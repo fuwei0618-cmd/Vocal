@@ -1,0 +1,715 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1"><link rel="icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vocal"><meta name="theme-color" content="#EDEFEA"></head><body>
+<title>街演 App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one-hand phone app. Sticky title bar, scrolling content, fixed bottom tab bar; edits open in bottom sheets. */
+:root{
+  --bg:#EDEFEA; --surface:#FAFBF8; --sunk:#E2E6E0; --ink:#1D2829; --muted:#5D6B6A; --line:#CDD4CE;
+  --accent:#1F6E77; --accent-ink:#FFFFFF; --accent-soft:#D3E6E7;
+  --coin:#8F6206; --coin-bg:#F5E6BF;
+  --warn:#A83E1B; --warn-bg:#F6DED3; --ok:#27704A; --ok-bg:#D9EEE0;
+  --display:"LXGW WenKai TC","Noto Sans TC","PingFang TC","Microsoft JhengHei",serif;
+  --body:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  --r:14px; --tabh:64px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111718; --surface:#1A2324; --sunk:#0C1112; --ink:#E4EBE9; --muted:#93A3A1; --line:#2C393A;
+  --accent:#62B6BF; --accent-ink:#0A1A1C; --accent-soft:#1D3639;
+  --coin:#E6B84E; --coin-bg:#3A2F14; --warn:#F08A66; --warn-bg:#3B1E15; --ok:#6CC48F; --ok-bg:#163223;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111718; --surface:#1A2324; --sunk:#0C1112; --ink:#E4EBE9; --muted:#93A3A1; --line:#2C393A;
+  --accent:#62B6BF; --accent-ink:#0A1A1C; --accent-soft:#1D3639;
+  --coin:#E6B84E; --coin-bg:#3A2F14; --warn:#F08A66; --warn-bg:#3B1E15; --ok:#6CC48F; --ok-bg:#163223;
+  color-scheme:dark}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--body);font-size:15px;line-height:1.55;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:0 calc(var(--tabh) + 32px + env(safe-area-inset-bottom,0px))}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-block:14px 10px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.top h1{font-family:var(--display);font-weight:700;font-size:26px;margin:0;letter-spacing:.02em}
+.top .sync{font-size:12px;color:var(--muted)}
+h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance}
+h2{font-size:20px} h3{font-size:16px}
+.sec{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
+.sec-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.label{font-size:12px;color:var(--muted);letter-spacing:.08em}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.num{font-variant-numeric:tabular-nums}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.list{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.list>li{border-top:1px solid var(--line)}
+.list>li:first-child{border-top:0}
+.row{display:flex;align-items:center;gap:10px;padding:11px 14px;min-height:48px;width:100%;background:none;border:0;text-align:left}
+.row .main{flex:1;min-width:0}
+.row .title{font-weight:500}
+.row .sub{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.chip.accent{background:var(--accent-soft);color:var(--accent)}
+.chip.coin{background:var(--coin-bg);color:var(--coin)}
+.chip.warn{background:var(--warn-bg);color:var(--warn)}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:8px 16px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-weight:500}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.warn{color:var(--warn);border-color:var(--warn)}
+.btn.block{width:100%}
+.btn.sm{min-height:34px;padding:4px 12px;font-size:13px}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.ghost{background:none;border:0;color:var(--accent);font-weight:500;padding:8px 4px;min-height:40px}
+.banner{border-radius:var(--r);padding:10px 14px;font-size:14px}
+.banner.warn{background:var(--warn-bg);color:var(--warn)}
+.banner.info{background:var(--accent-soft);color:var(--accent)}
+.empty{padding:22px 16px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:var(--r)}
+/* Next show */
+.show{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:12px}
+.show .when{font-family:var(--display);font-size:30px;font-weight:700;line-height:1.15}
+.show .where{font-size:17px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.progress{height:8px;border-radius:999px;background:var(--sunk);overflow:hidden}
+.progress>i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .2s}
+.check{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:46px;cursor:pointer}
+.check input{width:22px;height:22px;accent-color:var(--accent);flex:none}
+.check.done span{color:var(--muted);text-decoration:line-through}
+.check.rain span::after{content:"雨天";margin-left:8px;font-size:11px;padding:1px 6px;border-radius:999px;background:var(--accent-soft);color:var(--accent);text-decoration:none;display:inline-block}
+details.fold{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+details.fold>summary{padding:12px 14px;font-weight:500;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:8px}
+details.fold>summary::after{content:"＋";color:var(--muted)}
+details.fold[open]>summary::after{content:"－"}
+details.fold>.list{border:0;border-top:1px solid var(--line);border-radius:0 0 var(--r) var(--r)}
+.glabel{padding:8px 14px 4px;font-size:12px;color:var(--muted);letter-spacing:.08em;background:var(--sunk)}
+/* setlist */
+.setlist{counter-reset:s}
+.setlist li .n{width:22px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
+.handle{touch-action:none;cursor:grab;flex:none;width:36px;height:36px;display:grid;place-items:center;color:var(--muted);background:none;border:0;font-size:18px}
+li.dragging{background:var(--accent-soft)}
+.tempo{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:12px;flex:none;background:var(--sunk);color:var(--muted)}
+.tempo.t快{background:var(--warn-bg);color:var(--warn)}
+.tempo.t中{background:var(--coin-bg);color:var(--coin)}
+.tempo.t慢{background:var(--accent-soft);color:var(--accent)}
+.total{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14px}
+/* segmented */
+.seg{display:flex;background:var(--sunk);border-radius:999px;padding:3px;gap:2px}
+.seg button,.seg label{flex:1;border:0;background:none;border-radius:999px;padding:7px 10px;font-size:14px;color:var(--muted);text-align:center;cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed="true"],.seg input:checked+span{background:var(--surface);color:var(--ink);font-weight:500}
+.seg label{padding:0;display:flex}
+.seg label span{flex:1;padding:7px 10px;border-radius:999px}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+/* stats */
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;min-width:0}
+.tile b{display:block;font-size:20px;font-variant-numeric:tabular-nums;font-weight:700;overflow-wrap:anywhere}
+.tile span{font-size:12px;color:var(--muted)}
+.bars{display:grid;gap:6px}
+.bar{display:grid;grid-template-columns:64px 1fr 84px;gap:8px;align-items:center;font-size:13px;font-variant-numeric:tabular-nums}
+.bar .track{height:12px;background:var(--sunk);border-radius:4px;overflow:hidden}
+.bar .track i{display:block;height:100%;background:var(--coin);border-radius:4px}
+.bar .v{text-align:right}
+.tbl-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:9px 12px;text-align:left;border-top:1px solid var(--line);white-space:nowrap}
+thead th{border-top:0;font-size:12px;color:var(--muted);font-weight:500}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+/* tab bar */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs nav{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);height:var(--tabh)}
+.tabs button{border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--muted)}
+.tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tabs button[aria-current="page"]{color:var(--accent);font-weight:700}
+/* sheet */
+#sheet{position:fixed;inset:0;z-index:20}
+.sheet-bg{position:absolute;inset:0;background:rgba(10,16,17,.45)}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:92%;display:flex;flex-direction:column;background:var(--bg);border-radius:18px 18px 0 0;max-width:640px;margin:0 auto;animation:up .18s ease-out}
+@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}.progress>i{transition:none}}
+.sheet>header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.sheet>header h2{font-size:18px;text-align:center;flex:1}
+.sheet-body{overflow-y:auto;padding:16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));display:grid;gap:14px}
+.f{display:grid;gap:5px;min-width:0}
+.f>span{font-size:13px;color:var(--muted)}
+.f input,.f select,.f textarea{width:100%;min-height:44px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.f textarea{min-height:76px;resize:vertical}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:380px){.f2{grid-template-columns:1fr}.tiles{grid-template-columns:1fr 1fr}}
+.pick{display:flex;flex-wrap:wrap;gap:6px}
+.pick label{cursor:pointer}
+.pick input{position:absolute;opacity:0;pointer-events:none}
+.pick span{display:inline-block;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:14px}
+.pick input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.pick input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+fieldset{border:1px solid var(--line);border-radius:var(--r);padding:12px;margin:0;display:grid;gap:10px;min-width:0}
+legend{font-family:var(--display);font-weight:700;padding:0 6px}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tabh) + 16px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;max-width:calc(100% - 32px)}
+/* stage cards */
+#present{position:fixed;inset:0;z-index:40;background:var(--sunk);display:flex;flex-direction:column;padding:calc(12px + env(safe-area-inset-top,0px)) 20px calc(16px + env(safe-area-inset-bottom,0px))}
+#present .bar-top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:14px}
+#present .stage{flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;user-select:none;touch-action:pan-y}
+#present .stage h2{font-size:clamp(30px,8vw,56px);line-height:1.2;color:var(--accent)}
+#present .stage p{font-family:var(--display);font-size:clamp(22px,5.6vw,40px);line-height:1.5;margin:0;white-space:pre-wrap}
+#present .nav{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#present .nav .btn{min-height:56px;font-size:17px}
+.dots{display:flex;gap:6px;justify-content:center;padding-block:10px}
+.dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dots i.on{background:var(--accent)}
+.cardrow .body{font-size:13px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.link{color:var(--accent);text-decoration:none;font-size:13px}
+</style>
+
+<div class="app">
+  <header class="top"><h1 id="title">下一場</h1><span class="sync" id="sync">載入中…</span></header>
+  <main id="main"></main>
+</div>
+<div class="tabs"><nav aria-label="分頁">
+  <button data-tab="today"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>下一場</button>
+  <button data-tab="log"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8.5 10h7M8.5 13.5h7M8.5 17h4"/></svg>紀錄</button>
+  <button data-tab="songs"><svg viewBox="0 0 24 24"><path d="M9 18V5l10-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>歌單</button>
+  <button data-tab="gear"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9.5l2 2 3.5-3.5M8 15h8"/></svg>設備清單</button>
+  <button data-tab="host"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>主持稿</button>
+</nav></div>
+<div id="sheet" hidden></div>
+<div id="present" hidden></div>
+<div id="toast" hidden role="status"></div>
+
+<script>
+(function(){
+"use strict";
+const COLS=['songs','venues','records','gear','checks','cards','meta'];
+const GROUPS=['前一晚充電','出門準備','其他','隨身','當日'];
+const ONSITE=['現場・表演','現場・設備','現場・腳架'];
+const SONG_GROUPS=['溫馨','開放','商演','RenewSV'];
+const LEVELS=['練習中','可上台','拿手'];
+const TEMPOS=['快','中','慢'];
+const REASONS=['雨天','夥伴取消','設備壞','其他'];
+const TITLES={today:'下一場',log:'表演紀錄',songs:'歌單',gear:'設備與清單',host:'主持稿'};
+const LS='busk-app-v1';
+let S={}; COLS.forEach(c=>S[c]={});
+let db=null, mode='loading', downloads=null;
+let tab='today', logSeg='list', gearSeg='list', songFilter='全部', songQ='';
+
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=p=>p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const today=()=>new Date().toLocaleDateString('sv-SE');
+const money=n=>'$'+Math.round(Number(n)||0).toLocaleString('en-US');
+const clone=o=>JSON.parse(JSON.stringify(o||{}));
+function parseD(s){if(!s)return null;const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function fmtD(s,withYear){const d=parseD(s);if(!d)return '';return (withYear?d.getFullYear()+'/':'')+(d.getMonth()+1)+'/'+d.getDate()+'（'+'日一二三四五六'[d.getDay()]+'）'}
+function secs(len){if(!len)return 0;const t=String(len).trim();if(t.includes(':')){const[m,s]=t.split(':');return (+m||0)*60+(+s||0)}return Math.round((parseFloat(t)||0)*60)}
+function mmss(sec){const m=Math.floor(sec/60),s=sec%60;return m+':'+String(s).padStart(2,'0')}
+const sorted=(col,key='ts')=>Object.entries(S[col]).map(([id,v])=>({id,...v})).sort((a,b)=>((a[key]??0)>(b[key]??0)?1:(a[key]??0)<(b[key]??0)?-1:0));
+const next=()=>S.meta.next||{};
+const partnerName=p=>(p&&p.trim()&&p.trim()!=='自己')?p.trim():'';
+
+/* ---------- storage ---------- */
+function saveCache(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
+function loadCache(){try{const v=JSON.parse(localStorage.getItem(LS)||'null');if(v)COLS.forEach(c=>S[c]=v[c]||{})}catch(e){}}
+const wq={};
+function put(col,id,obj){
+  S[col][id]=obj; saveCache(); scheduleRender();
+  if(!db)return;
+  const k=col+'/'+id, q=wq[k]||(wq[k]={busy:false,val:undefined});
+  q.val=obj; if(!q.busy)flush(k,col,id);
+}
+async function flush(k,col,id){
+  const q=wq[k]; q.busy=true;
+  while(q.val!==undefined){
+    const v=q.val; q.val=undefined;
+    try{ if(v===null) await db.collection(col).doc(id).delete(); else await db.collection(col).doc(id).set(v); }
+    catch(e){ try{await new Promise(r=>setTimeout(r,600+Math.random()*600)); if(v===null) await db.collection(col).doc(id).delete(); else await db.collection(col).doc(id).set(v);}catch(e2){toast('沒有存到雲端（'+(e2.code||'連線問題')+'），稍後再按一次儲存')} }
+  }
+  q.busy=false;
+}
+function del(col,id){
+  delete S[col][id]; saveCache(); scheduleRender();
+  if(!db)return;
+  const k=col+'/'+id, q=wq[k]||(wq[k]={busy:false,val:undefined});
+  q.val=null; if(!q.busy)flush(k,col,id);
+}
+let tickTimer=null;
+function putNextSoon(n){S.meta.next=n;saveCache();scheduleRender();clearTimeout(tickTimer);tickTimer=setTimeout(()=>put('meta','next',S.meta.next),500)}
+
+/* ---------- render ---------- */
+let rq=false;
+function scheduleRender(){if(rq)return;rq=true;requestAnimationFrame(()=>{rq=false;render()})}
+function render(){
+  $('#title').textContent=TITLES[tab];
+  $('#sync').textContent=mode==='cloud'?'已同步到雲端':mode==='local'?'只存在這台裝置':'載入中…';
+  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false'));
+  const focusQ=document.activeElement&&document.activeElement.id==='song-q';
+  const html={today:vToday,log:vLog,songs:vSongs,gear:vGear,host:vHost}[tab]();
+  $('#main').innerHTML=html;
+  if(tab==='songs'){applySongSearch(); if(focusQ){const i=$('#song-q');i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
+  if(tab==='today'){const l=$('#today-set');if(l)enableDrag(l,ids=>{const n=clone(next());n.setlist=ids;put('meta','next',n)})}
+  if(tab==='host'){const l=$('#card-list');if(l)enableDrag(l,ids=>ids.forEach((id,i)=>{if(S.cards[id]&&S.cards[id].order!==i)put('cards',id,{...S.cards[id],order:i})}))}
+}
+
+/* ---------- stats ---------- */
+function stats(){
+  const recs=sorted('records','date').filter(r=>r.status==='表演');
+  const byMonth={},byVenue={},byPartner={},songCount={},songLast={};
+  recs.forEach(r=>{
+    const m=(r.date||'').slice(0,7); byMonth[m]=(byMonth[m]||0)+(+r.mine||0);
+    if(r.venueId){const v=byVenue[r.venueId]||(byVenue[r.venueId]={n:0,sum:0});v.n++;v.sum+=+r.total||0}
+    const p=partnerName(r.partner)||'自己一個人';const pp=byPartner[p]||(byPartner[p]={n:0,sum:0,mine:0});pp.n++;pp.sum+=+r.total||0;pp.mine+=+r.mine||0;
+    (r.songs||[]).forEach(id=>{songCount[id]=(songCount[id]||0)+1;if(!songLast[id]||r.date>songLast[id])songLast[id]=r.date});
+  });
+  return {recs,byMonth,byVenue,byPartner,songCount,songLast};
+}
+const venueAvg=(st,id)=>{const v=st.byVenue[id];return v&&v.n?Math.round(v.sum/v.n):null};
+
+/* ---------- 今天／下一場 ---------- */
+function setlistInfo(ids){
+  const songs=ids.map(id=>({id,...(S.songs[id]||{title:'（已刪除的歌）'})}));
+  const total=songs.reduce((a,s)=>a+secs(s.length),0);
+  const missing=songs.filter(s=>!secs(s.length)).length;
+  const hints=[];
+  if(songs.length){
+    if(songs[0].tempo!=='快')hints.push('開場建議放一首快歌'+(songs[0].tempo?'':'（第一首還沒設定節奏）'));
+    const last=songs[songs.length-1];
+    if(!(last.groups||[]).includes('溫馨'))hints.push('結尾建議放溫馨的歌');
+  }
+  return {songs,total,missing,hints};
+}
+function licenseWarnings(){
+  const L=S.meta.licenses||{};const out=[];const now=parseD(today());
+  [['taipei','台北'],['taoyuan','桃園']].forEach(([k,n])=>{const d=parseD(L[k]);if(!d)return;const days=Math.round((d-now)/864e5);
+    if(days<0)out.push(n+'街頭藝人證照已在 '+fmtD(L[k],true)+' 到期');else if(days<=45)out.push(n+'證照 '+days+' 天後到期（'+fmtD(L[k],true)+'）')});
+  return out;
+}
+function vToday(){
+  const n=next(), v=S.venues[n.venueId], info=setlistInfo(n.setlist||[]);
+  const checks=sorted('checks','order'), checked=n.checked||{}, rain=!!n.rain;
+  const pre=checks.filter(c=>GROUPS.includes(c.group)&&(!c.rain||rain));
+  const done=pre.filter(c=>checked[c.id]).length;
+  let h='';
+  licenseWarnings().forEach(w=>h+=`<div class="banner warn">${esc(w)}</div>`);
+  if(mode==='local')h+=`<div class="banner info">目前資料只存在這台裝置。用 claude.ai 登入開啟就會同步到雲端。</div>`;
+  h+='<section class="sec">';
+  if(n.date){
+    h+=`<div class="show"><div><div class="label">下一場</div><div class="when">${esc(fmtD(n.date))} ${esc(n.slot||'')}</div><div class="where">${v?esc(v.name)+' <span class="chip">'+esc(v.city||'')+'</span>':'<span class="muted">還沒選場地</span>'}</div></div>
+    <dl class="kv"><dt>搭檔</dt><dd>${esc(partnerName(n.partner)||'我自己')}</dd>${v&&(v.outlet||v.shelter||v.ground)?`<dt>場地</dt><dd>${esc([v.outlet&&'插座：'+v.outlet,v.ground&&'地面：'+v.ground,v.shelter&&'遮雨：'+v.shelter].filter(Boolean).join('、'))}</dd>`:''}${n.note?`<dt>備註</dt><dd>${esc(n.note)}</dd>`:''}</dl>
+    <div class="btns"><button class="btn sm" data-act="plan">編輯這場</button><button class="btn sm ${rain?'primary':''}" data-act="rain" aria-pressed="${rain}">${rain?'☂ 雨天模式開':'☂ 雨天模式'}</button></div></div>`;
+  }else{
+    h+=`<div class="empty"><p>還沒排下一場。</p><button class="btn primary" data-act="plan">安排下一場</button></div>`;
+  }
+  if(rain)h+=`<div class="banner info">雨天：記得帶雨傘、地墊，音響和線材做好防水。</div>`;
+  h+='</section>';
+  // setlist
+  h+=`<section class="sec"><div class="sec-head"><h2>本次歌單</h2><button class="btn sm" data-act="setlist">排歌單</button></div>`;
+  if(info.songs.length){
+    h+=`<ol class="list setlist" id="today-set">${info.songs.map((s,i)=>`<li data-id="${esc(s.id)}"><div class="row"><span class="n">${i+1}</span><span class="tempo t${esc(s.tempo||'')}">${esc(s.tempo||'－')}</span><div class="main"><div class="title">${esc(s.title)}</div><div class="sub">${esc([s.key&&'Key '+s.key,s.length].filter(Boolean).join('・'))}</div></div><button class="handle" aria-label="拖拉排序">⠿</button></div></li>`).join('')}</ol>
+    <div class="total"><span>${info.songs.length} 首</span><b class="num">約 ${mmss(info.total)}${info.missing?`<span class="muted small">（${info.missing} 首沒填長度）</span>`:''}</b></div>`;
+    info.hints.forEach(t=>h+=`<div class="banner warn small">${esc(t)}</div>`);
+  }else h+=`<div class="empty">還沒選歌。按「排歌單」從歌單勾選。</div>`;
+  h+='</section>';
+  // checklist
+  h+=`<section class="sec"><div class="sec-head"><h2>出門清單</h2><span class="num muted">${done} / ${pre.length}</span></div><div class="progress"><i style="width:${pre.length?Math.round(done/pre.length*100):0}%"></i></div>`;
+  if(!checks.length)h+=`<div class="empty">還沒有清單項目，到「設備清單」分頁新增。</div>`;
+  h+=`<div class="list">${GROUPS.map(g=>{const items=pre.filter(c=>c.group===g);if(!items.length)return '';return `<div class="glabel">${esc(g)}</div>`+items.map(c=>checkRow(c,checked)).join('')}).join('')}</div>`;
+  if(pre.length&&done===pre.length)h+=`<div class="banner info">都勾完了，可以出門！</div>`;
+  h+='</section>';
+  const on=checks.filter(c=>ONSITE.includes(c.group));
+  if(on.length){
+    h+=`<section class="sec"><details class="fold"><summary>現場提醒（${on.filter(c=>checked[c.id]).length}/${on.length}）</summary><div class="list">${ONSITE.map(g=>{const items=on.filter(c=>c.group===g);if(!items.length)return '';return `<div class="glabel">${esc(g.replace('現場・',''))}</div>`+items.map(c=>checkRow(c,checked)).join('')}).join('')}</div></details></section>`;
+  }
+  h+=`<section class="sec"><button class="btn primary block" data-act="finish">演出結束，寫紀錄</button><button class="btn block" data-act="reset-checks" data-confirm="再按一次清空勾選">重置清單</button></section>`;
+  return h;
+}
+const checkRow=(c,checked)=>`<label class="check ${checked[c.id]?'done':''} ${c.rain?'rain':''}"><input type="checkbox" data-check="${esc(c.id)}" ${checked[c.id]?'checked':''}><span>${esc(c.text)}</span></label>`;
+
+function venueOptions(sel){
+  const vs=sorted('venues','name');
+  return ['桃園','台北','其他'].map(city=>{const list=vs.filter(v=>(v.city||'其他')===city);if(!list.length)return '';return `<optgroup label="${city}">${list.map(v=>`<option value="${esc(v.id)}" ${v.id===sel?'selected':''}>${esc(v.name)}</option>`).join('')}</optgroup>`}).join('');
+}
+function partnerList(){const set=new Set();Object.values(S.records).forEach(r=>{const p=partnerName(r.partner);if(p)set.add(p)});return `<datalist id="partners">${[...set].map(p=>`<option value="${esc(p)}">`).join('')}</datalist>`}
+function segRadio(name,opts,val){return `<div class="seg" role="radiogroup">${opts.map(o=>`<label><input type="radio" name="${name}" value="${esc(o)}" ${o===val?'checked':''}><span>${esc(o)}</span></label>`).join('')}</div>`}
+
+function planSheet(){
+  const n=next();
+  openSheet('安排下一場',`
+    <div class="f2"><label class="f"><span>日期</span><input type="date" id="p-date" value="${esc(n.date||today())}"></label>
+    <div class="f"><span>時段</span>${segRadio('p-slot',['午','晚'],n.slot||'晚')}</div></div>
+    <label class="f"><span>場地</span><select id="p-venue"><option value="">未選</option>${venueOptions(n.venueId)}</select></label>
+    <label class="f"><span>搭檔（空白就是我自己）</span><input id="p-partner" list="partners" value="${esc(partnerName(n.partner))}" autocomplete="off">${partnerList()}</label>
+    <label class="f"><span>備註</span><textarea id="p-note">${esc(n.note||'')}</textarea></label>`,
+  ()=>{const x=clone(next());x.date=$('#p-date').value;x.slot=(document.querySelector('input[name=p-slot]:checked')||{}).value||'';x.venueId=$('#p-venue').value;x.partner=$('#p-partner').value.trim();x.note=$('#p-note').value.trim();put('meta','next',x);return true});
+}
+
+/* setlist builder */
+function setlistSheet(){
+  let ids=[...(next().setlist||[])].filter(id=>S.songs[id]);
+  let filt='全部';
+  const draw=()=>{
+    const info=setlistInfo(ids);
+    const all=sorted('songs').filter(s=>filt==='全部'||(s.groups||[]).includes(filt));
+    $('#sl-body').innerHTML=`
+      <div class="total"><b>已選 ${ids.length} 首</b><b class="num">約 ${mmss(info.total)}</b></div>
+      ${info.hints.map(t=>`<div class="banner warn small">${esc(t)}</div>`).join('')}
+      ${ids.length?`<ol class="list" id="sl-order">${info.songs.map((s,i)=>`<li data-id="${esc(s.id)}"><div class="row"><span class="n num muted">${i+1}</span><span class="tempo t${esc(s.tempo||'')}">${esc(s.tempo||'－')}</span><div class="main"><div class="title">${esc(s.title)}</div><div class="sub">${esc([(s.groups||[]).join('・'),s.length].filter(Boolean).join('　'))}</div></div><button class="ghost" data-sl-rm="${esc(s.id)}" aria-label="移除">移除</button><button class="handle" aria-label="拖拉排序">⠿</button></div></li>`).join('')}</ol>`:'<div class="empty">從下面點歌加入</div>'}
+      <div class="sec-head"><h3>從歌單加入</h3></div>
+      <div class="chips">${['全部',...SONG_GROUPS].map(g=>`<button class="chip ${g===filt?'accent':''}" data-sl-f="${esc(g)}">${esc(g)}</button>`).join('')}</div>
+      <ul class="list">${all.map(s=>{const on=ids.includes(s.id);return `<li><button class="row" data-sl-add="${esc(s.id)}"><span class="tempo t${esc(s.tempo||'')}">${esc(s.tempo||'－')}</span><div class="main"><div class="title">${esc(s.title)}</div><div class="sub">${esc([s.artist,s.key&&'Key '+s.key,s.level].filter(Boolean).join('・'))}</div></div><span class="chip ${on?'ok':''}">${on?'已加入':'＋ 加入'}</span></button></li>`}).join('')}</ul>`;
+    const ol=$('#sl-order'); if(ol)enableDrag(ol,o=>{ids=o;draw()});
+  };
+  openSheet('排歌單','<div id="sl-body" style="display:grid;gap:12px"></div>',()=>{const x=clone(next());x.setlist=ids;put('meta','next',x);return true});
+  $('#sl-body').addEventListener('click',e=>{
+    const a=e.target.closest('[data-sl-add]'),r=e.target.closest('[data-sl-rm]'),f=e.target.closest('[data-sl-f]');
+    if(a){const id=a.dataset.slAdd;ids=ids.includes(id)?ids.filter(x=>x!==id):[...ids,id];draw()}
+    else if(r){ids=ids.filter(x=>x!==r.dataset.slRm);draw()}
+    else if(f){filt=f.dataset.slF;draw()}
+  });
+  draw();
+}
+
+/* ---------- 紀錄 ---------- */
+function vLog(){
+  let h=`<div class="seg" style="margin-bottom:16px">${[['list','紀錄'],['stats','統計'],['venues','場地']].map(([k,t])=>`<button data-logseg="${k}" aria-pressed="${logSeg===k}">${t}</button>`).join('')}</div>`;
+  if(logSeg==='stats')return h+vStats();
+  if(logSeg==='venues')return h+vVenues();
+  const recs=sorted('records','date').reverse();
+  h+=`<section class="sec"><button class="btn primary block" data-act="new-record">＋ 新增一場紀錄</button></section>`;
+  if(!recs.length)return h+`<div class="empty">還沒有表演紀錄。演出結束後在「下一場」按「寫紀錄」，或從這裡新增。2025/11 起的 Notion 舊紀錄之後可以匯入。</div>`;
+  const months={};recs.forEach(r=>{const m=(r.date||'').slice(0,7)||'未填日期';(months[m]=months[m]||[]).push(r)});
+  Object.entries(months).forEach(([m,list])=>{
+    const inc=list.filter(r=>r.status==='表演').reduce((a,r)=>a+(+r.mine||0),0);
+    h+=`<section class="sec"><div class="sec-head"><h3>${esc(m.replace('-',' 年 ')+(m.includes('-')?' 月':''))}</h3><span class="chip coin num">我的收入 ${money(inc)}</span></div><ul class="list">${list.map(recRow).join('')}</ul></section>`;
+  });
+  return h;
+}
+function recRow(r){
+  const v=S.venues[r.venueId];const p=partnerName(r.partner);
+  let st=r.status==='取消'?`<span class="chip warn">取消${r.cancelReason?'・'+esc(r.cancelReason):''}</span>`:r.status==='觀摩'?'<span class="chip accent">觀摩</span>':`<span class="chip coin num">${money(r.total)}</span>`;
+  return `<li><button class="row" data-edit-record="${esc(r.id)}"><div class="main"><div class="title">${esc(fmtD(r.date))} ${esc(r.slot||'')}　${esc(v?v.name:'（未選場地）')}</div><div class="sub">${esc([p?'和 '+p:'',r.status==='表演'&&p?'我分到 '+money(r.mine):'',(r.songs||[]).length?(r.songs.length+' 首歌'):'',r.minutes?r.minutes+' 分鐘':''].filter(Boolean).join('・'))}</div></div>${st}</button></li>`;
+}
+function recordSheet(id,prefill){
+  const r=id?S.records[id]:(prefill||{date:today(),slot:'晚',status:'表演',songs:[]});
+  const rv=r.rv||{};
+  const rentals=sorted('gear','name').filter(g=>g.own==='租借');
+  openSheet(id?'編輯紀錄':'新增紀錄',`
+    <div class="f2"><label class="f"><span>日期</span><input type="date" id="r-date" value="${esc(r.date||'')}"></label>
+    <div class="f"><span>時段</span>${segRadio('r-slot',['午','晚'],r.slot||'晚')}</div></div>
+    <div class="f"><span>狀態</span>${segRadio('r-status',['表演','觀摩','取消'],r.status||'表演')}</div>
+    <div class="f" id="r-reason-wrap" ${r.status==='取消'?'':'hidden'}><span>取消原因</span>${segRadio('r-reason',REASONS,r.cancelReason||'')}</div>
+    <label class="f"><span>場地</span><select id="r-venue"><option value="">未選</option>${venueOptions(r.venueId)}</select></label>
+    <label class="f"><span>搭檔（空白就是我自己）</span><input id="r-partner" list="partners" value="${esc(partnerName(r.partner))}" autocomplete="off">${partnerList()}</label>
+    <div class="f2"><label class="f"><span>總打賞</span><input id="r-total" type="number" inputmode="numeric" min="0" value="${esc(r.total??'')}"></label>
+    <label class="f"><span>我的分潤</span><input id="r-mine" type="number" inputmode="numeric" min="0" value="${esc(r.mine??'')}"></label></div>
+    <p class="small muted" id="r-solo-hint" style="margin:-6px 0 0">自己一個人唱時，分潤會跟著總打賞自動填。</p>
+    <div class="f2"><label class="f"><span>場主</span><input id="r-host" value="${esc(r.host||'')}"></label>
+    <label class="f"><span>時長（分鐘）</span><input id="r-min" type="number" inputmode="numeric" min="0" value="${esc(r.minutes??'')}"></label></div>
+    <label class="f"><span>租借設備</span><input id="r-rental" list="rentals" value="${esc(r.rental||'')}" placeholder="例：SV_YAMAHA"><datalist id="rentals">${rentals.map(g=>`<option value="${esc(g.name)}">`).join('')}</datalist></label>
+    <fieldset><legend>本場唱的歌</legend><div class="pick">${sorted('songs').map(s=>`<label><input type="checkbox" name="r-song" value="${esc(s.id)}" ${(r.songs||[]).includes(s.id)?'checked':''}><span>${esc(s.title)}</span></label>`).join('')||'<span class="muted small">歌單還是空的</span>'}</div></fieldset>
+    <label class="f"><span>備註</span><textarea id="r-note">${esc(r.note||'')}</textarea></label>
+    <fieldset><legend>復盤</legend>
+      <label class="f"><span>人：民眾、搭檔</span><textarea id="rv-people">${esc(rv.people||'')}</textarea></label>
+      <label class="f"><span>事：主持、歌唱</span><textarea id="rv-matter">${esc(rv.matter||'')}</textarea></label>
+      <label class="f"><span>時：時段、人潮</span><textarea id="rv-time">${esc(rv.time||'')}</textarea></label>
+      <label class="f"><span>地：場地狀況</span><textarea id="rv-place">${esc(rv.place||'')}</textarea></label>
+      <label class="f"><span>物：設備、報酬</span><textarea id="rv-thing">${esc(rv.thing||'')}</textarea></label>
+    </fieldset>`,
+  ()=>{
+    const date=$('#r-date').value; if(!date){toast('請填日期');return false}
+    const status=(document.querySelector('input[name=r-status]:checked')||{}).value||'表演';
+    const partner=$('#r-partner').value.trim();
+    let total=$('#r-total').value===''?null:+$('#r-total').value, mine=$('#r-mine').value===''?null:+$('#r-mine').value;
+    if(!partnerName(partner)&&total!=null)mine=total;
+    const o={...(id?S.records[id]:{}),date,slot:(document.querySelector('input[name=r-slot]:checked')||{}).value||'',status,
+      cancelReason:status==='取消'?((document.querySelector('input[name=r-reason]:checked')||{}).value||''):'',
+      venueId:$('#r-venue').value,partner,total,mine,host:$('#r-host').value.trim(),minutes:$('#r-min').value===''?null:+$('#r-min').value,
+      rental:$('#r-rental').value.trim(),songs:[...document.querySelectorAll('input[name=r-song]:checked')].map(x=>x.value),note:$('#r-note').value.trim(),
+      rv:{people:$('#rv-people').value.trim(),matter:$('#rv-matter').value.trim(),time:$('#rv-time').value.trim(),place:$('#rv-place').value.trim(),thing:$('#rv-thing').value.trim()},
+      ts:(id&&S.records[id].ts)||Date.now()};
+    put('records',id||uid('r'),o);
+    if(!id&&prefill){const n=clone(next());n.checked={};n.rain=false;n.date='';n.note='';put('meta','next',n);toast('已記錄，清單已重置')} else toast('已儲存');
+    return true;
+  },id?{onDelete:()=>{del('records',id);toast('已刪除這場紀錄')}}:{});
+  const sync=()=>{if(!partnerName($('#r-partner').value))$('#r-mine').value=$('#r-total').value;$('#r-solo-hint').hidden=!!partnerName($('#r-partner').value)};
+  $('#r-total').addEventListener('input',sync);$('#r-partner').addEventListener('input',sync);sync();
+  document.querySelectorAll('input[name=r-status]').forEach(x=>x.addEventListener('change',()=>{$('#r-reason-wrap').hidden=x.value!=='取消'}));
+}
+
+function vStats(){
+  const st=stats();
+  if(!st.recs.length)return `<div class="empty">有了「表演」狀態的紀錄後，這裡會算出每月收入、各場地平均打賞和搭檔表現。</div>`;
+  const ym=today().slice(0,7),y=today().slice(0,4);
+  const monthInc=st.byMonth[ym]||0;
+  const yearInc=Object.entries(st.byMonth).filter(([m])=>m.startsWith(y)).reduce((a,[,v])=>a+v,0);
+  const months=Object.keys(st.byMonth).sort().slice(-12);
+  const max=Math.max(1,...months.map(m=>st.byMonth[m]));
+  const cancels={};Object.values(S.records).filter(r=>r.status==='取消').forEach(r=>{const k=r.cancelReason||'未填';cancels[k]=(cancels[k]||0)+1});
+  let h=`<section class="sec"><div class="tiles"><div class="tile"><span>本月我的收入</span><b>${money(monthInc)}</b></div><div class="tile"><span>${y} 年收入</span><b>${money(yearInc)}</b></div><div class="tile"><span>表演場數</span><b>${st.recs.length}</b></div></div></section>`;
+  h+=`<section class="sec"><h3>每月收入（我的分潤）</h3><div class="panel bars">${months.map(m=>`<div class="bar"><span>${esc(m.replace('-','/'))}</span><div class="track"><i style="width:${Math.round(st.byMonth[m]/max*100)}%"></i></div><span class="v">${money(st.byMonth[m])}</span></div>`).join('')}</div></section>`;
+  const vrows=Object.entries(st.byVenue).map(([id,v])=>({name:(S.venues[id]||{}).name||'（已刪除）',city:(S.venues[id]||{}).city||'',n:v.n,avg:v.sum/v.n})).sort((a,b)=>b.avg-a.avg);
+  h+=`<section class="sec"><h3>各場地平均打賞</h3><div class="tbl-wrap"><table><thead><tr><th>場地</th><th class="r">場數</th><th class="r">平均總打賞</th></tr></thead><tbody>${vrows.map(v=>`<tr><td>${esc(v.name)} <span class="muted small">${esc(v.city)}</span></td><td class="r">${v.n}</td><td class="r">${money(v.avg)}</td></tr>`).join('')||'<tr><td colspan="3" class="muted">還沒有選了場地的紀錄</td></tr>'}</tbody></table></div></section>`;
+  const prow=Object.entries(st.byPartner).map(([p,v])=>({p,...v})).sort((a,b)=>b.n-a.n);
+  h+=`<section class="sec"><h3>搭檔表現</h3><div class="tbl-wrap"><table><thead><tr><th>搭檔</th><th class="r">場數</th><th class="r">平均總打賞</th><th class="r">我平均分到</th></tr></thead><tbody>${prow.map(v=>`<tr><td>${esc(v.p)}</td><td class="r">${v.n}</td><td class="r">${money(v.sum/v.n)}</td><td class="r">${money(v.mine/v.n)}</td></tr>`).join('')}</tbody></table></div></section>`;
+  if(Object.keys(cancels).length)h+=`<section class="sec"><h3>取消原因</h3><div class="chips">${Object.entries(cancels).map(([k,n])=>`<span class="chip warn">${esc(k)} ${n} 次</span>`).join('')}</div></section>`;
+  return h;
+}
+
+function vVenues(){
+  const st=stats(), L=S.meta.licenses||{};
+  let h=`<section class="sec"><h3>街頭藝人證照到期日</h3><div class="panel f2">
+    <label class="f"><span>台北</span><input type="date" id="lic-taipei" value="${esc(L.taipei||'')}" data-lic="taipei"></label>
+    <label class="f"><span>桃園</span><input type="date" id="lic-taoyuan" value="${esc(L.taoyuan||'')}" data-lic="taoyuan"></label></div>
+    ${licenseWarnings().map(w=>`<div class="banner warn small">${esc(w)}</div>`).join('')}</section>`;
+  h+=`<section class="sec"><button class="btn primary block" data-act="new-venue">＋ 新增場地</button></section>`;
+  const vs=sorted('venues','name');
+  ['桃園','台北','其他'].forEach(city=>{
+    const list=vs.filter(v=>(v.city||'其他')===city);
+    if(!list.length){if(city==='桃園')h+=`<section class="sec"><h3>桃園</h3><div class="empty">還沒有桃園的場地，按上面新增。</div></section>`;return}
+    h+=`<section class="sec"><h3>${city}</h3><ul class="list">${list.map(v=>{const a=venueAvg(st,v.id);return `<li><button class="row" data-edit-venue="${esc(v.id)}"><div class="main"><div class="title">${esc(v.name)}</div><div class="sub">${esc([v.goodTimes&&'好時段：'+v.goodTimes,v.outlet&&'插座：'+v.outlet,v.ground&&'地面：'+v.ground,v.shelter&&'遮雨：'+v.shelter].filter(Boolean).join('・')||'點一下補上時段、插座、地面、遮雨')}</div></div>${a!=null?`<span class="chip coin num">均 ${money(a)}</span>`:''}</button></li>`}).join('')}</ul></section>`;
+  });
+  return h;
+}
+function venueSheet(id){
+  const v=id?S.venues[id]:{city:'桃園'};
+  openSheet(id?'編輯場地':'新增場地',`
+    <label class="f"><span>名稱</span><input id="v-name" value="${esc(v.name||'')}"></label>
+    <div class="f"><span>地區</span>${segRadio('v-city',['桃園','台北','其他'],v.city||'桃園')}</div>
+    <label class="f"><span>好時段與人潮</span><textarea id="v-good">${esc(v.goodTimes||'')}</textarea></label>
+    <div class="f2"><label class="f"><span>插座</span><input id="v-outlet" value="${esc(v.outlet||'')}"></label>
+    <label class="f"><span>地面</span><input id="v-ground" value="${esc(v.ground||'')}"></label></div>
+    <label class="f"><span>遮雨</span><input id="v-shelter" value="${esc(v.shelter||'')}"></label>
+    <label class="f"><span>備註</span><textarea id="v-note">${esc(v.note||'')}</textarea></label>
+    <p class="small muted" style="margin:0">平均打賞會從表演紀錄自動算。</p>`,
+  ()=>{const name=$('#v-name').value.trim();if(!name){toast('請填場地名稱');return false}
+    put('venues',id||uid('v'),{...v,name,city:(document.querySelector('input[name=v-city]:checked')||{}).value||'',goodTimes:$('#v-good').value.trim(),outlet:$('#v-outlet').value.trim(),ground:$('#v-ground').value.trim(),shelter:$('#v-shelter').value.trim(),note:$('#v-note').value.trim(),ts:v.ts||Date.now()});return true},
+  id?{onDelete:()=>del('venues',id)}:{});
+}
+
+/* ---------- 歌單 ---------- */
+function vSongs(){
+  const st=stats();
+  const songs=sorted('songs').filter(s=>songFilter==='全部'||(s.groups||[]).includes(songFilter)||(songFilter==='未設定熟練度'&&!s.level));
+  let h=`<section class="sec"><label class="f"><span class="label">搜尋歌名或原唱</span><input id="song-q" type="search" value="${esc(songQ)}" autocomplete="off"></label>
+    <div class="chips">${['全部',...SONG_GROUPS].map(g=>`<button class="chip ${g===songFilter?'accent':''}" data-song-f="${esc(g)}">${esc(g)}</button>`).join('')}</div>
+    <button class="btn primary block" data-act="new-song">＋ 新增歌曲</button></section>`;
+  if(!songs.length)return h+`<div class="empty">這個分組還沒有歌。</div>`;
+  const ns=next().setlist||[];
+  h+=`<ul class="list" id="song-list">${songs.map(s=>{const c=st.songCount[s.id]||0,last=st.songLast[s.id];
+    const lv=s.level?`<span class="chip ${s.level==='拿手'?'ok':s.level==='練習中'?'warn':'accent'}">${esc(s.level)}</span>`:'';
+    return `<li data-search="${esc((s.title+' '+(s.artist||'')).toLowerCase())}"><div class="row"><span class="tempo t${esc(s.tempo||'')}">${esc(s.tempo||'－')}</span><button class="main" style="background:none;border:0;text-align:left;padding:0" data-edit-song="${esc(s.id)}"><div class="title">${esc(s.title)} ${s.key?`<span class="chip num">${esc(s.key)}</span>`:''} ${lv}</div><div class="sub">${esc([s.artist,(s.groups||[]).join('・'),s.length,c?`唱過 ${c} 次・上次 ${fmtD(last,true)}`:'還沒唱過',s.note].filter(Boolean).join('　'))}</div>${s.moises||s.lyrics?`<div class="chips" style="margin-top:4px">${s.moises?`<a class="link" href="${esc(s.moises)}" target="_blank" rel="noopener">Moises 伴奏 ↗</a>`:''}${s.lyrics?`<a class="link" href="${esc(s.lyrics)}" target="_blank" rel="noopener">歌詞 ↗</a>`:''}</div>`:''}</button><button class="btn sm ${ns.includes(s.id)?'primary':''}" data-toggle-set="${esc(s.id)}" aria-pressed="${ns.includes(s.id)}">${ns.includes(s.id)?'已在歌單':'＋ 本次'}</button></div></li>`}).join('')}</ul>`;
+  return h;
+}
+function applySongSearch(){const q=songQ.trim().toLowerCase();document.querySelectorAll('#song-list>li').forEach(li=>li.hidden=!!q&&!li.dataset.search.includes(q))}
+function songSheet(id){
+  const s=id?S.songs[id]:{groups:[]};
+  openSheet(id?'編輯歌曲':'新增歌曲',`
+    <label class="f"><span>歌名</span><input id="s-title" value="${esc(s.title||'')}"></label>
+    <div class="f2"><label class="f"><span>原唱</span><input id="s-artist" value="${esc(s.artist||'')}"></label>
+    <label class="f"><span>我的 key</span><input id="s-key" value="${esc(s.key||'')}" placeholder="例：-1、+3、原key"></label></div>
+    <div class="f"><span>節奏</span>${segRadio('s-tempo',TEMPOS,s.tempo||'')}</div>
+    <div class="f"><span>分組（可複選）</span><div class="pick">${SONG_GROUPS.map(g=>`<label><input type="checkbox" name="s-group" value="${g}" ${(s.groups||[]).includes(g)?'checked':''}><span>${g}</span></label>`).join('')}</div></div>
+    <div class="f"><span>熟練度</span>${segRadio('s-level',LEVELS,s.level||'')}</div>
+    <label class="f"><span>長度（分:秒）</span><input id="s-len" value="${esc(s.length||'')}" placeholder="例：4:05" inputmode="numeric"></label>
+    <label class="f"><span>Moises 人聲靜音伴奏連結</span><input id="s-moises" type="url" value="${esc(s.moises||'')}"></label>
+    <label class="f"><span>歌詞連結</span><input id="s-lyrics" type="url" value="${esc(s.lyrics||'')}"></label>
+    <label class="f"><span>備註</span><textarea id="s-note">${esc(s.note||'')}</textarea></label>`,
+  ()=>{const title=$('#s-title').value.trim();if(!title){toast('請填歌名');return false}
+    const g=n=>(document.querySelector(`input[name=${n}]:checked`)||{}).value||'';
+    put('songs',id||uid('s'),{...s,title,artist:$('#s-artist').value.trim(),key:$('#s-key').value.trim(),tempo:g('s-tempo'),groups:[...document.querySelectorAll('input[name=s-group]:checked')].map(x=>x.value),level:g('s-level'),length:$('#s-len').value.trim(),moises:$('#s-moises').value.trim(),lyrics:$('#s-lyrics').value.trim(),note:$('#s-note').value.trim(),ts:s.ts||Date.now()});return true},
+  id?{onDelete:()=>del('songs',id)}:{});
+}
+
+/* ---------- 設備與清單 ---------- */
+function vGear(){
+  let h=`<div class="seg" style="margin-bottom:16px">${[['list','每場清單'],['stock','設備庫存']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
+  if(gearSeg==='stock'){
+    const gs=sorted('gear','name');
+    h+=`<section class="sec"><button class="btn primary block" data-act="new-gear">＋ 新增設備</button></section>`;
+    ['自有','租借'].forEach(o=>{const list=gs.filter(g=>(g.own||'自有')===o);
+      h+=`<section class="sec"><h3>${o}</h3>${list.length?`<ul class="list">${list.map(g=>`<li><button class="row" data-edit-gear="${esc(g.id)}"><div class="main"><div class="title">${esc(g.name)}${g.qty>1?` <span class="muted num">×${g.qty}</span>`:''}</div>${g.note?`<div class="sub">${esc(g.note)}</div>`:''}</div></button></li>`).join('')}</ul>`:`<div class="empty">還沒有${o}的設備</div>`}</section>`});
+    h+=backupBlock();
+    return h;
+  }
+  const checks=sorted('checks','order');
+  h+=`<p class="small muted" style="margin:0 0 14px">這裡改的是範本。每場的勾選在「下一場」分頁，寫完紀錄會自動重置。標「雨天」的項目只在雨天模式出現。</p>`;
+  [...GROUPS,...ONSITE].forEach(g=>{const list=checks.filter(c=>c.group===g);
+    h+=`<section class="sec"><div class="sec-head"><h3>${esc(g)}</h3><button class="ghost" data-new-check="${esc(g)}">＋ 新增</button></div>${list.length?`<ul class="list">${list.map(c=>`<li><button class="row" data-edit-check="${esc(c.id)}"><div class="main">${esc(c.text)}</div>${c.rain?'<span class="chip accent">雨天</span>':''}</button></li>`).join('')}</ul>`:''}</section>`});
+  h+=backupBlock();
+  return h;
+}
+function backupBlock(){return downloads?`<section class="sec"><h3>資料備份</h3><p class="small muted" style="margin:0">把所有歌、場地、紀錄、清單下載成一個 JSON 檔留底。</p><button class="btn" data-act="backup">下載備份檔</button></section>`:''}
+function gearSheet(id){
+  const g=id?S.gear[id]:{own:'自有',qty:1};
+  openSheet(id?'編輯設備':'新增設備',`
+    <label class="f"><span>名稱</span><input id="g-name" value="${esc(g.name||'')}"></label>
+    <div class="f2"><div class="f"><span>來源</span>${segRadio('g-own',['自有','租借'],g.own||'自有')}</div>
+    <label class="f"><span>數量</span><input id="g-qty" type="number" min="1" inputmode="numeric" value="${esc(g.qty||1)}"></label></div>
+    <label class="f"><span>備註（租借來源、費用、狀況）</span><textarea id="g-note">${esc(g.note||'')}</textarea></label>`,
+  ()=>{const name=$('#g-name').value.trim();if(!name){toast('請填設備名稱');return false}
+    put('gear',id||uid('g'),{...g,name,own:(document.querySelector('input[name=g-own]:checked')||{}).value||'自有',qty:+$('#g-qty').value||1,note:$('#g-note').value.trim(),ts:g.ts||Date.now()});return true},
+  id?{onDelete:()=>del('gear',id)}:{});
+}
+function checkSheet(id,group){
+  const c=id?S.checks[id]:{group,rain:false};
+  openSheet(id?'編輯清單項目':'新增清單項目',`
+    <label class="f"><span>項目</span><input id="c-text" value="${esc(c.text||'')}"></label>
+    <label class="f"><span>分類</span><select id="c-group">${[...GROUPS,...ONSITE].map(g=>`<option ${g===c.group?'selected':''}>${esc(g)}</option>`).join('')}</select></label>
+    <label class="check" style="padding:0"><input type="checkbox" id="c-rain" ${c.rain?'checked':''}><span style="text-decoration:none;color:var(--ink)">只在雨天模式出現</span></label>`,
+  ()=>{const text=$('#c-text').value.trim();if(!text){toast('請填項目');return false}
+    const grp=$('#c-group').value;
+    const order=id&&c.group===grp?c.order:Math.max(0,...Object.values(S.checks).filter(x=>x.group===grp).map(x=>x.order||0))+1;
+    put('checks',id||uid('c'),{...c,text,group:grp,rain:$('#c-rain').checked,order});return true},
+  id?{onDelete:()=>del('checks',id)}:{});
+}
+
+/* ---------- 主持稿 ---------- */
+function vHost(){
+  const cards=sorted('cards','order');
+  let h=`<section class="sec"><button class="btn primary block" data-act="present" ${cards.length?'':'disabled'}>上台模式（一頁一張）</button></section>`;
+  if(!cards.length)return h+`<div class="empty">還沒有主持卡。</div><section class="sec" style="margin-top:12px"><button class="btn block" data-act="new-card">＋ 新增卡片</button></section>`;
+  h+=`<ol class="list" id="card-list">${cards.map((c,i)=>`<li data-id="${esc(c.id)}"><div class="row cardrow"><span class="n num muted">${i+1}</span><button class="main" style="background:none;border:0;text-align:left;padding:0" data-edit-card="${esc(c.id)}"><div class="title">${esc(c.title)}</div><div class="body">${esc(c.body||'')}</div></button><button class="handle" aria-label="拖拉排序">⠿</button></div></li>`).join('')}</ol>`;
+  h+=`<section class="sec" style="margin-top:12px"><button class="btn block" data-act="new-card">＋ 新增卡片</button></section>`;
+  return h;
+}
+function cardSheet(id){
+  const c=id?S.cards[id]:{};
+  openSheet(id?'編輯卡片':'新增卡片',`
+    <label class="f"><span>標題</span><input id="k-title" value="${esc(c.title||'')}"></label>
+    <label class="f"><span>內容（上台時會放大顯示）</span><textarea id="k-body" style="min-height:180px">${esc(c.body||'')}</textarea></label>`,
+  ()=>{const title=$('#k-title').value.trim();if(!title){toast('請填標題');return false}
+    put('cards',id||uid('k'),{...c,title,body:$('#k-body').value,order:c.order??(Math.max(-1,...Object.values(S.cards).map(x=>x.order??0))+1)});return true},
+  id?{onDelete:()=>del('cards',id)}:{});
+}
+let pIdx=0, wake=null;
+function present(open){
+  const el=$('#present');
+  if(!open){el.hidden=true;try{wake&&wake.release()}catch(e){}wake=null;return}
+  pIdx=0; el.hidden=false; drawPresent();
+  try{navigator.wakeLock&&navigator.wakeLock.request('screen').then(w=>wake=w).catch(()=>{})}catch(e){}
+}
+function drawPresent(){
+  const cards=sorted('cards','order'); if(!cards.length)return present(false);
+  pIdx=Math.max(0,Math.min(pIdx,cards.length-1)); const c=cards[pIdx];
+  $('#present').innerHTML=`<div class="bar-top"><span class="num">${pIdx+1} / ${cards.length}</span><button class="btn sm" data-act="present-close">結束</button></div>
+    <div class="stage" id="stage"><h2>${esc(c.title)}</h2><p>${esc(c.body||'')}</p></div>
+    <div class="dots">${cards.map((_,i)=>`<i class="${i===pIdx?'on':''}"></i>`).join('')}</div>
+    <div class="nav"><button class="btn" data-act="p-prev" ${pIdx?'':'disabled'}>‹ 上一張</button><button class="btn primary" data-act="p-next" ${pIdx<cards.length-1?'':'disabled'}>下一張 ›</button></div>`;
+}
+
+/* ---------- sheet & toast ---------- */
+let curSave=null,curDel=null;
+function openSheet(title,body,onSave,opts={}){
+  const el=$('#sheet');
+  el.innerHTML=`<div class="sheet-bg" data-act="sheet-close"></div><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><button class="ghost" data-act="sheet-close">取消</button><h2>${esc(title)}</h2><button class="btn sm primary" data-act="sheet-save">儲存</button></header><div class="sheet-body">${body}${opts.onDelete?'<button class="btn warn block" data-act="sheet-del" data-confirm="再按一次確定刪除">刪除</button>':''}</div></div>`;
+  el.hidden=false; curSave=onSave; curDel=opts.onDelete||null;
+  document.documentElement.style.overflow='hidden';
+}
+function closeSheet(){$('#sheet').hidden=true;$('#sheet').innerHTML='';curSave=curDel=null;document.documentElement.style.overflow=''}
+let tt=null;
+function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(tt);tt=setTimeout(()=>el.hidden=true,2600)}
+function confirmTap(btn){
+  if(!btn.dataset.confirm)return true;
+  if(btn.dataset.armed)return true;
+  const orig=btn.textContent;btn.dataset.armed='1';btn.textContent=btn.dataset.confirm;
+  setTimeout(()=>{if(btn.isConnected){delete btn.dataset.armed;btn.textContent=orig}},3000);
+  return false;
+}
+
+/* ---------- drag reorder (touch + mouse) ---------- */
+function enableDrag(list,onDone){
+  list.addEventListener('pointerdown',e=>{
+    const h=e.target.closest('.handle'); if(!h||!list.contains(h))return;
+    const item=h.closest('li'); if(!item||item.parentElement!==list)return;
+    e.preventDefault(); try{h.setPointerCapture(e.pointerId)}catch(_){}
+    item.classList.add('dragging'); const start=[...list.children].map(li=>li.dataset.id).join();
+    const move=ev=>{const y=ev.clientY;let before=null;for(const s of list.children){if(s===item)continue;const r=s.getBoundingClientRect();if(y<r.top+r.height/2){before=s;break}}if(before!==item.nextSibling)list.insertBefore(item,before)};
+    const up=()=>{item.classList.remove('dragging');h.removeEventListener('pointermove',move);h.removeEventListener('pointerup',up);h.removeEventListener('pointercancel',up);
+      const ids=[...list.children].map(li=>li.dataset.id);if(ids.join()!==start)onDone(ids)};
+    h.addEventListener('pointermove',move);h.addEventListener('pointerup',up);h.addEventListener('pointercancel',up);
+  });
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button,[data-act]'); if(!t)return;
+  const d=t.dataset;
+  if(d.tab){tab=d.tab;try{localStorage.setItem(LS+'-tab',tab)}catch(_){}window.scrollTo(0,0);render();return}
+  if(d.logseg){logSeg=d.logseg;render();return}
+  if(d.gearseg){gearSeg=d.gearseg;render();return}
+  if(d.songF){songFilter=d.songF;render();return}
+  if(d.editRecord)return recordSheet(d.editRecord);
+  if(d.editVenue)return venueSheet(d.editVenue);
+  if(d.editSong)return songSheet(d.editSong);
+  if(d.editGear)return gearSheet(d.editGear);
+  if(d.editCheck)return checkSheet(d.editCheck);
+  if(d.newCheck)return checkSheet(null,d.newCheck);
+  if(d.editCard)return cardSheet(d.editCard);
+  if(d.toggleSet){const n=clone(next());const s=n.setlist||[];n.setlist=s.includes(d.toggleSet)?s.filter(x=>x!==d.toggleSet):[...s,d.toggleSet];put('meta','next',n);return}
+  switch(d.act){
+    case 'plan':return planSheet();
+    case 'setlist':return setlistSheet();
+    case 'rain':{const n=clone(next());n.rain=!n.rain;put('meta','next',n);return}
+    case 'finish':{const n=next();return recordSheet(null,{date:n.date||today(),slot:n.slot||'晚',status:'表演',venueId:n.venueId||'',partner:n.partner||'',songs:[...(n.setlist||[])]})}
+    case 'reset-checks':if(!confirmTap(t))return;{const n=clone(next());n.checked={};put('meta','next',n);toast('清單已重置');return}
+    case 'new-record':return recordSheet(null);
+    case 'new-venue':return venueSheet(null);
+    case 'new-song':return songSheet(null);
+    case 'new-gear':return gearSheet(null);
+    case 'new-card':return cardSheet(null);
+    case 'present':return present(true);
+    case 'present-close':return present(false);
+    case 'p-prev':pIdx--;return drawPresent();
+    case 'p-next':pIdx++;return drawPresent();
+    case 'sheet-close':return closeSheet();
+    case 'sheet-save':if(curSave&&curSave()!==false)closeSheet();return;
+    case 'sheet-del':if(!confirmTap(t))return;if(curDel)curDel();closeSheet();return;
+    case 'backup':return backup();
+  }
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.check){const n=clone(next());n.checked=n.checked||{};if(t.checked)n.checked[t.dataset.check]=true;else delete n.checked[t.dataset.check];putNextSoon(n)}
+  if(t.dataset.lic){const L={...(S.meta.licenses||{})};L[t.dataset.lic]=t.value;put('meta','licenses',L)}
+});
+document.addEventListener('input',e=>{if(e.target.id==='song-q'){songQ=e.target.value;applySongSearch()}});
+document.addEventListener('keydown',e=>{
+  if(!$('#present').hidden){if(e.key==='ArrowRight'||e.key===' '){pIdx++;drawPresent()}else if(e.key==='ArrowLeft'){pIdx--;drawPresent()}else if(e.key==='Escape')present(false)}
+  else if(e.key==='Escape'&&!$('#sheet').hidden)closeSheet();
+});
+// swipe on stage cards
+let sx=null;
+$('#present').addEventListener('pointerdown',e=>{if(e.target.closest('#stage'))sx=e.clientX});
+$('#present').addEventListener('pointerup',e=>{if(sx==null)return;const dx=e.clientX-sx;sx=null;if(Math.abs(dx)>50){pIdx+=dx<0?1:-1;drawPresent()}});
+
+async function backup(){
+  if(!downloads)return;
+  try{await downloads.save({filename:'街演備份-'+today()+'.json',data:JSON.stringify(S,null,2)});}catch(e){toast('沒有下載備份檔')}
+}
+
+/* ---------- boot ---------- */
+try{const tb=localStorage.getItem(LS+'-tab');if(tb&&TITLES[tb])tab=tb}catch(_){}
+const hash=(location.hash||'').slice(1);if(TITLES[hash])tab=hash;
+loadCache(); render();
+(async()=>{
+  const c=window.claude;
+  if(c&&c.use){
+    c.use('downloads').then(x=>{downloads=x;if(x)scheduleRender()}).catch(()=>{});
+    try{db=await c.use('db')}catch(e){db=null}
+  }
+  if(!db){mode='local';render();return}
+  const pending=new Set(COLS);
+  COLS.forEach(col=>{
+    db.collection(col).onSnapshot(snap=>{
+      const m={};snap.docs.forEach(d=>{m[d.id]=clone(d.data())});
+      if(col==='meta'&&tickTimer&&S.meta.next)m.next=S.meta.next; // keep unsent ticks
+      S[col]=m;pending.delete(col);if(!pending.size)mode='cloud';saveCache();scheduleRender();
+    },err=>{if(err.code==='revoked'||err.code==='not_granted'){mode='local'}toast('雲端連線中斷，資料先存在這台裝置');scheduleRender()});
+  });
+})();
+})();
+</script>
+
+<a class="to-origina" href="https://fuwei0618-cmd.github.io/Entry/" aria-label="回到 Origina">↖ Origina</a>
+<style>.to-origina{position:fixed;left:12px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:9;font:600 12px/1 "Noto Sans TC",system-ui,sans-serif;letter-spacing:.04em;text-decoration:none;color:#2B2724;background:rgba(236,232,225,.88);border:1px solid rgba(43,39,36,.18);border-radius:999px;padding:7px 11px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}</style>
+</body></html>
