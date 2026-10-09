@@ -1,4 +1,5 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1"><link rel="icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vocal"><meta name="theme-color" content="#EDEFEA"></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1"><link rel="icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vocal"><meta name="theme-color" content="#EDEFEA"><script src="https://fuwei0618-cmd.github.io/Entry/sync/origina-sync.js" data-app="vocal" data-keys="busk-app-v1" data-pos="br"></script>
+</head><body>
 <title>街演 App</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -241,7 +242,7 @@ let rq=false;
 function scheduleRender(){if(rq)return;rq=true;requestAnimationFrame(()=>{rq=false;render()})}
 function render(){
   $('#title').textContent=TITLES[tab];
-  $('#sync').textContent=mode==='cloud'?'已同步到雲端':mode==='local'?'只存在這台裝置':'載入中…';
+  $('#sync').textContent=mode==='cloud'?'已同步到雲端':mode==='local'?'OneDrive 同步：看右下角雲朵':'載入中…';
   document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false'));
   const focusQ=document.activeElement&&document.activeElement.id==='song-q';
   const html={today:vToday,log:vLog,songs:vSongs,gear:vGear,host:vHost}[tab]();
@@ -291,7 +292,6 @@ function vToday(){
   const done=pre.filter(c=>checked[c.id]).length;
   let h='';
   licenseWarnings().forEach(w=>h+=`<div class="banner warn">${esc(w)}</div>`);
-  if(mode==='local')h+=`<div class="banner info">目前資料只存在這台裝置。用 claude.ai 登入開啟就會同步到雲端。</div>`;
   h+='<section class="sec">';
   if(n.date){
     h+=`<div class="show"><div><div class="label">下一場</div><div class="when">${esc(fmtD(n.date))} ${esc(n.slot||'')}</div><div class="where">${v?esc(v.name)+' <span class="chip">'+esc(v.city||'')+'</span>':'<span class="muted">還沒選場地</span>'}</div></div>
