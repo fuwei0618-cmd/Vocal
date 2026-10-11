@@ -162,6 +162,18 @@ legend{font-family:var(--display);font-weight:700;padding:0 6px}
 .dots i.on{background:var(--accent)}
 .cardrow .body{font-size:13px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .link{color:var(--accent);text-decoration:none;font-size:13px}
+.link{background:none;border:0;padding:0;cursor:pointer}
+.visionEntry{display:grid;gap:2px;width:100%;text-align:left;margin-bottom:18px;cursor:pointer;background:linear-gradient(135deg,var(--surface),var(--accent-soft))}
+.visionEntry b{font-family:var(--display);font-size:17px}
+.eyebrow{font-size:11px;letter-spacing:.2em;color:var(--accent);font-weight:600}
+.visionHero{margin-bottom:22px}.visionHero .big{font-size:24px;display:block}
+.vt{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);padding:10px 12px;font:inherit;font-size:15px;line-height:1.6;resize:vertical}
+.reframe{display:grid;gap:4px;padding:8px 0;border-top:1px dashed var(--line)}
+.reframe .rq,.reframe .ra{display:flex;gap:6px;align-items:flex-start}
+.reframe .ra span{color:var(--accent);padding-top:10px}
+.reframe .q{background:var(--sunk)}
+.x{border:0;background:none;color:var(--muted);font-size:20px;line-height:1;padding:8px 6px;cursor:pointer}
+.wins{list-style:none;margin:0;padding:0;display:grid;gap:4px}.wins li{display:flex;gap:10px;align-items:center;border-top:1px solid var(--line);padding:6px 0}.wins li span:nth-child(2){flex:1}
 </style>
 
 <div class="app">
@@ -189,7 +201,7 @@ const SONG_GROUPS=['溫馨','開放','商演','RenewSV'];
 const LEVELS=['練習中','可上台','拿手'];
 const TEMPOS=['快','中','慢'];
 const REASONS=['雨天','夥伴取消','設備壞','其他'];
-const TITLES={today:'下一場',log:'表演紀錄',songs:'歌單',gear:'設備與清單',host:'主持稿'};
+const TITLES={today:'下一場',log:'表演紀錄',songs:'歌單',gear:'設備與清單',host:'主持稿',vision:'我的 Vocal 願景'};
 const LS='busk-app-v1';
 let S={}; COLS.forEach(c=>S[c]={});
 let db=null, mode='loading', downloads=null;
@@ -245,12 +257,36 @@ function render(){
   $('#sync').textContent=mode==='cloud'?'已同步到雲端':mode==='local'?'OneDrive 同步：看右下角雲朵':'載入中…';
   document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false'));
   const focusQ=document.activeElement&&document.activeElement.id==='song-q';
-  const html={today:vToday,log:vLog,songs:vSongs,gear:vGear,host:vHost}[tab]();
+  const html={today:vToday,log:vLog,songs:vSongs,gear:vGear,host:vHost,vision:vVision}[tab]();
   $('#main').innerHTML=html;
   if(tab==='songs'){applySongSearch(); if(focusQ){const i=$('#song-q');i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
   if(tab==='today'){const l=$('#today-set');if(l)enableDrag(l,ids=>{const n=clone(next());n.setlist=ids;put('meta','next',n)})}
   if(tab==='host'){const l=$('#card-list');if(l)enableDrag(l,ids=>ids.forEach((id,i)=>{if(S.cards[id]&&S.cards[id].order!==i)put('cards',id,{...S.cards[id],order:i})}))}
 }
+
+/* ---------- 願景（跟 HH 信念板同一套：80 歲的我 → 為什麼 → 想成為的樣子 → 腦中的那句話 → 小勝利 → 出發前讀這段） ---------- */
+const V_FEARS=['我年紀太大了，唱到老會很丟臉','別人會覺得我不務正業、像個戲子','別人會覺得我唱得難聽','我是不是真的唱得難聽','我的表演精神不夠到位','鐵肺歌后都去賣房子了，我還做什麼夢','最後歌沒唱好，人生也沒過好'];
+function visionData(){const v=clone(S.meta.vision||{});v.at80=v.at80||'';v.why=v.why||'';v.become=v.become&&v.become.length?v.become:['','',''];
+  v.reframes=v.reframes||V_FEARS.map(q=>({q,a:''}));v.wins=v.wins||[];v.note=v.note||'';return v;}
+let vTimer=null;function saveVision(v,now){S.meta.vision=v;saveCache();clearTimeout(vTimer);
+  vTimer=setTimeout(()=>{if(!db)return;const k='meta/vision',q=wq[k]||(wq[k]={busy:false,val:undefined});q.val=S.meta.vision;if(!q.busy)flush(k,'meta','vision');},now?0:600);} /* 不呼叫 put()，打字時才不會重畫丟失游標 */
+function vVision(){const v=visionData();
+  const shows=sorted('records','date').filter(r=>r.status==='表演').length,best=Object.values(S.songs).filter(x=>x.level==='拿手').length;
+  return `<button class="btn sm ghost" data-tab="today" style="align-self:flex-start;margin-bottom:10px">← 回到下一場</button>
+  <section class="panel visionHero"><div class="eyebrow">MY VOCAL VISION</div>
+    <div class="tiles" style="margin-top:8px"><div class="tile"><b class="num big">${shows}</b><span class="muted small">場表演</span></div><div class="tile"><b class="num big">${best}</b><span class="muted small">首拿手歌</span></div><div class="tile"><b class="num big">${v.wins.length}</b><span class="muted small">個小勝利</span></div></div></section>
+  <section class="sec"><h2>80 歲的我，在唱歌這件事上</h2><textarea class="vt" data-v="at80" rows="3" placeholder="80 歲的你還在唱嗎？唱給誰聽？在哪裡唱？">${esc(v.at80)}</textarea></section>
+  <section class="sec"><h2>我為什麼想唱</h2><textarea class="vt" data-v="why" rows="3" placeholder="例如：唱歌的時候，我覺得自己在發光">${esc(v.why)}</textarea></section>
+  <section class="sec"><h2>我想成為的樣子</h2>${v.become.map((b,i)=>`<input class="vt" data-vb="${i}" value="${esc(b)}" placeholder="${['例如：上台時敢看著觀眾的眼睛','例如：有三首拿手歌，隨時可以唱','例如：每個月錄一首，聽得到自己的進步'][i]||''}">`).join('')}<button class="link" data-act="vb-add" style="align-self:flex-start">＋ 再加一個</button></section>
+  <section class="sec"><h2>腦中的那句話 → 我的回答</h2><p class="muted small" style="margin:0">想放棄、想找理由不去的時候，腦中通常會冒出這些話。先放了你自己說過的幾句，替每一句寫一個回答；用不到的就刪掉。</p>
+    ${v.reframes.map((r,i)=>`<div class="reframe"><div class="rq"><textarea class="vt q" data-rq="${i}" rows="1" placeholder="腦中的那句話">${esc(r.q)}</textarea><button class="x" data-act="rf-del" data-i="${i}" aria-label="刪除">×</button></div><div class="ra"><span aria-hidden="true">→</span><textarea class="vt a" data-ra="${i}" rows="1" placeholder="我的回答">${esc(r.a)}</textarea></div></div>`).join('')}
+    <button class="link" data-act="rf-add" style="align-self:flex-start">＋ 再加一句</button>
+    <a class="link" href="https://fuwei0618-cmd.github.io/Entry/mission/" target="_top">想拆深一點：去日晷的拆解室 →</a></section>
+  <section class="sec"><h2>小勝利罐子</h2><p class="muted small" style="margin:0">有去上課、有去街演、敢唱一首新歌，再小都記下來。想放棄的時候，回來看這裡。</p>
+    <div class="row" style="gap:8px"><input class="vt" id="v-win" placeholder="例如：今天有去上課！" style="flex:1"><button class="btn primary" data-act="win-add">放進罐子</button></div>
+    <div class="chips">${['今天有去上課','去街演了','錄了一首歌','敢唱一首新歌','有陌生人停下來聽','練習了 10 分鐘'].map(t=>`<button class="chip" data-act="win-quick" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+    ${v.wins.length?`<ul class="wins">${v.wins.slice().reverse().map((w,ri)=>{const i=v.wins.length-1-ri;return `<li><span class="num muted small">${esc(w.d)}</span><span>${esc(w.t)}</span><button class="x" data-act="win-del" data-i="${i}" aria-label="刪除">×</button></li>`}).join('')}</ul>`:''}</section>
+  <section class="sec"><h2>出發前讀這段</h2><p class="muted small" style="margin:0">寫給猶豫中的自己。上課前、街演出門前，先讀一遍。</p><textarea class="vt" data-v="note" rows="4">${esc(v.note)}</textarea></section>`;}
 
 /* ---------- stats ---------- */
 function stats(){
@@ -290,7 +326,7 @@ function vToday(){
   const checks=sorted('checks','order'), checked=n.checked||{}, rain=!!n.rain;
   const pre=checks.filter(c=>GROUPS.includes(c.group)&&(!c.rain||rain));
   const done=pre.filter(c=>checked[c.id]).length;
-  let h='';
+  let h=`<button class="panel visionEntry" data-tab="vision"><span class="eyebrow">MY VOCAL VISION</span><b>我的 Vocal 願景</b><span class="muted small">出發前先來這裡看一下 →</span></button>`;
   licenseWarnings().forEach(w=>h+=`<div class="banner warn">${esc(w)}</div>`);
   h+='<section class="sec">';
   if(n.date){
@@ -665,6 +701,12 @@ document.addEventListener('click',e=>{
     case 'sheet-save':if(curSave&&curSave()!==false)closeSheet();return;
     case 'sheet-del':if(!confirmTap(t))return;if(curDel)curDel();closeSheet();return;
     case 'backup':return backup();
+    case 'vb-add':{const v=visionData();v.become.push('');saveVision(v,1);render();return}
+    case 'rf-add':{const v=visionData();v.reframes.push({q:'',a:''});saveVision(v,1);render();return}
+    case 'rf-del':{const v=visionData();v.reframes.splice(+d.i,1);saveVision(v,1);render();return}
+    case 'win-add':{const t=($('#v-win').value||'').trim();if(!t)return;const v=visionData();v.wins.push({d:today(),t});saveVision(v,1);render();return}
+    case 'win-quick':{const v=visionData();v.wins.push({d:today(),t:d.t});saveVision(v,1);render();toast('放進罐子了');return}
+    case 'win-del':{const v=visionData();v.wins.splice(+d.i,1);saveVision(v,1);render();return}
   }
 });
 document.addEventListener('change',e=>{
@@ -672,7 +714,10 @@ document.addEventListener('change',e=>{
   if(t.dataset.check){const n=clone(next());n.checked=n.checked||{};if(t.checked)n.checked[t.dataset.check]=true;else delete n.checked[t.dataset.check];putNextSoon(n)}
   if(t.dataset.lic){const L={...(S.meta.licenses||{})};L[t.dataset.lic]=t.value;put('meta','licenses',L)}
 });
-document.addEventListener('input',e=>{if(e.target.id==='song-q'){songQ=e.target.value;applySongSearch()}});
+document.addEventListener('input',e=>{if(e.target.id==='song-q'){songQ=e.target.value;applySongSearch()}
+  const t=e.target,ds=t.dataset;if(ds.v!=null||ds.vb!=null||ds.rq!=null||ds.ra!=null){const v=visionData();
+    if(ds.v!=null)v[ds.v]=t.value;else if(ds.vb!=null)v.become[+ds.vb]=t.value;else if(ds.rq!=null)v.reframes[+ds.rq].q=t.value;else v.reframes[+ds.ra].a=t.value;saveVision(v);
+    if(t.tagName==='TEXTAREA'){t.style.height='auto';t.style.height=t.scrollHeight+'px';}}});
 document.addEventListener('keydown',e=>{
   if(!$('#present').hidden){if(e.key==='ArrowRight'||e.key===' '){pIdx++;drawPresent()}else if(e.key==='ArrowLeft'){pIdx--;drawPresent()}else if(e.key==='Escape')present(false)}
   else if(e.key==='Escape'&&!$('#sheet').hidden)closeSheet();
