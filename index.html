@@ -172,6 +172,7 @@ legend{font-family:var(--display);font-weight:700;padding:0 6px}
 .reframe .rq,.reframe .ra{display:flex;gap:6px;align-items:flex-start}
 .reframe .ra span{color:var(--accent);padding-top:10px}
 .reframe .q{background:var(--sunk)}
+.tpl{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;margin-left:22px;font-size:13px;color:var(--muted);line-height:1.6}.tpl span{flex:1 1 220px}
 .x{border:0;background:none;color:var(--muted);font-size:20px;line-height:1;padding:8px 6px;cursor:pointer}
 .wins{list-style:none;margin:0;padding:0;display:grid;gap:4px}.wins li{display:flex;gap:10px;align-items:center;border-top:1px solid var(--line);padding:6px 0}.wins li span:nth-child(2){flex:1}
 </style>
@@ -260,12 +261,21 @@ function render(){
   const html={today:vToday,log:vLog,songs:vSongs,gear:vGear,host:vHost,vision:vVision}[tab]();
   $('#main').innerHTML=html;
   if(tab==='songs'){applySongSearch(); if(focusQ){const i=$('#song-q');i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
+  if(tab==='vision')document.querySelectorAll('textarea.vt').forEach(t=>{t.style.height='auto';t.style.height=t.scrollHeight+'px'});
   if(tab==='today'){const l=$('#today-set');if(l)enableDrag(l,ids=>{const n=clone(next());n.setlist=ids;put('meta','next',n)})}
   if(tab==='host'){const l=$('#card-list');if(l)enableDrag(l,ids=>ids.forEach((id,i)=>{if(S.cards[id]&&S.cards[id].order!==i)put('cards',id,{...S.cards[id],order:i})}))}
 }
 
 /* ---------- 願景（跟 HH 信念板同一套：80 歲的我 → 為什麼 → 想成為的樣子 → 腦中的那句話 → 小勝利 → 出發前讀這段） ---------- */
 const V_FEARS=['我年紀太大了，唱到老會很丟臉','別人會覺得我不務正業、像個戲子','別人會覺得我唱得難聽','我是不是真的唱得難聽','我的表演精神不夠到位','鐵肺歌后都去賣房子了，我還做什麼夢','最後歌沒唱好，人生也沒過好'];
+const V_TPL={
+ '我年紀太大了，唱到老會很丟臉':'鄧麗君、江蕙都唱了很久，觀眾聽的是故事，不是年紀。80 歲還在唱的人不丟臉，是讓人羨慕。聲音會老，但會多出年輕時唱不出來的東西。',
+ '別人會覺得我不務正業、像個戲子':'我的正業有在做，唱歌是我照顧自己的方式。「戲子」是把故事帶給別人的人，這是很古老、很珍貴的工作。',
+ '別人會覺得我唱得難聽':'不是每個人都要喜歡。街上停下來聽的那一個人，就是我今天唱給他的。',
+ '我是不是真的唱得難聽':'錄音就是證據：跟三個月前的自己比，不跟別人比。難聽的地方是還沒練到，不是不能練。',
+ '我的表演精神不夠到位':'表演精神是練出來的，不是天生的。每一次上台看著一個人的眼睛唱完，就多長一點。',
+ '鐵肺歌后都去賣房子了，我還做什麼夢':'她不唱，不代表唱歌不值得；她要的是靠唱歌養活自己。我不用靠唱歌賺錢才算數，我唱，是因為我想唱。',
+ '最後歌沒唱好，人生也沒過好':'我沒有把人生押在唱歌上：工作照做、金庫照存。唱歌是讓我過得好的一部分，不是賭注。'};
 function visionData(){const v=clone(S.meta.vision||{});v.at80=v.at80||'';v.why=v.why||'';v.become=v.become&&v.become.length?v.become:['','',''];
   v.reframes=v.reframes||V_FEARS.map(q=>({q,a:''}));v.wins=v.wins||[];v.note=v.note||'';return v;}
 let vTimer=null;function saveVision(v,now){S.meta.vision=v;saveCache();clearTimeout(vTimer);
@@ -275,18 +285,18 @@ function vVision(){const v=visionData();
   return `<button class="btn sm ghost" data-tab="today" style="align-self:flex-start;margin-bottom:10px">← 回到下一場</button>
   <section class="panel visionHero"><div class="eyebrow">MY VOCAL VISION</div>
     <div class="tiles" style="margin-top:8px"><div class="tile"><b class="num big">${shows}</b><span class="muted small">場表演</span></div><div class="tile"><b class="num big">${best}</b><span class="muted small">首拿手歌</span></div><div class="tile"><b class="num big">${v.wins.length}</b><span class="muted small">個小勝利</span></div></div></section>
-  <section class="sec"><h2>80 歲的我，在唱歌這件事上</h2><textarea class="vt" data-v="at80" rows="3" placeholder="80 歲的你還在唱嗎？唱給誰聽？在哪裡唱？">${esc(v.at80)}</textarea></section>
-  <section class="sec"><h2>我為什麼想唱</h2><textarea class="vt" data-v="why" rows="3" placeholder="例如：唱歌的時候，我覺得自己在發光">${esc(v.why)}</textarea></section>
+  <section class="sec"><h2>80 歲的我，在唱歌這件事上</h2><textarea class="vt" data-v="at80" rows="3" placeholder="範本：80 歲的我還在唱。週末在公園或老宅的院子裡，唱給老朋友和路過的人聽，唱到大家跟著哼。">${esc(v.at80)}</textarea></section>
+  <section class="sec"><h2>我為什麼想唱</h2><textarea class="vt" data-v="why" rows="3" placeholder="範本：唱歌的時候，我不用解釋自己是誰。聲音一出來，我就覺得自己在發光，也想讓聽的人亮一下。">${esc(v.why)}</textarea></section>
   <section class="sec"><h2>我想成為的樣子</h2>${v.become.map((b,i)=>`<input class="vt" data-vb="${i}" value="${esc(b)}" placeholder="${['例如：上台時敢看著觀眾的眼睛','例如：有三首拿手歌，隨時可以唱','例如：每個月錄一首，聽得到自己的進步'][i]||''}">`).join('')}<button class="link" data-act="vb-add" style="align-self:flex-start">＋ 再加一個</button></section>
   <section class="sec"><h2>腦中的那句話 → 我的回答</h2><p class="muted small" style="margin:0">想放棄、想找理由不去的時候，腦中通常會冒出這些話。先放了你自己說過的幾句，替每一句寫一個回答；用不到的就刪掉。</p>
-    ${v.reframes.map((r,i)=>`<div class="reframe"><div class="rq"><textarea class="vt q" data-rq="${i}" rows="1" placeholder="腦中的那句話">${esc(r.q)}</textarea><button class="x" data-act="rf-del" data-i="${i}" aria-label="刪除">×</button></div><div class="ra"><span aria-hidden="true">→</span><textarea class="vt a" data-ra="${i}" rows="1" placeholder="我的回答">${esc(r.a)}</textarea></div></div>`).join('')}
+    ${v.reframes.map((r,i)=>`<div class="reframe"><div class="rq"><textarea class="vt q" data-rq="${i}" rows="1" placeholder="腦中的那句話">${esc(r.q)}</textarea><button class="x" data-act="rf-del" data-i="${i}" aria-label="刪除">×</button></div><div class="ra"><span aria-hidden="true">→</span><textarea class="vt a" data-ra="${i}" rows="1" placeholder="我的回答">${esc(r.a)}</textarea></div>${!r.a&&V_TPL[r.q]?`<div class="tpl"><span>範本：${esc(V_TPL[r.q])}</span><button class="link" data-act="tpl-use" data-i="${i}">拿來改 →</button></div>`:''}</div>`).join('')}
     <button class="link" data-act="rf-add" style="align-self:flex-start">＋ 再加一句</button>
     <a class="link" href="https://fuwei0618-cmd.github.io/Entry/mission/" target="_top">想拆深一點：去日晷的拆解室 →</a></section>
   <section class="sec"><h2>小勝利罐子</h2><p class="muted small" style="margin:0">有去上課、有去街演、敢唱一首新歌，再小都記下來。想放棄的時候，回來看這裡。</p>
     <div class="row" style="gap:8px"><input class="vt" id="v-win" placeholder="例如：今天有去上課！" style="flex:1"><button class="btn primary" data-act="win-add">放進罐子</button></div>
     <div class="chips">${['今天有去上課','去街演了','錄了一首歌','敢唱一首新歌','有陌生人停下來聽','練習了 10 分鐘'].map(t=>`<button class="chip" data-act="win-quick" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
     ${v.wins.length?`<ul class="wins">${v.wins.slice().reverse().map((w,ri)=>{const i=v.wins.length-1-ri;return `<li><span class="num muted small">${esc(w.d)}</span><span>${esc(w.t)}</span><button class="x" data-act="win-del" data-i="${i}" aria-label="刪除">×</button></li>`}).join('')}</ul>`:''}</section>
-  <section class="sec"><h2>出發前讀這段</h2><p class="muted small" style="margin:0">寫給猶豫中的自己。上課前、街演出門前，先讀一遍。</p><textarea class="vt" data-v="note" rows="4">${esc(v.note)}</textarea></section>`;}
+  <section class="sec"><h2>出發前讀這段</h2><p class="muted small" style="margin:0">寫給猶豫中的自己。上課前、街演出門前，先讀一遍。</p><textarea class="vt" data-v="note" rows="4" placeholder="範本：你不用準備好才出發。今天只要唱完一首，就算贏。唱完回來，在罐子裡放一顆。">${esc(v.note)}</textarea></section>`;}
 
 /* ---------- stats ---------- */
 function stats(){
@@ -702,6 +712,7 @@ document.addEventListener('click',e=>{
     case 'sheet-del':if(!confirmTap(t))return;if(curDel)curDel();closeSheet();return;
     case 'backup':return backup();
     case 'vb-add':{const v=visionData();v.become.push('');saveVision(v,1);render();return}
+    case 'tpl-use':{const v=visionData(),r=v.reframes[+d.i];r.a=V_TPL[r.q]||'';saveVision(v,1);render();const t=document.querySelector(`[data-ra="${d.i}"]`);if(t){t.style.height=t.scrollHeight+'px';t.focus();}return}
     case 'rf-add':{const v=visionData();v.reframes.push({q:'',a:''});saveVision(v,1);render();return}
     case 'rf-del':{const v=visionData();v.reframes.splice(+d.i,1);saveVision(v,1);render();return}
     case 'win-add':{const t=($('#v-win').value||'').trim();if(!t)return;const v=visionData();v.wins.push({d:today(),t});saveVision(v,1);render();return}
