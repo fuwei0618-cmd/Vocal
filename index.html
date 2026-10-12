@@ -1,4 +1,21 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1"><link rel="icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vocal"><meta name="theme-color" content="#EDEFEA"><script src="https://fuwei0618-cmd.github.io/Entry/sync/origina-sync.js" data-app="vocal" data-keys="busk-app-v1" data-pos="br"></script>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+/* 願景：一目了然版（全部攤開、直接在原地改） */
+.vg{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px 12px;margin-bottom:10px;display:grid;gap:2px}
+.vnote2{background:linear-gradient(135deg,var(--surface),var(--accent-soft))}
+.vl{font-size:11.5px;letter-spacing:.12em;color:var(--accent);font-weight:700;margin-top:6px;display:flex;align-items:center;gap:8px}.vl:first-child{margin-top:0}
+.vl em{font-style:normal;color:var(--muted);font-weight:500;letter-spacing:0}.vl .link{font-size:15px;line-height:1}
+.bl{width:100%;box-sizing:border-box;border:0;border-bottom:1px dashed transparent;background:none;color:var(--ink);padding:2px 0;font:inherit;font-size:15px;line-height:1.55;resize:none;overflow:hidden;outline:none;min-width:0}
+.bl:focus{border-bottom-color:var(--accent)}.bl::placeholder{color:var(--muted);opacity:.75}
+.bl.serif{font-family:var(--display);font-size:16.5px}
+.bl.box{border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:14px}
+.blist .bl{padding-left:14px;background:radial-gradient(circle at 4px 50%,var(--accent) 2.5px,transparent 3px) no-repeat}
+.rf2{border-top:1px dashed var(--line);padding:4px 0 2px}.rf2:first-of-type{border-top:0}
+.rfh{display:flex;align-items:center;gap:6px}.rfh .link{font-size:12px;white-space:nowrap}
+.bl.q{font-size:13.5px;color:var(--muted);font-weight:600}.bl.a{padding-left:16px;background:linear-gradient(var(--accent),var(--accent)) no-repeat 3px 6px/2px 1.1em}
+.chip.q{font-size:12.5px;padding:3px 9px}
+.vg .vrow{display:flex;gap:8px;flex-wrap:nowrap}.vg .vrow .bl.box{flex:1;width:auto}
+.wins2{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.wins2 .w{display:inline-flex;align-items:center;gap:5px;background:var(--accent-soft);border-radius:99px;padding:2px 4px 2px 10px;font-size:13px}.wins2 small{color:var(--muted)}.wins2 .x{font-size:15px;padding:0 4px}
+</style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1"><link rel="icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vocal"><meta name="theme-color" content="#EDEFEA"><script src="https://fuwei0618-cmd.github.io/Entry/sync/origina-sync.js" data-app="vocal" data-keys="busk-app-v1" data-pos="br"></script>
 </head><body>
 <title>街演 App</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -270,7 +287,7 @@ function render(){
   const html={today:vToday,log:vLog,songs:vSongs,gear:vGear,host:vHost,vision:vVision}[tab]();
   $('#main').innerHTML=html;
   if(tab==='songs'){applySongSearch(); if(focusQ){const i=$('#song-q');i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
-  if(tab==='vision')fitVT(document);
+  if(tab==='vision')fitBL(document);
   if(tab==='today'){const l=$('#today-set');if(l)enableDrag(l,ids=>{const n=clone(next());n.setlist=ids;put('meta','next',n)})}
   if(tab==='host'){const l=$('#card-list');if(l)enableDrag(l,ids=>ids.forEach((id,i)=>{if(S.cards[id]&&S.cards[id].order!==i)put('cards',id,{...S.cards[id],order:i})}))}
 }
@@ -289,29 +306,31 @@ function visionData(){const v=clone(S.meta.vision||{});v.at80=v.at80||'';v.why=v
   v.reframes=v.reframes||V_FEARS.map(q=>({q,a:''}));v.wins=v.wins||[];v.note=v.note||'';return v;}
 let vTimer=null;function saveVision(v,now){S.meta.vision=v;saveCache();clearTimeout(vTimer);
   vTimer=setTimeout(()=>{if(!db)return;const k='meta/vision',q=wq[k]||(wq[k]={busy:false,val:undefined});q.val=S.meta.vision;if(!q.busy)flush(k,'meta','vision');},now?0:600);} /* 不呼叫 put()，打字時才不會重畫丟失游標 */
+function fitOne(t){const e=!t.value;if(e)t.value=t.placeholder;t.style.height='auto';t.style.height=t.scrollHeight+'px';if(e)t.value='';}
+function fitBL(r){r.querySelectorAll('textarea.bl').forEach(fitOne)}
 function fitVT(r){r.querySelectorAll('textarea.vt').forEach(t=>{if(!t.offsetParent)return;t.style.height='auto';t.style.height=t.scrollHeight+2+'px'})}
 const vOpen=new Set();try{JSON.parse(localStorage.getItem(LS+'-vopen')||'[]').forEach(k=>vOpen.add(k))}catch(_){}
 document.addEventListener('toggle',e=>{const d=e.target;if(!d.dataset||!d.dataset.vk)return;d.open?vOpen.add(d.dataset.vk):vOpen.delete(d.dataset.vk);if(d.open)fitVT(d);try{localStorage.setItem(LS+'-vopen',JSON.stringify([...vOpen]))}catch(_){}},true);
 const vSec=(k,title,pv,body)=>`<details class="vs" data-vk="${k}"${vOpen.has(k)?' open':''}><summary><b>${title}</b><span class="pv">${pv}</span></summary><div class="vb">${body}</div></details>`;
 const vCut=(t,n=22)=>t?esc(t.length>n?t.slice(0,n)+'…':t):'<i>還沒寫</i>';
 function vVision(){const v=visionData();
-  const shows=sorted('records','date').filter(r=>r.status==='表演').length,best=Object.values(S.songs).filter(x=>x.level==='拿手').length,ans=v.reframes.filter(r=>r.a).length,bec=v.become.filter(Boolean);
+  const shows=sorted('records','date').filter(r=>r.status==='表演').length,best=Object.values(S.songs).filter(x=>x.level==='拿手').length,ans=v.reframes.filter(r=>r.a).length;
   const NOTE_TPL='你不用準備好才出發。今天只要唱完一首，就算贏。唱完回來，在罐子裡放一顆。';
+  const ta=(k,val,ph,cls='')=>`<textarea class="bl ${cls}" data-v="${k}" rows="1" placeholder="${esc(ph)}">${esc(val)}</textarea>`;
   return `<div class="vtop"><button class="link" data-tab="today">← 下一場</button><span class="muted small num">${shows} 場表演・${best} 首拿手・${v.wins.length} 個小勝利</span></div>
-  <details class="vnote" data-vk="note"${vOpen.has('note')?' open':''}><summary><span class="eyebrow">出發前讀這段</span><p>${esc(v.note||NOTE_TPL)}</p><span class="muted small">${v.note?'點一下修改':'範本・點一下改成你的話'}</span></summary>
-    <textarea class="vt" data-v="note" rows="3" placeholder="範本：${NOTE_TPL}">${esc(v.note)}</textarea></details>
-  <div class="vlist">
-  ${vSec('at80','80 歲的我',vCut(v.at80),`<textarea class="vt" data-v="at80" rows="2" placeholder="範本：80 歲的我還在唱。週末在公園或老宅的院子裡，唱給老朋友和路過的人聽，唱到大家跟著哼。">${esc(v.at80)}</textarea>`)}
-  ${vSec('why','我為什麼想唱',vCut(v.why),`<textarea class="vt" data-v="why" rows="2" placeholder="範本：唱歌的時候，我不用解釋自己是誰。聲音一出來，我就覺得自己在發光，也想讓聽的人亮一下。">${esc(v.why)}</textarea>`)}
-  ${vSec('become','想成為的樣子',bec.length?bec.length+' 個':'<i>還沒寫</i>',v.become.map((b,i)=>`<input class="vt" data-vb="${i}" value="${esc(b)}" placeholder="${['例如：上台時敢看著觀眾的眼睛','例如：有三首拿手歌，隨時可以唱','例如：每個月錄一首，聽得到自己的進步'][i]||''}">`).join('')+`<button class="link" data-act="vb-add">＋ 再加一個</button>`)}
-  ${vSec('rf','腦中的那句話',`回答了 ${ans}/${v.reframes.length}`,`<p class="muted small" style="margin:0">點一句展開，寫下你的回答。</p>`+v.reframes.map((r,i)=>`<details class="rf" data-vk="rf${i}"${vOpen.has('rf'+i)?' open':''}><summary><span>${esc(r.q)||'<i>新的一句</i>'}</span><em class="${r.a?'ok':''}">${r.a?'✓':'範本'}</em></summary>
-      <textarea class="vt" data-ra="${i}" rows="2" placeholder="我的回答">${esc(r.a)}</textarea>
-      ${!r.a&&V_TPL[r.q]?`<div class="tpl">範本：${esc(V_TPL[r.q])} <button class="link" data-act="tpl-use" data-i="${i}">拿來改 →</button></div>`:''}
-      <div class="rfq"><input class="vt sm" data-rq="${i}" value="${esc(r.q)}" placeholder="腦中的那句話"><button class="x" data-act="rf-del" data-i="${i}" aria-label="刪除這句">×</button></div></details>`).join('')+`<div class="vrow"><button class="link" data-act="rf-add">＋ 再加一句</button><a class="link" href="https://fuwei0618-cmd.github.io/Entry/mission/" target="_top">去拆解室拆深一點 →</a></div>`)}
-  ${vSec('wins','小勝利罐子',v.wins.length?`${v.wins.length} 顆・最近：${vCut(v.wins[v.wins.length-1].t,12)}`:'<i>還是空的</i>',`<div class="vrow"><input class="vt sm" id="v-win" placeholder="今天的小勝利" style="flex:1"><button class="btn sm primary" data-act="win-add">放進去</button></div>
-    <div class="chips">${['今天有去上課','去街演了','錄了一首歌','敢唱一首新歌','有陌生人停下來聽','練習了 10 分鐘'].map(t=>`<button class="chip" data-act="win-quick" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
-    ${v.wins.length?`<ul class="wins">${v.wins.slice().reverse().map((w,ri)=>{const i=v.wins.length-1-ri;return `<li><span class="num muted small">${esc(w.d.slice(5))}</span><span>${esc(w.t)}</span><button class="x" data-act="win-del" data-i="${i}" aria-label="刪除">×</button></li>`}).join('')}</ul>`:''}`)}
-  </div>`;}
+  <div class="vg vnote2"><span class="vl">出發前讀這段</span>${ta('note',v.note,'範本：'+NOTE_TPL,'serif')}</div>
+  <div class="vg"><span class="vl">80 歲的我</span>${ta('at80',v.at80,'範本：80 歲的我還在唱。週末在公園或老宅的院子裡，唱給老朋友和路過的人聽，唱到大家跟著哼。')}
+    <span class="vl">我為什麼想唱</span>${ta('why',v.why,'範本：唱歌的時候，我不用解釋自己是誰。聲音一出來，我就覺得自己在發光，也想讓聽的人亮一下。')}
+    <span class="vl">想成為的樣子 <button class="link" data-act="vb-add">＋</button></span>
+    <div class="blist">${v.become.map((b,i)=>`<input class="bl" data-vb="${i}" value="${esc(b)}" placeholder="${['上台時敢看著觀眾的眼睛','有三首拿手歌，隨時可以唱','每個月錄一首，聽得到自己的進步'][i]||'再寫一個'}">`).join('')}</div></div>
+  <div class="vg"><span class="vl">腦中的那句話 → 我的回答 <em>${ans}/${v.reframes.length}</em> <button class="link" data-act="rf-add">＋</button></span>
+    ${v.reframes.map((r,i)=>`<div class="rf2"><div class="rfh"><input class="bl q" data-rq="${i}" value="${esc(r.q)}" placeholder="腦中的那句話">${!r.a&&V_TPL[r.q]?`<button class="link" data-act="tpl-use" data-i="${i}">用範本</button>`:''}<button class="x" data-act="rf-del" data-i="${i}" aria-label="刪除">×</button></div>
+      <textarea class="bl a" data-ra="${i}" rows="1" placeholder="${esc(V_TPL[r.q]?'範本：'+V_TPL[r.q]:'我的回答')}">${esc(r.a)}</textarea></div>`).join('')}
+    <a class="link small" href="https://fuwei0618-cmd.github.io/Entry/mission/" target="_top">想拆深一點：去拆解室 →</a></div>
+  <div class="vg"><span class="vl">小勝利罐子 <em>${v.wins.length} 顆</em></span>
+    <div class="vrow"><input class="bl box" id="v-win" placeholder="今天的小勝利…"><button class="btn sm primary" data-act="win-add">放進去</button></div>
+    <div class="chips">${['今天有去上課','去街演了','錄了一首歌','敢唱一首新歌','有陌生人停下來聽','練習了 10 分鐘'].map(t=>`<button class="chip q" data-act="win-quick" data-t="${esc(t)}">＋${esc(t)}</button>`).join('')}</div>
+    ${v.wins.length?`<div class="wins2">${v.wins.slice().reverse().map((w,ri)=>{const i=v.wins.length-1-ri;return `<span class="w"><small class="num">${esc(w.d.slice(5).replace('-','/'))}</small>${esc(w.t)}<button class="x" data-act="win-del" data-i="${i}" aria-label="刪除">×</button></span>`}).join('')}</div>`:''}</div>`;}
 
 /* ---------- stats ---------- */
 function stats(){
@@ -743,7 +762,7 @@ document.addEventListener('change',e=>{
 document.addEventListener('input',e=>{if(e.target.id==='song-q'){songQ=e.target.value;applySongSearch()}
   const t=e.target,ds=t.dataset;if(ds.v!=null||ds.vb!=null||ds.rq!=null||ds.ra!=null){const v=visionData();
     if(ds.v!=null)v[ds.v]=t.value;else if(ds.vb!=null)v.become[+ds.vb]=t.value;else if(ds.rq!=null)v.reframes[+ds.rq].q=t.value;else v.reframes[+ds.ra].a=t.value;saveVision(v);
-    if(t.tagName==='TEXTAREA'){t.style.height='auto';t.style.height=t.scrollHeight+'px';}}});
+    if(t.tagName==='TEXTAREA')fitOne(t);}});
 document.addEventListener('keydown',e=>{
   if(!$('#present').hidden){if(e.key==='ArrowRight'||e.key===' '){pIdx++;drawPresent()}else if(e.key==='ArrowLeft'){pIdx--;drawPresent()}else if(e.key==='Escape')present(false)}
   else if(e.key==='Escape'&&!$('#sheet').hidden)closeSheet();
