@@ -780,6 +780,7 @@ async function backup(){
 /* ---------- boot ---------- */
 try{const tb=localStorage.getItem(LS+'-tab');if(tb&&TITLES[tb])tab=tb}catch(_){}
 const hash=(location.hash||'').slice(1);if(TITLES[hash])tab=hash;
+addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(TITLES[h]){tab=h;window.scrollTo(0,0);render();}});   // #vision：直接打開 Vocal 信念板
 loadCache(); render();
 (async()=>{
   const c=window.claude;
