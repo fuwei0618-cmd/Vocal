@@ -317,7 +317,7 @@ function vVision(){const v=visionData();
   const shows=sorted('records','date').filter(r=>r.status==='表演').length,best=Object.values(S.songs).filter(x=>x.level==='拿手').length,ans=v.reframes.filter(r=>r.a).length;
   const NOTE_TPL='你不用準備好才出發。今天只要唱完一首，就算贏。唱完回來，在罐子裡放一顆。';
   const ta=(k,val,ph,cls='')=>`<textarea class="bl ${cls}" data-v="${k}" rows="1" placeholder="${esc(ph)}">${esc(val)}</textarea>`;
-  return `<div class="vtop"><span><button class="link" data-tab="today">← 下一場</button>　<a class="link" href="https://fuwei0618-cmd.github.io/Entry/bedside/#all" target="_top">← 信念彙集</a></span><span class="muted small num">${shows} 場表演・${best} 首拿手・${v.wins.length} 個小勝利</span></div>
+  return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:0 0 10px;font-size:13px"><a href="https://fuwei0618-cmd.github.io/Entry/bedside/#all" target="_top" style="color:inherit;text-decoration:underline;text-underline-offset:3px">← 信念彙集</a><span style="color:#B08D57;font-weight:600;letter-spacing:.06em">一句話 → 使命 → 身份 → 行為 → 卡住時</span></div><div class="vtop"><button class="link" data-tab="today">← 下一場</button><span class="muted small num">${shows} 場表演・${best} 首拿手・${v.wins.length} 個小勝利</span></div>
   <div class="vg vnote2"><span class="vl">出發前讀這段</span>${ta('note',v.note,'範本：'+NOTE_TPL,'serif')}</div>
   <div class="vg"><span class="vl">80 歲的我</span>${ta('at80',v.at80,'範本：80 歲的我還在唱。週末在公園或老宅的院子裡，唱給老朋友和路過的人聽，唱到大家跟著哼。')}
     <span class="vl">我為什麼想唱</span>${ta('why',v.why,'範本：唱歌的時候，我不用解釋自己是誰。聲音一出來，我就覺得自己在發光，也想讓聽的人亮一下。')}
