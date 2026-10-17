@@ -137,6 +137,7 @@ th,td{padding:9px 12px;text-align:left;border-top:1px solid var(--line);white-sp
 thead th{border-top:0;font-size:12px;color:var(--muted);font-weight:500}
 td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
 /* tab bar */
+.fab{position:fixed;right:12px;bottom:calc(132px + env(safe-area-inset-bottom,0px));z-index:12;width:54px;height:54px;border-radius:50%;border:0;background:var(--ink);color:var(--surface);font-size:30px;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.2);cursor:pointer}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
 .tabs nav{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);height:var(--tabh)}
 .tabs button{border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--muted)}
@@ -207,7 +208,9 @@ legend{font-family:var(--display);font-weight:700;padding:0 6px}
   <header class="top"><h1 id="title">下一場</h1><span class="sync" id="sync">載入中…</span></header>
   <main id="main"></main>
 </div>
-<div class="tabs"><nav aria-label="分頁">
+<button class="fab" id="fab" aria-label="新增" hidden>＋</button>
+<div class="tabs">
+<nav aria-label="分頁">
   <button data-tab="today"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>下一場</button>
   <button data-tab="log"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8.5 10h7M8.5 13.5h7M8.5 17h4"/></svg>紀錄</button>
   <button data-tab="songs"><svg viewBox="0 0 24 24"><path d="M9 18V5l10-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>歌單</button>
@@ -286,6 +289,8 @@ function render(){
   const focusQ=document.activeElement&&document.activeElement.id==='song-q';
   const html={today:vToday,log:vLog,songs:vSongs,gear:vGear,host:vHost,vision:vVision}[tab]();
   $('#main').innerHTML=html;
+  const fa=tab==='log'?(logSeg==='list'?'new-record':logSeg==='venues'?'new-venue':''):tab==='songs'?'new-song':tab==='gear'&&gearSeg==='stock'?'new-gear':tab==='host'?'new-card':'';
+  const fb=$('#fab');fb.hidden=!fa;fb.dataset.act=fa;
   if(tab==='songs'){applySongSearch(); if(focusQ){const i=$('#song-q');i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
   if(tab==='vision')fitBL(document);
   if(tab==='today'){const l=$('#today-set');if(l)enableDrag(l,ids=>{const n=clone(next());n.setlist=ids;put('meta','next',n)})}
@@ -455,7 +460,7 @@ function vLog(){
   if(logSeg==='stats')return h+vStats();
   if(logSeg==='venues')return h+vVenues();
   const recs=sorted('records','date').reverse();
-  h+=`<section class="sec"><button class="btn primary block" data-act="new-record">＋ 新增一場紀錄</button></section>`;
+  h+=``;
   if(!recs.length)return h+`<div class="empty">還沒有表演紀錄。演出結束後在「下一場」按「寫紀錄」，或從這裡新增。2025/11 起的 Notion 舊紀錄之後可以匯入。</div>`;
   const months={};recs.forEach(r=>{const m=(r.date||'').slice(0,7)||'未填日期';(months[m]=months[m]||[]).push(r)});
   Object.entries(months).forEach(([m,list])=>{
@@ -541,7 +546,7 @@ function vVenues(){
     <label class="f"><span>台北</span><input type="date" id="lic-taipei" value="${esc(L.taipei||'')}" data-lic="taipei"></label>
     <label class="f"><span>桃園</span><input type="date" id="lic-taoyuan" value="${esc(L.taoyuan||'')}" data-lic="taoyuan"></label></div>
     ${licenseWarnings().map(w=>`<div class="banner warn small">${esc(w)}</div>`).join('')}</section>`;
-  h+=`<section class="sec"><button class="btn primary block" data-act="new-venue">＋ 新增場地</button></section>`;
+  h+=``;
   const vs=sorted('venues','name');
   ['桃園','台北','其他'].forEach(city=>{
     const list=vs.filter(v=>(v.city||'其他')===city);
@@ -571,8 +576,7 @@ function vSongs(){
   const st=stats();
   const songs=sorted('songs').filter(s=>songFilter==='全部'||(s.groups||[]).includes(songFilter)||(songFilter==='未設定熟練度'&&!s.level));
   let h=`<section class="sec"><label class="f"><span class="label">搜尋歌名或原唱</span><input id="song-q" type="search" value="${esc(songQ)}" autocomplete="off"></label>
-    <div class="chips">${['全部',...SONG_GROUPS].map(g=>`<button class="chip ${g===songFilter?'accent':''}" data-song-f="${esc(g)}">${esc(g)}</button>`).join('')}</div>
-    <button class="btn primary block" data-act="new-song">＋ 新增歌曲</button></section>`;
+    <div class="chips">${['全部',...SONG_GROUPS].map(g=>`<button class="chip ${g===songFilter?'accent':''}" data-song-f="${esc(g)}">${esc(g)}</button>`).join('')}</div></section>`;
   if(!songs.length)return h+`<div class="empty">這個分組還沒有歌。</div>`;
   const ns=next().setlist||[];
   h+=`<ul class="list" id="song-list">${songs.map(s=>{const c=st.songCount[s.id]||0,last=st.songLast[s.id];
@@ -605,7 +609,7 @@ function vGear(){
   let h=`<div class="seg" style="margin-bottom:16px">${[['list','每場清單'],['stock','設備庫存']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
   if(gearSeg==='stock'){
     const gs=sorted('gear','name');
-    h+=`<section class="sec"><button class="btn primary block" data-act="new-gear">＋ 新增設備</button></section>`;
+    h+=``;
     ['自有','租借'].forEach(o=>{const list=gs.filter(g=>(g.own||'自有')===o);
       h+=`<section class="sec"><h3>${o}</h3>${list.length?`<ul class="list">${list.map(g=>`<li><button class="row" data-edit-gear="${esc(g.id)}"><div class="main"><div class="title">${esc(g.name)}${g.qty>1?` <span class="muted num">×${g.qty}</span>`:''}</div>${g.note?`<div class="sub">${esc(g.note)}</div>`:''}</div></button></li>`).join('')}</ul>`:`<div class="empty">還沒有${o}的設備</div>`}</section>`});
     h+=backupBlock();
@@ -647,9 +651,9 @@ function checkSheet(id,group){
 function vHost(){
   const cards=sorted('cards','order');
   let h=`<section class="sec"><button class="btn primary block" data-act="present" ${cards.length?'':'disabled'}>上台模式（一頁一張）</button></section>`;
-  if(!cards.length)return h+`<div class="empty">還沒有主持卡。</div><section class="sec" style="margin-top:12px"><button class="btn block" data-act="new-card">＋ 新增卡片</button></section>`;
+  if(!cards.length)return h+`<div class="empty">還沒有主持卡。</div>`;
   h+=`<ol class="list" id="card-list">${cards.map((c,i)=>`<li data-id="${esc(c.id)}"><div class="row cardrow"><span class="n num muted">${i+1}</span><button class="main" style="background:none;border:0;text-align:left;padding:0" data-edit-card="${esc(c.id)}"><div class="title">${esc(c.title)}</div><div class="body">${esc(c.body||'')}</div></button><button class="handle" aria-label="拖拉排序">⠿</button></div></li>`).join('')}</ol>`;
-  h+=`<section class="sec" style="margin-top:12px"><button class="btn block" data-act="new-card">＋ 新增卡片</button></section>`;
+  h+=``;
   return h;
 }
 function cardSheet(id){
