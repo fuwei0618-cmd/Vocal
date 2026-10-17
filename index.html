@@ -215,7 +215,7 @@ legend{font-family:var(--display);font-weight:700;padding:0 6px}
   <button data-tab="log"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8.5 10h7M8.5 13.5h7M8.5 17h4"/></svg>紀錄</button>
   <button data-tab="songs"><svg viewBox="0 0 24 24"><path d="M9 18V5l10-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>歌單</button>
   <button data-tab="gear"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9.5l2 2 3.5-3.5M8 15h8"/></svg>設備清單</button>
-  <button data-tab="host"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>主持稿</button>
+  <button data-tab="host"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.8 3.6-6 7-6s6.2 2.2 7 6"/></svg>我</button>
 </nav></div>
 <div id="sheet" hidden></div>
 <div id="present" hidden></div>
@@ -231,7 +231,7 @@ const SONG_GROUPS=['溫馨','開放','商演','RenewSV'];
 const LEVELS=['練習中','可上台','拿手'];
 const TEMPOS=['快','中','慢'];
 const REASONS=['雨天','夥伴取消','設備壞','其他'];
-const TITLES={today:'下一場',log:'表演紀錄',songs:'歌單',gear:'設備與清單',host:'主持稿',vision:'我的 Vocal 願景'};
+const TITLES={today:'下一場',log:'表演紀錄',songs:'歌單',gear:'設備與清單',host:'我',vision:'我的 Vocal 願景'};
 const LS='busk-app-v1';
 let S={}; COLS.forEach(c=>S[c]={});
 let db=null, mode='loading', downloads=null;
@@ -541,11 +541,8 @@ function vStats(){
 }
 
 function vVenues(){
-  const st=stats(), L=S.meta.licenses||{};
-  let h=`<section class="sec"><h3>街頭藝人證照到期日</h3><div class="panel f2">
-    <label class="f"><span>台北</span><input type="date" id="lic-taipei" value="${esc(L.taipei||'')}" data-lic="taipei"></label>
-    <label class="f"><span>桃園</span><input type="date" id="lic-taoyuan" value="${esc(L.taoyuan||'')}" data-lic="taoyuan"></label></div>
-    ${licenseWarnings().map(w=>`<div class="banner warn small">${esc(w)}</div>`).join('')}</section>`;
+  const st=stats();
+  let h=``;
   h+=``;
   const vs=sorted('venues','name');
   ['桃園','台北','其他'].forEach(city=>{
@@ -612,14 +609,12 @@ function vGear(){
     h+=``;
     ['自有','租借'].forEach(o=>{const list=gs.filter(g=>(g.own||'自有')===o);
       h+=`<section class="sec"><h3>${o}</h3>${list.length?`<ul class="list">${list.map(g=>`<li><button class="row" data-edit-gear="${esc(g.id)}"><div class="main"><div class="title">${esc(g.name)}${g.qty>1?` <span class="muted num">×${g.qty}</span>`:''}</div>${g.note?`<div class="sub">${esc(g.note)}</div>`:''}</div></button></li>`).join('')}</ul>`:`<div class="empty">還沒有${o}的設備</div>`}</section>`});
-    h+=backupBlock();
     return h;
   }
   const checks=sorted('checks','order');
   h+=`<p class="small muted" style="margin:0 0 14px">這裡改的是範本。每場的勾選在「下一場」分頁，寫完紀錄會自動重置。標「雨天」的項目只在雨天模式出現。</p>`;
   [...GROUPS,...ONSITE].forEach(g=>{const list=checks.filter(c=>c.group===g);
     h+=`<section class="sec"><div class="sec-head"><h3>${esc(g)}</h3><button class="ghost" data-new-check="${esc(g)}">＋ 新增</button></div>${list.length?`<ul class="list">${list.map(c=>`<li><button class="row" data-edit-check="${esc(c.id)}"><div class="main">${esc(c.text)}</div>${c.rain?'<span class="chip accent">雨天</span>':''}</button></li>`).join('')}</ul>`:''}</section>`});
-  h+=backupBlock();
   return h;
 }
 function backupBlock(){return downloads?`<section class="sec"><h3>資料備份</h3><p class="small muted" style="margin:0">把所有歌、場地、紀錄、清單下載成一個 JSON 檔留底。</p><button class="btn" data-act="backup">下載備份檔</button></section>`:''}
@@ -649,11 +644,17 @@ function checkSheet(id,group){
 
 /* ---------- 主持稿 ---------- */
 function vHost(){
-  const cards=sorted('cards','order');
-  let h=`<section class="sec"><button class="btn primary block" data-act="present" ${cards.length?'':'disabled'}>上台模式（一頁一張）</button></section>`;
-  if(!cards.length)return h+`<div class="empty">還沒有主持卡。</div>`;
+  const cards=sorted('cards','order'), L=S.meta.licenses||{};
+  let h=`<button class="panel visionEntry" data-tab="vision"><span class="eyebrow">MY VOCAL VISION</span><b>我的 Vocal 願景</b><span class="muted small">一句話、使命、身份、小勝利都在這裡 →</span></button>`;
+  h+=`<h2 style="margin:6px 0 10px">主持稿</h2><section class="sec"><button class="btn primary block" data-act="present" ${cards.length?'':'disabled'}>上台模式（一頁一張）</button></section>`;
+  if(!cards.length)h+=`<section class="sec"><div class="empty">還沒有主持卡，按右下角的＋新增。</div></section>`;
+  else
   h+=`<ol class="list" id="card-list">${cards.map((c,i)=>`<li data-id="${esc(c.id)}"><div class="row cardrow"><span class="n num muted">${i+1}</span><button class="main" style="background:none;border:0;text-align:left;padding:0" data-edit-card="${esc(c.id)}"><div class="title">${esc(c.title)}</div><div class="body">${esc(c.body||'')}</div></button><button class="handle" aria-label="拖拉排序">⠿</button></div></li>`).join('')}</ol>`;
-  h+=``;
+  h+=`<section class="sec"><h3>街頭藝人證照到期日</h3><div class="panel f2">
+    <label class="f"><span>台北</span><input type="date" id="lic-taipei" value="${esc(L.taipei||'')}" data-lic="taipei"></label>
+    <label class="f"><span>桃園</span><input type="date" id="lic-taoyuan" value="${esc(L.taoyuan||'')}" data-lic="taoyuan"></label></div>
+    ${licenseWarnings().map(w=>`<div class="banner warn small">${esc(w)}</div>`).join('')}</section>`;
+  h+=backupBlock();
   return h;
 }
 function cardSheet(id){
