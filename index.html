@@ -1,5 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* 願景：一目了然版（全部攤開、直接在原地改） */
+.vroot summary{cursor:pointer;list-style:none}.vroot summary::-webkit-details-marker{display:none}.vroot{min-width:0}.vroot .tbl-wrap{overflow-x:auto}.vroot table{font-size:12.5px;width:100%}.vroot td,.vroot th{vertical-align:top;white-space:normal;padding:8px 8px}.vroot td:first-child{min-width:7.5em}
 .vg{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px 12px;margin-bottom:10px;display:grid;gap:2px}
 .vnote2{background:linear-gradient(135deg,var(--surface),var(--accent-soft))}
 .vl{font-size:11.5px;letter-spacing:.12em;color:var(--accent);font-weight:700;margin-top:6px;display:flex;align-items:center;gap:8px}.vl:first-child{margin-top:0}
@@ -318,13 +319,20 @@ const vOpen=new Set();try{JSON.parse(localStorage.getItem(LS+'-vopen')||'[]').fo
 document.addEventListener('toggle',e=>{const d=e.target;if(!d.dataset||!d.dataset.vk)return;d.open?vOpen.add(d.dataset.vk):vOpen.delete(d.dataset.vk);if(d.open)fitVT(d);try{localStorage.setItem(LS+'-vopen',JSON.stringify([...vOpen]))}catch(_){}},true);
 const vSec=(k,title,pv,body)=>`<details class="vs" data-vk="${k}"${vOpen.has(k)?' open':''}><summary><b>${title}</b><span class="pv">${pv}</span></summary><div class="vb">${body}</div></details>`;
 const vCut=(t,n=22)=>t?esc(t.length>n?t.slice(0,n)+'…':t):'<i>還沒寫</i>';
-function vVision(){const v=visionData();
+const V_ROOT='音樂是我和世界之間最短的路：不用翻譯，感受直接變成聲音。';
+const V_ROOT_TBL=[['直接','從感受到被聽見，要轉幾道','3 道','3 道','1 道'],['不用想','要先想好怎麼說嗎','要','要','不用，歌詞旋律都準備好了'],['不用應對','要一邊應對別人嗎','不用','要','不用'],['無國界','聽不懂語言也會被打動嗎','✗','✗','✓'],['跨距離','不用面對面也傳得到嗎','✓ 但沒聲音','要看影片','✓ 街頭、公園、舞台'],['情緒寬','能裝多深多亂的情緒','偏理性','偏理性','可以哭也可以狂歡'],['身體','身體有沒有參與','✗','少','✓ 從核心到全身'],['心流','會進入心流嗎','有時','很少','最容易']];
+function vVision(){
+  {const cur=S.meta.vision;if(!(cur&&cur.rootP1)){const v=visionData();if(!v.why.includes(V_ROOT))v.why=V_ROOT+(v.why.trim()?'\n\n'+v.why:'');v.rootP1=1;saveVision(v,true);}}   // 10/18：使命換成根本原因那一句，原本的話留在下面
+  const v=visionData();
   const shows=sorted('records','date').filter(r=>r.status==='表演').length,best=Object.values(S.songs).filter(x=>x.level==='拿手').length,ans=v.reframes.filter(r=>r.a).length;
   const NOTE_TPL='你不用準備好才出發。今天只要唱完一首，就算贏。唱完回來，在罐子裡放一顆。';
   const ta=(k,val,ph,cls='')=>`<textarea class="bl ${cls}" data-v="${k}" rows="1" placeholder="${esc(ph)}">${esc(val)}</textarea>`;
   return `<div class="vbar" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:0 0 10px;font-size:13px;position:sticky;top:var(--toph,62px);z-index:4;background:var(--bg);padding:6px 0"><a href="https://fuwei0618-cmd.github.io/Entry/bedside/#all" target="_top" style="color:inherit;text-decoration:underline;text-underline-offset:3px">← 信念彙集</a><span style="color:#B08D57;font-weight:600;letter-spacing:.06em">一句話 → 使命 → 身份 → 行為 → 卡住時</span></div><div class="vtop"><button class="link" data-tab="today">← 下一場</button><span class="muted small num">${shows} 場表演・${best} 首拿手・${v.wins.length} 個小勝利</span></div>
   <div class="vg vnote2"><span class="vl">一句話・出發前讀這段</span>${ta('note',v.note,'範本：'+NOTE_TPL,'serif')}</div>
   <div class="vg"><span class="vl">使命・我為什麼想唱</span>${ta('why',v.why,'範本：唱歌的時候，我不用解釋自己是誰。聲音一出來，我就覺得自己在發光，也想讓聽的人亮一下。')}</div>
+  <details class="vg vroot"><summary class="vl">根本原因・為什麼是音樂 ▾</summary>
+    <div class="tbl-wrap"><table><thead><tr><th>關鍵字</th><th>寫字</th><th>說話</th><th>唱歌</th></tr></thead><tbody>${V_ROOT_TBL.map(r=>`<tr><td><b>${r[0]}</b><br><span class="small muted">${r[1]}</span></td><td>${r[2]}</td><td>${r[3]}</td><td><b>${r[4]}</b></td></tr>`).join('')}</tbody></table></div>
+    <p class="small muted" style="margin:6px 0 0">第一列「直接」是原因，下面七個關鍵字都是它帶來的結果。所以說音樂「最無腦」：不是最淺，是最直接。</p></details>
   <div class="vg"><span class="vl">身份・80 歲的我</span>${ta('at80',v.at80,'範本：80 歲的我還在唱。週末在公園或老宅的院子裡，唱給老朋友和路過的人聽，唱到大家跟著哼。')}
     <span class="vl">身份・想成為的樣子 <button class="link" data-act="vb-add">＋</button></span>
     <div class="blist">${v.become.map((b,i)=>`<input class="bl" data-vb="${i}" value="${esc(b)}" placeholder="${['上台時敢看著觀眾的眼睛','有三首拿手歌，隨時可以唱','每個月錄一首，聽得到自己的進步'][i]||'再寫一個'}">`).join('')}</div></div>
