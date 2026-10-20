@@ -229,6 +229,8 @@ const COLS=['songs','venues','records','gear','checks','cards','meta'];
 const GROUPS=['前一晚充電','出門準備','其他','隨身','當日'];
 const ONSITE=['現場・表演','現場・設備','現場・腳架'];
 const SONG_GROUPS=['溫馨','開放','商演','RenewSV'];
+// 10/20：歌先照「我想成為誰」分身份，每首歌知道自己是哪一個我在唱，才不會飄
+const WHO=[['Teresa','找回聲音・唱給自己','鄧麗君、葉柄桓、李芷婷：溫柔、回家、玩聲音'],['Shakira','為眾生・火','唱給大家、熱場、有力量'],['Elva','燕尾蝶・愛','G.E.M.、Elva：情歌、做自己、敢愛'],['Faye','富偉・水','Chiara、Faye：空靈、流動、安靜']];
 const LEVELS=['練習中','可上台','拿手'];
 const TEMPOS=['快','中','慢'];
 const REASONS=['雨天','夥伴取消','設備壞','其他'];
@@ -236,7 +238,7 @@ const TITLES={today:'下一場',log:'表演紀錄',songs:'歌單',gear:'設備�
 const LS='busk-app-v1';
 let S={}; COLS.forEach(c=>S[c]={});
 let db=null, mode='loading', downloads=null;
-let tab='today', logSeg='list', gearSeg='list', songFilter='全部', songQ='';
+let tab='today', logSeg='list', gearSeg='list', songFilter='全部', songQ='', whoF='全部';
 
 const $=(s,r=document)=>r.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -579,23 +581,27 @@ function venueSheet(id){
 /* ---------- 歌單 ---------- */
 function vSongs(){
   const st=stats();
-  const songs=sorted('songs').filter(s=>songFilter==='全部'||(s.groups||[]).includes(songFilter)||(songFilter==='未設定熟練度'&&!s.level));
+  const songs=sorted('songs').filter(s=>(songFilter==='全部'||(s.groups||[]).includes(songFilter)||(songFilter==='未設定熟練度'&&!s.level))&&(whoF==='全部'||(whoF==='未分類'?!s.who:s.who===whoF)));
   let h=`<section class="sec"><label class="f"><span class="label">搜尋歌名或原唱</span><input id="song-q" type="search" value="${esc(songQ)}" autocomplete="off"></label>
-    <div class="chips">${['全部',...SONG_GROUPS].map(g=>`<button class="chip ${g===songFilter?'accent':''}" data-song-f="${esc(g)}">${esc(g)}</button>`).join('')}</div></section>`;
+    <div class="f" style="margin:4px 0 0"><span class="label">哪一個我在唱</span><div class="chips">${['全部',...WHO.map(w=>w[0]),'未分類'].map(g=>`<button class="chip ${g===whoF?'accent':''}" data-who-f="${esc(g)}">${esc(g)}</button>`).join('')}</div></div>
+    <div class="f" style="margin:4px 0 0"><span class="label">場合</span><div class="chips">${['全部',...SONG_GROUPS].map(g=>`<button class="chip ${g===songFilter?'accent':''}" data-song-f="${esc(g)}">${esc(g)}</button>`).join('')}</div></div></section>`;
   if(!songs.length)return h+`<div class="empty">這個分組還沒有歌。</div>`;
   const ns=next().setlist||[];
-  h+=`<ul class="list" id="song-list">${songs.map(s=>{const c=st.songCount[s.id]||0,last=st.songLast[s.id];
+  const row=s=>{const c=st.songCount[s.id]||0,last=st.songLast[s.id];
     const lv=s.level?`<span class="chip ${s.level==='拿手'?'ok':s.level==='練習中'?'warn':'accent'}">${esc(s.level)}</span>`:'';
-    return `<li data-search="${esc((s.title+' '+(s.artist||'')).toLowerCase())}"><div class="row"><span class="tempo t${esc(s.tempo||'')}">${esc(s.tempo||'－')}</span><button class="main" style="background:none;border:0;text-align:left;padding:0" data-edit-song="${esc(s.id)}"><div class="title">${esc(s.title)} ${s.key?`<span class="chip num">${esc(s.key)}</span>`:''} ${lv}</div><div class="sub">${esc([s.artist,(s.groups||[]).join('・'),s.length,c?`唱過 ${c} 次・上次 ${fmtD(last,true)}`:'還沒唱過',s.note].filter(Boolean).join('　'))}</div>${s.moises||s.lyrics?`<div class="chips" style="margin-top:4px">${s.moises?`<a class="link" href="${esc(s.moises)}" target="_blank" rel="noopener">Moises 伴奏 ↗</a>`:''}${s.lyrics?`<a class="link" href="${esc(s.lyrics)}" target="_blank" rel="noopener">歌詞 ↗</a>`:''}</div>`:''}</button><button class="btn sm ${ns.includes(s.id)?'primary':''}" data-toggle-set="${esc(s.id)}" aria-pressed="${ns.includes(s.id)}">${ns.includes(s.id)?'已在歌單':'＋ 本次'}</button></div></li>`}).join('')}</ul>`;
+    return `<li data-search="${esc((s.title+' '+(s.artist||'')).toLowerCase())}"><div class="row"><span class="tempo t${esc(s.tempo||'')}">${esc(s.tempo||'－')}</span><button class="main" style="background:none;border:0;text-align:left;padding:0" data-edit-song="${esc(s.id)}"><div class="title">${esc(s.title)} ${s.key?`<span class="chip num">${esc(s.key)}</span>`:''} ${lv}</div><div class="sub">${esc([s.artist,(s.groups||[]).join('・'),s.length,c?`唱過 ${c} 次・上次 ${fmtD(last,true)}`:'還沒唱過',s.note].filter(Boolean).join('　'))}</div>${s.moises||s.lyrics?`<div class="chips" style="margin-top:4px">${s.moises?`<a class="link" href="${esc(s.moises)}" target="_blank" rel="noopener">Moises 伴奏 ↗</a>`:''}${s.lyrics?`<a class="link" href="${esc(s.lyrics)}" target="_blank" rel="noopener">歌詞 ↗</a>`:''}</div>`:''}</button><button class="btn sm ${ns.includes(s.id)?'primary':''}" data-toggle-set="${esc(s.id)}" aria-pressed="${ns.includes(s.id)}">${ns.includes(s.id)?'已在歌單':'＋ 本次'}</button></div></li>`};
+  const secs_=whoF==='全部'?[...WHO.map(w=>[w,songs.filter(x=>x.who===w[0])]),[['未分類','還沒決定是誰在唱','點歌名進去，選「哪一個我在唱」'],songs.filter(x=>!x.who)]]:[[WHO.find(w=>w[0]===whoF)||[whoF,'',''],songs]];
+  h+=`<div id="song-list">${secs_.filter(([,L])=>L.length).map(([w,L])=>`<section class="sec"><div class="sec-head"><h2>${esc(w[0])} <span class="small muted" style="font-weight:400">${esc(w[1])}・${L.length} 首</span></h2></div>${w[2]?`<p class="small muted" style="margin:-6px 0 8px">${esc(w[2])}</p>`:''}<ul class="list">${L.map(row).join('')}</ul></section>`).join('')}</div>`;
   return h;
 }
-function applySongSearch(){const q=songQ.trim().toLowerCase();document.querySelectorAll('#song-list>li').forEach(li=>li.hidden=!!q&&!li.dataset.search.includes(q))}
+function applySongSearch(){const q=songQ.trim().toLowerCase();document.querySelectorAll('#song-list li[data-search]').forEach(li=>li.hidden=!!q&&!li.dataset.search.includes(q))}
 function songSheet(id){
   const s=id?S.songs[id]:{groups:[]};
   openSheet(id?'編輯歌曲':'新增歌曲',`
     <label class="f"><span>歌名</span><input id="s-title" value="${esc(s.title||'')}"></label>
     <div class="f2"><label class="f"><span>原唱</span><input id="s-artist" value="${esc(s.artist||'')}"></label>
     <label class="f"><span>我的 key</span><input id="s-key" value="${esc(s.key||'')}" placeholder="例：-1、+3、原key"></label></div>
+    <div class="f"><span>哪一個我在唱</span>${segRadio('s-who',WHO.map(w=>w[0]),s.who||'')}<span class="small muted">${WHO.map(w=>w[0]+'＝'+w[1]).join('　')}</span></div>
     <div class="f"><span>節奏</span>${segRadio('s-tempo',TEMPOS,s.tempo||'')}</div>
     <div class="f"><span>分組（可複選）</span><div class="pick">${SONG_GROUPS.map(g=>`<label><input type="checkbox" name="s-group" value="${g}" ${(s.groups||[]).includes(g)?'checked':''}><span>${g}</span></label>`).join('')}</div></div>
     <div class="f"><span>熟練度</span>${segRadio('s-level',LEVELS,s.level||'')}</div>
@@ -605,7 +611,7 @@ function songSheet(id){
     <label class="f"><span>備註</span><textarea id="s-note">${esc(s.note||'')}</textarea></label>`,
   ()=>{const title=$('#s-title').value.trim();if(!title){toast('請填歌名');return false}
     const g=n=>(document.querySelector(`input[name=${n}]:checked`)||{}).value||'';
-    put('songs',id||uid('s'),{...s,title,artist:$('#s-artist').value.trim(),key:$('#s-key').value.trim(),tempo:g('s-tempo'),groups:[...document.querySelectorAll('input[name=s-group]:checked')].map(x=>x.value),level:g('s-level'),length:$('#s-len').value.trim(),moises:$('#s-moises').value.trim(),lyrics:$('#s-lyrics').value.trim(),note:$('#s-note').value.trim(),ts:s.ts||Date.now()});return true},
+    put('songs',id||uid('s'),{...s,title,artist:$('#s-artist').value.trim(),key:$('#s-key').value.trim(),tempo:g('s-tempo'),who:g('s-who'),groups:[...document.querySelectorAll('input[name=s-group]:checked')].map(x=>x.value),level:g('s-level'),length:$('#s-len').value.trim(),moises:$('#s-moises').value.trim(),lyrics:$('#s-lyrics').value.trim(),note:$('#s-note').value.trim(),ts:s.ts||Date.now()});return true},
   id?{onDelete:()=>del('songs',id)}:{});
 }
 
@@ -731,6 +737,7 @@ document.addEventListener('click',e=>{
   if(d.logseg){logSeg=d.logseg;render();return}
   if(d.gearseg){gearSeg=d.gearseg;render();return}
   if(d.songF){songFilter=d.songF;render();return}
+  if(d.whoF){whoF=d.whoF;render();return}
   if(d.editRecord)return recordSheet(d.editRecord);
   if(d.editVenue)return venueSheet(d.editVenue);
   if(d.editSong)return songSheet(d.editSong);
