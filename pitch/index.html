@@ -139,6 +139,15 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700}
       <input id="backingFile" type="file" accept="audio/*" hidden>
       <span id="backingName" class="file-name">還沒有伴奏</span>
     </div>
+    <div class="row">
+      <button id="pickOriginal" type="button">選原唱檔</button>
+      <input id="originalFile" type="file" accept="audio/*" hidden>
+      <span id="originalName" class="file-name">還沒有原唱</span>
+      <button id="analyzeOriginal" type="button" disabled>抓取原唱旋律</button>
+      <button id="playOriginal" type="button" disabled>播放原唱</button>
+    </div>
+    <label class="hint" style="display:flex;align-items:center;gap:5px"><input id="useOriginal" type="checkbox">錄音時播放原唱（請戴耳機）</label>
+    <p class="hint">原唱旋律會在此裝置分析並保存。混音歌曲可能抓到伴奏音，請用簡譜核對；辨識不準時可編輯下方簡譜。</p>
     <div class="row" style="justify-content:space-between">
       <div class="row">
         <label for="keySel">原調</label>
@@ -170,6 +179,8 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700}
     <div class="canvas-wrap"><canvas id="live"></canvas></div>
     <div class="row" style="justify-content:space-between">
       <div class="legend">
+        <span><i style="background:#1687d9"></i>原唱旋律</span>
+        <span><i style="background:var(--target)"></i>鋼琴／譜音</span>
         <span><i style="background:var(--ok)"></i>準</span>
         <span><i style="background:var(--slight)"></i>差一點</span>
         <span><i style="background:var(--off)"></i>卡在兩個音中間</span>
@@ -355,20 +366,31 @@ function drawGrid(g,w,h,lo,hi,key,labelW){
   }
   return y;
 }
+function drawReference(g,w,lw,y,x,offset=0,shift=0){
+  const melody=S.song&&S.song.melody;if(!melody||!melody.length)return;
+  const step=S.song.melodyDt||DT;g.save();g.strokeStyle='#1687d9';g.lineWidth=2.2;g.beginPath();let started=false;
+  for(let i=0;i<melody.length;i++){
+    const m=melody[i];if(!m){started=false;continue}
+    const xx=x(i*step-offset);if(xx<lw||xx>w){started=false;continue}
+    if(!started){g.moveTo(xx,y(m+shift));started=true}else g.lineTo(xx,y(m+shift));
+  }
+  g.stroke();g.restore();
+}
 function drawLive(){
   const cv=$('live'),w=cv.parentElement.clientWidth,h=240,g=setupCanvas(cv,w,h);
   const lw=52,y=drawGrid(g,w,h,S.lo,S.hi,curKey(),lw);
   if(S.target!=null&&S.target>=S.lo&&S.target<=S.hi){g.strokeStyle=cssv('--target');g.lineWidth=3;g.setLineDash([8,6]);g.beginPath();g.moveTo(lw,y(S.target));g.lineTo(w,y(S.target));g.stroke();g.setLineDash([])}
   const span=8,now=live.t,x=t=>lw+(t-(now-span))/span*(w-lw-8);
-  const key=curKey();
+  const key=curKey();drawReference(g,w,lw,y,t=>x(t+span),live.offset||0,S.song.shift);
   for(const [t,m] of live.pts){if(t<now-span||!m)continue;g.fillStyle=cssv(COLORVAR[classify(m,key)]);g.beginPath();g.arc(x(t),y(m),2.6,0,7);g.fill()}
 }
-function drawTake(track,dt,key){
+function drawTake(track,dt,key,offset=0,shift=0){
   const cv=$('takeCanvas');const ms=track.filter(Boolean);
   let lo=ms.length?Math.floor(Math.min(...ms))-1:55,hi=ms.length?Math.ceil(Math.max(...ms))+1:72;
   lo=Math.max(lo,40);hi=Math.min(hi,84);if(hi-lo<12){const c=(hi+lo)/2;lo=Math.floor(c-6);hi=Math.ceil(c+6)}
   const lw=52,pxs=36,dur=track.length*dt,w=Math.max(cv.parentElement.clientWidth,lw+dur*pxs+10),h=220;
   const g=setupCanvas(cv,w,h),y=drawGrid(g,w,h,lo,hi,key,lw);
+  drawReference(g,w,lw,y,t=>lw+t*pxs,offset,shift);
   g.fillStyle=cssv('--muted');g.font='10px "DM Mono",monospace';g.textBaseline='bottom';
   for(let s=0;s<=dur;s+=5){const xx=lw+s*pxs;g.globalAlpha=.5;g.fillRect(xx,h-4,1,4);g.globalAlpha=1;if(s%10===0)g.fillText(s+'秒',xx+2,h-2)}
   for(let i=0;i<track.length;i++){const m=track[i];if(!m)continue;g.fillStyle=cssv(COLORVAR[classify(m,key)]);g.fillRect(lw+i*dt*pxs-1,y(m)-1.5,3,3)}
@@ -435,13 +457,36 @@ function yin(buf,sr){
 }
 
 /* ---------- 伴奏 ---------- */
-let player=null,shifter=null,backingBuf=null;
+let player=null,shifter=null,backingBuf=null,originalBuf=null,originalPlayer=null,originalShifter=null;
 async function loadBacking(){
   backingBuf=null;
   if(!S.song||!S.song.backing){$('backingName').textContent='還沒有伴奏（沒有也可以只看音高）';return}
   $('backingName').textContent=S.song.backingName||'已選伴奏';
   try{const ab=await S.song.backing.arrayBuffer();await ensureAudio();backingBuf=await Tone.getContext().decodeAudioData(ab)}catch(e){backingBuf=null;$('backingName').textContent='伴奏讀不出來，請重新選檔'}
 }
+async function loadOriginal(){
+  originalBuf=null;
+  if(!S.song||!S.song.original){$('originalName').textContent='還沒有原唱';$('analyzeOriginal').disabled=true;$('playOriginal').disabled=true;return}
+  $('originalName').textContent=S.song.originalName||'已選原唱';
+  try{const ab=await S.song.original.arrayBuffer();await ensureAudio();originalBuf=await Tone.getContext().decodeAudioData(ab);$('analyzeOriginal').disabled=false;$('playOriginal').disabled=false}
+  catch(e){$('originalName').textContent='原唱讀不出來，請重新選檔';$('analyzeOriginal').disabled=true;$('playOriginal').disabled=true}
+}
+function stopOriginal(){try{if(originalPlayer){originalPlayer.stop();originalPlayer.dispose()}}catch(e){}try{if(originalShifter)originalShifter.dispose()}catch(e){}originalPlayer=null;originalShifter=null}
+function startOriginal(offset=0,dur){stopOriginal();if(!originalBuf)return false;originalPlayer=new Tone.Player(originalBuf);const sh=S.song.shift;if(sh){originalShifter=new Tone.PitchShift({pitch:sh,windowSize:.09});originalPlayer.connect(originalShifter);originalShifter.toDestination()}else originalPlayer.toDestination();originalPlayer.start(Tone.now()+.05,offset,dur||undefined);return true}
+async function extractOriginalMelody(){
+  if(!originalBuf)return;
+  $('analyzeOriginal').disabled=true;$('analyzeOriginal').textContent='分析中…';
+  try{
+    const sr=Tone.getContext().sampleRate,factor=Math.max(1,Math.round(sr/16000)),rate=sr/factor,channels=Array.from({length:originalBuf.numberOfChannels},(_,i)=>originalBuf.getChannelData(i)),frameSize=2048,rawSize=frameSize*factor,hop=Math.max(1,Math.round(sr*.2)),count=Math.ceil(originalBuf.duration/DT),melody=new Array(count).fill(0);
+    for(let center=Math.floor(rawSize/2);center<originalBuf.length;center+=hop){
+      const frame=new Float32Array(frameSize);for(let i=0;i<frameSize;i++){const at=center-Math.floor(rawSize/2)+i*factor;if(at>=0&&at<originalBuf.length){let v=0;for(const ch of channels)v+=ch[at]||0;frame[i]=v/channels.length}}
+      const f=yin(frame,rate),m=f>75&&f<1000?69+12*Math.log2(f/440):0,idx=Math.round(center/sr/DT);for(let j=Math.max(0,idx-2);j<Math.min(count,idx+2);j++)melody[j]=m;
+      if(center%(hop*10)<hop)await new Promise(resolve=>setTimeout(resolve,0));
+    }
+    S.song.melody=melody;S.song.melodyDt=DT;await dbPut('songs',S.song);drawLive();if(S.take)drawTake(S.take.track,S.take.dt,S.take.key,S.take.offset||0,S.take.shift||0);toast('原唱旋律已抓取；混音辨識可能含伴奏，請用簡譜核對');
+  }catch(e){toast('原唱分析失敗，請確認音檔格式')}finally{$('analyzeOriginal').disabled=!originalBuf;$('analyzeOriginal').textContent='抓取原唱旋律'}
+}
+function playOriginal(){if(originalPlayer){stopOriginal();return}if(!originalBuf)return;ensureAudio().then(()=>{startOriginal(Math.max(0,+$('aT').value||0));toast('原唱播放中，再按一次停止')})}
 function startBacking(offset,dur){
   stopBacking();if(!backingBuf)return false;
   player=new Tone.Player(backingBuf);
@@ -463,7 +508,7 @@ async function begin(record){
   const dur=bv!=null&&bv>a?bv-a:null;
   S.mode=record?'rec':'listen';
   live.pts=[];live.track=[];live.hist=[];live.offset=a;
-  const hasBacking=startBacking(a,dur);
+  const hasBacking=startBacking(a,dur);if($('useOriginal').checked)startOriginal(a,dur);
   if(record){
     chunks=[];
     try{recorder=new MediaRecorder(mic);recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};recorder.start()}catch(e){recorder=null;toast('這支手機不支援錄音，只會記下音高')}
@@ -492,7 +537,7 @@ function tick(){
   drawLive();
 }
 async function end(){
-  clearTimeout(live.autoStop);cancelAnimationFrame(live.raf);stopBacking();
+  clearTimeout(live.autoStop);cancelAnimationFrame(live.raf);stopBacking();stopOriginal();
   const wasRec=S.mode==='rec';S.mode=null;
   $('sing').hidden=false;$('listen').hidden=false;$('stop').hidden=true;$('state').textContent='準備好了';
   try{wake&&wake.release()}catch(e){}wake=null;
@@ -512,15 +557,22 @@ async function end(){
 
 /* ---------- 結果與紀錄 ---------- */
 const LABEL={ok:'準',slight:'差一點',off:'卡在中間',outkey:'跑出調外'};
+function compareOriginal(track,dt,offset=0,shift=0){
+  const melody=S.song&&S.song.melody;if(!melody||!melody.length)return null;
+  const md=S.song.melodyDt||DT,diffs=[];
+  for(let i=0;i<track.length;i++){const m=track[i];if(!m)continue;const ref=melody[Math.round((offset+i*dt)/md)];if(!ref)continue;diffs.push(m-(ref+shift))}
+  if(!diffs.length)return null;const mean=diffs.reduce((a,b)=>a+b,0)/diffs.length;return {cents:Math.round(mean*100),count:diffs.length};
+}
 function fmtDate(ts){const d=new Date(ts);return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
 function showTake(tk){
   S.take=tk;const a=analyze(tk.track,tk.key,tk.dt);
   $('resTitle').textContent=tk.example?'範例：今晚〈後來〉第五次':'這次結果';
   $('resMeta').textContent=(tk.example?'從你今晚的錄音整理':fmtDate(tk.date))+`・${KEYZH[tk.key]}大調`+(tk.shift?`（${tk.shift>0?'升':'降'}${Math.abs(tk.shift)}）`:'');
+  const cmp=compareOriginal(tk.track,tk.dt,tk.offset||0,tk.shift||0);if(cmp&&cmp.count>10)$('resMeta').textContent+=cmp.cents>5?`・相對原唱平均偏高 ${cmp.cents} 音分`:cmp.cents< -5?`・相對原唱平均偏低 ${Math.abs(cmp.cents)} 音分`:'・平均音高接近原唱';
   $('resBar').innerHTML='';
   ['ok','slight','off','outkey'].forEach(k=>{const s=document.createElement('span');s.style.width=(a.pct[k]*100)+'%';s.style.background=`var(${COLORVAR[k]})`;s.title=LABEL[k];$('resBar').appendChild(s)});
   $('resStats').innerHTML=['ok','slight','off','outkey'].map(k=>`<div class="stat"><b style="color:var(${COLORVAR[k]})">${Math.round(a.pct[k]*100)}%</b><small>${LABEL[k]}</small></div>`).join('');
-  drawTake(tk.track,tk.dt,tk.key);
+  drawTake(tk.track,tk.dt,tk.key,tk.offset||0,tk.shift||0);
   const wk=$('weak');wk.innerHTML='';
   if(a.weak.length){
     const h=document.createElement('div');h.className='hint';h.textContent='最需要練的段落（準＋差一點的比例最低）：';wk.appendChild(h);
@@ -643,6 +695,7 @@ async function selectSong(id){
   if(first)showTake(first);else{$('result').hidden=true}
   if(first)$('result').hidden=false;
   loadBacking().then(()=>{if(S.take)$('playBoth').disabled=!S.take.audio||!backingBuf});
+  loadOriginal();
 }
 
 /* ---------- 事件 ---------- */
@@ -653,6 +706,10 @@ $('up').onclick=async()=>{if(S.song.shift<6){S.song.shift++;await dbPut('songs',
 ['aT','bT','loop'].forEach(id=>$(id).addEventListener('change',saveSongPrefs));
 $('pickBacking').onclick=()=>$('backingFile').click();
 $('backingFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;S.song.backing=f;S.song.backingName=f.name;await dbPut('songs',S.song);await loadBacking();toast('伴奏已存在這支手機，下次不用再選')};
+$('pickOriginal').onclick=()=>$('originalFile').click();
+$('originalFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;S.song.original=f;S.song.originalName=f.name;delete S.song.melody;await dbPut('songs',S.song);await loadOriginal();drawLive();toast('原唱已存在這支手機，下次不用再選')};
+$('analyzeOriginal').onclick=extractOriginalMelody;
+$('playOriginal').onclick=playOriginal;
 $('rUp').onclick=()=>{if(S.hi<88){S.lo+=2;S.hi+=2;buildPiano();drawLive()}};
 $('rDown').onclick=()=>{if(S.lo>36){S.lo-=2;S.hi-=2;buildPiano();drawLive()}};
 $('clearTarget').onclick=()=>{S.target=null;drawLive()};
