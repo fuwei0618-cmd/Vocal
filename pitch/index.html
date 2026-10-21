@@ -266,6 +266,7 @@ async function dbDel(store,id){const d=await idb();if(!d)return;return new Promi
 const S={songs:[],song:null,takes:[],take:null,lo:55,hi:72,target:null,mode:null};
 const DEFAULT_SONGS=[
   {id:'s-houlai',name:'後來（劉若英）',key:3,shift:0,a:0,b:null,loop:false},
+  {id:'s-houlai-orig',name:'後來（原唱，跟著唱）',key:3,shift:0,a:0,b:null,loop:true},
   {id:'s-zhishao',name:'至少還有你（林憶蓮）',key:4,shift:0,a:0,b:null,loop:false}
 ];
 function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2600)}
