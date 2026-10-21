@@ -123,6 +123,43 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700}
 .syntax p{margin:4px 0}
 .syntax code{font-family:var(--mono);background:var(--bg);padding:1px 5px;border-radius:5px}
 .file-name{font-size:.82rem;color:var(--muted);overflow-wrap:anywhere}
+/* 清楚的練習工作台層次 */
+body{background:radial-gradient(ellipse at 50% -18%,color-mix(in srgb,var(--accent-soft) 78%,transparent),transparent 55%),var(--bg)}
+main{max-width:760px;gap:16px}
+header{position:relative;padding:8px 4px 4px}
+header>div{padding-top:10px}
+header::before{content:"VOCAL  /  PITCH ROOM";position:absolute;top:0;left:4px;color:var(--accent);font:500 .68rem var(--mono);letter-spacing:.14em}
+h1{font-size:1.9rem;letter-spacing:.04em}
+header p{font-size:.92rem;margin-top:5px}
+.panel{border-color:color-mix(in srgb,var(--line) 82%,var(--accent));border-radius:18px;padding:18px;gap:14px;box-shadow:0 5px 18px rgba(38,24,48,.045)}
+.panel h2{font-size:1.05rem;letter-spacing:.015em}
+.panel[aria-label="即時音高"]{padding:20px;background:linear-gradient(145deg,var(--panel),color-mix(in srgb,var(--accent-soft) 24%,var(--panel)));}
+.panel[aria-label="歌曲"]{background:linear-gradient(145deg,var(--panel),color-mix(in srgb,var(--bg) 36%,var(--panel)))}
+select,input[type=number],input[type=text],textarea{border-radius:11px;background:color-mix(in srgb,var(--panel) 88%,var(--bg));border-color:var(--line)}
+button{border-radius:11px;transition:transform .14s ease,box-shadow .14s ease,background .14s ease}
+button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(44,25,55,.1)}
+button.primary{box-shadow:0 5px 14px color-mix(in srgb,var(--accent) 22%,transparent)}
+button.big{min-height:54px}
+.canvas-wrap{border-radius:14px;background:color-mix(in srgb,var(--panel) 94%,var(--bg))}
+.piano-scroll{border:1px solid var(--line);border-radius:14px;padding:8px 8px 5px;background:color-mix(in srgb,var(--bg) 54%,var(--panel))}
+.piano{height:138px}
+.wk{height:130px;border-radius:0 0 9px 9px}
+.transport{background:color-mix(in srgb,var(--accent-soft) 36%,var(--panel));border-color:color-mix(in srgb,var(--accent) 34%,var(--line));border-radius:14px;padding:14px}
+.transport-head{font-size:.95rem}
+.transport input[type=range]{min-height:24px}
+.phrase{border:1px solid var(--line);border-radius:12px;padding:9px}
+.original-panel audio{border-radius:14px}
+@media(max-width:560px){
+  main{gap:12px}
+  .panel{padding:14px;border-radius:15px;gap:12px}
+  .panel[aria-label="即時音高"]{padding:15px}
+  h1{font-size:1.65rem}
+  .now .note{font-size:2.1rem}
+  .legend{gap:8px;font-size:.73rem}
+  .row:has(#sing){display:grid;grid-template-columns:1fr 1fr}
+  #sing,#listen,#stop{min-width:0;width:100%;font-size:.94rem}
+  #stop{grid-column:1/-1}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
