@@ -147,6 +147,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700}
       <button id="playOriginal" type="button" disabled>播放原唱</button>
     </div>
     <div id="originalPanel" class="row" hidden>
+      <audio id="originalAudio" controls preload="metadata" playsinline style="width:100%;min-width:220px"></audio>
       <span id="originalTime" class="hint">0:00 / 0:00</span>
       <input id="originalSeek" type="range" min="0" max="100" value="0" step="0.1" aria-label="原唱播放進度" style="flex:1;min-width:120px">
       <button id="originalPause" type="button">暫停</button>
@@ -482,7 +483,7 @@ async function loadOriginal(){
   originalBuf=null;
   if(!S.song||!S.song.original){$('originalName').textContent='還沒有原唱';$('analyzeOriginal').disabled=true;$('playOriginal').disabled=true;$('playMelody').disabled=true;return}
   $('originalName').textContent=S.song.originalName||'已選原唱';
-  try{const ab=await S.song.original.arrayBuffer();originalBuf=await Tone.getContext().decodeAudioData(ab);$('analyzeOriginal').disabled=false;$('playOriginal').disabled=false;$('originalPanel').hidden=false;originalStartOffset=0;updateOriginalPanel();$('playMelody').disabled=!(S.song.melody&&S.song.melody.length)}
+  try{const ab=await S.song.original.arrayBuffer();originalBuf=await Tone.getContext().decodeAudioData(ab);const audioUrl=URL.createObjectURL(S.song.original);$('originalAudio').src=audioUrl;$('originalAudio').playbackRate=Math.pow(2,(S.song.shift||0)/12);$('originalAudio').preservesPitch=false;$('analyzeOriginal').disabled=false;$('playOriginal').disabled=false;$('originalPanel').hidden=false;originalStartOffset=0;updateOriginalPanel();$('playMelody').disabled=!(S.song.melody&&S.song.melody.length)}
   catch(e){$('originalName').textContent='原唱讀不出來，請重新選檔';$('analyzeOriginal').disabled=true;$('playOriginal').disabled=true;$('playMelody').disabled=true}
 }
 function stopOriginal(preserve=true){if(preserve&&originalPlayer&&originalBuf)originalStartOffset=Math.min(originalBuf.duration,originalStartOffset+Math.max(0,Tone.now()-originalStartedAt));clearInterval(originalTimer);originalTimer=0;try{if(originalPlayer){originalPlayer.stop();originalPlayer.dispose()}}catch(e){}try{if(originalShifter)originalShifter.dispose()}catch(e){}originalPlayer=null;originalShifter=null;if(originalBuf){$('playOriginal').textContent='播放原唱';updateOriginalPanel()}}
@@ -720,6 +721,7 @@ function fillKeys(sel){sel.innerHTML=KEYZH.map((k,i)=>`<option value="${i}">${k}
 function renderSongSel(){$('songSel').innerHTML=S.songs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');if(S.song)$('songSel').value=S.song.id}
 function renderSong(){
   const s=S.song;$('keySel').value=s.key;$('shiftOut').textContent=(s.shift>0?'+':'')+s.shift;
+  if($('originalAudio').src){$('originalAudio').playbackRate=Math.pow(2,(s.shift||0)/12);$('originalAudio').preservesPitch=false}
   const k=curKey();$('curKey').textContent=`${KEYZH[k]}大調`+(s.shift?`（原調${s.shift>0?'升':'降'}${Math.abs(s.shift)}個半音）`:'（原調）');
   $('aT').value=s.a||0;$('bT').value=s.b??'';$('loop').checked=!!s.loop;
   $('scoreText').value=s.score||'';$('bpm').value=s.bpm||70;renderPhrases();
@@ -750,9 +752,11 @@ $('backingFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;S.son
 $('pickOriginal').onclick=()=>$('originalFile').click();
 $('originalFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;S.song.original=f;S.song.originalName=f.name;delete S.song.melody;await dbPut('songs',S.song);await loadOriginal();drawLive();toast('原唱已存在這支手機，下次不用再選')};
 $('analyzeOriginal').onclick=extractOriginalMelody;
-$('playOriginal').onclick=playOriginal;
-$('originalPause').onclick=()=>stopOriginal(true);
-$('originalSeek').oninput=e=>{stopOriginal(false);originalStartOffset=+e.target.value||0;updateOriginalPanel()};
+$('playOriginal').onclick=()=>{const a=$('originalAudio');if(a.paused)a.play().catch(()=>toast('請點播放器播放，並確認裝置音量'));else a.pause()};
+$('originalAudio').ontimeupdate=()=>{const a=$('originalAudio');if(!Number.isFinite(a.duration))return;$('originalSeek').max=a.duration;$('originalSeek').value=a.currentTime;$('originalTime').textContent=`${clockText(a.currentTime)} / ${clockText(a.duration)}`;$('playOriginal').textContent=a.paused?'播放原唱':'暫停原唱'};
+$('originalAudio').onended=()=>{$('playOriginal').textContent='播放原唱'};
+$('originalPause').onclick=()=>{$('originalAudio').pause();stopOriginal(true)};
+$('originalSeek').oninput=e=>{const a=$('originalAudio');a.currentTime=+e.target.value||0;stopOriginal(false);originalStartOffset=+e.target.value||0;updateOriginalPanel()};
 $('rUp').onclick=()=>{if(S.hi<88){S.lo+=2;S.hi+=2;buildPiano();drawLive()}};
 $('rDown').onclick=()=>{if(S.lo>36){S.lo-=2;S.hi-=2;buildPiano();drawLive()}};
 $('clearTarget').onclick=()=>{S.target=null;drawLive()};
@@ -790,4 +794,5 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{draw
 </script>
 </body>
 </html>
+
 
