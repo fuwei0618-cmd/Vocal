@@ -152,6 +152,8 @@ details.fold>.cgrid{padding:8px 8px 0}
 .site-wall{position:absolute;left:0;right:0;top:0;padding:4px;text-align:center;font-size:12px;color:var(--muted);background:var(--surface);border-bottom:3px solid var(--ink)}
 .site-aud{position:absolute;left:0;right:0;bottom:0;padding:6px;text-align:center;font-size:12px;letter-spacing:.3em;color:var(--accent);background:var(--accent-soft)}
 .vs{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 8px 5px;min-width:72px;border-radius:12px;border:2px solid var(--line);background:var(--surface);font-size:12px;line-height:1.2}
+.vs{touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.vs.dragging{z-index:5;box-shadow:0 8px 20px rgba(0,0,0,.25);cursor:grabbing}
 .vs svg{width:30px;height:30px;fill:none;stroke:var(--ink);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .vs small{font-size:11px;color:var(--muted)}
 .vs.me{border-radius:50%;width:76px;height:76px;justify-content:center;background:var(--accent-soft);border-color:var(--accent)}
@@ -553,8 +555,9 @@ function vSite(){
   const all=sorted('checks','order');
   const of=s=>all.filter(c=>(ONSITE.includes(c.group)||c.group==='其他')&&s.kw.some(k=>(c.text||'').includes(k))&&(ONSITE.includes(c.group)||s.k==='tip'||s.k==='chair'));
   const sel=VSPOTS.find(s=>s.k===siteSel)||VSPOTS[1];
-  let h=`<p class="small muted" style="margin:0 0 10px">從上面往下看的擺位，觀眾在下面。點一樣東西，看到場要檢查什麼。位置是我先照你的清單擺的，跟你實際不一樣就告訴我。</p>`;
-  h+=`<div class="site"><div class="site-wall">背後（牆／店面）</div><div class="site-aud">觀眾</div>${VSPOTS.map(s=>{const l=of(s),d=l.filter(c=>checked[c.id]).length;return `<button class="vs ${s.k===sel.k?'on':''} ${l.length&&d===l.length?'ok':''} ${s.k==='me'?'me':''}" style="left:${s.x}%;top:${s.y}%" data-vspot="${s.k}"><svg viewBox="0 0 48 48" aria-hidden="true">${VI[s.ic]}</svg><b>${s.n}</b>${l.length?`<small class="num">${d}/${l.length}</small>`:''}</button>`}).join('')}</div>`;
+  const pos=S.meta.site||{};
+  let h=`<div class="packbar"><p class="small muted" style="margin:0">從上面往下看的擺位，觀眾在下面。按住拖曳可以移動位置，點一下看到場要檢查什麼。</p>${Object.keys(pos).length?'<button class="btn sm" data-act="site-reset" data-confirm="再按一次回到預設">回到預設位置</button>':''}</div>`;
+  h+=`<div class="site"><div class="site-wall">背後（牆／店面）</div><div class="site-aud">觀眾</div>${VSPOTS.map(s=>{const l=of(s),d=l.filter(c=>checked[c.id]).length;return `<button class="vs ${s.k===sel.k?'on':''} ${l.length&&d===l.length?'ok':''} ${s.k==='me'?'me':''}" style="left:${(pos[s.k]||s).x}%;top:${(pos[s.k]||s).y}%" data-vspot="${s.k}"><svg viewBox="0 0 48 48" aria-hidden="true">${VI[s.ic]}</svg><b>${s.n}</b>${l.length?`<small class="num">${d}/${l.length}</small>`:''}</button>`}).join('')}</div>`;
   const l=of(sel);
   h+=`<div class="bag packpanel" style="margin-top:10px"><div class="baghead"><b>${esc(sel.n)}</b>${l.length?`<span class="pcnt num">${l.filter(c=>checked[c.id]).length}/${l.length}</span>`:''}</div>${l.length?`<div class="cols">${l.map(c=>checkRow(c,checked,rain)).join('')}</div>`:'<div class="small muted" style="padding:10px 12px">這裡沒有要檢查的項目。</div>'}</div>`;
   return h;
@@ -765,7 +768,7 @@ function songSheet(id){
 /* ---------- 設備與清單 ---------- */
 function vGear(){
   let h=`<div class="seg" style="margin-bottom:16px">${[['list','準備清單'],['pack','打包圖'],['site','現場圖'],['stock','設備庫存']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
-  h+=`<p class="small muted" style="margin:-8px 0 12px;text-align:right">版本 10/21-6</p>`;
+  h+=`<p class="small muted" style="margin:-8px 0 12px;text-align:right">版本 10/21-7</p>`;
   if(gearSeg==='pack')return h+vPack();
   if(gearSeg==='site')return h+vSite();
   if(gearSeg==='stock'){
@@ -892,6 +895,27 @@ function enableDrag(list,onDone){
   });
 }
 
+/* ---------- drag venue items ---------- */
+document.addEventListener('pointerdown',e=>{
+  const t=e.target.closest('.vs');if(!t||e.button>0)return;
+  const site=t.closest('.site'),k=t.dataset.vspot,sx=e.clientX,sy=e.clientY;let moved=false,x=0,y=0;
+  const move=ev=>{
+    if(!moved&&Math.hypot(ev.clientX-sx,ev.clientY-sy)<8)return;
+    moved=true;ev.preventDefault();t.classList.add('dragging');
+    const r=site.getBoundingClientRect();
+    x=Math.round(Math.min(94,Math.max(6,(ev.clientX-r.left)/r.width*100))*10)/10;
+    y=Math.round(Math.min(90,Math.max(10,(ev.clientY-r.top)/r.height*100))*10)/10;
+    t.style.left=x+'%';t.style.top=y+'%';
+  };
+  const up=()=>{
+    document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);
+    if(!moved)return;
+    t.classList.remove('dragging');dragSup=Date.now();
+    put('meta','site',{...(S.meta.site||{}),[k]:{x,y}});
+  };
+  document.addEventListener('pointermove',move,{passive:false});document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);
+});
+
 /* ---------- drag items between bags ---------- */
 let dragSup=0;
 document.addEventListener('pointerdown',e=>{
@@ -914,7 +938,7 @@ document.addEventListener('pointerdown',e=>{
   };
   document.addEventListener('pointermove',move,{passive:false});document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);
 });
-document.addEventListener('click',e=>{if(Date.now()-dragSup<350&&e.target.closest('.tile2')){e.stopPropagation();e.preventDefault()}},true);
+document.addEventListener('click',e=>{if(Date.now()-dragSup<350&&e.target.closest('.tile2,.vs')){e.stopPropagation();e.preventDefault()}},true);
 
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{
@@ -943,6 +967,7 @@ document.addEventListener('click',e=>{
     case 'rain':{const n=clone(next());n.rain=!n.rain;put('meta','next',n);return}
     case 'finish':{const n=next();return recordSheet(null,{date:n.date||today(),slot:n.slot||'晚',status:'表演',venueId:n.venueId||'',partner:n.partner||'',songs:[...(n.setlist||[])]})}
     case 'reset-checks':if(!confirmTap(t))return;{const n=clone(next());n.checked={};put('meta','next',n);toast('清單已重置');return}
+    case 'site-reset':if(!confirmTap(t))return;put('meta','site',{});toast('已回到預設位置');return;
     case 'pack-edit':packEdit=!packEdit;return render();
     case 'gear-edit':gearEdit=!gearEdit;return render();
     case 'fill-bags':return fillDefaultBags();
