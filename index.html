@@ -95,9 +95,20 @@ h2{font-size:20px} h3{font-size:16px}
 .kv dt{color:var(--muted)} .kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .progress{height:8px;border-radius:999px;background:var(--sunk);overflow:hidden}
 .progress>i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .2s}
-.check{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:46px;cursor:pointer}
-.check input{width:22px;height:22px;accent-color:var(--accent);flex:none}
+.check{display:flex;align-items:center;gap:10px;padding:5px 12px;min-height:36px;cursor:pointer;font-size:14px;line-height:1.35}
+.check input{width:19px;height:19px;accent-color:var(--accent);flex:none}
 .check.done span{color:var(--muted);text-decoration:line-through}
+.cgrid{columns:2 230px;column-gap:8px}
+details.fold>.cgrid{padding:8px 8px 0}
+.cgroup{break-inside:avoid;margin-bottom:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:block}
+.bags{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;align-items:start}
+.bag{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.baghead{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.baghead b{flex:1;font-family:var(--display);font-size:16px}
+.bagicon{width:30px;height:30px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.layer+.layer{border-top:1px dashed var(--line)}
+.layer .glabel{background:var(--accent-soft);color:var(--accent)}
+.check.pk{font-size:13.5px}
 .check.rainon{background:var(--warn-bg)}
 .links{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .linkbtn{flex-direction:column;align-items:flex-start;border-radius:var(--r);text-decoration:none;color:var(--ink);padding:10px 14px;gap:0}
@@ -109,7 +120,7 @@ details.fold>summary{padding:12px 14px;font-weight:500;cursor:pointer;list-style
 details.fold>summary::after{content:"＋";color:var(--muted)}
 details.fold[open]>summary::after{content:"－"}
 details.fold>.list{border:0;border-top:1px solid var(--line);border-radius:0 0 var(--r) var(--r)}
-.glabel{padding:8px 14px 4px;font-size:12px;color:var(--muted);letter-spacing:.08em;background:var(--sunk)}
+.glabel{display:flex;justify-content:space-between;gap:8px;padding:4px 12px;font-size:12px;color:var(--muted);letter-spacing:.08em;background:var(--sunk)}
 /* setlist */
 .setlist{counter-reset:s}
 .setlist li .n{width:22px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
@@ -426,9 +437,33 @@ function vToday(){
   return h;
 }
 const DEFAULT_CHECKS={'前一晚充電':['音響','麥克風＋充電電池','監聽＋2 耳機','iPad mini＋接線 ×2','行動電源 ×3'],'出門準備':['拉車（大號＋行李袋）','腳架 ×2','支架（2 iPad、2 麥、1 手機、1 平台）','雨傘 ×2／地墊','行動電源 ×2','AG06＋2 線'],'其他':['打賞箱','QR Code 名牌','椅子'],'隨身':['錢包、耳機、鑰匙','行動電源','水','衛生紙','悠遊卡'],'當日':['宣傳','開嗓','廁所','水'],'現場・表演':['人聲靜音 Moises','Party 結束快切','升降調','左口白、右歌詞'],'現場・設備':['監聽音量（音樂／麥）','音響音量（音樂／麥）','直播（音樂／麥）'],'現場・腳架':['直播','筆記','音源','麥架','水杯托盤']};
-function loadDefaultChecks(){let j=0;Object.entries(DEFAULT_CHECKS).forEach(([g,items])=>items.forEach((t,i)=>{j++;const id='c'+String(j).padStart(2,'0');if(!S.checks[id])put('checks',id,{group:g,text:t,rain:t.startsWith('雨傘'),order:i})}));toast('已放入原本的清單')}
+function loadDefaultChecks(){let j=0;Object.entries(DEFAULT_CHECKS).forEach(([g,items])=>items.forEach((t,i)=>{j++;const id='c'+String(j).padStart(2,'0');if(!S.checks[id])put('checks',id,{group:g,text:t,rain:t.startsWith('雨傘'),order:i,bag:g==='當日'||g.startsWith('現場')?'':(DEFAULT_BAG[t]||'')})}));toast('已放入原本的清單')}
 const emptyChecks=()=>`<div class="empty"><p>這台裝置上還沒有清單。</p><button class="btn primary" data-act="load-checks">放入原本的準備清單</button></div>`;
-function checkGroups(items,groups,checked,rain,strip){return `<div class="list">${groups.map(g=>{const l=items.filter(c=>c.group===g);if(!l.length)return '';return `<div class="glabel">${esc(strip?g.replace('現場・',''):g)}</div>`+l.map(c=>checkRow(c,checked,rain)).join('')}).join('')}</div>`}
+function checkGroups(items,groups,checked,rain,strip){return `<div class="cgrid">${groups.map(g=>{const l=items.filter(c=>c.group===g);if(!l.length)return '';const d=l.filter(c=>checked[c.id]).length;return `<div class="cgroup"><div class="glabel"><span>${esc(strip?g.replace('現場・',''):g)}</span><span class="num">${d}/${l.length}</span></div>`+l.map(c=>checkRow(c,checked,rain)).join('')+'</div>'}).join('')}</div>`}
+const BAGS=[{k:'cart',n:'拉車'},{k:'tote1',n:'上層'},{k:'tote2',n:'中層'},{k:'tote3',n:'下層'},{k:'pack',n:'後背包'}];
+const BAG_NAME={cart:'拉車',tote1:'手提袋・上層',tote2:'手提袋・中層',tote3:'手提袋・下層',pack:'後背包'};
+const DEFAULT_BAG={'音響':'cart','麥克風＋充電電池':'tote2','監聽＋2 耳機':'tote2','iPad mini＋接線 ×2':'tote1','行動電源 ×3':'tote3','拉車（大號＋行李袋）':'cart','腳架 ×2':'cart','支架（2 iPad、2 麥、1 手機、1 平台）':'cart','雨傘 ×2／地墊':'cart','行動電源 ×2':'tote3','AG06＋2 線':'tote3','打賞箱':'cart','QR Code 名牌':'tote1','椅子':'cart','錢包、耳機、鑰匙':'pack','行動電源':'pack','水':'pack','衛生紙':'pack','悠遊卡':'pack'};
+function fillDefaultBags(){let n=0;Object.entries(S.checks).forEach(([id,c])=>{if(!c.bag&&c.group!=='當日'&&GROUPS.includes(c.group)&&DEFAULT_BAG[c.text]){put('checks',id,{...c,bag:DEFAULT_BAG[c.text]});n++}});toast(n?'已照預設放進包包，點項目可以改位置':'沒有可以自動放的項目')}
+const ICON={cart:'<svg viewBox="0 0 48 48" class="bagicon"><path d="M30 6v28"/><path d="M26 6h8"/><rect x="10" y="14" width="18" height="20" rx="2"/><path d="M10 22h18"/><circle cx="14" cy="39" r="3"/><circle cx="28" cy="39" r="3"/><path d="M8 34h24"/></svg>',
+tote:'<svg viewBox="0 0 48 48" class="bagicon"><path d="M17 15v-3a7 7 0 0 1 14 0v3"/><path d="M9 15h30l-3 27H12z"/><path d="M10.2 24h27.6M11.2 33h25.6"/></svg>',
+pack:'<svg viewBox="0 0 48 48" class="bagicon"><path d="M19 9V7a5 5 0 0 1 10 0v2"/><rect x="11" y="9" width="26" height="33" rx="8"/><rect x="16" y="27" width="16" height="10" rx="2"/><path d="M16 31h16"/></svg>'};
+function bagItems(list,checked,rain){return list.length?list.map(c=>`<label class="check pk ${checked[c.id]?'done':''} ${c.rain&&rain?'rainon':''}"><input type="checkbox" data-check="${esc(c.id)}" ${checked[c.id]?'checked':''}><span>${esc(c.text)}</span></label>`).join(''):'<div class="muted small" style="padding:6px 12px">（空）</div>'}
+function vPack(){
+  const n=next(),checked=n.checked||{},rain=!!n.rain;
+  const items=sorted('checks','order').filter(c=>GROUPS.includes(c.group)&&c.group!=='當日');
+  if(!items.length)return emptyChecks();
+  const by=k=>items.filter(c=>c.bag===k), cnt=l=>`<span class="num muted small">${l.filter(c=>checked[c.id]).length}/${l.length}</span>`;
+  const tote=['tote1','tote2','tote3'].map(by);
+  let h=`<p class="small muted" style="margin:0 0 10px">出門前照包包裝。勾選跟準備清單是同一份。要換位置：準備清單 → 編輯清單 → 點項目。</p>`;
+  if(rain)h+=`<div class="banner warn small" style="margin-bottom:10px">雨天：雨傘、地墊放拉車。</div>`;
+  h+=`<div class="bags">
+    <div class="bag"><div class="baghead">${ICON.cart}<b>拉車</b>${cnt(by('cart'))}</div>${bagItems(by('cart'),checked,rain)}</div>
+    <div class="bag"><div class="baghead">${ICON.tote}<b>手提袋</b>${cnt(tote.flat())}</div>${['上層','中層','下層'].map((t,i)=>`<div class="layer"><div class="glabel"><span>${t}</span>${cnt(tote[i])}</div>${bagItems(tote[i],checked,rain)}</div>`).join('')}</div>
+    <div class="bag"><div class="baghead">${ICON.pack}<b>後背包</b>${cnt(by('pack'))}</div>${bagItems(by('pack'),checked,rain)}</div></div>`;
+  const none=items.filter(c=>!BAG_NAME[c.bag]);
+  if(none.length)h+=`<section class="sec" style="margin-top:14px"><div class="sec-head"><h3>還沒放進包包（${none.length}）</h3><button class="btn sm" data-act="fill-bags">照預設放</button></div><div class="cgroup">${bagItems(none,checked,rain)}</div></section>`;
+  return h;
+}
 const LINKS=[{t:'中央氣象署',sub:'看天氣、降雨',u:'https://www.cwa.gov.tw/V8/C/'},{t:'國道路況',sub:'去台北場地前先看高速公路',u:'https://tw.live/national-highway/1/'}];
 function checkLinks(){return `<div class="links">${LINKS.map(l=>`<a class="btn linkbtn" href="${l.u}" target="_blank" rel="noopener"><b>${l.t} ↗</b><span>${l.sub}</span></a>`).join('')}</div>`}
 const checkRow=(c,checked,rain)=>`<label class="check ${checked[c.id]?'done':''} ${c.rain?'rain':''} ${c.rain&&rain?'rainon':''}"><input type="checkbox" data-check="${esc(c.id)}" ${checked[c.id]?'checked':''}><span>${esc(c.text)}</span></label>`;
@@ -630,7 +665,8 @@ function songSheet(id){
 
 /* ---------- 設備與清單 ---------- */
 function vGear(){
-  let h=`<div class="seg" style="margin-bottom:16px">${[['list','準備清單'],['stock','設備庫存']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
+  let h=`<div class="seg" style="margin-bottom:16px">${[['list','準備清單'],['pack','打包圖'],['stock','設備庫存']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
+  if(gearSeg==='pack')return h+vPack();
   if(gearSeg==='stock'){
     const gs=sorted('gear','name');
     h+=``;
@@ -673,11 +709,12 @@ function checkSheet(id,group){
   openSheet(id?'編輯清單項目':'新增清單項目',`
     <label class="f"><span>項目</span><input id="c-text" value="${esc(c.text||'')}"></label>
     <label class="f"><span>分類</span><select id="c-group">${[...GROUPS,...ONSITE].map(g=>`<option ${g===c.group?'selected':''}>${esc(g)}</option>`).join('')}</select></label>
+    <label class="f"><span>放在哪裡（打包圖）</span><select id="c-bag"><option value="">不用打包</option>${Object.entries(BAG_NAME).map(([k,v])=>`<option value="${k}" ${c.bag===k?'selected':''}>${v}</option>`).join('')}</select></label>
     <label class="check" style="padding:0"><input type="checkbox" id="c-rain" ${c.rain?'checked':''}><span style="text-decoration:none;color:var(--ink)">只在雨天模式出現</span></label>`,
   ()=>{const text=$('#c-text').value.trim();if(!text){toast('請填項目');return false}
     const grp=$('#c-group').value;
     const order=id&&c.group===grp?c.order:Math.max(0,...Object.values(S.checks).filter(x=>x.group===grp).map(x=>x.order||0))+1;
-    put('checks',id||uid('c'),{...c,text,group:grp,rain:$('#c-rain').checked,order});return true},
+    put('checks',id||uid('c'),{...c,text,group:grp,rain:$('#c-rain').checked,order,bag:$('#c-bag').value});return true},
   id?{onDelete:()=>del('checks',id)}:{});
 }
 
@@ -778,6 +815,7 @@ document.addEventListener('click',e=>{
     case 'finish':{const n=next();return recordSheet(null,{date:n.date||today(),slot:n.slot||'晚',status:'表演',venueId:n.venueId||'',partner:n.partner||'',songs:[...(n.setlist||[])]})}
     case 'reset-checks':if(!confirmTap(t))return;{const n=clone(next());n.checked={};put('meta','next',n);toast('清單已重置');return}
     case 'gear-edit':gearEdit=!gearEdit;return render();
+    case 'fill-bags':return fillDefaultBags();
     case 'load-checks':return loadDefaultChecks();
     case 'new-record':return recordSheet(null);
     case 'new-venue':return venueSheet(null);
