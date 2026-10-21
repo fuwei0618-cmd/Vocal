@@ -477,7 +477,13 @@ function buildPiano(){
 
 /* ---------- 音訊 ---------- */
 let audioOn=false;
-async function ensureAudio(){if(!audioOn){await Tone.start();audioOn=true}}
+async function ensureAudio(){
+  const ctx=Tone.getContext().rawContext;
+  if(!audioOn||ctx.state!=='running')await Tone.start();
+  if(ctx.state==='suspended')await ctx.resume();
+  audioOn=ctx.state==='running';
+  if(!audioOn)throw new Error('AudioContext is not running');
+}
 let mic=null,micSrc=null,analyser=null,recorder=null,chunks=[];
 async function openMic(){
   if(mic)return true;
@@ -702,11 +708,12 @@ function renderPhrases(){
     scoreChips.push(chips);row.appendChild(b);row.appendChild(toks);box.appendChild(row);
   });
 }
-let scoreTimers=[],scoreOscillators=[],scoreOriginalPlayer=null,scoreOriginalShifter=null,scoreClockTimer=0;
-let transport={events:[],duration:0,mode:'',label:'',offset:0,base:0,withOriginal:false,originalOffset:0,paused:false};
+let scoreTimers=[],scoreOscillators=[],scoreMelodyPlayer=null,scoreOriginalPlayer=null,scoreOriginalShifter=null,scoreClockTimer=0;
+let transport={events:[],duration:0,mode:'',label:'',offset:0,base:0,withOriginal:false,originalOffset:0,melodyBuffer:null,paused:false};
 function clearTransportAudio(){
   scoreTimers.forEach(clearTimeout);scoreTimers=[];
   scoreOscillators.forEach(group=>group.forEach(o=>{try{o.stop()}catch(e){}}));scoreOscillators=[];
+  try{if(scoreMelodyPlayer){scoreMelodyPlayer.stop();scoreMelodyPlayer.dispose()}}catch(e){}scoreMelodyPlayer=null;
   try{if(scoreOriginalPlayer){scoreOriginalPlayer.stop();scoreOriginalPlayer.dispose()}}catch(e){}scoreOriginalPlayer=null;
   try{if(scoreOriginalShifter)scoreOriginalShifter.dispose()}catch(e){}scoreOriginalShifter=null;
   clearInterval(scoreClockTimer);scoreClockTimer=0;
@@ -725,9 +732,10 @@ async function runTransport(offset=0){
   transport.events.forEach(e=>{
     const end=e.start+e.duration;if(end<=transport.offset)return;
     const from=Math.max(e.start,transport.offset),at=startAt+from-transport.offset,dur=Math.min(end,transport.duration)-from;
-    if(e.m!==null&&dur>0)scoreOscillators.push(playNote(e.m,Math.max(.06,dur),at));
+    if(transport.mode==='score'&&e.m!==null&&dur>0)scoreOscillators.push(playNote(e.m,Math.max(.06,dur),at));
     if(e.chip)scoreTimers.push(setTimeout(()=>{document.querySelectorAll('.tok.now').forEach(c=>c.classList.remove('now'));e.chip.classList.add('now');if(e.m!==null){S.target=e.m;if(e.m<S.lo||e.m>S.hi){S.lo=e.m-8;S.hi=e.m+9;buildPiano()}if(!S.mode)drawLive()}},Math.max(0,(from-transport.offset)*1000+100)));
   });
+  if(transport.mode==='melody'&&transport.melodyBuffer){scoreMelodyPlayer=new Tone.Player(transport.melodyBuffer).toDestination();scoreMelodyPlayer.start(Tone.now()+.15,transport.offset,Math.max(.05,transport.duration-transport.offset))}
   if(transport.withOriginal&&originalBuf){scoreOriginalPlayer=new Tone.Player(originalBuf);const sh=S.song.shift||0;if(sh){scoreOriginalShifter=new Tone.PitchShift({pitch:sh,windowSize:.09});scoreOriginalPlayer.connect(scoreOriginalShifter);scoreOriginalShifter.toDestination()}else scoreOriginalPlayer.toDestination();scoreOriginalPlayer.start(Tone.now()+.15,transport.originalOffset+transport.offset,Math.max(.05,transport.duration-transport.offset))}
   scoreClockTimer=setInterval(()=>{updateTransportClock();if(!transport.paused&&transportTime()>=transport.duration-.03)finishTransport()},80);updateTransportClock();
 }
@@ -749,13 +757,23 @@ function melodySegments(){
   }
   return out;
 }
+function melodyAudioBuffer(events,duration){
+  const sr=22050,raw=Tone.getContext().rawContext,count=Math.ceil(sr*(duration+.08)),buffer=raw.createBuffer(1,count,sr),samples=buffer.getChannelData(0),partials=[[1,1],[2,.42],[3,.18],[4,.07]];
+  for(const e of events){const begin=Math.max(0,Math.floor(e.start*sr)),end=Math.min(count,Math.ceil((e.start+e.duration+.045)*sr)),f=440*Math.pow(2,(e.m-69)/12);
+    for(let i=begin;i<end;i++){const t=i/sr-e.start,elapsed=t-e.duration;if(t<0)continue;const env=t<.012?t/.012:(elapsed>0?Math.exp(-elapsed*55):Math.exp(-t*.75));let v=0;for(const [harm,amp] of partials)v+=Math.sin(2*Math.PI*f*harm*t)*amp;samples[i]+=v*env*.32}
+  }
+  let peak=0;for(const v of samples)peak=Math.max(peak,Math.abs(v));if(peak>.001){const scale=Math.min(1,.72/peak);for(let i=0;i<count;i++)samples[i]*=scale}
+  return buffer;
+}
 async function playOriginalMelody(){
   const notes=melodySegments();if(!notes.length){toast('先選原唱檔並抓取旋律');return}
   if($('melodyWithOriginal').checked){$('originalAudio').pause();stopOriginal(false)}
   const a=Math.max(0,+$('aT').value||0),last=notes[notes.length-1].end,b=+$('bT').value>a?+$('bT').value:last,shift=S.song.shift||0,events=[];
   notes.forEach(n=>{const from=Math.max(n.start,a),to=Math.min(n.end,b);if(to>from)events.push({m:n.m+shift,start:from-a,duration:to-from})});
   if(!events.length){toast('選取的練習區間沒有抓到旋律');return}
-  stopScore();transport={events,duration:Math.max(.1,b-a),mode:'melody',label:'原唱旋律・鋼琴',offset:0,base:0,withOriginal:$('melodyWithOriginal').checked,originalOffset:a,paused:false};
+  const duration=Math.max(.1,b-a);let melodyBuffer;
+  try{await ensureAudio();melodyBuffer=melodyAudioBuffer(events,duration)}catch(e){toast('鋼琴音源準備失敗，請再按一次');return}
+  stopScore();transport={events,duration,mode:'melody',label:'原唱旋律・鋼琴',offset:0,base:0,withOriginal:$('melodyWithOriginal').checked,originalOffset:a,melodyBuffer,paused:false};
   try{await runTransport(0)}catch(e){stopScore();toast('鋼琴播放失敗，請再按一次')}
 }
 async function playLines(idxs){
