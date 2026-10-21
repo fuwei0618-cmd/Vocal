@@ -482,7 +482,7 @@ async function loadOriginal(){
   originalBuf=null;
   if(!S.song||!S.song.original){$('originalName').textContent='還沒有原唱';$('analyzeOriginal').disabled=true;$('playOriginal').disabled=true;$('playMelody').disabled=true;return}
   $('originalName').textContent=S.song.originalName||'已選原唱';
-  try{const ab=await S.song.original.arrayBuffer();await ensureAudio();originalBuf=await Tone.getContext().decodeAudioData(ab);$('analyzeOriginal').disabled=false;$('playOriginal').disabled=false;$('originalPanel').hidden=false;originalStartOffset=0;updateOriginalPanel();$('playMelody').disabled=!(S.song.melody&&S.song.melody.length)}
+  try{const ab=await S.song.original.arrayBuffer();originalBuf=await Tone.getContext().decodeAudioData(ab);$('analyzeOriginal').disabled=false;$('playOriginal').disabled=false;$('originalPanel').hidden=false;originalStartOffset=0;updateOriginalPanel();$('playMelody').disabled=!(S.song.melody&&S.song.melody.length)}
   catch(e){$('originalName').textContent='原唱讀不出來，請重新選檔';$('analyzeOriginal').disabled=true;$('playOriginal').disabled=true;$('playMelody').disabled=true}
 }
 function stopOriginal(preserve=true){if(preserve&&originalPlayer&&originalBuf)originalStartOffset=Math.min(originalBuf.duration,originalStartOffset+Math.max(0,Tone.now()-originalStartedAt));clearInterval(originalTimer);originalTimer=0;try{if(originalPlayer){originalPlayer.stop();originalPlayer.dispose()}}catch(e){}try{if(originalShifter)originalShifter.dispose()}catch(e){}originalPlayer=null;originalShifter=null;if(originalBuf){$('playOriginal').textContent='播放原唱';updateOriginalPanel()}}
@@ -790,3 +790,4 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{draw
 </script>
 </body>
 </html>
+
