@@ -142,6 +142,10 @@ details.fold>.cgrid{padding:8px 8px 0}
 .tile2.edit{border-style:dashed;border-color:var(--accent);background:var(--surface)}
 .tile2 .pen{border:0;width:auto;height:auto;color:var(--accent);font-size:12px}
 .tile2.add{border-style:dashed;color:var(--accent);background:transparent;font-weight:500}
+.tile2.edit{touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.tile2.dragsrc{opacity:.35}
+.tile2.ghost{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-60%) rotate(-3deg);box-shadow:0 8px 20px rgba(0,0,0,.25);background:var(--surface)}
+.dropover{outline:3px solid var(--coin);outline-offset:3px;background:var(--coin-bg)!important}
 .packbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 .tile2.rainon{border-color:var(--warn);background:var(--warn-bg)}
 .site{position:relative;aspect-ratio:16/10;width:100%;border-radius:16px;border:1px solid var(--line);overflow:hidden;background:repeating-linear-gradient(0deg,transparent 0 47px,var(--line) 47px 48px),repeating-linear-gradient(90deg,transparent 0 47px,var(--line) 47px 48px),var(--sunk)}
@@ -508,16 +512,16 @@ function vPack(){
   const by=k=>items.filter(c=>bagOf(c)===k);
   const cnt=l=>`<span class="pcnt num">${l.filter(c=>checked[c.id]).length}/${l.length}</span>`;
   const cart=by('cart'),t1=by('tote1'),t2=by('tote2'),pk=by('pack');
-  let h=`<div class="packbar"><p class="small muted" style="margin:0">${packEdit?'整理模式：點東西可以改名字、換包包、換分類或刪除；每個包包最後有「＋ 新增」。':'東西都畫在包包裡，點一下就算裝好了。勾選跟準備清單是同一份。'}</p><button class="btn sm ${packEdit?'primary':''}" data-act="pack-edit">${packEdit?'完成整理':'整理物品'}</button></div>`;
+  let h=`<div class="packbar"><p class="small muted" style="margin:0">${packEdit?'整理模式：按住東西拖到別的包包就能換位置；點一下可以改名字、換分類或刪除；每個包包最後有「＋ 新增」。':'東西都畫在包包裡，點一下就算裝好了。勾選跟準備清單是同一份。'}</p><button class="btn sm ${packEdit?'primary':''}" data-act="pack-edit">${packEdit?'完成整理':'整理物品'}</button></div>`;
   if(rain)h+=`<div class="banner warn small" style="margin-bottom:10px">雨天：雨傘、地墊放拉車。</div>`;
   h+=`<div class="pscene">
-    <div class="pwrap"><div class="cart-handle"></div><div class="pbody cart"><div class="ptag"><b>拉車</b>${cnt(cart)}</div>${tiles(cart,checked,rain,'cart')}</div><div class="wheels"><i></i><i></i></div></div>
-    <div class="pwrap"><svg class="tote-handles" viewBox="0 0 100 34" preserveAspectRatio="none" aria-hidden="true"><path d="M22 34C22 2 44 2 44 34M56 34C56 2 78 2 78 34"/></svg><div class="pbody tote"><div class="ptag"><b>手提袋</b>${cnt([...t1,...t2])}</div><div class="tlayer"><div class="lname">上層 ${cnt(t1)}</div>${tiles(t1,checked,rain,'tote1')}</div><div class="tlayer"><div class="lname">下層 ${cnt(t2)}</div>${tiles(t2,checked,rain,'tote2')}</div></div></div>
-    <div class="pwrap"><div class="pack-loop"></div><div class="pbody pack"><div class="ptag"><b>後背包</b>${cnt(pk)}</div>${tiles(pk,checked,rain,'pack')}</div></div>
+    <div class="pwrap"><div class="cart-handle"></div><div class="pbody cart" data-drop="cart"><div class="ptag"><b>拉車</b>${cnt(cart)}</div>${tiles(cart,checked,rain,'cart')}</div><div class="wheels"><i></i><i></i></div></div>
+    <div class="pwrap"><svg class="tote-handles" viewBox="0 0 100 34" preserveAspectRatio="none" aria-hidden="true"><path d="M22 34C22 2 44 2 44 34M56 34C56 2 78 2 78 34"/></svg><div class="pbody tote"><div class="ptag"><b>手提袋</b>${cnt([...t1,...t2])}</div><div class="tlayer" data-drop="tote1"><div class="lname">上層 ${cnt(t1)}</div>${tiles(t1,checked,rain,'tote1')}</div><div class="tlayer" data-drop="tote2"><div class="lname">下層 ${cnt(t2)}</div>${tiles(t2,checked,rain,'tote2')}</div></div></div>
+    <div class="pwrap"><div class="pack-loop"></div><div class="pbody pack" data-drop="pack"><div class="ptag"><b>後背包</b>${cnt(pk)}</div>${tiles(pk,checked,rain,'pack')}</div></div>
   </div>`;
   const none=items.filter(c=>!BAG_NAME[bagOf(c)]);
-  if(none.length)h+=`<section class="sec" style="margin-top:14px"><div class="sec-head"><h3>還沒放進包包（${none.length}）</h3><button class="btn sm" data-act="fill-bags">照預設放</button></div>${tiles(none,checked,rain,'')}</section>`;
-  else if(packEdit)h+=`<section class="sec" style="margin-top:14px"><h3>不用打包的</h3>${tiles([],checked,rain,'')}</section>`;
+  if(none.length)h+=`<section class="sec" style="margin-top:14px" data-drop=""><div class="sec-head"><h3>還沒放進包包（${none.length}）</h3><button class="btn sm" data-act="fill-bags">照預設放</button></div>${tiles(none,checked,rain,'')}</section>`;
+  else if(packEdit)h+=`<section class="sec" style="margin-top:14px" data-drop=""><h3>不用打包的</h3>${tiles([],checked,rain,'')}</section>`;
   return h;
 }
 const VI={
@@ -761,7 +765,7 @@ function songSheet(id){
 /* ---------- 設備與清單 ---------- */
 function vGear(){
   let h=`<div class="seg" style="margin-bottom:16px">${[['list','準備清單'],['pack','打包圖'],['site','現場圖'],['stock','設備庫存']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
-  h+=`<p class="small muted" style="margin:-8px 0 12px;text-align:right">版本 10/21-5</p>`;
+  h+=`<p class="small muted" style="margin:-8px 0 12px;text-align:right">版本 10/21-6</p>`;
   if(gearSeg==='pack')return h+vPack();
   if(gearSeg==='site')return h+vSite();
   if(gearSeg==='stock'){
@@ -887,6 +891,30 @@ function enableDrag(list,onDone){
     h.addEventListener('pointermove',move);h.addEventListener('pointerup',up);h.addEventListener('pointercancel',up);
   });
 }
+
+/* ---------- drag items between bags ---------- */
+let dragSup=0;
+document.addEventListener('pointerdown',e=>{
+  const t=e.target.closest('.tile2.edit');if(!t||e.button>0)return;
+  const id=t.dataset.editCheck,sx=e.clientX,sy=e.clientY;let ghost=null,over=null;
+  const move=ev=>{
+    if(!ghost){if(Math.hypot(ev.clientX-sx,ev.clientY-sy)<8)return;
+      ghost=t.cloneNode(true);ghost.classList.add('ghost');document.body.appendChild(ghost);t.classList.add('dragsrc');}
+    ev.preventDefault();
+    ghost.style.left=ev.clientX+'px';ghost.style.top=ev.clientY+'px';
+    ghost.hidden=true;const el=document.elementFromPoint(ev.clientX,ev.clientY);ghost.hidden=false;
+    const d=el&&el.closest('[data-drop]');
+    if(d!==over){over&&over.classList.remove('dropover');over=d;over&&over.classList.add('dropover')}
+  };
+  const up=()=>{
+    document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);
+    if(!ghost)return;
+    ghost.remove();t.classList.remove('dragsrc');over&&over.classList.remove('dropover');dragSup=Date.now();
+    if(over&&S.checks[id]){const bag=over.dataset.drop;const c=S.checks[id];if(bagOf(c)!==bag){put('checks',id,{...c,bag});toast('已移到'+(BAG_NAME[bag]||'不用打包'))}}
+  };
+  document.addEventListener('pointermove',move,{passive:false});document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);
+});
+document.addEventListener('click',e=>{if(Date.now()-dragSup<350&&e.target.closest('.tile2')){e.stopPropagation();e.preventDefault()}},true);
 
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{
