@@ -748,6 +748,9 @@ function melodySegments(){
   // split a sustained sung note into several short synthesized notes.
   const raw=data.map(v=>v?Math.round(v):0),stable=raw.slice();
   for(let i=1;i<raw.length-1;i++)if(raw[i-1]&&raw[i-1]===raw[i+1]&&raw[i]!==raw[i-1])stable[i]=raw[i-1];
+  // Brief gaps often come from consonants or the pitch detector losing the
+  // voice for one frame. Bridge up to 100 ms to avoid an audible chopped note.
+  for(let i=1;i<stable.length-1;){if(stable[i]){i++;continue}let j=i;while(j<stable.length&&!stable[j])j++;const gap=j-i,left=stable[i-1],right=stable[j];if(left&&right&&gap<=2){for(let k=i;k<j;k++)stable[k]=k-i<gap/2?left:right}i=j}
   const out=[];let note=0,start=0,sum=0,count=0;
   const push=end=>{if(note&&end>start)out.push({m:Math.round(sum/count),start:start*dt,end:end*dt})};
   for(let i=0;i<=stable.length;i++){
@@ -758,11 +761,16 @@ function melodySegments(){
   return out;
 }
 function melodyAudioBuffer(events,duration){
-  const sr=22050,raw=Tone.getContext().rawContext,count=Math.ceil(sr*(duration+.08)),buffer=raw.createBuffer(1,count,sr),samples=buffer.getChannelData(0),partials=[[1,1],[2,.42],[3,.18],[4,.07]];
-  for(const e of events){const begin=Math.max(0,Math.floor(e.start*sr)),end=Math.min(count,Math.ceil((e.start+e.duration+.045)*sr)),f=440*Math.pow(2,(e.m-69)/12);
-    for(let i=begin;i<end;i++){const t=i/sr-e.start,elapsed=t-e.duration;if(t<0)continue;const env=t<.012?t/.012:(elapsed>0?Math.exp(-elapsed*55):Math.exp(-t*.75));let v=0;for(const [harm,amp] of partials)v+=Math.sin(2*Math.PI*f*harm*t)*amp;samples[i]+=v*env*.32}
+  const sr=22050,raw=Tone.getContext().rawContext,count=Math.ceil(sr*(duration+.16)),buffer=raw.createBuffer(1,count,sr),samples=buffer.getChannelData(0);
+  // A restrained, warm additive piano voice. Upper partials decay faster so
+  // the tone has a clear pitch without the buzzy, organ-like edge.
+  const partials=[[1,.72,2.8],[2,.24,1.05],[3,.085,.52],[4,.025,.28],[5,.008,.16]],attack=.009,release=.075;
+  for(const e of events){const begin=Math.max(0,Math.floor(e.start*sr)),end=Math.min(count,Math.ceil((e.start+e.duration+release)*sr)),f=440*Math.pow(2,(e.m-69)/12);
+    for(let i=begin;i<end;i++){const t=i/sr-e.start;if(t<0)continue;const held=Math.min(t,e.duration),fadeIn=Math.min(1,held/attack),releaseEnv=t>e.duration?Math.exp(-(t-e.duration)*7):1;let v=0;
+      for(const [harm,amp,tau] of partials){if(f*harm>=sr*.48)continue;const decay=Math.exp(-held/tau);v+=Math.sin(2*Math.PI*f*harm*t)*amp*decay}
+      samples[i]+=v*fadeIn*releaseEnv*.30}
   }
-  let peak=0;for(const v of samples)peak=Math.max(peak,Math.abs(v));if(peak>.001){const scale=Math.min(1,.72/peak);for(let i=0;i<count;i++)samples[i]*=scale}
+  let peak=0;for(const v of samples)peak=Math.max(peak,Math.abs(v));if(peak>.001){const scale=Math.min(1,.55/peak);for(let i=0;i<count;i++)samples[i]*=scale}
   return buffer;
 }
 async function playOriginalMelody(){
