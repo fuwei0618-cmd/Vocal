@@ -220,7 +220,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700}
   <section class="panel" aria-label="照譜彈">
     <div class="row" style="justify-content:space-between">
       <h2>照譜彈</h2>
-      <span class="hint">抓到原唱旋律後，按「鋼琴播放原唱旋律」；速度可用 BPM 調慢，練習段落與重複設定也會套用</span>
+      <span class="hint">抓到原唱旋律後按「鋼琴播放原唱旋律」；會照原唱時間與節奏播放。BPM 只調整手動輸入的簡譜速度，練習段落與重複設定也會套用</span>
     </div>
     <textarea id="scoreText" rows="5" placeholder="照你的譜輸入數字，一行一句" aria-label="簡譜"></textarea>
     <details class="hint"><summary>怎麼輸入</summary>
@@ -493,10 +493,10 @@ async function extractOriginalMelody(){
   if(!originalBuf)return;
   $('analyzeOriginal').disabled=true;$('analyzeOriginal').textContent='分析中…';
   try{
-    const sr=Tone.getContext().sampleRate,factor=Math.max(1,Math.round(sr/16000)),rate=sr/factor,channels=Array.from({length:originalBuf.numberOfChannels},(_,i)=>originalBuf.getChannelData(i)),frameSize=2048,rawSize=frameSize*factor,hop=Math.max(1,Math.round(sr*.2)),count=Math.ceil(originalBuf.duration/DT),melody=new Array(count).fill(0);
+    const sr=Tone.getContext().sampleRate,factor=Math.max(1,Math.round(sr/16000)),rate=sr/factor,channels=Array.from({length:originalBuf.numberOfChannels},(_,i)=>originalBuf.getChannelData(i)),frameSize=2048,rawSize=frameSize*factor,hop=Math.max(1,Math.round(sr*DT)),count=Math.ceil(originalBuf.duration/DT),melody=new Array(count).fill(0);
     for(let center=Math.floor(rawSize/2);center<originalBuf.length;center+=hop){
       const frame=new Float32Array(frameSize);for(let i=0;i<frameSize;i++){const at=center-Math.floor(rawSize/2)+i*factor;if(at>=0&&at<originalBuf.length){let v=0;for(const ch of channels)v+=ch[at]||0;frame[i]=v/channels.length}}
-      const f=yin(frame,rate),m=f>75&&f<1000?69+12*Math.log2(f/440):0,idx=Math.round(center/sr/DT);for(let j=Math.max(0,idx-2);j<Math.min(count,idx+2);j++)melody[j]=m;
+      const f=yin(frame,rate),m=f>75&&f<1000?69+12*Math.log2(f/440):0,idx=Math.round(center/sr/DT);if(idx>=0&&idx<count)melody[idx]=m;
       if(center%(hop*10)<hop)await new Promise(resolve=>setTimeout(resolve,0));
     }
     S.song.melody=melody;S.song.melodyDt=DT;await dbPut('songs',S.song);$('playMelody').disabled=false;drawLive();if(S.take)drawTake(S.take.track,S.take.dt,S.take.key,S.take.offset||0,S.take.shift||0);toast('原唱旋律已抓取，按「鋼琴播放原唱旋律」試聽');
@@ -698,12 +698,12 @@ function stopMelody(){
 }
 async function playOriginalMelody(){
   stopScore();stopMelody();const notes=melodySegments();if(!notes.length){toast('先選原唱檔並抓取旋律');return}
-  const bpm=Math.min(200,Math.max(30,+$('bpm').value||70)),speed=70/bpm,a=Math.max(0,+$('aT').value||0),last=notes[notes.length-1].end;
+  const a=Math.max(0,+$('aT').value||0),last=notes[notes.length-1].end;
   const b=+$('bT').value>a?+$('bT').value:last,shift=S.song.shift||0,events=[];
   $('playMelody').hidden=true;$('stopMelody').hidden=false;
-  notes.forEach(n=>{const from=Math.max(n.start,a),to=Math.min(n.end,b);if(to<=from)return;const at=(from-a)*speed,dur=(to-from)*speed;events.push({m:n.m+shift,start:at,duration:Math.max(.08,dur)});melodyTimers.push(setTimeout(()=>{S.target=n.m+shift;drawLive()},Math.max(0,at*1000)))});
-  const audio=$('pianoAudio');pianoWavUrl=URL.createObjectURL(melodyWav(events,Math.max(.1,(b-a)*speed)));audio.src=pianoWavUrl;try{await audio.play()}catch(e){toast('鋼琴播放被瀏覽器擋下，請再按一次播放');stopMelody();return}
-  const elapsed=Math.max(.1,(b-a)*speed);melodyTimers.push(setTimeout(()=>{if($('loop').checked){playOriginalMelody()}else stopMelody()},elapsed*1000+250));
+  notes.forEach(n=>{const from=Math.max(n.start,a),to=Math.min(n.end,b);if(to<=from)return;const at=from-a,dur=to-from;events.push({m:n.m+shift,start:at,duration:Math.max(.08,dur)});melodyTimers.push(setTimeout(()=>{S.target=n.m+shift;drawLive()},Math.max(0,at*1000)))});
+  const audio=$('pianoAudio');pianoWavUrl=URL.createObjectURL(melodyWav(events,Math.max(.1,b-a)));audio.src=pianoWavUrl;try{await audio.play()}catch(e){toast('鋼琴播放被瀏覽器擋下，請再按一次播放');stopMelody();return}
+  const elapsed=Math.max(.1,b-a);melodyTimers.push(setTimeout(()=>{if($('loop').checked){playOriginalMelody()}else stopMelody()},elapsed*1000+250));
 }
 async function playLines(idxs){
   await ensureAudio();stopScore();stopMelody();
