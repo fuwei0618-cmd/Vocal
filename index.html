@@ -139,6 +139,10 @@ details.fold>.cgrid{padding:8px 8px 0}
 .tile2.on{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
 .tile2.on i{background:var(--ok);border-color:var(--ok)}
 .tile2.on i::after{content:"✓"}
+.tile2.edit{border-style:dashed;border-color:var(--accent);background:var(--surface)}
+.tile2 .pen{border:0;width:auto;height:auto;color:var(--accent);font-size:12px}
+.tile2.add{border-style:dashed;color:var(--accent);background:transparent;font-weight:500}
+.packbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 .tile2.rainon{border-color:var(--warn);background:var(--warn-bg)}
 .site{position:relative;aspect-ratio:16/10;width:100%;border-radius:16px;border:1px solid var(--line);overflow:hidden;background:repeating-linear-gradient(0deg,transparent 0 47px,var(--line) 47px 48px),repeating-linear-gradient(90deg,transparent 0 47px,var(--line) 47px 48px),var(--sunk)}
 .site-wall{position:absolute;left:0;right:0;top:0;padding:4px;text-align:center;font-size:12px;color:var(--muted);background:var(--surface);border-bottom:3px solid var(--ink)}
@@ -299,7 +303,7 @@ const TITLES={today:'下一場',log:'表演紀錄',songs:'歌單',gear:'設備�
 const LS='busk-app-v1';
 let S={}; COLS.forEach(c=>S[c]={});
 let db=null, mode='loading', downloads=null;
-let gearEdit=false, packSel='cart', siteSel='speaker';
+let gearEdit=false, packEdit=false, packSel='cart', siteSel='speaker';
 let tab='today', logSeg='list', gearSeg='list', songFilter='全部', songQ='', whoF='全部';
 
 const $=(s,r=document)=>r.querySelector(s);
@@ -470,7 +474,7 @@ function vToday(){
   }else h+=`<div class="empty">還沒選歌。按「排歌單」從歌單勾選。</div>`;
   h+='</section>';
   // checklist
-  h+=`<section class="sec"><div class="sec-head"><h2>出門清單</h2><span class="num muted">${done} / ${pre.length}</span></div><div class="progress"><i style="width:${pre.length?Math.round(done/pre.length*100):0}%"></i></div>`;
+  h+=`<section class="sec"><div class="sec-head"><h2>出門清單</h2><span class="num muted">${done} / ${pre.length}</span></div><div class="btns"><button class="btn sm" data-goto="pack">看打包圖</button><button class="btn sm" data-goto="site">看現場圖</button></div><div class="progress"><i style="width:${pre.length?Math.round(done/pre.length*100):0}%"></i></div>`;
   if(!checks.length)h+=emptyChecks();
   h+=checkGroups(pre,GROUPS,checked,rain);
   if(pre.length&&done===pre.length)h+=`<div class="banner info">都勾完了，可以出門！</div>`;
@@ -495,8 +499,8 @@ function migrate(){
   const m=S.meta.migr||{};
   if(!m.contacts){if(!Object.values(S.checks).some(c=>(c.text||'').includes('隱形眼鏡')))put('checks','c36',{group:'隨身',text:'隱形眼鏡',rain:false,order:5,bag:'pack'});put('meta','migr',{...m,contacts:true})}
 }
-const tileBtn=(c,checked,rain)=>`<button class="tile2 ${checked[c.id]?'on':''} ${c.rain&&rain?'rainon':''}" data-tick="${esc(c.id)}" aria-pressed="${!!checked[c.id]}"><i></i><span>${esc(c.text)}</span></button>`;
-const tiles=(l,checked,rain)=>`<div class="ptiles">${l.length?l.map(c=>tileBtn(c,checked,rain)).join(''):'<span class="small muted">（空）</span>'}</div>`;
+const tileBtn=(c,checked,rain)=>packEdit?`<button class="tile2 edit" data-edit-check="${esc(c.id)}"><span>${esc(c.text)}</span><i class="pen" aria-hidden="true">✎</i></button>`:`<button class="tile2 ${checked[c.id]?'on':''} ${c.rain&&rain?'rainon':''}" data-tick="${esc(c.id)}" aria-pressed="${!!checked[c.id]}"><i></i><span>${esc(c.text)}</span></button>`;
+const tiles=(l,checked,rain,bag)=>`<div class="ptiles">${l.length?l.map(c=>tileBtn(c,checked,rain)).join(''):(packEdit?'':'<span class="small muted">（空）</span>')}${packEdit&&bag!==undefined?`<button class="tile2 add" data-add-bag="${bag}">＋ 新增</button>`:''}</div>`;
 function vPack(){
   const n=next(),checked=n.checked||{},rain=!!n.rain;
   const items=sorted('checks','order').filter(c=>GROUPS.includes(c.group)&&c.group!=='當日');
@@ -504,16 +508,16 @@ function vPack(){
   const by=k=>items.filter(c=>bagOf(c)===k);
   const cnt=l=>`<span class="pcnt num">${l.filter(c=>checked[c.id]).length}/${l.length}</span>`;
   const cart=by('cart'),t1=by('tote1'),t2=by('tote2'),pk=by('pack');
-  let h=`<p class="small muted" style="margin:0 0 10px">東西都畫在包包裡，點一下就算裝好了。勾選跟準備清單是同一份。</p>`;
+  let h=`<div class="packbar"><p class="small muted" style="margin:0">${packEdit?'整理模式：點東西可以改名字、換包包、換分類或刪除；每個包包最後有「＋ 新增」。':'東西都畫在包包裡，點一下就算裝好了。勾選跟準備清單是同一份。'}</p><button class="btn sm ${packEdit?'primary':''}" data-act="pack-edit">${packEdit?'完成整理':'整理物品'}</button></div>`;
   if(rain)h+=`<div class="banner warn small" style="margin-bottom:10px">雨天：雨傘、地墊放拉車。</div>`;
   h+=`<div class="pscene">
-    <div class="pwrap"><div class="cart-handle"></div><div class="pbody cart"><div class="ptag"><b>拉車</b>${cnt(cart)}</div>${tiles(cart,checked,rain)}</div><div class="wheels"><i></i><i></i></div></div>
-    <div class="pwrap"><svg class="tote-handles" viewBox="0 0 100 34" preserveAspectRatio="none" aria-hidden="true"><path d="M22 34C22 2 44 2 44 34M56 34C56 2 78 2 78 34"/></svg><div class="pbody tote"><div class="ptag"><b>手提袋</b>${cnt([...t1,...t2])}</div><div class="tlayer"><div class="lname">上層 ${cnt(t1)}</div>${tiles(t1,checked,rain)}</div><div class="tlayer"><div class="lname">下層 ${cnt(t2)}</div>${tiles(t2,checked,rain)}</div></div></div>
-    <div class="pwrap"><div class="pack-loop"></div><div class="pbody pack"><div class="ptag"><b>後背包</b>${cnt(pk)}</div>${tiles(pk,checked,rain)}</div></div>
+    <div class="pwrap"><div class="cart-handle"></div><div class="pbody cart"><div class="ptag"><b>拉車</b>${cnt(cart)}</div>${tiles(cart,checked,rain,'cart')}</div><div class="wheels"><i></i><i></i></div></div>
+    <div class="pwrap"><svg class="tote-handles" viewBox="0 0 100 34" preserveAspectRatio="none" aria-hidden="true"><path d="M22 34C22 2 44 2 44 34M56 34C56 2 78 2 78 34"/></svg><div class="pbody tote"><div class="ptag"><b>手提袋</b>${cnt([...t1,...t2])}</div><div class="tlayer"><div class="lname">上層 ${cnt(t1)}</div>${tiles(t1,checked,rain,'tote1')}</div><div class="tlayer"><div class="lname">下層 ${cnt(t2)}</div>${tiles(t2,checked,rain,'tote2')}</div></div></div>
+    <div class="pwrap"><div class="pack-loop"></div><div class="pbody pack"><div class="ptag"><b>後背包</b>${cnt(pk)}</div>${tiles(pk,checked,rain,'pack')}</div></div>
   </div>`;
   const none=items.filter(c=>!BAG_NAME[bagOf(c)]);
-  if(none.length)h+=`<section class="sec" style="margin-top:14px"><div class="sec-head"><h3>還沒放進包包（${none.length}）</h3><button class="btn sm" data-act="fill-bags">照預設放</button></div>${tiles(none,checked,rain)}</section>`;
-  h+=`<p class="small muted" style="margin:10px 0 0">要換位置或改名字：準備清單 → 編輯清單 → 點項目。</p>`;
+  if(none.length)h+=`<section class="sec" style="margin-top:14px"><div class="sec-head"><h3>還沒放進包包（${none.length}）</h3><button class="btn sm" data-act="fill-bags">照預設放</button></div>${tiles(none,checked,rain,'')}</section>`;
+  else if(packEdit)h+=`<section class="sec" style="margin-top:14px"><h3>不用打包的</h3>${tiles([],checked,rain,'')}</section>`;
   return h;
 }
 const VI={
@@ -757,6 +761,7 @@ function songSheet(id){
 /* ---------- 設備與清單 ---------- */
 function vGear(){
   let h=`<div class="seg" style="margin-bottom:16px">${[['list','準備清單'],['pack','打包圖'],['site','現場圖'],['stock','設備庫存']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
+  h+=`<p class="small muted" style="margin:-8px 0 12px;text-align:right">版本 10/21-5</p>`;
   if(gearSeg==='pack')return h+vPack();
   if(gearSeg==='site')return h+vSite();
   if(gearSeg==='stock'){
@@ -796,17 +801,17 @@ function gearSheet(id){
     put('gear',id||uid('g'),{...g,name,own:(document.querySelector('input[name=g-own]:checked')||{}).value||'自有',qty:+$('#g-qty').value||1,note:$('#g-note').value.trim(),ts:g.ts||Date.now()});return true},
   id?{onDelete:()=>del('gear',id)}:{});
 }
-function checkSheet(id,group){
-  const c=id?S.checks[id]:{group,rain:false};
+function checkSheet(id,group,bag){
+  const c=id?S.checks[id]:{group,rain:false,bag:bag||''};
   openSheet(id?'編輯清單項目':'新增清單項目',`
     <label class="f"><span>項目</span><input id="c-text" value="${esc(c.text||'')}"></label>
-    <label class="f"><span>分類</span><select id="c-group">${[...GROUPS,...ONSITE].map(g=>`<option ${g===c.group?'selected':''}>${esc(g)}</option>`).join('')}</select></label>
-    <label class="f"><span>放在哪裡（打包圖）</span><select id="c-bag"><option value="">不用打包</option>${Object.entries(BAG_NAME).map(([k,v])=>`<option value="${k}" ${bagOf(c)===k?'selected':''}>${v}</option>`).join('')}</select></label>
+    <div class="f"><span>放在哪裡（打包圖）</span><div class="pick">${[['','不用打包'],...Object.entries(BAG_NAME)].map(([k,v])=>`<label><input type="radio" name="c-bag" value="${k}" ${(bagOf(c)||'')===k?'checked':''}><span>${v}</span></label>`).join('')}</div></div>
+    <div class="f"><span>分類（準備清單）</span><div class="pick">${[...GROUPS,...ONSITE].map(g=>`<label><input type="radio" name="c-group" value="${esc(g)}" ${g===c.group?'checked':''}><span>${esc(g)}</span></label>`).join('')}</div></div>
     <label class="check" style="padding:0"><input type="checkbox" id="c-rain" ${c.rain?'checked':''}><span style="text-decoration:none;color:var(--ink)">只在雨天模式出現</span></label>`,
   ()=>{const text=$('#c-text').value.trim();if(!text){toast('請填項目');return false}
-    const grp=$('#c-group').value;
+    const grp=(document.querySelector('input[name=c-group]:checked')||{}).value||c.group||'出門準備';
     const order=id&&c.group===grp?c.order:Math.max(0,...Object.values(S.checks).filter(x=>x.group===grp).map(x=>x.order||0))+1;
-    put('checks',id||uid('c'),{...c,text,group:grp,rain:$('#c-rain').checked,order,bag:$('#c-bag').value});return true},
+    put('checks',id||uid('c'),{...c,text,group:grp,rain:$('#c-rain').checked,order,bag:(document.querySelector('input[name=c-bag]:checked')||{}).value||''});return true},
   id?{onDelete:()=>del('checks',id)}:{});
 }
 
@@ -900,6 +905,8 @@ document.addEventListener('click',e=>{
   if(d.editGear)return gearSheet(d.editGear);
   if(d.editCheck)return checkSheet(d.editCheck);
   if(d.newCheck)return checkSheet(null,d.newCheck);
+  if(d.addBag!==undefined)return checkSheet(null,d.addBag==='pack'?'隨身':'出門準備',d.addBag);
+  if(d.goto){tab='gear';gearSeg=d.goto;window.scrollTo(0,0);render();return}
   if(d.editCard)return cardSheet(d.editCard);
   if(d.toggleSet){const n=clone(next());const s=n.setlist||[];n.setlist=s.includes(d.toggleSet)?s.filter(x=>x!==d.toggleSet):[...s,d.toggleSet];put('meta','next',n);return}
   switch(d.act){
@@ -908,6 +915,7 @@ document.addEventListener('click',e=>{
     case 'rain':{const n=clone(next());n.rain=!n.rain;put('meta','next',n);return}
     case 'finish':{const n=next();return recordSheet(null,{date:n.date||today(),slot:n.slot||'晚',status:'表演',venueId:n.venueId||'',partner:n.partner||'',songs:[...(n.setlist||[])]})}
     case 'reset-checks':if(!confirmTap(t))return;{const n=clone(next());n.checked={};put('meta','next',n);toast('清單已重置');return}
+    case 'pack-edit':packEdit=!packEdit;return render();
     case 'gear-edit':gearEdit=!gearEdit;return render();
     case 'fill-bags':return fillDefaultBags();
     case 'load-checks':return loadDefaultChecks();
