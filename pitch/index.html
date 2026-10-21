@@ -741,7 +741,7 @@ async function saveScore(){if(!S.song)return;S.song.score=$('scoreText').value;S
 $('scoreText').addEventListener('input',()=>{renderPhrases();clearTimeout(saveScore._t);saveScore._t=setTimeout(saveScore,600)});
 $('bpm').addEventListener('change',saveScore);
 $('playScore').onclick=()=>playLines(null);
-$('playMelody').onclick=playOriginalMelody;
+$('playMelody').onclick=()=>playOriginalMelody(false);
 $('playMelodySync').onclick=()=>playOriginalMelody(true);
 $('stopMelody').onclick=stopMelody;
 $('stopScore').onclick=stopScore;
