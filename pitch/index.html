@@ -242,6 +242,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700}
     <div class="row">
       <button id="playScore" class="primary" type="button">從頭彈全部</button>
       <button id="playMelody" type="button" disabled>鋼琴播放原唱旋律</button>
+      <button id="playMelodySync" type="button" disabled>同步播放原唱＋鋼琴</button>
       <button id="stopMelody" type="button" hidden>停止鋼琴</button>
       <button id="stopScore" type="button" hidden>停止</button>
     </div>
@@ -482,10 +483,10 @@ async function loadBacking(){
 async function loadOriginal(){
   stopOriginal(false);$('originalPanel').hidden=true;
   originalBuf=null;
-  if(!S.song||!S.song.original){$('originalName').textContent='還沒有原唱';$('analyzeOriginal').disabled=true;$('playOriginal').disabled=true;$('playMelody').disabled=true;return}
+  if(!S.song||!S.song.original){$('originalName').textContent='還沒有原唱';$('analyzeOriginal').disabled=true;$('playOriginal').disabled=true;$('playMelody').disabled=true;$('playMelodySync').disabled=true;return}
   $('originalName').textContent=S.song.originalName||'已選原唱';
-  try{const ab=await S.song.original.arrayBuffer();originalBuf=await Tone.getContext().decodeAudioData(ab);const audioUrl=URL.createObjectURL(S.song.original);$('originalAudio').src=audioUrl;$('originalAudio').playbackRate=Math.pow(2,(S.song.shift||0)/12);$('originalAudio').preservesPitch=false;$('analyzeOriginal').disabled=false;$('playOriginal').disabled=false;$('originalPanel').hidden=false;originalStartOffset=0;updateOriginalPanel();$('playMelody').disabled=!(S.song.melody&&S.song.melody.length)}
-  catch(e){$('originalName').textContent='原唱讀不出來，請重新選檔';$('analyzeOriginal').disabled=true;$('playOriginal').disabled=true;$('playMelody').disabled=true}
+  try{const ab=await S.song.original.arrayBuffer();originalBuf=await Tone.getContext().decodeAudioData(ab);const audioUrl=URL.createObjectURL(S.song.original);$('originalAudio').src=audioUrl;$('originalAudio').playbackRate=Math.pow(2,(S.song.shift||0)/12);$('originalAudio').preservesPitch=false;$('analyzeOriginal').disabled=false;$('playOriginal').disabled=false;$('originalPanel').hidden=false;originalStartOffset=0;updateOriginalPanel();const staleMelody=S.song.melody&&S.song.melody.length&&S.song.melodyVersion!==2;const hasMelody=S.song.melody&&S.song.melody.length&&!staleMelody;$('playMelody').disabled=!hasMelody;$('playMelodySync').disabled=!hasMelody;$('analyzeOriginal').textContent=staleMelody?'重新抓取旋律':'抓取原唱旋律';if(staleMelody)toast('節奏同步已改善，請按「重新抓取旋律」更新這首歌的音符時間')}
+  catch(e){$('originalName').textContent='原唱讀不出來，請重新選檔';$('analyzeOriginal').disabled=true;$('playOriginal').disabled=true;$('playMelody').disabled=true;$('playMelodySync').disabled=true}
 }
 function stopOriginal(preserve=true){if(preserve&&originalPlayer&&originalBuf)originalStartOffset=Math.min(originalBuf.duration,originalStartOffset+Math.max(0,Tone.now()-originalStartedAt));clearInterval(originalTimer);originalTimer=0;try{if(originalPlayer){originalPlayer.stop();originalPlayer.dispose()}}catch(e){}try{if(originalShifter)originalShifter.dispose()}catch(e){}originalPlayer=null;originalShifter=null;if(originalBuf){$('playOriginal').textContent='播放原唱';updateOriginalPanel()}}
 function startOriginal(offset=0,dur){stopOriginal(false);if(!originalBuf)return false;originalStartOffset=offset;originalPlayer=new Tone.Player(originalBuf);const sh=S.song.shift;if(sh){originalShifter=new Tone.PitchShift({pitch:sh,windowSize:.09});originalPlayer.connect(originalShifter);originalShifter.toDestination()}else originalPlayer.toDestination();originalStartedAt=Tone.now()+.05;originalPlayer.start(originalStartedAt,offset,dur||undefined);$('playOriginal').textContent='暫停原唱';originalTimer=setInterval(updateOriginalPanel,100);updateOriginalPanel();return true}
@@ -499,8 +500,8 @@ async function extractOriginalMelody(){
       const f=yin(frame,rate),m=f>75&&f<1000?69+12*Math.log2(f/440):0,idx=Math.round(center/sr/DT);if(idx>=0&&idx<count)melody[idx]=m;
       if(center%(hop*10)<hop)await new Promise(resolve=>setTimeout(resolve,0));
     }
-    S.song.melody=melody;S.song.melodyDt=DT;await dbPut('songs',S.song);$('playMelody').disabled=false;drawLive();if(S.take)drawTake(S.take.track,S.take.dt,S.take.key,S.take.offset||0,S.take.shift||0);toast('原唱旋律已抓取，按「鋼琴播放原唱旋律」試聽');
-  }catch(e){toast('原唱分析失敗，請確認音檔格式')}finally{$('analyzeOriginal').disabled=!originalBuf;$('analyzeOriginal').textContent='抓取原唱旋律'}
+    S.song.melody=melody;S.song.melodyDt=DT;S.song.melodyVersion=2;await dbPut('songs',S.song);$('playMelody').disabled=false;$('playMelodySync').disabled=false;drawLive();if(S.take)drawTake(S.take.track,S.take.dt,S.take.key,S.take.offset||0,S.take.shift||0);toast('原唱旋律已抓取，按「鋼琴播放原唱旋律」試聽');
+  }catch(e){toast('原唱分析失敗，請確認音檔格式')}finally{$('analyzeOriginal').disabled=!originalBuf;$('analyzeOriginal').textContent=S.song&&S.song.melodyVersion!==2?'重新抓取旋律':'抓取原唱旋律'}
 }
 function playOriginal(){if(!originalBuf)return;if(originalPlayer){stopOriginal(true);return}ensureAudio().then(()=>{const p=+$('originalSeek').value||0;startOriginal(p);toast('原唱播放中')})}
 function startBacking(offset,dur){
@@ -666,12 +667,12 @@ function renderPhrases(){
   });
 }
 function stopScore(){scoreTimers.forEach(clearTimeout);scoreTimers=[];document.querySelectorAll('.tok.now').forEach(c=>c.classList.remove('now'));$('stopScore').hidden=true;$('playScore').hidden=false}
-let melodyTimers=[],melodyOscillators=[],melodyRepeatTimer=0;
+let melodyTimers=[],melodyOscillators=[],melodyRepeatTimer=0,melodyPianoPlayer=null,melodyOriginalPlayer=null,melodyOriginalShifter=null;
 let pianoWavUrl='';
 function melodyWav(events,duration){
-  const sr=22050,count=Math.ceil(sr*(duration+.22)),samples=new Float32Array(count),partials=[[1,1],[2,.42],[3,.18],[4,.07]];
-  for(const e of events){const begin=Math.max(0,Math.floor(e.start*sr)),end=Math.min(count,Math.ceil((e.start+e.duration+.18)*sr)),f=440*Math.pow(2,(e.m-69)/12);
-    for(let i=begin;i<end;i++){const t=i/sr-e.start,elapsed=t-e.duration;if(t<0)continue;const env=t<.012?t/.012:(elapsed>0?Math.exp(-elapsed*18):Math.exp(-t*.75));let v=0;for(const [harm,amp] of partials)v+=Math.sin(2*Math.PI*f*harm*t)*amp;samples[i]+=v*env*.32}
+  const release=.045,sr=22050,count=Math.ceil(sr*(duration+release+.03)),samples=new Float32Array(count),partials=[[1,1],[2,.42],[3,.18],[4,.07]];
+  for(const e of events){const begin=Math.max(0,Math.floor(e.start*sr)),end=Math.min(count,Math.ceil((e.start+e.duration+release)*sr)),f=440*Math.pow(2,(e.m-69)/12);
+    for(let i=begin;i<end;i++){const t=i/sr-e.start,elapsed=t-e.duration;if(t<0)continue;const env=t<.012?t/.012:(elapsed>0?Math.exp(-elapsed*55):Math.exp(-t*.75));let v=0;for(const [harm,amp] of partials)v+=Math.sin(2*Math.PI*f*harm*t)*amp;samples[i]+=v*env*.32}
   }
   let peak=0;for(const v of samples)peak=Math.max(peak,Math.abs(v));const scale=peak>.001?Math.min(1,.72/peak):1;
   const bytes=new ArrayBuffer(44+count*2),view=new DataView(bytes),write=(offset,str)=>{for(let i=0;i<str.length;i++)view.setUint8(offset+i,str.charCodeAt(i))};
@@ -681,29 +682,42 @@ function melodyWav(events,duration){
 }
 function melodySegments(){
   const data=S.song&&S.song.melody,dt=S.song&&S.song.melodyDt||DT;if(!data)return[];
+  // Analysis windows overlap; suppress a one-frame pitch flicker so it cannot
+  // split a sustained sung note into several short synthesized notes.
+  const raw=data.map(v=>v?Math.round(v):0),stable=raw.slice();
+  for(let i=1;i<raw.length-1;i++)if(raw[i-1]&&raw[i-1]===raw[i+1]&&raw[i]!==raw[i-1])stable[i]=raw[i-1];
   const out=[];let note=0,start=0,sum=0,count=0;
   const push=end=>{if(note&&end>start)out.push({m:Math.round(sum/count),start:start*dt,end:end*dt})};
-  for(let i=0;i<=data.length;i++){
-    const m=i<data.length&&data[i]?Math.round(data[i]):0;
-    if(m===note){if(m){sum+=data[i];count++}continue}
-    push(i);note=m;start=i;sum=m?data[i]:0;count=m?1:0;
+  for(let i=0;i<=stable.length;i++){
+    const m=i<stable.length?stable[i]:0;
+    if(m===note){if(m){sum+=m;count++}continue}
+    push(i);note=m;start=i;sum=m;count=m?1:0;
   }
   return out;
 }
 function stopMelody(){
   melodyTimers.forEach(clearTimeout);melodyTimers=[];clearTimeout(melodyRepeatTimer);melodyRepeatTimer=0;
   melodyOscillators.forEach(o=>{try{o.stop()}catch(e){}});melodyOscillators=[];
+  try{if(melodyPianoPlayer){melodyPianoPlayer.stop();melodyPianoPlayer.dispose()}}catch(e){}melodyPianoPlayer=null;
+  try{if(melodyOriginalPlayer){melodyOriginalPlayer.stop();melodyOriginalPlayer.dispose()}}catch(e){}melodyOriginalPlayer=null;
+  try{if(melodyOriginalShifter)melodyOriginalShifter.dispose()}catch(e){}melodyOriginalShifter=null;
   const audio=$('pianoAudio');audio.pause();audio.removeAttribute('src');audio.load();if(pianoWavUrl){URL.revokeObjectURL(pianoWavUrl);pianoWavUrl=''}
   $('stopMelody').hidden=true;$('playMelody').hidden=false;
 }
-async function playOriginalMelody(){
+async function playOriginalMelody(withOriginal=false){
   stopScore();stopMelody();const notes=melodySegments();if(!notes.length){toast('先選原唱檔並抓取旋律');return}
+  if(withOriginal){$('originalAudio').pause();stopOriginal(false)}
   const a=Math.max(0,+$('aT').value||0),last=notes[notes.length-1].end;
   const b=+$('bT').value>a?+$('bT').value:last,shift=S.song.shift||0,events=[];
   $('playMelody').hidden=true;$('stopMelody').hidden=false;
-  notes.forEach(n=>{const from=Math.max(n.start,a),to=Math.min(n.end,b);if(to<=from)return;const at=from-a,dur=to-from;events.push({m:n.m+shift,start:at,duration:Math.max(.08,dur)});melodyTimers.push(setTimeout(()=>{S.target=n.m+shift;drawLive()},Math.max(0,at*1000)))});
-  const audio=$('pianoAudio');pianoWavUrl=URL.createObjectURL(melodyWav(events,Math.max(.1,b-a)));audio.src=pianoWavUrl;try{await audio.play()}catch(e){toast('鋼琴播放被瀏覽器擋下，請再按一次播放');stopMelody();return}
-  const elapsed=Math.max(.1,b-a);melodyTimers.push(setTimeout(()=>{if($('loop').checked){playOriginalMelody()}else stopMelody()},elapsed*1000+250));
+  notes.forEach(n=>{const from=Math.max(n.start,a),to=Math.min(n.end,b);if(to<=from)return;const at=from-a,dur=to-from;events.push({m:n.m+shift,start:at,duration:dur})});
+  try{
+    await ensureAudio();const ctx=Tone.getContext(),wav=melodyWav(events,Math.max(.1,b-a)),piano=await ctx.decodeAudioData(await wav.arrayBuffer()),when=Tone.now()+.12;
+    melodyPianoPlayer=new Tone.Player(piano).toDestination();melodyPianoPlayer.start(when);
+    if(withOriginal&&originalBuf){melodyOriginalPlayer=new Tone.Player(originalBuf);const sh=shift;if(sh){melodyOriginalShifter=new Tone.PitchShift({pitch:sh,windowSize:.09});melodyOriginalPlayer.connect(melodyOriginalShifter);melodyOriginalShifter.toDestination()}else melodyOriginalPlayer.toDestination();melodyOriginalPlayer.start(when,a,Math.max(.1,b-a))}
+    notes.forEach(n=>{const at=Math.max(n.start,a)-a,to=Math.min(n.end,b);if(to<=Math.max(n.start,a))return;melodyTimers.push(setTimeout(()=>{S.target=n.m+shift;drawLive()},120+Math.max(0,at*1000)))});
+  }catch(e){toast('鋼琴播放失敗，請再按一次');stopMelody();return}
+  const elapsed=Math.max(.1,b-a);melodyTimers.push(setTimeout(()=>{if($('loop').checked){playOriginalMelody(withOriginal)}else stopMelody()},elapsed*1000+250));
 }
 async function playLines(idxs){
   await ensureAudio();stopScore();stopMelody();
@@ -728,6 +742,7 @@ $('scoreText').addEventListener('input',()=>{renderPhrases();clearTimeout(saveSc
 $('bpm').addEventListener('change',saveScore);
 $('playScore').onclick=()=>playLines(null);
 $('playMelody').onclick=playOriginalMelody;
+$('playMelodySync').onclick=()=>playOriginalMelody(true);
 $('stopMelody').onclick=stopMelody;
 $('stopScore').onclick=stopScore;
 
