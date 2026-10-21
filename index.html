@@ -98,6 +98,11 @@ h2{font-size:20px} h3{font-size:16px}
 .check{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:46px;cursor:pointer}
 .check input{width:22px;height:22px;accent-color:var(--accent);flex:none}
 .check.done span{color:var(--muted);text-decoration:line-through}
+.check.rainon{background:var(--warn-bg)}
+.links{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.linkbtn{flex-direction:column;align-items:flex-start;border-radius:var(--r);text-decoration:none;color:var(--ink);padding:10px 14px;gap:0}
+.linkbtn b{color:var(--accent)}
+.linkbtn span{font-size:12px;color:var(--muted);font-weight:400}
 .check.rain span::after{content:"雨天";margin-left:8px;font-size:11px;padding:1px 6px;border-radius:999px;background:var(--accent-soft);color:var(--accent);text-decoration:none;display:inline-block}
 details.fold{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
 details.fold>summary{padding:12px 14px;font-weight:500;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:8px}
@@ -238,6 +243,7 @@ const TITLES={today:'下一場',log:'表演紀錄',songs:'歌單',gear:'設備�
 const LS='busk-app-v1';
 let S={}; COLS.forEach(c=>S[c]={});
 let db=null, mode='loading', downloads=null;
+let gearEdit=false;
 let tab='today', logSeg='list', gearSeg='list', songFilter='全部', songQ='', whoF='全部';
 
 const $=(s,r=document)=>r.querySelector(s);
@@ -383,7 +389,7 @@ function licenseWarnings(){
 function vToday(){
   const n=next(), v=S.venues[n.venueId], info=setlistInfo(n.setlist||[]);
   const checks=sorted('checks','order'), checked=n.checked||{}, rain=!!n.rain;
-  const pre=checks.filter(c=>GROUPS.includes(c.group)&&(!c.rain||rain));
+  const pre=checks.filter(c=>GROUPS.includes(c.group));
   const done=pre.filter(c=>checked[c.id]).length;
   let h=`<button class="panel visionEntry" data-tab="vision"><span class="eyebrow">MY VOCAL VISION</span><b>我的 Vocal 願景</b><span class="muted small">出發前先來這裡看一下 →</span></button>`;
   licenseWarnings().forEach(w=>h+=`<div class="banner warn">${esc(w)}</div>`);
@@ -395,7 +401,8 @@ function vToday(){
   }else{
     h+=`<div class="empty"><p>還沒排下一場。</p><button class="btn primary" data-act="plan">安排下一場</button></div>`;
   }
-  if(rain)h+=`<div class="banner info">雨天：記得帶雨傘、地墊，音響和線材做好防水。</div>`;
+  if(rain)h+=`<div class="banner warn">雨天：記得帶雨傘、地墊，音響和線材做好防水。如果這場取消，按「寫紀錄」把狀態選「取消・雨天」。</div>`;
+  h+=checkLinks();
   h+='</section>';
   // setlist
   h+=`<section class="sec"><div class="sec-head"><h2>本次歌單</h2><button class="btn sm" data-act="setlist">排歌單</button></div>`;
@@ -407,18 +414,24 @@ function vToday(){
   h+='</section>';
   // checklist
   h+=`<section class="sec"><div class="sec-head"><h2>出門清單</h2><span class="num muted">${done} / ${pre.length}</span></div><div class="progress"><i style="width:${pre.length?Math.round(done/pre.length*100):0}%"></i></div>`;
-  if(!checks.length)h+=`<div class="empty">還沒有清單項目，到「設備清單」分頁新增。</div>`;
-  h+=`<div class="list">${GROUPS.map(g=>{const items=pre.filter(c=>c.group===g);if(!items.length)return '';return `<div class="glabel">${esc(g)}</div>`+items.map(c=>checkRow(c,checked)).join('')}).join('')}</div>`;
+  if(!checks.length)h+=emptyChecks();
+  h+=checkGroups(pre,GROUPS,checked,rain);
   if(pre.length&&done===pre.length)h+=`<div class="banner info">都勾完了，可以出門！</div>`;
   h+='</section>';
   const on=checks.filter(c=>ONSITE.includes(c.group));
   if(on.length){
-    h+=`<section class="sec"><details class="fold"><summary>現場提醒（${on.filter(c=>checked[c.id]).length}/${on.length}）</summary><div class="list">${ONSITE.map(g=>{const items=on.filter(c=>c.group===g);if(!items.length)return '';return `<div class="glabel">${esc(g.replace('現場・',''))}</div>`+items.map(c=>checkRow(c,checked)).join('')}).join('')}</div></details></section>`;
+    h+=`<section class="sec"><details class="fold" open><summary>現場（${on.filter(c=>checked[c.id]).length}/${on.length}）</summary>${checkGroups(on,ONSITE,checked,rain,true)}</details></section>`;
   }
   h+=`<section class="sec"><button class="btn primary block" data-act="finish">演出結束，寫紀錄</button><button class="btn block" data-act="reset-checks" data-confirm="再按一次清空勾選">重置清單</button></section>`;
   return h;
 }
-const checkRow=(c,checked)=>`<label class="check ${checked[c.id]?'done':''} ${c.rain?'rain':''}"><input type="checkbox" data-check="${esc(c.id)}" ${checked[c.id]?'checked':''}><span>${esc(c.text)}</span></label>`;
+const DEFAULT_CHECKS={'前一晚充電':['音響','麥克風＋充電電池','監聽＋2 耳機','iPad mini＋接線 ×2','行動電源 ×3'],'出門準備':['拉車（大號＋行李袋）','腳架 ×2','支架（2 iPad、2 麥、1 手機、1 平台）','雨傘 ×2／地墊','行動電源 ×2','AG06＋2 線'],'其他':['打賞箱','QR Code 名牌','椅子'],'隨身':['錢包、耳機、鑰匙','行動電源','水','衛生紙','悠遊卡'],'當日':['宣傳','開嗓','廁所','水'],'現場・表演':['人聲靜音 Moises','Party 結束快切','升降調','左口白、右歌詞'],'現場・設備':['監聽音量（音樂／麥）','音響音量（音樂／麥）','直播（音樂／麥）'],'現場・腳架':['直播','筆記','音源','麥架','水杯托盤']};
+function loadDefaultChecks(){let j=0;Object.entries(DEFAULT_CHECKS).forEach(([g,items])=>items.forEach((t,i)=>{j++;const id='c'+String(j).padStart(2,'0');if(!S.checks[id])put('checks',id,{group:g,text:t,rain:t.startsWith('雨傘'),order:i})}));toast('已放入原本的清單')}
+const emptyChecks=()=>`<div class="empty"><p>這台裝置上還沒有清單。</p><button class="btn primary" data-act="load-checks">放入原本的準備清單</button></div>`;
+function checkGroups(items,groups,checked,rain,strip){return `<div class="list">${groups.map(g=>{const l=items.filter(c=>c.group===g);if(!l.length)return '';return `<div class="glabel">${esc(strip?g.replace('現場・',''):g)}</div>`+l.map(c=>checkRow(c,checked,rain)).join('')}).join('')}</div>`}
+const LINKS=[{t:'中央氣象署',sub:'看天氣、降雨',u:'https://www.cwa.gov.tw/V8/C/'},{t:'國道路況',sub:'去台北場地前先看高速公路',u:'https://tw.live/national-highway/1/'}];
+function checkLinks(){return `<div class="links">${LINKS.map(l=>`<a class="btn linkbtn" href="${l.u}" target="_blank" rel="noopener"><b>${l.t} ↗</b><span>${l.sub}</span></a>`).join('')}</div>`}
+const checkRow=(c,checked,rain)=>`<label class="check ${checked[c.id]?'done':''} ${c.rain?'rain':''} ${c.rain&&rain?'rainon':''}"><input type="checkbox" data-check="${esc(c.id)}" ${checked[c.id]?'checked':''}><span>${esc(c.text)}</span></label>`;
 
 function venueOptions(sel){
   const vs=sorted('venues','name');
@@ -617,7 +630,7 @@ function songSheet(id){
 
 /* ---------- 設備與清單 ---------- */
 function vGear(){
-  let h=`<div class="seg" style="margin-bottom:16px">${[['list','每場清單'],['stock','設備庫存']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
+  let h=`<div class="seg" style="margin-bottom:16px">${[['list','準備清單'],['stock','設備庫存']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
   if(gearSeg==='stock'){
     const gs=sorted('gear','name');
     h+=``;
@@ -626,7 +639,19 @@ function vGear(){
     return h;
   }
   const checks=sorted('checks','order');
-  h+=`<p class="small muted" style="margin:0 0 14px">這裡改的是範本。每場的勾選在「下一場」分頁，寫完紀錄會自動重置。標「雨天」的項目只在雨天模式出現。</p>`;
+  if(!gearEdit){
+    const n=next(),checked=n.checked||{},rain=!!n.rain;
+    const pre=checks.filter(c=>GROUPS.includes(c.group)),on=checks.filter(c=>ONSITE.includes(c.group));
+    const done=pre.filter(c=>checked[c.id]).length;
+    h+=`<section class="sec"><div class="btns"><button class="btn sm ${rain?'primary':''}" data-act="rain" aria-pressed="${rain}">${rain?'☂ 雨天模式開':'☂ 雨天模式'}</button><button class="btn sm" data-act="gear-edit">編輯清單</button></div>${checkLinks()}</section>`;
+    if(rain)h+=`<div class="banner warn" style="margin-bottom:14px">雨天：記得帶雨傘、地墊。</div>`;
+    if(!checks.length)return h+emptyChecks();
+    h+=`<section class="sec"><div class="sec-head"><h2>出門前</h2><span class="num muted">${done} / ${pre.length}</span></div><div class="progress"><i style="width:${pre.length?Math.round(done/pre.length*100):0}%"></i></div>${checkGroups(pre,GROUPS,checked,rain)}</section>`;
+    if(on.length)h+=`<section class="sec"><h2>現場</h2>${checkGroups(on,ONSITE,checked,rain,true)}</section>`;
+    h+=`<section class="sec"><button class="btn block" data-act="reset-checks" data-confirm="再按一次清空勾選">重置清單</button><p class="small muted" style="margin:0">這裡跟「下一場」分頁是同一份勾選。演出後寫紀錄會自動重置。</p></section>`;
+    return h;
+  }
+  h+=`<section class="sec"><button class="btn sm primary" data-act="gear-edit">完成編輯</button><p class="small muted" style="margin:0">點項目可以改字、換分類或刪除。標「雨天」的項目在雨天模式會特別標出來。</p></section>`;
   [...GROUPS,...ONSITE].forEach(g=>{const list=checks.filter(c=>c.group===g);
     h+=`<section class="sec"><div class="sec-head"><h3>${esc(g)}</h3><button class="ghost" data-new-check="${esc(g)}">＋ 新增</button></div>${list.length?`<ul class="list">${list.map(c=>`<li><button class="row" data-edit-check="${esc(c.id)}"><div class="main">${esc(c.text)}</div>${c.rain?'<span class="chip accent">雨天</span>':''}</button></li>`).join('')}</ul>`:''}</section>`});
   return h;
@@ -752,6 +777,8 @@ document.addEventListener('click',e=>{
     case 'rain':{const n=clone(next());n.rain=!n.rain;put('meta','next',n);return}
     case 'finish':{const n=next();return recordSheet(null,{date:n.date||today(),slot:n.slot||'晚',status:'表演',venueId:n.venueId||'',partner:n.partner||'',songs:[...(n.setlist||[])]})}
     case 'reset-checks':if(!confirmTap(t))return;{const n=clone(next());n.checked={};put('meta','next',n);toast('清單已重置');return}
+    case 'gear-edit':gearEdit=!gearEdit;return render();
+    case 'load-checks':return loadDefaultChecks();
     case 'new-record':return recordSheet(null);
     case 'new-venue':return venueSheet(null);
     case 'new-song':return songSheet(null);
