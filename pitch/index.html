@@ -103,6 +103,18 @@ canvas{display:block;width:100%}
 dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);max-width:min(420px,calc(100% - 32px));width:100%}
 dialog::backdrop{background:rgba(10,6,16,.45)}
 dialog form{display:flex;flex-direction:column;gap:10px}
+.phrases{display:flex;flex-direction:column;gap:8px}
+.phrase{display:flex;gap:8px;align-items:flex-start;padding:8px;border-radius:10px;background:var(--bg)}
+.phrase .toks{display:flex;flex-wrap:wrap;gap:4px;flex:1;min-width:0}
+.tok{font:500 .95rem var(--mono);padding:2px 6px;border-radius:6px;border:1px solid var(--line);background:var(--panel)}
+.tok.rest{color:var(--muted)}
+.tok.bad{border-color:var(--off);color:var(--off)}
+.tok.now{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.phrase button{padding:5px 10px;flex:0 0 auto}
+textarea{font:500 1rem var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px;width:100%;resize:vertical}
+details summary{cursor:pointer;color:var(--accent);font-weight:700}
+.syntax p{margin:4px 0}
+.syntax code{font-family:var(--mono);background:var(--bg);padding:1px 5px;border-radius:5px}
 .file-name{font-size:.82rem;color:var(--muted);overflow-wrap:anywhere}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -184,6 +196,35 @@ dialog form{display:flex;flex-direction:column;gap:10px}
     </div>
     <div class="piano-scroll"><div class="piano" id="piano"></div></div>
     <div class="row"><button id="clearTarget" type="button">清除目標線</button></div>
+  </section>
+
+  <!-- 照譜彈 -->
+  <section class="panel" aria-label="照譜彈">
+    <div class="row" style="justify-content:space-between">
+      <h2>照譜彈</h2>
+      <span class="hint">譜存在這支手機，每首歌各一份</span>
+    </div>
+    <textarea id="scoreText" rows="5" placeholder="照你的譜輸入數字，一行一句" aria-label="簡譜"></textarea>
+    <details class="hint"><summary>怎麼輸入</summary>
+      <div class="syntax">
+        <p>數字 1～7 是音，0 是休止，用空白隔開。一個數字＝一拍。</p>
+        <p><b>-</b> 延長一拍　<b>_</b> 加在數字後面＝半拍（<b>__</b>＝四分之一拍）　<b>.</b> 加在最後＝附點</p>
+        <p><b>'</b> 加在後面＝高八度（數字上面有點）　<b>,</b> 加在後面＝低八度（數字下面有點）</p>
+        <p><b>#</b> 或 <b>b</b> 放在數字前面＝升或降半音　<b>|</b> 小節線可打可不打</p>
+        <p>例：兩隻老虎第一句　<code>1 2 3 1 | 1 2 3 1</code>　；　<code>5, 6,_ 7,_ 1 -</code></p>
+      </div>
+    </details>
+    <div class="row">
+      <label for="bpm">速度</label>
+      <input id="bpm" type="number" min="30" max="200" step="5" value="70" inputmode="numeric">
+      <label for="bpm">拍／分鐘</label>
+      <label style="display:flex;align-items:center;gap:4px"><input id="scoreSing" type="checkbox"> 彈完接著看音高</label>
+    </div>
+    <div class="phrases" id="phrases"></div>
+    <div class="row">
+      <button id="playScore" class="primary" type="button">從頭彈全部</button>
+      <button id="stopScore" type="button" hidden>停止</button>
+    </div>
   </section>
 
   <!-- 結果 -->
@@ -335,10 +376,10 @@ function drawTake(track,dt,key){
 
 /* ---------- 琴鍵 ---------- */
 let pianoGain=null;
-function playNote(m,dur=1.6){
+function playNote(m,dur=1.6,at){
   const ctx=Tone.getContext().rawContext;
   if(!pianoGain){pianoGain=ctx.createGain();pianoGain.gain.value=.35;pianoGain.connect(ctx.destination)}
-  const f=440*Math.pow(2,(m-69)/12),t0=ctx.currentTime;
+  const f=440*Math.pow(2,(m-69)/12),t0=at||ctx.currentTime;
   const out=ctx.createGain();out.gain.setValueAtTime(0,t0);out.gain.linearRampToValueAtTime(1,t0+.006);out.gain.exponentialRampToValueAtTime(.25,t0+.35);out.gain.exponentialRampToValueAtTime(.0008,t0+dur);
   const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(Math.min(9000,f*9),t0);lp.frequency.exponentialRampToValueAtTime(Math.max(600,f*2.5),t0+dur);
   out.connect(lp);lp.connect(pianoGain);
@@ -523,6 +564,64 @@ async function playTake(withBacking){
   }catch(e){toast('這段錄音播不出來')}
 }
 
+/* ---------- 照譜彈 ---------- */
+const DEG=[0,2,4,5,7,9,11];
+function parseLine(line,key){
+  const out=[];
+  for(const raw of line.trim().split(/\s+/)){
+    if(!raw||raw==='|'||raw==='||')continue;
+    if(/^-+$/.test(raw)){if(out.length)out[out.length-1].beats+=raw.length;continue}
+    const t=raw.replace(/\|/g,'');
+    const mm=t.match(/^([#b]?)([0-7])([',]*)(_*)(\.?)$/);
+    if(!mm){out.push({tok:raw,bad:true,beats:0});continue}
+    let beats=1/Math.pow(2,mm[4].length);if(mm[5])beats*=1.5;
+    if(mm[2]==='0'){out.push({tok:raw,m:null,beats});continue}
+    const oct=(mm[3].match(/'/g)||[]).length-(mm[3].match(/,/g)||[]).length;
+    const acc=mm[1]==='#'?1:mm[1]==='b'?-1:0;
+    out.push({tok:raw,m:60+key+DEG[+mm[2]-1]+acc+12*oct,beats});
+  }
+  return out;
+}
+let scoreTimers=[],scoreChips=[];
+function renderPhrases(){
+  const box=$('phrases');box.innerHTML='';scoreChips=[];
+  const lines=$('scoreText').value.split('\n').filter(l=>l.trim());
+  if(!lines.length){box.innerHTML='<div class="empty">照你手上的譜輸入第一句，這裡就會出現可以播放的句子。</div>';$('playScore').disabled=true;return}
+  $('playScore').disabled=false;
+  lines.forEach((line,i)=>{
+    const notes=parseLine(line,curKey());
+    const row=document.createElement('div');row.className='phrase';
+    const b=document.createElement('button');b.type='button';b.textContent='彈這句';b.onclick=()=>playLines([i]);
+    const toks=document.createElement('div');toks.className='toks';
+    const chips=notes.map(n=>{const c=document.createElement('span');c.className='tok'+(n.bad?' bad':'')+(n.m===null?' rest':'');c.textContent=n.tok+(n.beats>1?' '+'－'.repeat(Math.round(n.beats)-1):'');if(n.bad)c.title='看不懂這個寫法';toks.appendChild(c);return c});
+    scoreChips.push(chips);row.appendChild(b);row.appendChild(toks);box.appendChild(row);
+  });
+}
+function stopScore(){scoreTimers.forEach(clearTimeout);scoreTimers=[];document.querySelectorAll('.tok.now').forEach(c=>c.classList.remove('now'));$('stopScore').hidden=true;$('playScore').hidden=false}
+async function playLines(idxs){
+  await ensureAudio();stopScore();
+  const lines=$('scoreText').value.split('\n').filter(l=>l.trim());
+  if(!idxs)idxs=lines.map((_,i)=>i);
+  const bpm=Math.min(200,Math.max(30,+$('bpm').value||70)),beat=60/bpm;
+  const ctx=Tone.getContext().rawContext,start=ctx.currentTime+0.15;let t=0;
+  $('stopScore').hidden=false;$('playScore').hidden=true;
+  idxs.forEach((li,k)=>{
+    parseLine(lines[li],curKey()).forEach((n,ni)=>{
+      if(n.bad)return;const d=n.beats*beat,chip=scoreChips[li]&&scoreChips[li][ni];
+      if(n.m!==null)playNote(n.m,Math.min(d+0.35,3),start+t);
+      scoreTimers.push(setTimeout(()=>{document.querySelectorAll('.tok.now').forEach(c=>c.classList.remove('now'));if(chip){chip.classList.add('now')}if(n.m!==null){S.target=n.m;if(n.m<S.lo||n.m>S.hi){const c=n.m;S.lo=c-8;S.hi=c+9;buildPiano()}if(!S.mode)drawLive()}},(0.15+t)*1000));
+      t+=d;
+    });
+    if(k<idxs.length-1)t+=beat;
+  });
+  scoreTimers.push(setTimeout(()=>{stopScore();if($('scoreSing').checked&&!S.mode)begin(false)},(0.15+t+0.3)*1000));
+}
+async function saveScore(){if(!S.song)return;S.song.score=$('scoreText').value;S.song.bpm=+$('bpm').value||70;await dbPut('songs',S.song)}
+$('scoreText').addEventListener('input',()=>{renderPhrases();clearTimeout(saveScore._t);saveScore._t=setTimeout(saveScore,600)});
+$('bpm').addEventListener('change',saveScore);
+$('playScore').onclick=()=>playLines(null);
+$('stopScore').onclick=stopScore;
+
 /* ---------- 歌曲 ---------- */
 function fillKeys(sel){sel.innerHTML=KEYZH.map((k,i)=>`<option value="${i}">${k}大調</option>`).join('')}
 function renderSongSel(){$('songSel').innerHTML=S.songs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');if(S.song)$('songSel').value=S.song.id}
@@ -530,6 +629,7 @@ function renderSong(){
   const s=S.song;$('keySel').value=s.key;$('shiftOut').textContent=(s.shift>0?'+':'')+s.shift;
   const k=curKey();$('curKey').textContent=`${KEYZH[k]}大調`+(s.shift?`（原調${s.shift>0?'升':'降'}${Math.abs(s.shift)}個半音）`:'（原調）');
   $('aT').value=s.a||0;$('bT').value=s.b??'';$('loop').checked=!!s.loop;
+  $('scoreText').value=s.score||'';$('bpm').value=s.bpm||70;renderPhrases();
   buildPiano();drawLive();
 }
 async function saveSongPrefs(){const s=S.song;if(!s)return;s.a=+$('aT').value||0;s.b=$('bT').value===''?null:+$('bT').value;s.loop=$('loop').checked;await dbPut('songs',s)}
