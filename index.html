@@ -50,7 +50,7 @@ body{font-family:var(--body);font-size:15px;line-height:1.55;-webkit-tap-highlig
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.app{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:0 calc(var(--tabh) + 32px + env(safe-area-inset-bottom,0px))}
+.app{max-width:none;margin:0 auto;padding-inline:16px;padding-block:0 calc(var(--tabh) + 32px + env(safe-area-inset-bottom,0px))}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-block:14px 10px;border-bottom:1px solid var(--line);margin-bottom:14px}
 .top h1{font-family:var(--display);font-weight:700;font-size:26px;margin:0;letter-spacing:.02em}
 .top .sync{font-size:12px;color:var(--muted)}
@@ -98,7 +98,7 @@ h2{font-size:20px} h3{font-size:16px}
 .check{display:flex;align-items:center;gap:10px;padding:5px 12px;min-height:36px;cursor:pointer;font-size:14px;line-height:1.35}
 .check input{width:19px;height:19px;accent-color:var(--accent);flex:none}
 .check.done span{color:var(--muted);text-decoration:line-through}
-.cgrid{columns:2 230px;column-gap:8px}
+.cgrid{columns:230px;column-gap:8px}
 details.fold>.cgrid{padding:8px 8px 0}
 .cgroup{break-inside:avoid;margin-bottom:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:block}
 .bags{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;align-items:start}
@@ -106,6 +106,15 @@ details.fold>.cgrid{padding:8px 8px 0}
 .baghead{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line)}
 .baghead b{flex:1;font-family:var(--display);font-size:16px}
 .bagicon{width:30px;height:30px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.scene{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);margin-bottom:10px;background:var(--sunk)}
+.scene img{display:block;width:100%;height:auto}
+.spot{position:absolute;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;border:3px solid rgba(255,255,255,.85);background:var(--accent);color:var(--accent-ink);font-family:var(--display);font-size:20px;font-weight:700;box-shadow:0 0 0 6px rgba(255,255,255,.35),0 4px 12px rgba(0,0,0,.25)}
+.spot.on{background:var(--coin);color:#fff;transform:translate(-50%,-50%) scale(1.1)}
+.spot.ok{background:var(--ok);color:#fff}
+.packchips{margin-bottom:10px}.packchips .chip{font-size:14px;padding:6px 14px;border:0;cursor:pointer}
+.packpanel .cols{columns:220px;column-gap:0}.packpanel .cols .check{break-inside:avoid}
+.layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.layers .layer+.layer{border-left:1px dashed var(--line)}
 .layer+.layer{border-top:1px dashed var(--line)}
 .layer .glabel{background:var(--accent-soft);color:var(--accent)}
 .check.pk{font-size:13.5px}
@@ -156,14 +165,14 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
 /* tab bar */
 .fab{position:fixed;right:12px;bottom:calc(132px + env(safe-area-inset-bottom,0px));z-index:12;width:54px;height:54px;border-radius:50%;border:0;background:var(--ink);color:var(--surface);font-size:30px;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.2);cursor:pointer}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
-.tabs nav{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);height:var(--tabh)}
+.tabs nav{max-width:none;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);height:var(--tabh)}
 .tabs button{border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--muted)}
 .tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .tabs button[aria-current="page"]{color:var(--accent);font-weight:700}
 /* sheet */
 #sheet{position:fixed;inset:0;z-index:20}
 .sheet-bg{position:absolute;inset:0;background:rgba(10,16,17,.45)}
-.sheet{position:absolute;left:0;right:0;bottom:0;max-height:92%;display:flex;flex-direction:column;background:var(--bg);border-radius:18px 18px 0 0;max-width:640px;margin:0 auto;animation:up .18s ease-out}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:92%;display:flex;flex-direction:column;background:var(--bg);border-radius:18px 18px 0 0;max-width:760px;margin:0 auto;animation:up .18s ease-out}
 @keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.sheet{animation:none}.progress>i{transition:none}}
 .sheet>header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line)}
@@ -254,7 +263,7 @@ const TITLES={today:'下一場',log:'表演紀錄',songs:'歌單',gear:'設備�
 const LS='busk-app-v1';
 let S={}; COLS.forEach(c=>S[c]={});
 let db=null, mode='loading', downloads=null;
-let gearEdit=false;
+let gearEdit=false, packSel='cart';
 let tab='today', logSeg='list', gearSeg='list', songFilter='全部', songQ='', whoF='全部';
 
 const $=(s,r=document)=>r.querySelector(s);
@@ -454,12 +463,15 @@ function vPack(){
   if(!items.length)return emptyChecks();
   const by=k=>items.filter(c=>c.bag===k), cnt=l=>`<span class="num muted small">${l.filter(c=>checked[c.id]).length}/${l.length}</span>`;
   const tote=['tote1','tote2','tote3'].map(by);
-  let h=`<p class="small muted" style="margin:0 0 10px">出門前照包包裝。勾選跟準備清單是同一份。要換位置：準備清單 → 編輯清單 → 點項目。</p>`;
-  if(rain)h+=`<div class="banner warn small" style="margin-bottom:10px">雨天：雨傘、地墊放拉車。</div>`;
-  h+=`<div class="bags">
-    <div class="bag"><div class="baghead">${ICON.cart}<b>拉車</b>${cnt(by('cart'))}</div>${bagItems(by('cart'),checked,rain)}</div>
-    <div class="bag"><div class="baghead">${ICON.tote}<b>手提袋</b>${cnt(tote.flat())}</div>${['上層','中層','下層'].map((t,i)=>`<div class="layer"><div class="glabel"><span>${t}</span>${cnt(tote[i])}</div>${bagItems(tote[i],checked,rain)}</div>`).join('')}</div>
-    <div class="bag"><div class="baghead">${ICON.pack}<b>後背包</b>${cnt(by('pack'))}</div>${bagItems(by('pack'),checked,rain)}</div></div>`;
+  const sel=packSel, tl=tote.flat();
+  const spots=[{k:'cart',t:'車',n:'拉車',x:22,y:52,l:by('cart')},{k:'tote',t:'袋',n:'手提袋',x:56,y:66,l:tl},{k:'pack',t:'包',n:'後背包',x:83,y:66,l:by('pack')}];
+  const left=l=>l.length-l.filter(c=>checked[c.id]).length;
+  let h=`<div class="scene" id="scene"><img src="img/scene.jpg?v=1" alt="拉車、手提袋、後背包" onerror="this.parentNode.hidden=true">${spots.map(o=>`<button class="spot ${o.k===sel?'on':''} ${o.l.length&&!left(o.l)?'ok':''}" style="left:${o.x}%;top:${o.y}%" data-pack="${o.k}" aria-label="${o.n}">${o.l.length&&!left(o.l)?'✓':o.t}</button>`).join('')}</div>`;
+  h+=`<div class="chips packchips">${spots.map(o=>`<button class="chip ${o.k===sel?'accent':''}" data-pack="${o.k}">${o.n} <span class="num">${o.l.length-left(o.l)}/${o.l.length}</span></button>`).join('')}</div>`;
+  if(rain)h+=`<div class="banner warn small" style="margin-block:8px">雨天：雨傘、地墊放拉車。</div>`;
+  if(sel==='tote')h+=`<div class="bag packpanel"><div class="baghead">${ICON.tote}<b>手提袋</b>${cnt(tl)}</div><div class="layers">${['上層','中層','下層'].map((t,i)=>`<div class="layer"><div class="glabel"><span>${t}</span>${cnt(tote[i])}</div>${bagItems(tote[i],checked,rain)}</div>`).join('')}</div></div>`;
+  else{const o=spots.find(x=>x.k===sel);h+=`<div class="bag packpanel"><div class="baghead">${ICON[sel]}<b>${o.n}</b>${cnt(o.l)}</div><div class="cols">${bagItems(o.l,checked,rain)}</div></div>`}
+  h+=`<p class="small muted" style="margin:8px 0 0">點圖上的東西看要裝什麼。勾選跟準備清單是同一份。要換位置：準備清單 → 編輯清單 → 點項目。</p>`;
   const none=items.filter(c=>!BAG_NAME[c.bag]);
   if(none.length)h+=`<section class="sec" style="margin-top:14px"><div class="sec-head"><h3>還沒放進包包（${none.length}）</h3><button class="btn sm" data-act="fill-bags">照預設放</button></div><div class="cgroup">${bagItems(none,checked,rain)}</div></section>`;
   return h;
@@ -797,6 +809,7 @@ document.addEventListener('click',e=>{
   const d=t.dataset;
   if(d.tab){tab=d.tab;try{localStorage.setItem(LS+'-tab',tab)}catch(_){}window.scrollTo(0,0);render();return}
   if(d.logseg){logSeg=d.logseg;render();return}
+  if(d.pack){packSel=d.pack;render();return}
   if(d.gearseg){gearSeg=d.gearseg;render();return}
   if(d.songF){songFilter=d.songF;render();return}
   if(d.whoF){whoF=d.whoF;render();return}
