@@ -111,6 +111,13 @@ dialog form{display:flex;flex-direction:column;gap:10px}
 .tok.bad{border-color:var(--off);color:var(--off)}
 .tok.now{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .phrase button{padding:5px 10px;flex:0 0 auto}
+.transport{display:grid;grid-template-columns:1fr auto;gap:8px 12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.transport-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700}
+.transport time{font:500 .85rem var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.transport input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--accent)}
+.transport-actions{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end}
+.original-panel{width:100%;padding:4px 0}
+.original-panel audio{display:block;width:100%;min-width:0}
 textarea{font:500 1rem var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px;width:100%;resize:vertical}
 details summary{cursor:pointer;color:var(--accent);font-weight:700}
 .syntax p{margin:4px 0}
@@ -144,14 +151,9 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700}
       <input id="originalFile" type="file" accept="audio/*" hidden>
       <span id="originalName" class="file-name">還沒有原唱</span>
       <button id="analyzeOriginal" type="button" disabled>抓取原唱旋律</button>
-      <button id="playOriginal" type="button" disabled>播放原唱</button>
     </div>
-    <div id="originalPanel" class="row" hidden>
-      <audio id="originalAudio" controls preload="metadata" playsinline style="width:100%;min-width:220px"></audio>
-      <audio id="pianoAudio" preload="auto" playsinline hidden></audio>
-      <span id="originalTime" class="hint">0:00 / 0:00</span>
-      <input id="originalSeek" type="range" min="0" max="100" value="0" step="0.1" aria-label="原唱播放進度" style="flex:1;min-width:120px">
-      <button id="originalPause" type="button">暫停</button>
+    <div id="originalPanel" class="original-panel" hidden>
+      <audio id="originalAudio" controls preload="metadata" playsinline></audio>
     </div>
     <label class="hint" style="display:flex;align-items:center;gap:5px"><input id="useOriginal" type="checkbox">錄音時播放原唱（請戴耳機）</label>
     <p class="hint">先選原唱檔，再按「抓取原唱旋律」；抓到後可用鋼琴播放。混音歌曲可能抓到伴奏音，請用簡譜核對。</p>
@@ -220,7 +222,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700}
   <section class="panel" aria-label="照譜彈">
     <div class="row" style="justify-content:space-between">
       <h2>照譜彈</h2>
-      <span class="hint">抓到原唱旋律後按「鋼琴播放原唱旋律」；會照原唱時間與節奏播放。BPM 只調整手動輸入的簡譜速度，練習段落與重複設定也會套用</span>
+      <span class="hint">輸入簡譜後可逐句或整首播放；速度依 BPM 設定</span>
     </div>
     <textarea id="scoreText" rows="5" placeholder="照你的譜輸入數字，一行一句" aria-label="簡譜"></textarea>
     <details class="hint"><summary>怎麼輸入</summary>
@@ -242,9 +244,12 @@ details summary{cursor:pointer;color:var(--accent);font-weight:700}
     <div class="row">
       <button id="playScore" class="primary" type="button">從頭彈全部</button>
       <button id="playMelody" type="button" disabled>鋼琴播放原唱旋律</button>
-      <button id="playMelodySync" type="button" disabled>同步播放原唱＋鋼琴</button>
-      <button id="stopMelody" type="button" hidden>停止鋼琴</button>
-      <button id="stopScore" type="button" hidden>停止</button>
+      <label class="hint" style="display:flex;align-items:center;gap:5px"><input id="melodyWithOriginal" type="checkbox">同時播放原唱</label>
+    </div>
+    <div id="scoreTransport" class="transport" hidden aria-label="照譜彈播放控制">
+      <div class="transport-head"><span id="scorePlayState">照譜彈</span><time id="scoreClock">0:00 / 0:00</time></div>
+      <input id="scoreSeek" type="range" min="0" max="0" value="0" step="0.05" aria-label="簡譜播放進度">
+      <div class="transport-actions"><button id="scorePause" type="button">暫停</button><button id="stopScore" type="button">停止</button></div>
     </div>
   </section>
 
@@ -467,13 +472,8 @@ function yin(buf,sr){
 }
 
 /* ---------- 伴奏 ---------- */
-let player=null,shifter=null,backingBuf=null,originalBuf=null,originalPlayer=null,originalShifter=null,originalStartOffset=0,originalStartedAt=0,originalTimer=0;
+let player=null,shifter=null,backingBuf=null,originalBuf=null,originalPlayer=null,originalShifter=null,originalStartOffset=0,originalStartedAt=0;
 function clockText(sec){sec=Math.max(0,Math.floor(sec||0));return `${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`}
-function updateOriginalPanel(){
-  if(!originalBuf)return;const d=originalBuf.duration,p=originalPlayer?Math.min(d,originalStartOffset+Math.max(0,Tone.now()-originalStartedAt)):originalStartOffset;
-  $('originalSeek').max=d;$('originalSeek').value=p;$('originalTime').textContent=`${clockText(p)} / ${clockText(d)}`;
-  if(originalPlayer&&p>=d-.05){stopOriginal(true);originalStartOffset=d}
-}
 async function loadBacking(){
   backingBuf=null;
   if(!S.song||!S.song.backing){$('backingName').textContent='還沒有伴奏（沒有也可以只看音高）';return}
@@ -483,13 +483,13 @@ async function loadBacking(){
 async function loadOriginal(){
   stopOriginal(false);$('originalPanel').hidden=true;
   originalBuf=null;
-  if(!S.song||!S.song.original){$('originalName').textContent='還沒有原唱';$('analyzeOriginal').disabled=true;$('playOriginal').disabled=true;$('playMelody').disabled=true;$('playMelodySync').disabled=true;return}
+  if(!S.song||!S.song.original){$('originalName').textContent='還沒有原唱';$('analyzeOriginal').disabled=true;$('playMelody').disabled=true;return}
   $('originalName').textContent=S.song.originalName||'已選原唱';
-  try{const ab=await S.song.original.arrayBuffer();originalBuf=await Tone.getContext().decodeAudioData(ab);const audioUrl=URL.createObjectURL(S.song.original);$('originalAudio').src=audioUrl;$('originalAudio').playbackRate=Math.pow(2,(S.song.shift||0)/12);$('originalAudio').preservesPitch=false;$('analyzeOriginal').disabled=false;$('playOriginal').disabled=false;$('originalPanel').hidden=false;originalStartOffset=0;updateOriginalPanel();const staleMelody=S.song.melody&&S.song.melody.length&&S.song.melodyVersion!==2;const hasMelody=S.song.melody&&S.song.melody.length&&!staleMelody;$('playMelody').disabled=!hasMelody;$('playMelodySync').disabled=!hasMelody;$('analyzeOriginal').textContent=staleMelody?'重新抓取旋律':'抓取原唱旋律';if(staleMelody)toast('節奏同步已改善，請按「重新抓取旋律」更新這首歌的音符時間')}
-  catch(e){$('originalName').textContent='原唱讀不出來，請重新選檔';$('analyzeOriginal').disabled=true;$('playOriginal').disabled=true;$('playMelody').disabled=true;$('playMelodySync').disabled=true}
+  try{const ab=await S.song.original.arrayBuffer();originalBuf=await Tone.getContext().decodeAudioData(ab);const audioUrl=URL.createObjectURL(S.song.original);$('originalAudio').src=audioUrl;$('originalAudio').playbackRate=Math.pow(2,(S.song.shift||0)/12);$('originalAudio').preservesPitch=false;$('analyzeOriginal').disabled=false;$('originalPanel').hidden=false;originalStartOffset=0;const staleMelody=S.song.melody&&S.song.melody.length&&S.song.melodyVersion!==2;const hasMelody=S.song.melody&&S.song.melody.length&&!staleMelody;$('playMelody').disabled=!hasMelody;$('analyzeOriginal').textContent=staleMelody?'重新抓取旋律':'抓取原唱旋律';if(staleMelody)toast('節奏同步已改善，請按「重新抓取旋律」更新這首歌的音符時間')}
+  catch(e){$('originalName').textContent='原唱讀不出來，請重新選檔';$('analyzeOriginal').disabled=true;$('playMelody').disabled=true}
 }
-function stopOriginal(preserve=true){if(preserve&&originalPlayer&&originalBuf)originalStartOffset=Math.min(originalBuf.duration,originalStartOffset+Math.max(0,Tone.now()-originalStartedAt));clearInterval(originalTimer);originalTimer=0;try{if(originalPlayer){originalPlayer.stop();originalPlayer.dispose()}}catch(e){}try{if(originalShifter)originalShifter.dispose()}catch(e){}originalPlayer=null;originalShifter=null;if(originalBuf){$('playOriginal').textContent='播放原唱';updateOriginalPanel()}}
-function startOriginal(offset=0,dur){stopOriginal(false);if(!originalBuf)return false;originalStartOffset=offset;originalPlayer=new Tone.Player(originalBuf);const sh=S.song.shift;if(sh){originalShifter=new Tone.PitchShift({pitch:sh,windowSize:.09});originalPlayer.connect(originalShifter);originalShifter.toDestination()}else originalPlayer.toDestination();originalStartedAt=Tone.now()+.05;originalPlayer.start(originalStartedAt,offset,dur||undefined);$('playOriginal').textContent='暫停原唱';originalTimer=setInterval(updateOriginalPanel,100);updateOriginalPanel();return true}
+function stopOriginal(preserve=true){if(preserve&&originalPlayer&&originalBuf)originalStartOffset=Math.min(originalBuf.duration,originalStartOffset+Math.max(0,Tone.now()-originalStartedAt));try{if(originalPlayer){originalPlayer.stop();originalPlayer.dispose()}}catch(e){}try{if(originalShifter)originalShifter.dispose()}catch(e){}originalPlayer=null;originalShifter=null}
+function startOriginal(offset=0,dur){stopOriginal(false);if(!originalBuf)return false;originalStartOffset=offset;originalPlayer=new Tone.Player(originalBuf);const sh=S.song.shift;if(sh){originalShifter=new Tone.PitchShift({pitch:sh,windowSize:.09});originalPlayer.connect(originalShifter);originalShifter.toDestination()}else originalPlayer.toDestination();originalStartedAt=Tone.now()+.05;originalPlayer.start(originalStartedAt,offset,dur||undefined);return true}
 async function extractOriginalMelody(){
   if(!originalBuf)return;
   $('analyzeOriginal').disabled=true;$('analyzeOriginal').textContent='分析中…';
@@ -500,10 +500,9 @@ async function extractOriginalMelody(){
       const f=yin(frame,rate),m=f>75&&f<1000?69+12*Math.log2(f/440):0,idx=Math.round(center/sr/DT);if(idx>=0&&idx<count)melody[idx]=m;
       if(center%(hop*10)<hop)await new Promise(resolve=>setTimeout(resolve,0));
     }
-    S.song.melody=melody;S.song.melodyDt=DT;S.song.melodyVersion=2;await dbPut('songs',S.song);$('playMelody').disabled=false;$('playMelodySync').disabled=false;drawLive();if(S.take)drawTake(S.take.track,S.take.dt,S.take.key,S.take.offset||0,S.take.shift||0);toast('原唱旋律已抓取，按「鋼琴播放原唱旋律」試聽');
+    S.song.melody=melody;S.song.melodyDt=DT;S.song.melodyVersion=2;await dbPut('songs',S.song);$('playMelody').disabled=false;drawLive();if(S.take)drawTake(S.take.track,S.take.dt,S.take.key,S.take.offset||0,S.take.shift||0);toast('原唱旋律已抓取，按「鋼琴播放原唱旋律」試聽');
   }catch(e){toast('原唱分析失敗，請確認音檔格式')}finally{$('analyzeOriginal').disabled=!originalBuf;$('analyzeOriginal').textContent=S.song&&S.song.melodyVersion!==2?'重新抓取旋律':'抓取原唱旋律'}
 }
-function playOriginal(){if(!originalBuf)return;if(originalPlayer){stopOriginal(true);return}ensureAudio().then(()=>{const p=+$('originalSeek').value||0;startOriginal(p);toast('原唱播放中')})}
 function startBacking(offset,dur){
   stopBacking();if(!backingBuf)return false;
   player=new Tone.Player(backingBuf);
@@ -651,7 +650,7 @@ function parseLine(line,key){
   }
   return out;
 }
-let scoreTimers=[],scoreChips=[];
+let scoreChips=[];
 function renderPhrases(){
   const box=$('phrases');box.innerHTML='';scoreChips=[];
   const lines=$('scoreText').value.split('\n').filter(l=>l.trim());
@@ -666,20 +665,38 @@ function renderPhrases(){
     scoreChips.push(chips);row.appendChild(b);row.appendChild(toks);box.appendChild(row);
   });
 }
-function stopScore(){scoreTimers.forEach(clearTimeout);scoreTimers=[];document.querySelectorAll('.tok.now').forEach(c=>c.classList.remove('now'));$('stopScore').hidden=true;$('playScore').hidden=false}
-let melodyTimers=[],melodyOscillators=[],melodyRepeatTimer=0,melodyPianoPlayer=null,melodyOriginalPlayer=null,melodyOriginalShifter=null;
-let pianoWavUrl='';
-function melodyWav(events,duration){
-  const release=.045,sr=22050,count=Math.ceil(sr*(duration+release+.03)),samples=new Float32Array(count),partials=[[1,1],[2,.42],[3,.18],[4,.07]];
-  for(const e of events){const begin=Math.max(0,Math.floor(e.start*sr)),end=Math.min(count,Math.ceil((e.start+e.duration+release)*sr)),f=440*Math.pow(2,(e.m-69)/12);
-    for(let i=begin;i<end;i++){const t=i/sr-e.start,elapsed=t-e.duration;if(t<0)continue;const env=t<.012?t/.012:(elapsed>0?Math.exp(-elapsed*55):Math.exp(-t*.75));let v=0;for(const [harm,amp] of partials)v+=Math.sin(2*Math.PI*f*harm*t)*amp;samples[i]+=v*env*.32}
-  }
-  let peak=0;for(const v of samples)peak=Math.max(peak,Math.abs(v));const scale=peak>.001?Math.min(1,.72/peak):1;
-  const bytes=new ArrayBuffer(44+count*2),view=new DataView(bytes),write=(offset,str)=>{for(let i=0;i<str.length;i++)view.setUint8(offset+i,str.charCodeAt(i))};
-  write(0,'RIFF');view.setUint32(4,36+count*2,true);write(8,'WAVE');write(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,sr,true);view.setUint32(28,sr*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);write(36,'data');view.setUint32(40,count*2,true);
-  for(let i=0;i<count;i++)view.setInt16(44+i*2,Math.max(-1,Math.min(1,samples[i]*scale))*32767,true);
-  return new Blob([bytes],{type:'audio/wav'});
+let scoreTimers=[],scoreOscillators=[],scoreOriginalPlayer=null,scoreOriginalShifter=null,scoreClockTimer=0;
+let transport={events:[],duration:0,mode:'',label:'',offset:0,base:0,withOriginal:false,originalOffset:0,paused:false};
+function clearTransportAudio(){
+  scoreTimers.forEach(clearTimeout);scoreTimers=[];
+  scoreOscillators.forEach(group=>group.forEach(o=>{try{o.stop()}catch(e){}}));scoreOscillators=[];
+  try{if(scoreOriginalPlayer){scoreOriginalPlayer.stop();scoreOriginalPlayer.dispose()}}catch(e){}scoreOriginalPlayer=null;
+  try{if(scoreOriginalShifter)scoreOriginalShifter.dispose()}catch(e){}scoreOriginalShifter=null;
+  clearInterval(scoreClockTimer);scoreClockTimer=0;
 }
+function stopScore(reset=true){
+  clearTransportAudio();document.querySelectorAll('.tok.now').forEach(c=>c.classList.remove('now'));
+  if(reset){transport.paused=false;transport.offset=0;$('scoreTransport').hidden=true;$('scorePause').textContent='暫停';$('scoreSeek').value=0}
+  else $('scorePause').textContent='繼續';
+}
+function transportTime(){const ctx=Tone.getContext().rawContext;return Math.max(0,Math.min(transport.duration,ctx.currentTime-transport.base))}
+function updateTransportClock(){const p=transport.paused?transport.offset:transportTime();$('scoreSeek').value=p;$('scoreClock').textContent=`${clockText(p)} / ${clockText(transport.duration)}`}
+async function runTransport(offset=0){
+  await ensureAudio();clearTransportAudio();const ctx=Tone.getContext().rawContext,now=ctx.currentTime,startAt=now+.15;
+  transport.offset=Math.max(0,Math.min(transport.duration,offset));transport.base=startAt-transport.offset;transport.paused=false;
+  $('scoreTransport').hidden=false;$('scorePlayState').textContent=transport.label;$('scorePause').textContent='暫停';$('scoreSeek').max=transport.duration;$('scoreSeek').value=transport.offset;
+  transport.events.forEach(e=>{
+    const end=e.start+e.duration;if(end<=transport.offset)return;
+    const from=Math.max(e.start,transport.offset),at=startAt+from-transport.offset,dur=Math.min(end,transport.duration)-from;
+    if(e.m!==null&&dur>0)scoreOscillators.push(playNote(e.m,Math.max(.06,dur),at));
+    if(e.chip)scoreTimers.push(setTimeout(()=>{document.querySelectorAll('.tok.now').forEach(c=>c.classList.remove('now'));e.chip.classList.add('now');if(e.m!==null){S.target=e.m;if(e.m<S.lo||e.m>S.hi){S.lo=e.m-8;S.hi=e.m+9;buildPiano()}if(!S.mode)drawLive()}},Math.max(0,(from-transport.offset)*1000+100)));
+  });
+  if(transport.withOriginal&&originalBuf){scoreOriginalPlayer=new Tone.Player(originalBuf);const sh=S.song.shift||0;if(sh){scoreOriginalShifter=new Tone.PitchShift({pitch:sh,windowSize:.09});scoreOriginalPlayer.connect(scoreOriginalShifter);scoreOriginalShifter.toDestination()}else scoreOriginalPlayer.toDestination();scoreOriginalPlayer.start(Tone.now()+.15,transport.originalOffset+transport.offset,Math.max(.05,transport.duration-transport.offset))}
+  scoreClockTimer=setInterval(()=>{updateTransportClock();if(!transport.paused&&transportTime()>=transport.duration-.03)finishTransport()},80);updateTransportClock();
+}
+function finishTransport(){const loop=transport.mode==='melody'&&$('loop').checked,mode=transport.mode;stopScore();if(loop)runTransport(0);else if(mode==='score'&&$('scoreSing').checked&&!S.mode)begin(false)}
+async function toggleTransportPause(){if($('scoreTransport').hidden)return;if(!transport.paused){transport.offset=transportTime();transport.paused=true;stopScore(false);updateTransportClock()}else await runTransport(transport.offset)}
+async function seekTransport(){if(!transport.mode)return;const p=+$('scoreSeek').value||0;if(transport.paused){transport.offset=p;updateTransportClock()}else await runTransport(p)}
 function melodySegments(){
   const data=S.song&&S.song.melody,dt=S.song&&S.song.melodyDt||DT;if(!data)return[];
   // Analysis windows overlap; suppress a one-frame pitch flicker so it cannot
@@ -695,56 +712,40 @@ function melodySegments(){
   }
   return out;
 }
-function stopMelody(){
-  melodyTimers.forEach(clearTimeout);melodyTimers=[];clearTimeout(melodyRepeatTimer);melodyRepeatTimer=0;
-  melodyOscillators.forEach(o=>{try{o.stop()}catch(e){}});melodyOscillators=[];
-  try{if(melodyPianoPlayer){melodyPianoPlayer.stop();melodyPianoPlayer.dispose()}}catch(e){}melodyPianoPlayer=null;
-  try{if(melodyOriginalPlayer){melodyOriginalPlayer.stop();melodyOriginalPlayer.dispose()}}catch(e){}melodyOriginalPlayer=null;
-  try{if(melodyOriginalShifter)melodyOriginalShifter.dispose()}catch(e){}melodyOriginalShifter=null;
-  const audio=$('pianoAudio');audio.pause();audio.removeAttribute('src');audio.load();if(pianoWavUrl){URL.revokeObjectURL(pianoWavUrl);pianoWavUrl=''}
-  $('stopMelody').hidden=true;$('playMelody').hidden=false;
-}
-async function playOriginalMelody(withOriginal=false){
-  stopScore();stopMelody();const notes=melodySegments();if(!notes.length){toast('先選原唱檔並抓取旋律');return}
-  if(withOriginal){$('originalAudio').pause();stopOriginal(false)}
-  const a=Math.max(0,+$('aT').value||0),last=notes[notes.length-1].end;
-  const b=+$('bT').value>a?+$('bT').value:last,shift=S.song.shift||0,events=[];
-  $('playMelody').hidden=true;$('stopMelody').hidden=false;
-  notes.forEach(n=>{const from=Math.max(n.start,a),to=Math.min(n.end,b);if(to<=from)return;const at=from-a,dur=to-from;events.push({m:n.m+shift,start:at,duration:dur})});
-  try{
-    await ensureAudio();const ctx=Tone.getContext(),wav=melodyWav(events,Math.max(.1,b-a)),piano=await ctx.decodeAudioData(await wav.arrayBuffer()),when=Tone.now()+.12;
-    melodyPianoPlayer=new Tone.Player(piano).toDestination();melodyPianoPlayer.start(when);
-    if(withOriginal&&originalBuf){melodyOriginalPlayer=new Tone.Player(originalBuf);const sh=shift;if(sh){melodyOriginalShifter=new Tone.PitchShift({pitch:sh,windowSize:.09});melodyOriginalPlayer.connect(melodyOriginalShifter);melodyOriginalShifter.toDestination()}else melodyOriginalPlayer.toDestination();melodyOriginalPlayer.start(when,a,Math.max(.1,b-a))}
-    notes.forEach(n=>{const at=Math.max(n.start,a)-a,to=Math.min(n.end,b);if(to<=Math.max(n.start,a))return;melodyTimers.push(setTimeout(()=>{S.target=n.m+shift;drawLive()},120+Math.max(0,at*1000)))});
-  }catch(e){toast('鋼琴播放失敗，請再按一次');stopMelody();return}
-  const elapsed=Math.max(.1,b-a);melodyTimers.push(setTimeout(()=>{if($('loop').checked){playOriginalMelody(withOriginal)}else stopMelody()},elapsed*1000+250));
+async function playOriginalMelody(){
+  const notes=melodySegments();if(!notes.length){toast('先選原唱檔並抓取旋律');return}
+  if($('melodyWithOriginal').checked){$('originalAudio').pause();stopOriginal(false)}
+  const a=Math.max(0,+$('aT').value||0),last=notes[notes.length-1].end,b=+$('bT').value>a?+$('bT').value:last,shift=S.song.shift||0,events=[];
+  notes.forEach(n=>{const from=Math.max(n.start,a),to=Math.min(n.end,b);if(to>from)events.push({m:n.m+shift,start:from-a,duration:to-from})});
+  if(!events.length){toast('選取的練習區間沒有抓到旋律');return}
+  stopScore();transport={events,duration:Math.max(.1,b-a),mode:'melody',label:'原唱旋律・鋼琴',offset:0,base:0,withOriginal:$('melodyWithOriginal').checked,originalOffset:a,paused:false};
+  try{await runTransport(0)}catch(e){stopScore();toast('鋼琴播放失敗，請再按一次')}
 }
 async function playLines(idxs){
-  await ensureAudio();stopScore();stopMelody();
+  stopScore();
   const lines=$('scoreText').value.split('\n').filter(l=>l.trim());
   if(!idxs)idxs=lines.map((_,i)=>i);
   const bpm=Math.min(200,Math.max(30,+$('bpm').value||70)),beat=60/bpm;
-  const ctx=Tone.getContext().rawContext,start=ctx.currentTime+0.15;let t=0;
-  $('stopScore').hidden=false;$('playScore').hidden=true;
+  let t=0;const events=[];
   idxs.forEach((li,k)=>{
     parseLine(lines[li],curKey()).forEach((n,ni)=>{
       if(n.bad)return;const d=n.beats*beat,chip=scoreChips[li]&&scoreChips[li][ni];
-      if(n.m!==null)playNote(n.m,Math.min(d+0.35,3),start+t);
-      scoreTimers.push(setTimeout(()=>{document.querySelectorAll('.tok.now').forEach(c=>c.classList.remove('now'));if(chip){chip.classList.add('now')}if(n.m!==null){S.target=n.m;if(n.m<S.lo||n.m>S.hi){const c=n.m;S.lo=c-8;S.hi=c+9;buildPiano()}if(!S.mode)drawLive()}},(0.15+t)*1000));
+      events.push({m:n.m,start:t,duration:d,chip});
       t+=d;
     });
     if(k<idxs.length-1)t+=beat;
   });
-  scoreTimers.push(setTimeout(()=>{stopScore();if($('scoreSing').checked&&!S.mode)begin(false)},(0.15+t+0.3)*1000));
+  transport={events,duration:Math.max(.1,t),mode:'score',label:'照譜彈',offset:0,base:0,withOriginal:false,originalOffset:0,paused:false};
+  try{await runTransport(0)}catch(e){stopScore();toast('鋼琴播放失敗，請再按一次')}
 }
 async function saveScore(){if(!S.song)return;S.song.score=$('scoreText').value;S.song.bpm=+$('bpm').value||70;await dbPut('songs',S.song)}
 $('scoreText').addEventListener('input',()=>{renderPhrases();clearTimeout(saveScore._t);saveScore._t=setTimeout(saveScore,600)});
 $('bpm').addEventListener('change',saveScore);
 $('playScore').onclick=()=>playLines(null);
-$('playMelody').onclick=()=>playOriginalMelody(false);
-$('playMelodySync').onclick=()=>playOriginalMelody(true);
-$('stopMelody').onclick=stopMelody;
-$('stopScore').onclick=stopScore;
+$('playMelody').onclick=playOriginalMelody;
+$('scorePause').onclick=toggleTransportPause;
+$('scoreSeek').addEventListener('change',seekTransport);
+$('stopScore').onclick=()=>stopScore();
 
 /* ---------- 歌曲 ---------- */
 function fillKeys(sel){sel.innerHTML=KEYZH.map((k,i)=>`<option value="${i}">${k}大調</option>`).join('')}
@@ -782,11 +783,6 @@ $('backingFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;S.son
 $('pickOriginal').onclick=()=>$('originalFile').click();
 $('originalFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;S.song.original=f;S.song.originalName=f.name;delete S.song.melody;await dbPut('songs',S.song);await loadOriginal();drawLive();toast('原唱已存在這支手機，下次不用再選')};
 $('analyzeOriginal').onclick=extractOriginalMelody;
-$('playOriginal').onclick=()=>{const a=$('originalAudio');if(a.paused)a.play().catch(()=>toast('請點播放器播放，並確認裝置音量'));else a.pause()};
-$('originalAudio').ontimeupdate=()=>{const a=$('originalAudio');if(!Number.isFinite(a.duration))return;$('originalSeek').max=a.duration;$('originalSeek').value=a.currentTime;$('originalTime').textContent=`${clockText(a.currentTime)} / ${clockText(a.duration)}`;$('playOriginal').textContent=a.paused?'播放原唱':'暫停原唱'};
-$('originalAudio').onended=()=>{$('playOriginal').textContent='播放原唱'};
-$('originalPause').onclick=()=>{$('originalAudio').pause();stopOriginal(true)};
-$('originalSeek').oninput=e=>{const a=$('originalAudio');a.currentTime=+e.target.value||0;stopOriginal(false);originalStartOffset=+e.target.value||0;updateOriginalPanel()};
 $('rUp').onclick=()=>{if(S.hi<88){S.lo+=2;S.hi+=2;buildPiano();drawLive()}};
 $('rDown').onclick=()=>{if(S.lo>36){S.lo-=2;S.hi-=2;buildPiano();drawLive()}};
 $('clearTarget').onclick=()=>{S.target=null;drawLive()};
