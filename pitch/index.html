@@ -461,7 +461,7 @@ function ensurePianoSampler(){
     let done=false;const timer=setTimeout(()=>{if(!done){done=true;reject(new Error('Piano samples timed out'))}},20000);
     try{
       let sampler;
-      sampler=new Tone.Sampler(PIANO_SAMPLES,()=>{if(done)return;done=true;clearTimeout(timer);sampler.release=.16;pianoSampler=sampler;resolve(sampler)},PIANO_BASE).toDestination();
+      sampler=new Tone.Sampler(PIANO_SAMPLES,()=>{if(done)return;done=true;clearTimeout(timer);sampler.release=.55;pianoSampler=sampler;resolve(sampler)},PIANO_BASE).toDestination();
     }catch(e){clearTimeout(timer);done=true;reject(e)}
   }).catch(e=>{pianoSamplerPromise=null;throw e});
   return pianoSamplerPromise;
