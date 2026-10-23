@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <style>
-/* 版面：情境圖鋪滿整個螢幕（固定不動，只會左右移到現在那段的物品），歌詞像字幕疊在下半部滑。永遠暗色。 */
+/* 版面：情境圖固定不動、鋪滿畫面，歌詞像字幕疊在下半部滑，唱到哪就亮哪個物品。直的手機時圖放上面整張。永遠暗色。 */
 :root{
   --bg:#0d0b09; --ink:#f6efe4; --muted:#bfb3a3; --line:rgba(255,255,255,.16); --glow:#f2c27b; --glow-soft:rgba(242,194,123,.16);
   --display:"LXGW WenKai TC","Noto Sans TC","PingFang TC",serif;
@@ -20,7 +20,8 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);-webkit-tap-highlight-color:transparent}
-.bg{position:fixed;left:0;top:0;z-index:0;transition:transform .9s cubic-bezier(.4,.1,.2,1);will-change:transform}
+.bg{position:fixed;left:0;top:0;z-index:0}
+.blur{position:fixed;inset:0;z-index:0;background-size:cover;background-position:center;filter:blur(28px) brightness(.45);transform:scale(1.15);display:none}
 .bg img{position:absolute;inset:0;width:100%;height:100%;display:block}
 .shade{position:absolute;inset:0;pointer-events:none;transition:background .6s ease}
 .spot{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;transition:opacity .5s ease}
@@ -38,7 +39,7 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)
 .bar .edit{margin-left:auto;background:none;border:0;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;padding:0}
 .lyr{position:relative;z-index:2;padding:70vh 20px 50vh;max-width:680px}
 .blk{padding:8px 0 10px;cursor:pointer;transition:opacity .35s ease;opacity:.35}
-.blk.on{opacity:1}.blk.past{opacity:.08}
+.blk.on{opacity:1}.blk.past{opacity:0}
 .blk h3{margin:0 0 2px;font-size:12px;font-weight:500;color:var(--glow);letter-spacing:.06em;text-shadow:0 1px 6px #000}
 .blk h3 b{font-family:var(--display);font-size:14px;margin:0 4px}
 .blk h3 span{color:var(--muted);letter-spacing:0;margin-left:2px}
@@ -53,24 +54,33 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)
 button:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
 /* 寬螢幕（iPad 橫放）：一樣歌詞在下面，像字幕，置中 */
 @media (min-width:900px){.lyr{margin:0 auto}.blk p{font-size:19px;line-height:1.5}}
-@media (prefers-reduced-motion:reduce){.spot.on i{animation:none}.bg,.shade,.spot,.blk{transition:none}}
+/* 直的手機：圖在上面一整張，歌詞從圖下面開始 */
+@media (orientation:portrait){
+  .blur{display:block}
+  .bg{z-index:3}
+  .bar{z-index:4;background:var(--bg)}
+  .veil{background:linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) var(--img-bottom,40%),rgba(0,0,0,.35) calc(var(--img-bottom,40%) + 40px),rgba(0,0,0,.6) 100%)}
+  .lyr{padding-top:calc(var(--img-bottom,40vh) + 24px)}
+}
+@media (prefers-reduced-motion:reduce){.spot.on i{animation:none}.shade,.spot,.blk{transition:none}}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <script>
 // 每首歌一筆：圖、圖的長寬比、熱點位置（圖上的百分比）、段落（看哪個東西、身體做的一個字、一句提示、這段有幾行歌詞）。
+// spot 可以是陣列：一行歌詞對一個東西，陣列用完就停在最後一個。
 // 歌詞不放在程式裡（這個網站是公開的），第一次打開時貼上，只存在這台裝置。
 const SCENES={
   jiayi:{
-    title:'甲乙丙丁',artist:'李佳薇',img:'jiayi.jpg',ratio:1024/572,
-    spots:{coat:{x:42,y:57,name:'外套'},photo:{x:31,y:29,name:'照片'},neck:{x:20,y:59,name:'項鍊'},door:{x:86,y:50,name:'門'}},
+    title:'甲乙丙丁',artist:'李佳薇',img:'jiayi.jpg',ratio:2752/1536,
+    spots:{coat:{x:39.5,y:57,name:'外套'},photo:{x:30.5,y:28,name:'照片'},neck:{x:21,y:61,name:'項鍊'},dinner:{x:58,y:60,name:'晚餐'},laundry:{x:70,y:52,name:'衣服'},door:{x:86,y:40,name:'門'}},
     steps:[
       {sec:'主歌',spot:'coat',word:'輕',cue:'他的東西還在，房間太安靜',n:4},
-      {sec:'導歌',spot:'photo',word:'推',cue:'一句比一句往上',n:3},
+      {sec:'導歌',spot:['photo','laundry','dinner'],word:'推',cue:'一句比一句往上',n:3},
       {sec:'導歌',spot:'neck',word:'收',cue:'勇敢放，丟在原地收',n:4},
       {sec:'副歌',spot:'door',word:'打',cue:'每個「怎麼」都打出去',n:7},
-      {sec:'第二輪',spot:'photo',word:'穩',cue:'又被拉回來，這次站穩',n:7},
+      {sec:'第二輪',spot:['photo','laundry','dinner','neck'],word:'穩',cue:'又被拉回來，這次站穩',n:7},
       {sec:'副歌',spot:'door',word:'打',cue:'比第一次更確定',n:7},
       {sec:'最後副歌',spot:'door',word:'全開',cue:'最滿，最後「同情」收輕',n:7}
     ]
@@ -79,7 +89,9 @@ const SCENES={
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const app=document.getElementById('app');
-let key='',cur=0,editing=false;
+let key='',cur=0,curL=0,editing=false;
+const spotOf=(st,l)=>Array.isArray(st.spot)?st.spot[Math.min(l,st.spot.length-1)]:st.spot;
+const namesOf=(sc,st)=>[...new Set([].concat(st.spot))].map(k=>sc.spots[k].name).join('・');
 
 function loadLyrics(){try{return (JSON.parse(localStorage.getItem(LKEY)||'{}')||{})[key]||''}catch(e){return ''}}
 function saveLyrics(t){let all={};try{all=JSON.parse(localStorage.getItem(LKEY)||'{}')||{}}catch(e){}all[key]=t;try{localStorage.setItem(LKEY,JSON.stringify(all))}catch(e){alert('這台裝置沒辦法存歌詞')}}
@@ -96,39 +108,39 @@ function render(){
   if(!sc){app.innerHTML=`<div class="bar"><a href="../#songs">← 歌單</a></div><div class="empty">這首歌還沒有情境圖</div>`;return}
   document.title=sc.title+'・情境圖';
   const text=loadLyrics(),blocks=text?split(text,sc.steps):null,paste=!blocks||editing;
-  const bg=`<div class="bg" id="bg"><img src="${esc(sc.img)}" alt="${esc(sc.title)}的情境圖"><div class="shade" id="shade"></div>
+  const bg=`<div class="blur" style="background-image:url('${esc(sc.img)}')"></div><div class="bg" id="bg"><img src="${esc(sc.img)}" alt="${esc(sc.title)}的情境圖"><div class="shade" id="shade"></div>
     ${Object.entries(sc.spots).map(([k,s])=>`<div class="spot" data-spot="${k}" style="left:${s.x}%;top:${s.y}%"><i></i><b>${esc(s.name)}</b></div>`).join('')}</div><div class="veil"></div>`;
   const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${esc(sc.artist)}</span>${paste?'':'<button class="edit" data-act="edit">改歌詞</button>'}</div>`;
   const body=paste
     ?`<div class="paste"><p>把這首歌的歌詞整首貼進來，一行一句、照順序。<br>歌詞只存在這台裝置，不會放到網路上。</p>
       <textarea id="lyr-in" placeholder="還沒來得及習慣…">${esc(text)}</textarea>
       <div class="row">${text?'<button class="btn ghost" data-act="cancel">取消</button>':''}<button class="btn" data-act="save">存好</button></div></div>`
-    :`<div class="lyr">${sc.steps.map((s,i)=>`<section class="blk" data-b="${i}"><h3>${esc(s.sec)}<b>${esc(sc.spots[s.spot].name)} ${esc(s.word)}</b><span>${esc(s.cue)}</span></h3><p>${(blocks[i]||[]).map(esc).join('<br>')}</p></section>`).join('')}</div>`;
+    :`<div class="lyr">${sc.steps.map((s,i)=>`<section class="blk" data-b="${i}"><h3>${esc(s.sec)}<b>${esc(namesOf(sc,s))} ${esc(s.word)}</b><span>${esc(s.cue)}</span></h3><p>${(blocks[i]||[]).map((t,k)=>`<span class="ln" data-l="${k}">${esc(t)}</span>`).join('<br>')}</p></section>`).join('')}</div>`;
   app.innerHTML=bg+bar+body;
-  mark(cur,true);
+  mark(cur,true,curL);
 }
 
 // 圖鋪滿螢幕（像 object-fit:cover），再左右平移，讓現在那段的物品落在看得到的位置
-function place(instant){
+// 圖固定不動。橫的螢幕：鋪滿（像 object-fit:cover）置中；直的手機：整張寬度放在上面，背後用同一張圖模糊鋪滿，才看得到全部物品
+const portrait=()=>innerWidth<innerHeight;
+function place(){
   const sc=SCENES[key],bg=document.getElementById('bg');if(!bg)return;
-  const vw=innerWidth,vh=innerHeight,W=Math.max(vw,vh*sc.ratio),H=W/sc.ratio;
-  const sp=sc.spots[sc.steps[cur].spot];
-  const cx=vw*.5,cy=vh*.32;
-  const tx=Math.min(0,Math.max(vw-W,cx-sp.x/100*W)),ty=Math.min(0,Math.max(vh-H,cy-sp.y/100*H));
-  if(instant)bg.style.transition='none';
+  const vw=innerWidth,vh=innerHeight;let W,H,tx,ty;
+  if(portrait()){W=vw;H=W/sc.ratio;tx=0;ty=document.querySelector('.bar').offsetHeight}
+  else{W=Math.max(vw,vh*sc.ratio);H=W/sc.ratio;tx=(vw-W)/2;ty=(vh-H)/2}
   bg.style.width=W+'px';bg.style.height=H+'px';bg.style.transform=`translate(${tx}px,${ty}px)`;
-  if(instant){bg.offsetWidth;bg.style.transition=''}
+  document.documentElement.style.setProperty('--img-bottom',(ty+H)+'px');
 }
 // 只換亮暗和位置，不重畫，才不會打斷滑動
-function mark(i,instant){
-  const sc=SCENES[key];cur=i;const st=sc.steps[i],sp=sc.spots[st.spot];
+function mark(i,instant,l=0){
+  const sc=SCENES[key];cur=i;curL=l;const st=sc.steps[i],k=spotOf(st,l),sp=sc.spots[k];
   const sh=document.getElementById('shade');
   if(sh)sh.style.background=`radial-gradient(circle at ${sp.x}% ${sp.y}%,rgba(0,0,0,0) 0,rgba(0,0,0,0) 9%,rgba(0,0,0,.45) 30%,rgba(0,0,0,.6) 100%)`;
-  document.querySelectorAll('.spot').forEach(el=>{const on=el.dataset.spot===st.spot;el.classList.toggle('on',on);el.classList.toggle('dim',!on)});
+  document.querySelectorAll('.spot').forEach(el=>{const on=el.dataset.spot===k;el.classList.toggle('on',on);el.classList.toggle('dim',!on)});
   document.querySelectorAll('.blk').forEach(b=>{b.classList.toggle('on',+b.dataset.b===i);b.classList.toggle('past',+b.dataset.b<i)});
-  place(instant);
+  place();
 }
-const lineY=()=>innerHeight*.74;
+const lineY=()=>portrait()?(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--img-bottom'))||innerHeight*.4)+48:innerHeight*.74;
 function goTo(i){
   const n=SCENES[key].steps.length;i=Math.max(0,Math.min(n-1,i));mark(i);
   const b=document.querySelector(`.blk[data-b="${i}"]`);if(!b)return;
@@ -141,8 +153,9 @@ let lock=0,ticking=false;
 addEventListener('scroll',()=>{if(ticking||Date.now()-lock<700)return;ticking=true;requestAnimationFrame(()=>{ticking=false;
   const bl=[...document.querySelectorAll('.blk')];if(!bl.length)return;const y=lineY();let pick=0;
   bl.forEach((b,i)=>{if(b.getBoundingClientRect().top<=y)pick=i});
-  if(pick!==cur)mark(pick)})},{passive:true});
-addEventListener('resize',()=>place(true));
+  let ln=0;bl[pick].querySelectorAll('.ln').forEach((e,k)=>{if(e.getBoundingClientRect().top<=y)ln=k});
+  if(pick!==cur||ln!==curL)mark(pick,false,ln)})},{passive:true});
+addEventListener('resize',()=>place());
 
 app.addEventListener('click',e=>{
   const a=e.target.closest('[data-act]');
