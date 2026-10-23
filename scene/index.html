@@ -28,6 +28,10 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)
 .spot i{width:12px;height:12px;border-radius:50%;background:var(--glow);box-shadow:0 0 0 5px var(--glow-soft),0 0 16px var(--glow)}
 .spot b{font-family:var(--display);font-size:16px;font-weight:700;color:#fff;text-shadow:0 1px 8px #000,0 0 2px #000;white-space:nowrap}
 .spot.dim{opacity:0}
+.stars{position:absolute;inset:0;pointer-events:none}
+.stars i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;box-shadow:0 0 4px #fff;opacity:.55;animation:tw 3s ease-in-out infinite}
+.stars.on i{opacity:1;box-shadow:0 0 6px #fff,0 0 10px rgba(255,240,200,.8)}
+@keyframes tw{50%{opacity:.15}}
 .spot.on i{animation:pulse 1.8s ease-in-out infinite}
 @keyframes pulse{50%{box-shadow:0 0 0 11px rgba(242,194,123,0),0 0 24px var(--glow)}}
 /* 讓字看得清楚：下半部暗，物品都在上半部 */
@@ -62,7 +66,13 @@ button:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
   .veil{background:linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) var(--img-bottom,40%),rgba(0,0,0,.35) calc(var(--img-bottom,40%) + 40px),rgba(0,0,0,.6) 100%)}
   .lyr{padding-top:calc(var(--img-bottom,40vh) + 24px)}
 }
-@media (prefers-reduced-motion:reduce){.spot.on i{animation:none}.shade,.spot,.blk{transition:none}}
+/* 物品在畫面下半部的歌（lay-top）：橫的螢幕歌詞放上半部，只顯示正在唱的那段，才不會蓋到物品 */
+@media (orientation:landscape){
+  body.lay-top .veil{background:linear-gradient(to bottom,rgba(0,0,0,.6) 0,rgba(0,0,0,.45) 45%,rgba(0,0,0,0) 62%)}
+  body.lay-top .lyr{padding-top:14vh}
+  body.lay-top .blk:not(.on){opacity:0}
+}
+@media (prefers-reduced-motion:reduce){.stars i{animation:none}.spot.on i{animation:none}.shade,.spot,.blk{transition:none}}
 </style>
 </head>
 <body>
@@ -84,6 +94,24 @@ const SCENES={
       {sec:'副歌',spot:'door',word:'打',cue:'比第一次更確定',n:7},
       {sec:'最後副歌',spot:'door',word:'全開',cue:'最滿，最後「同情」收輕',n:7}
     ]
+  },
+  houlai:{
+    title:'後來',artist:'劉若英',img:'houlai.jpg?v=4',ratio:1024/572,layout:'top',
+    // 星空是後製加的：在窗戶的天空範圍裡畫小星星（x0,y0,x1,y1，百分比）
+    stars:[[1,2,34,30],[41,2,51,28]],
+    spots:{city:{x:18,y:58,name:'人海'},flower:{x:31,y:76,name:'梔子花'},skirt:{x:49,y:70,name:'百褶裙'},stars:{x:16,y:13,name:'星光'},photo:{x:67,y:81,name:'舊照片'}},
+    steps:[
+      {sec:'開場',spot:'city',word:'輕',cue:'像自言自語',n:6},
+      {sec:'主歌',spot:['flower','skirt','flower'],word:'甜',cue:'聞得到那個夏天',n:4},
+      {sec:'主歌',spot:'stars',word:'暖',cue:'十七歲的星光',n:4},
+      {sec:'主歌',spot:'photo',word:'問',cue:'輕輕問，不用答案',n:4},
+      {sec:'主歌',spot:'city',word:'悔',cue:'同一個深夜，兩個地方',n:4},
+      {sec:'導歌',spot:'photo',word:'柔',cue:'想像他怎麼想起你',n:2},
+      {sec:'副歌',spot:'city',word:'放',cue:'消失在人海，放出去',n:6},
+      {sec:'導歌',spot:'photo',word:'柔',cue:'比上一次更溫柔',n:2},
+      {sec:'副歌',spot:'city',word:'放',cue:'更寬、更遠',n:6},
+      {sec:'最後副歌',spot:['city','city','city','city','city','city','flower'],word:'收',cue:'最後兩句回到花，輕輕收',n:8}
+    ]
   }
 };
 const LKEY='scene-lyrics-v1';
@@ -100,20 +128,27 @@ function split(text,steps){
   const lines=text.split(/\r?\n/).map(s=>s.trim()).filter(s=>s&&!/^[-—=_~*·.]+$/.test(s));let i=0;
   return steps.map((s,k)=>{const take=k===steps.length-1?lines.length-i:s.n;const L=lines.slice(i,i+take);i+=take;return L});
 }
-const wide=()=>matchMedia('(min-width:900px)').matches;
+// 固定的假亂數，星星每次位置都一樣
+function starsHtml(sc){
+  if(!sc.stars)return '';let seed=7,h='';const r=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  sc.stars.forEach(([x0,y0,x1,y1])=>{const n=Math.round((x1-x0)*(y1-y0)/9);for(let k=0;k<n;k++){const sz=r()<.15?3:2;
+    h+=`<i style="left:${(x0+r()*(x1-x0)).toFixed(2)}%;top:${(y0+r()*(y1-y0)).toFixed(2)}%;width:${sz}px;height:${sz}px;animation-delay:${(r()*3).toFixed(2)}s"></i>`}});
+  return `<div class="stars" id="stars">${h}</div>`;
+}
 
 function render(){
   key=(location.hash||'#jiayi').slice(1);
   const sc=SCENES[key];
   if(!sc){app.innerHTML=`<div class="bar"><a href="../#songs">← 歌單</a></div><div class="empty">這首歌還沒有情境圖</div>`;return}
   document.title=sc.title+'・情境圖';
+  document.body.classList.toggle('lay-top',sc.layout==='top');
   const text=loadLyrics(),blocks=text?split(text,sc.steps):null,paste=!blocks||editing;
-  const bg=`<div class="blur" style="background-image:url('${esc(sc.img)}')"></div><div class="bg" id="bg"><img src="${esc(sc.img)}" alt="${esc(sc.title)}的情境圖"><div class="shade" id="shade"></div>
+  const bg=`<div class="blur" style="background-image:url('${esc(sc.img)}')"></div><div class="bg" id="bg"><img src="${esc(sc.img)}" alt="${esc(sc.title)}的情境圖"><div class="shade" id="shade"></div>${starsHtml(sc)}
     ${Object.entries(sc.spots).map(([k,s])=>`<div class="spot" data-spot="${k}" style="left:${s.x}%;top:${s.y}%"><i></i><b>${esc(s.name)}</b></div>`).join('')}</div><div class="veil"></div>`;
-  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${esc(sc.artist)}・v3</span>${paste?'':'<button class="edit" data-act="edit">改歌詞</button>'}</div>`;
+  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${esc(sc.artist)}・v4</span>${paste?'':'<button class="edit" data-act="edit">改歌詞</button>'}</div>`;
   const body=paste
     ?`<div class="paste"><p>把這首歌的歌詞整首貼進來，一行一句、照順序。<br>歌詞只存在這台裝置，不會放到網路上。</p>
-      <textarea id="lyr-in" placeholder="還沒來得及習慣…">${esc(text)}</textarea>
+      <textarea id="lyr-in" placeholder="第一句歌詞…">${esc(text)}</textarea>
       <div class="row">${text?'<button class="btn ghost" data-act="cancel">取消</button>':''}<button class="btn" data-act="save">存好</button></div></div>`
     :`<div class="lyr">${sc.steps.map((s,i)=>`<section class="blk" data-b="${i}"><h3>${esc(s.sec)}<b>${esc(namesOf(sc,s))} ${esc(s.word)}</b><span>${esc(s.cue)}</span></h3><p>${(blocks[i]||[]).map((t,k)=>`<span class="ln" data-l="${k}">${esc(t)}</span>`).join('<br>')}</p></section>`).join('')}</div>`;
   app.innerHTML=bg+bar+body;
@@ -136,11 +171,12 @@ function mark(i,instant,l=0){
   const sc=SCENES[key];cur=i;curL=l;const st=sc.steps[i],k=spotOf(st,l),sp=sc.spots[k];
   const sh=document.getElementById('shade');
   if(sh)sh.style.background=`radial-gradient(circle at ${sp.x}% ${sp.y}%,rgba(0,0,0,0) 0,rgba(0,0,0,0) 9%,rgba(0,0,0,.45) 30%,rgba(0,0,0,.6) 100%)`;
+  const stz=document.getElementById('stars');if(stz)stz.classList.toggle('on',k==='stars');
   document.querySelectorAll('.spot').forEach(el=>{const on=el.dataset.spot===k;el.classList.toggle('on',on);el.classList.toggle('dim',!on)});
   document.querySelectorAll('.blk').forEach(b=>{b.classList.toggle('on',+b.dataset.b===i);b.classList.toggle('past',+b.dataset.b<i)});
   place();
 }
-const lineY=()=>portrait()?(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--img-bottom'))||innerHeight*.4)+48:innerHeight*.74;
+const lineY=()=>portrait()?(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--img-bottom'))||innerHeight*.4)+48:innerHeight*(document.body.classList.contains('lay-top')?.2:.74);
 function goTo(i){
   const n=SCENES[key].steps.length;i=Math.max(0,Math.min(n-1,i));mark(i);
   const b=document.querySelector(`.blk[data-b="${i}"]`);if(!b)return;
