@@ -97,7 +97,7 @@ function loadLyrics(){try{return (JSON.parse(localStorage.getItem(LKEY)||'{}')||
 function saveLyrics(t){let all={};try{all=JSON.parse(localStorage.getItem(LKEY)||'{}')||{}}catch(e){}all[key]=t;try{localStorage.setItem(LKEY,JSON.stringify(all))}catch(e){alert('這台裝置沒辦法存歌詞')}}
 // 依每段行數切歌詞；多出來的行併到最後一段
 function split(text,steps){
-  const lines=text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);let i=0;
+  const lines=text.split(/\r?\n/).map(s=>s.trim()).filter(s=>s&&!/^[-—=_~*·.]+$/.test(s));let i=0;
   return steps.map((s,k)=>{const take=k===steps.length-1?lines.length-i:s.n;const L=lines.slice(i,i+take);i+=take;return L});
 }
 const wide=()=>matchMedia('(min-width:900px)').matches;
