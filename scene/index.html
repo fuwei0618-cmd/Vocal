@@ -51,6 +51,8 @@ body.play{overflow:hidden;height:100vh;touch-action:manipulation;user-select:non
 .sub .cue{font-size:12.5px;color:var(--glow);letter-spacing:.06em;text-shadow:0 1px 6px #000;margin-bottom:4px}
 .sub .cue b{font-family:var(--display);font-size:15px;margin:0 4px}.sub .cue span{color:var(--muted);letter-spacing:0;margin-left:2px}
 .sub .next{margin-top:12px;opacity:.38}
+.sub .ln{transition:opacity .3s,color .3s}
+.sub.lines .ln{opacity:.55}.sub.lines .ln.past{opacity:.3}.sub.lines .ln.on{opacity:1;color:#fff3dc;text-shadow:0 0 16px rgba(242,194,123,.75),0 1px 10px rgba(0,0,0,.95)}
 .sub .next small{display:block;font-size:11.5px;color:var(--glow);letter-spacing:.08em;margin-bottom:1px;text-shadow:0 1px 6px #000}
 .sub .next p{font-size:17px;text-shadow:0 1px 8px #000}
 .sub.swap{animation:swap .45s ease}
@@ -128,7 +130,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=12;
+const VER=13;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -196,7 +198,8 @@ function show(i,anim=true){
   const sub=document.getElementById('sub');
   if(sub&&blocks){
     const nx=sc.steps[cur+1];
-    sub.innerHTML=`<div class="cue">${esc(st.sec)}<b>${esc(namesOf(sc,st))} ${esc(st.word)}</b><span>${esc(st.cue)}</span></div><p>${(blocks[cur]||[]).map(esc).join('<br>')}</p>`+(nx?`<div class="next"><small>下一段・${esc(namesOf(sc,nx))} ${esc(nx.word)}</small><p>${(blocks[cur+1]||[]).slice(0,2).map(esc).join('<br>')}</p></div>`:'<div class="next"><small>最後一段</small></div>');
+    const off=blocks.slice(0,cur).reduce((a,b)=>a+b.length,0);
+    sub.innerHTML=`<div class="cue">${esc(st.sec)}<b>${esc(namesOf(sc,st))} ${esc(st.word)}</b><span>${esc(st.cue)}</span></div><p class="cur">${(blocks[cur]||[]).map((l,k)=>`<span class="ln" data-l="${off+k}">${esc(l)}</span>`).join('<br>')}</p>`+(nx?`<div class="next"><small>下一段・${esc(namesOf(sc,nx))} ${esc(nx.word)}</small><p>${(blocks[cur+1]||[]).slice(0,2).map(esc).join('<br>')}</p></div>`:'<div class="next"><small>最後一段</small></div>');
     if(anim){sub.classList.remove('swap');sub.offsetWidth;sub.classList.add('swap')}
   }
   const c=document.getElementById('count');if(c)c.textContent=`${cur+1} / ${n}`;
@@ -214,7 +217,7 @@ app.addEventListener('click',e=>{
     else if(act==='track')switchTrack();
     else if(act==='play'){if(!au)return;au.paused?au.play():au.pause()}
     else if(act==='rec')toggleRec();
-    else if(act==='auto')autoAlign();
+    else if(act==='auto'){if(getTimes().length>1&&!confirm('用人聲重新算每段時間？你原本點的段會被換掉'))return;autoAlign(null,true)}
     return}
   if(e.target.id==='tap')step(e.clientX<innerWidth*.3?cur-1:cur+1);
 });
@@ -237,6 +240,9 @@ async function getFile(k){try{const db=await idb();return await new Promise(ok=>
 async function putFile(k,f){const db=await idb();return new Promise((ok,no)=>{const t=db.transaction('files','readwrite');t.objectStore('files').put(f,k);t.oncomplete=ok;t.onerror=()=>no(t.error)})}
 function getTimes(){try{return (JSON.parse(localStorage.getItem(TKEY)||'{}')||{})[key]||[]}catch(e){return []}}
 function setTimes(a){let all={};try{all=JSON.parse(localStorage.getItem(TKEY)||'{}')||{}}catch(e){}all[key]=a;try{localStorage.setItem(TKEY,JSON.stringify(all))}catch(e){}}
+const LNKEY='scene-lines-v1';
+function getLines(){try{return (JSON.parse(localStorage.getItem(LNKEY)||'{}')||{})[key]||[]}catch(e){return []}}
+function setLines(a){let all={};try{all=JSON.parse(localStorage.getItem(LNKEY)||'{}')||{}}catch(e){}all[key]=a;try{localStorage.setItem(LNKEY,JSON.stringify(all))}catch(e){}}
 const mmss=t=>isFinite(t)?`${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')}`:'0:00';
 let hintT=0;
 function hint(t){clearTimeout(hintT);const h=document.getElementById('hint');if(!h)return;h.hidden=!t;h.textContent=t||''}
@@ -244,13 +250,14 @@ function hint(t){clearTimeout(hintT);const h=document.getElementById('hint');if(
 async function loadAudio(want,at,play){
   const fi=await getFile(key+'|inst')||await getFile(key),fo=await getFile(key+'|orig');
   have={inst:!!fi,orig:!!fo};hasVocal=!!await getFile(key+'|vocal');
+  if(hasVocal&&!getLines().length&&!loadAudio.did){loadAudio.did=1;autoAlign()}  // 之前放過人聲：補算逐句一次
   try{track=want||localStorage.getItem('scene-track')||'inst'}catch(e){track=want||'inst'}
   if(!have[track])track=have.inst?'inst':'orig';
   const f=track==='inst'?fi:fo;if(!f){drawPlayer();return}
   if(au)au.pause();
   if(auUrl)URL.revokeObjectURL(auUrl);auUrl=URL.createObjectURL(f);
   au=new Audio(auUrl);au.preload='auto';
-  au.addEventListener('timeupdate',sync);au.addEventListener('play',drawPlayer);au.addEventListener('pause',drawPlayer);
+  au.addEventListener('timeupdate',sync);au.addEventListener('play',drawPlayer);au.addEventListener('pause',()=>{drawPlayer();lightLine()});
   au.addEventListener('ended',()=>{if(rec)toggleRec();drawPlayer()});au.addEventListener('loadedmetadata',()=>{if(at)au.currentTime=at;if(play)au.play();drawPlayer()});
   drawPlayer();
 }
@@ -284,9 +291,17 @@ function step(i){
 let lastDraw=0;
 function sync(){
   if(Date.now()-lastDraw>500){lastDraw=Date.now();const s=document.querySelector('#player .t');if(s)s.textContent=`${mmss(au.currentTime)} / ${mmss(au.duration)}`}
-  if(rec)return;const t=getTimes();if(t.length<2)return;
+  if(rec)return;const t=getTimes();if(t.length<2){lightLine();return}
   let k=0;t.forEach((x,j)=>{if(x!=null&&au.currentTime>=x-.05)k=j});
   if(k!==cur)show(k);
+  lightLine();
+}
+// 逐句：正在唱的那句亮、唱過的變淡（有人聲分析過才有）
+function lightLine(){
+  const L=getLines(),sub=document.getElementById('sub');if(!sub)return;
+  const on=au&&!au.paused&&!rec&&L.length;sub.classList.toggle('lines',!!on);if(!on)return;
+  let k=-1;L.forEach((x,j)=>{if(x!=null&&au.currentTime>=x-.3)k=j});
+  sub.querySelectorAll('.ln').forEach(el=>{const j=+el.dataset.l;el.classList.toggle('on',j===k);el.classList.toggle('past',j<k)});
 }
 app.addEventListener('change',async e=>{
   if(e.target.id!=='afile')return;const f=e.target.files[0];if(!f)return;
@@ -300,8 +315,10 @@ app.addEventListener('change',async e=>{
 });
 /* ---------- 自動對拍：用 Moises 分出來的純人聲，找出每句歌開始唱的位置 ---------- */
 // 人聲檔只拿來分析，不播放。和伴奏、原唱是同一首分出來的，所以秒數直接共用
-async function autoAlign(file){
+// 已經手動對過段：只補逐句，段的秒數照你點的（除非按「自動對」整個重算）
+async function autoAlign(file,redo){
   file=file||await getFile(key+'|vocal');if(!file)return;
+  const keep=!redo&&getTimes().length===SCENES[key].steps.length?getTimes():null;
   hint('正在聽人聲，找每段開始的地方…');
   let buf;
   try{
@@ -310,14 +327,14 @@ async function autoAlign(file){
     buf=await new Promise((ok,no)=>{const p=ctx.decodeAudioData(ab,ok,no);if(p&&p.then)p.then(ok,no)});
     ctx.close&&ctx.close();
   }catch(err){hint('');alert('這個人聲檔讀不出來，換 mp3 或 wav 試試');return}
-  const times=alignTimes(buf);
-  if(!times){hint('這個檔案聽不太出唱歌的地方，用「對拍」手動點一次吧');hintT=setTimeout(()=>hint(''),4000);return}
-  setTimes(times);rec=false;drawPlayer();
-  if(au){if(au.paused)show(0)}else show(0);
-  hint('自動對好了！播放會自己換段，哪裡不準就按「重新對拍」');hintT=setTimeout(()=>hint(''),4500);
+  const res=alignTimes(buf,keep);
+  if(!res){hint('這個檔案聽不太出唱歌的地方，用「對拍」手動點一次吧');hintT=setTimeout(()=>hint(''),4000);return}
+  if(!keep)setTimes(res.sec);setLines(res.lines);rec=false;drawPlayer();
+  if(!au||au.paused)show(cur);
+  hint(keep?'逐句對好了！段落照你原本點的，播放時唱到哪句哪句會亮':'自動對好了！播放會自己換段、逐句亮，哪裡不準就按「重新對拍」');hintT=setTimeout(()=>hint(''),4500);
 }
 // 每 50 毫秒算一次音量 → 有聲音的地方連成一句一句 → 依每段幾行歌詞分組，段和段之間盡量切在比較長的空檔
-function alignTimes(buf){
+function alignTimes(buf,keep){
   const sr=buf.sampleRate,hop=Math.round(sr*.05),nf=Math.floor(buf.length/hop),dt=hop/sr;
   const ch=[];for(let c=0;c<buf.numberOfChannels;c++)ch.push(buf.getChannelData(c));
   const e=new Float32Array(nf);
@@ -333,6 +350,12 @@ function alignTimes(buf){
   const steps=SCENES[key].steps,N=steps.length;
   const want=steps.map((s,i)=>blocks&&blocks[i]?blocks[i].length:s.n);
   const P=ph.length;if(P<N)return null;
+  let start;
+  if(keep){
+    // 用你點的段落時間：每段從離那個時間最近的一句開始
+    start=[0];for(let i=1;i<N;i++){let best=start[i-1]+1,bd=1e9;for(let a=start[i-1]+1;a<=P-(N-i);a++){const d=Math.abs(ph[a][0]-keep[i]);if(d<bd){bd=d;best=a}}start.push(best)}
+    return {sec:keep,lines:lineTimes(ph,start,want)};
+  }
   const gap=ph.map((p,j)=>j?p[0]-ph[j-1][1]:p[0]);
   const med=gap.slice(1).sort((a,b)=>a-b)[Math.floor((P-1)/2)]||.5;
   const gs=j=>Math.log(1+Math.min(gap[j],12)/med);
@@ -344,9 +367,22 @@ function alignTimes(buf){
     const c=dp[i-1][a]+d*d/Math.max(1,want[i-1])-(i>1?2*gs(a):0);
     if(c<dp[i][j]){dp[i][j]=c;bk[i][j]=a}
   }
-  const start=[];let j=P;for(let i=N;i>=1;i--){const a=bk[i][j];start[i-1]=a;j=a}
+  start=[];let j=P;for(let i=N;i>=1;i--){const a=bk[i][j];start[i-1]=a;j=a}
   // 每段比開口早一點換（最多早 1 秒），先看到歌詞
-  return start.map((a,i)=>i?Math.max(ph[a-1][1],ph[a][0]-Math.min(1,gap[a]/2)):0).map(t=>Math.round(t*100)/100);
+  const sec=start.map((a,i)=>i?Math.max(ph[a-1][1],ph[a][0]-Math.min(1,gap[a]/2)):0).map(t=>Math.round(t*100)/100);
+  return {sec,lines:lineTimes(ph,start,want)};
+}
+// 一段裡的句子對到歌詞行：句子太多就併在小空檔，太少就把最長的一句切半
+function lineTimes(ph,start,want){
+  const out=[];
+  start.forEach((a,i)=>{
+    const b=i+1<start.length?start[i+1]:ph.length,n=want[i];
+    let seg=ph.slice(a,b).map(p=>[p[0],p[1]]);
+    while(seg.length>n){let k=1,g=1e9;for(let x=1;x<seg.length;x++){const d=seg[x][0]-seg[x-1][1];if(d<g){g=d;k=x}}seg[k-1][1]=seg[k][1];seg.splice(k,1)}
+    while(seg.length<n&&seg.length){let k=0;seg.forEach((p,x)=>{if(p[1]-p[0]>seg[k][1]-seg[k][0])k=x});const [s0,e0]=seg[k],m=(s0+e0)/2;seg.splice(k,1,[s0,m],[m,e0])}
+    for(let k=0;k<n;k++)out.push(seg[k]?Math.round(seg[k][0]*100)/100:null);
+  });
+  return out;
 }
 render();
 </script>
