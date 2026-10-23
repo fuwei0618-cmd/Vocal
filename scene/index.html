@@ -63,8 +63,9 @@ body.play{overflow:hidden;height:100vh;touch-action:manipulation;user-select:non
 .player button{background:rgba(0,0,0,.45);border:1px solid var(--line);color:var(--ink);border-radius:99px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
 .player button.rec{border-color:#e46b6b;color:#ffb4b4}
 .player .t{font-variant-numeric:tabular-nums;min-width:5.5em}
-@media (max-width:500px){.player .t{display:none}.player button,.foot button{padding:6px 10px}}
+@media (max-width:640px){.player .t{display:none}.player button,.foot button{padding:6px 10px}.player{right:16px;flex-wrap:wrap;bottom:calc(env(safe-area-inset-bottom,0px) + 54px)}}
 .hint{position:fixed;z-index:3;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 56px);background:rgba(0,0,0,.65);border:1px solid var(--line);border-radius:99px;padding:6px 14px;font-size:13px;color:var(--ink);pointer-events:none;white-space:nowrap}
+@media (max-width:640px){.hint{bottom:calc(env(safe-area-inset-bottom,0px) + 100px)}}
 .bar .edit+.edit{margin-left:0}
 .paste{position:relative;z-index:5;display:grid;gap:8px;margin:0 auto;max-width:560px;padding:calc(env(safe-area-inset-top,0px) + 56px) 16px 40px}
 .paste p{margin:0;color:var(--ink);font-size:14px;line-height:1.6;text-shadow:0 1px 6px #000}
@@ -130,7 +131,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=13;
+const VER=14;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -203,6 +204,7 @@ function show(i,anim=true){
     if(anim){sub.classList.remove('swap');sub.offsetWidth;sub.classList.add('swap')}
   }
   const c=document.getElementById('count');if(c)c.textContent=`${cur+1} / ${n}`;
+  if(typeof au!=='undefined'&&au)drawPlayer();
   place();
 }
 
@@ -217,6 +219,7 @@ app.addEventListener('click',e=>{
     else if(act==='track')switchTrack();
     else if(act==='play'){if(!au)return;au.paused?au.play():au.pause()}
     else if(act==='rec')toggleRec();
+    else if(act==='part')startPart();
     else if(act==='auto'){if(getTimes().length>1&&!confirm('用人聲重新算每段時間？你原本點的段會被換掉'))return;autoAlign(null,true)}
     return}
   if(e.target.id==='tap')step(e.clientX<innerWidth*.3?cur-1:cur+1);
@@ -267,7 +270,7 @@ function drawPlayer(){
   p.hidden=false;
   const has=getTimes().length>1;
   const sw=have.inst&&have.orig?`<button data-act="track" aria-label="切換伴奏或原唱">${TRACK[track]} ⇄</button>`:`<span>${TRACK[track]}</span>`;
-  p.innerHTML=sw+`<button data-act="play">${au.paused?'▶ 播放':'❚❚ 暫停'}</button><span class="t">${mmss(au.currentTime)} / ${mmss(au.duration)}</span><button data-act="rec" class="${rec?'rec':''}">${rec?'● 對拍中・按這完成':has?'重新對拍':'對拍'}</button>`+(hasVocal&&!rec?'<button data-act="auto">自動對</button>':'');
+  p.innerHTML=sw+`<button data-act="play">${au.paused?'▶ 播放':'❚❚ 暫停'}</button><span class="t">${mmss(au.currentTime)} / ${mmss(au.duration)}</span><button data-act="rec" class="${rec?'rec':''}">${rec?'● 對拍中・按這完成':has?'整首重對':'對拍'}</button>`+(has&&!rec&&cur>0?'<button data-act="part">從這段改</button>':'')+(hasVocal&&!rec?'<button data-act="auto">自動對</button>':'');
 }
 function switchTrack(){
   if(!au)return;const at=au.currentTime,play=!au.paused,to=track==='inst'?'orig':'inst';
@@ -276,14 +279,27 @@ function switchTrack(){
 }
 function toggleRec(){
   if(!au)return;
-  if(rec){rec=false;hint('');drawPlayer();return}
-  rec=true;setTimes([0]);au.currentTime=0;show(0);au.play();
+  if(rec){rec=false;hint('');if(recPart)finishPart();drawPlayer();return}
+  rec=true;recPart=false;setTimes([0]);au.currentTime=0;show(0);au.play();
   hint('跟著音樂，每到下一段就點一下螢幕');drawPlayer();
+}
+// 只改一部分：從這段前 5 秒開始放，這段真正開始時點一下；後面也要改就繼續點，按「完成」結束，沒點到的段照舊
+let recPart=false;
+function startPart(){
+  if(!au||cur<1)return;const t=getTimes();
+  rec=true;recPart=true;const at=Math.max(0,(t[cur]!=null?t[cur]:t[cur-1]||0)-5);show(cur-1);au.currentTime=at;au.play();
+  hint('等這段開始的時候點一下螢幕。後面也要改就繼續點，改完按「完成」');drawPlayer();
+}
+function finishPart(){
+  recPart=false;const t=getTimes();
+  for(let j=1;j<t.length;j++)if(t[j]==null||t[j]<=t[j-1])t[j]=Math.round((t[j-1]+.5)*100)/100;
+  setTimes(t);if(hasVocal)autoAlign(null,false,true);
+  hint('改好了');hintT=setTimeout(()=>hint(''),2000);
 }
 // 換段：對拍中就記秒數；有對過拍、正在播，就把音樂跳到那段
 function step(i){
   const n=SCENES[key].steps.length;i=Math.max(0,Math.min(n-1,i));
-  if(au&&rec&&i===cur+1){const t=getTimes();t[i]=au.currentTime;setTimes(t.slice(0,i+1));show(i);if(i===n-1){rec=false;hint('對好了！之後播放會自動換段');hintT=setTimeout(()=>hint(''),2500);drawPlayer()}return}
+  if(au&&rec&&i===cur+1){const t=getTimes();t[i]=Math.round(au.currentTime*100)/100;setTimes(recPart?t:t.slice(0,i+1));show(i);if(i===n-1){rec=false;if(recPart){finishPart();drawPlayer();return}hint('對好了！之後播放會自動換段');hintT=setTimeout(()=>hint(''),2500);drawPlayer()}return}
   const t=getTimes();
   if(au&&!rec&&!au.paused&&t[i]!=null)au.currentTime=t[i];
   show(i);
@@ -316,10 +332,10 @@ app.addEventListener('change',async e=>{
 /* ---------- 自動對拍：用 Moises 分出來的純人聲，找出每句歌開始唱的位置 ---------- */
 // 人聲檔只拿來分析，不播放。和伴奏、原唱是同一首分出來的，所以秒數直接共用
 // 已經手動對過段：只補逐句，段的秒數照你點的（除非按「自動對」整個重算）
-async function autoAlign(file,redo){
+async function autoAlign(file,redo,quiet){
   file=file||await getFile(key+'|vocal');if(!file)return;
   const keep=!redo&&getTimes().length===SCENES[key].steps.length?getTimes():null;
-  hint('正在聽人聲，找每段開始的地方…');
+  if(!quiet)hint('正在聽人聲，找每段開始的地方…');
   let buf;
   try{
     const C=window.AudioContext||window.webkitAudioContext,ctx=new C();
@@ -331,7 +347,7 @@ async function autoAlign(file,redo){
   if(!res){hint('這個檔案聽不太出唱歌的地方，用「對拍」手動點一次吧');hintT=setTimeout(()=>hint(''),4000);return}
   if(!keep)setTimes(res.sec);setLines(res.lines);rec=false;drawPlayer();
   if(!au||au.paused)show(cur);
-  hint(keep?'逐句對好了！段落照你原本點的，播放時唱到哪句哪句會亮':'自動對好了！播放會自己換段、逐句亮，哪裡不準就按「重新對拍」');hintT=setTimeout(()=>hint(''),4500);
+  if(!quiet)hint(keep?'逐句對好了！段落照你原本點的，播放時唱到哪句哪句會亮':'自動對好了！播放會自己換段、逐句亮，哪段不準就停在那段按「從這段改」');hintT=setTimeout(()=>hint(''),4500);
 }
 // 每 50 毫秒算一次音量 → 有聲音的地方連成一句一句 → 依每段幾行歌詞分組，段和段之間盡量切在比較長的空檔
 function alignTimes(buf,keep){
