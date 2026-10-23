@@ -40,14 +40,19 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)
 .bar a{color:var(--muted);text-decoration:none;font-size:13px;white-space:nowrap}
 .bar h1{font-family:var(--display);font-weight:700;font-size:18px;margin:0;letter-spacing:.04em;text-shadow:0 1px 6px #000}
 .bar .by{color:var(--muted);font-size:12px}
+.bar{flex-wrap:wrap}.bar .now{flex-basis:100%;order:9;font-size:12.5px;color:var(--glow);letter-spacing:.06em;text-shadow:0 1px 6px #000;min-height:1.4em}
+.bar .now b{font-family:var(--display);font-size:15px;margin:0 4px}.bar .now span{color:var(--muted);letter-spacing:0;margin-left:2px}
 .bar .edit{margin-left:auto;background:none;border:0;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;padding:0}
 .lyr{position:relative;z-index:2;padding:70vh 20px 50vh;max-width:680px}
-.blk{padding:8px 0 10px;cursor:pointer;transition:opacity .35s ease;opacity:.35}
-.blk.on{opacity:1}.blk.past{opacity:0}
+.blk{padding:8px 0 10px}
+.blk h3{transition:opacity .35s ease;opacity:.35}.blk.on h3,.blk.past h3{opacity:0}
+.ln{cursor:pointer;transition:opacity .35s ease,color .35s ease;opacity:.4}
+.ln.on{opacity:1;color:#fff}.ln.past{opacity:0}
 .blk h3{margin:0 0 2px;font-size:12px;font-weight:500;color:var(--glow);letter-spacing:.06em;text-shadow:0 1px 6px #000}
 .blk h3 b{font-family:var(--display);font-size:14px;margin:0 4px}
 .blk h3 span{color:var(--muted);letter-spacing:0;margin-left:2px}
 .blk p{margin:0;font-family:var(--display);font-size:19px;line-height:1.6;text-shadow:0 1px 10px rgba(0,0,0,.9),0 0 2px #000}
+.ln.on{text-shadow:0 0 14px rgba(242,194,123,.45),0 1px 10px rgba(0,0,0,.9)}
 .paste{position:relative;z-index:2;display:grid;gap:8px;margin:0 auto;max-width:560px;padding:calc(env(safe-area-inset-top,0px) + 56px) 16px 40px}
 .paste p{margin:0;color:var(--ink);font-size:14px;line-height:1.6;text-shadow:0 1px 6px #000}
 .paste textarea{width:100%;min-height:50vh;background:rgba(15,12,9,.82);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font:16px/1.6 var(--body)}
@@ -70,7 +75,7 @@ button:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
 @media (orientation:landscape){
   body.lay-top .veil{background:linear-gradient(to bottom,rgba(0,0,0,.6) 0,rgba(0,0,0,.45) 45%,rgba(0,0,0,0) 62%)}
   body.lay-top .lyr{padding-top:14vh}
-  body.lay-top .blk:not(.on){opacity:0}
+  body.lay-top .ln.far,body.lay-top .blk:not(.on) h3{opacity:0}
 }
 @media (prefers-reduced-motion:reduce){.stars i{animation:none}.spot.on i{animation:none}.shade,.spot,.blk{transition:none}}
 </style>
@@ -83,7 +88,7 @@ button:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
 // 歌詞不放在程式裡（這個網站是公開的），第一次打開時貼上，只存在這台裝置。
 const SCENES={
   jiayi:{
-    title:'甲乙丙丁',artist:'李佳薇',img:'jiayi.jpg?v=3',ratio:2752/1536,
+    title:'甲乙丙丁',artist:'李佳薇',img:'jiayi.jpg?v=5',ratio:2752/1536,
     spots:{coat:{x:39.5,y:57,name:'外套'},photo:{x:30.5,y:28,name:'照片'},neck:{x:21,y:61,name:'項鍊'},dinner:{x:58,y:60,name:'晚餐'},laundry:{x:70,y:52,name:'衣服'},door:{x:86,y:40,name:'門'}},
     steps:[
       {sec:'主歌',spot:'coat',word:'輕',cue:'他的東西還在，房間太安靜',n:4},
@@ -96,7 +101,7 @@ const SCENES={
     ]
   },
   houlai:{
-    title:'後來',artist:'劉若英',img:'houlai.jpg?v=4',ratio:1024/572,layout:'top',
+    title:'後來',artist:'劉若英',img:'houlai.jpg?v=5',ratio:1024/572,layout:'top',
     // 星空是後製加的：在窗戶的天空範圍裡畫小星星（x0,y0,x1,y1，百分比）
     stars:[[1,2,34,30],[41,2,51,28]],
     spots:{city:{x:18,y:58,name:'人海'},flower:{x:31,y:76,name:'梔子花'},skirt:{x:49,y:70,name:'百褶裙'},stars:{x:16,y:13,name:'星光'},photo:{x:67,y:81,name:'舊照片'}},
@@ -145,12 +150,12 @@ function render(){
   const text=loadLyrics(),blocks=text?split(text,sc.steps):null,paste=!blocks||editing;
   const bg=`<div class="blur" style="background-image:url('${esc(sc.img)}')"></div><div class="bg" id="bg"><img src="${esc(sc.img)}" alt="${esc(sc.title)}的情境圖"><div class="shade" id="shade"></div>${starsHtml(sc)}
     ${Object.entries(sc.spots).map(([k,s])=>`<div class="spot" data-spot="${k}" style="left:${s.x}%;top:${s.y}%"><i></i><b>${esc(s.name)}</b></div>`).join('')}</div><div class="veil"></div>`;
-  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${esc(sc.artist)}・v4</span>${paste?'':'<button class="edit" data-act="edit">改歌詞</button>'}</div>`;
+  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${esc(sc.artist)}・v5</span>${paste?'':'<button class="edit" data-act="edit">改歌詞</button><div class="now" id="now"></div>'}</div>`;
   const body=paste
     ?`<div class="paste"><p>把這首歌的歌詞整首貼進來，一行一句、照順序。<br>歌詞只存在這台裝置，不會放到網路上。</p>
       <textarea id="lyr-in" placeholder="第一句歌詞…">${esc(text)}</textarea>
       <div class="row">${text?'<button class="btn ghost" data-act="cancel">取消</button>':''}<button class="btn" data-act="save">存好</button></div></div>`
-    :`<div class="lyr">${sc.steps.map((s,i)=>`<section class="blk" data-b="${i}"><h3>${esc(s.sec)}<b>${esc(namesOf(sc,s))} ${esc(s.word)}</b><span>${esc(s.cue)}</span></h3><p>${(blocks[i]||[]).map((t,k)=>`<span class="ln" data-l="${k}">${esc(t)}</span>`).join('<br>')}</p></section>`).join('')}</div>`;
+    :`<div class="lyr">${sc.steps.map((s,i)=>`<section class="blk" data-b="${i}"><h3>${esc(s.sec)}<b>${esc(namesOf(sc,s))} ${esc(s.word)}</b><span>${esc(s.cue)}</span></h3><p>${(blocks[i]||[]).map((t,k)=>`<span class="ln" data-b="${i}" data-l="${k}" style="display:block">${esc(t)}</span>`).join('')}</p></section>`).join('')}</div>`;
   app.innerHTML=bg+bar+body;
   mark(cur,true,curL);
 }
@@ -171,25 +176,34 @@ function mark(i,instant,l=0){
   const sc=SCENES[key];cur=i;curL=l;const st=sc.steps[i],k=spotOf(st,l),sp=sc.spots[k];
   const sh=document.getElementById('shade');
   if(sh)sh.style.background=`radial-gradient(circle at ${sp.x}% ${sp.y}%,rgba(0,0,0,0) 0,rgba(0,0,0,0) 9%,rgba(0,0,0,.45) 30%,rgba(0,0,0,.6) 100%)`;
+  const now=document.getElementById('now');if(now)now.innerHTML=`${esc(st.sec)}<b>${esc(sp.name)} ${esc(st.word)}</b><span>${esc(st.cue)}</span>`;
   const stz=document.getElementById('stars');if(stz)stz.classList.toggle('on',k==='stars');
   document.querySelectorAll('.spot').forEach(el=>{const on=el.dataset.spot===k;el.classList.toggle('on',on);el.classList.toggle('dim',!on)});
   document.querySelectorAll('.blk').forEach(b=>{b.classList.toggle('on',+b.dataset.b===i);b.classList.toggle('past',+b.dataset.b<i)});
+  // 一句一句：唱過的消失、這句最亮、還沒唱的排在下面（物品在下半部的歌只露出下兩句）
+  const all=[...document.querySelectorAll('.ln')],g=all.findIndex(e=>+e.dataset.b===i&&+e.dataset.l===l);
+  all.forEach((e,j)=>{e.classList.toggle('past',j<g);e.classList.toggle('on',j===g);e.classList.toggle('far',j>g+2)});
   place();
 }
 const lineY=()=>portrait()?(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--img-bottom'))||innerHeight*.4)+48:innerHeight*(document.body.classList.contains('lay-top')?.2:.74);
-function goTo(i){
-  const n=SCENES[key].steps.length;i=Math.max(0,Math.min(n-1,i));mark(i);
-  const b=document.querySelector(`.blk[data-b="${i}"]`);if(!b)return;
+function goLine(d){
+  const all=[...document.querySelectorAll('.ln')];if(!all.length)return;
+  let g=all.findIndex(e=>+e.dataset.b===cur&&+e.dataset.l===curL)+d;g=Math.max(0,Math.min(all.length-1,g));
+  goTo(+all[g].dataset.b,+all[g].dataset.l);
+}
+function goTo(i,l=0){
+  const n=SCENES[key].steps.length;i=Math.max(0,Math.min(n-1,i));mark(i,false,l);
+  const b=document.querySelector(`.ln[data-b="${i}"][data-l="${l}"]`);if(!b)return;
   lock=Date.now();
-  const y=b.getBoundingClientRect().top+scrollY-(lineY()-30);
+  const y=b.getBoundingClientRect().top+scrollY-(lineY()-6);
   scrollTo({top:Math.max(0,y),behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});
 }
 // 滑動時：碰到參考線的那一段就是現在這段
 let lock=0,ticking=false;
 addEventListener('scroll',()=>{if(ticking||Date.now()-lock<700)return;ticking=true;requestAnimationFrame(()=>{ticking=false;
-  const bl=[...document.querySelectorAll('.blk')];if(!bl.length)return;const y=lineY();let pick=0;
-  bl.forEach((b,i)=>{if(b.getBoundingClientRect().top<=y)pick=i});
-  let ln=0;bl[pick].querySelectorAll('.ln').forEach((e,k)=>{if(e.getBoundingClientRect().top<=y)ln=k});
+  const all=[...document.querySelectorAll('.ln')];if(!all.length)return;const y=lineY();let e=all[0];
+  all.forEach(x=>{if(x.getBoundingClientRect().top<=y)e=x});
+  const pick=+e.dataset.b,ln=+e.dataset.l;
   if(pick!==cur||ln!==curL)mark(pick,false,ln)})},{passive:true});
 addEventListener('resize',()=>place());
 
@@ -200,12 +214,12 @@ app.addEventListener('click',e=>{
     else if(act==='edit'){editing=true;render();scrollTo(0,0)}
     else if(act==='cancel'){editing=false;render()}
     return}
-  const blk=e.target.closest('[data-b]');if(blk)return goTo(+blk.dataset.b);
+  const ln=e.target.closest('.ln');if(ln)return goTo(+ln.dataset.b,+ln.dataset.l);
 });
 addEventListener('keydown',e=>{
   if(!SCENES[key]||e.target.tagName==='TEXTAREA')return;
-  if(e.key==='ArrowDown'||e.key==='ArrowRight'){e.preventDefault();goTo(cur+1)}
-  else if(e.key==='ArrowUp'||e.key==='ArrowLeft'){e.preventDefault();goTo(cur-1)}
+  if(e.key==='ArrowDown'||e.key==='ArrowRight'){e.preventDefault();goLine(1)}
+  else if(e.key==='ArrowUp'||e.key==='ArrowLeft'){e.preventDefault();goLine(-1)}
 });
 addEventListener('hashchange',()=>{cur=0;editing=false;render()});
 render();
