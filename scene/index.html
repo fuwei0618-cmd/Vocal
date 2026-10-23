@@ -73,7 +73,7 @@ button:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
 // 歌詞不放在程式裡（這個網站是公開的），第一次打開時貼上，只存在這台裝置。
 const SCENES={
   jiayi:{
-    title:'甲乙丙丁',artist:'李佳薇',img:'jiayi.jpg',ratio:2752/1536,
+    title:'甲乙丙丁',artist:'李佳薇',img:'jiayi.jpg?v=3',ratio:2752/1536,
     spots:{coat:{x:39.5,y:57,name:'外套'},photo:{x:30.5,y:28,name:'照片'},neck:{x:21,y:61,name:'項鍊'},dinner:{x:58,y:60,name:'晚餐'},laundry:{x:70,y:52,name:'衣服'},door:{x:86,y:40,name:'門'}},
     steps:[
       {sec:'主歌',spot:'coat',word:'輕',cue:'他的東西還在，房間太安靜',n:4},
@@ -110,7 +110,7 @@ function render(){
   const text=loadLyrics(),blocks=text?split(text,sc.steps):null,paste=!blocks||editing;
   const bg=`<div class="blur" style="background-image:url('${esc(sc.img)}')"></div><div class="bg" id="bg"><img src="${esc(sc.img)}" alt="${esc(sc.title)}的情境圖"><div class="shade" id="shade"></div>
     ${Object.entries(sc.spots).map(([k,s])=>`<div class="spot" data-spot="${k}" style="left:${s.x}%;top:${s.y}%"><i></i><b>${esc(s.name)}</b></div>`).join('')}</div><div class="veil"></div>`;
-  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${esc(sc.artist)}</span>${paste?'':'<button class="edit" data-act="edit">改歌詞</button>'}</div>`;
+  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${esc(sc.artist)}・v3</span>${paste?'':'<button class="edit" data-act="edit">改歌詞</button>'}</div>`;
   const body=paste
     ?`<div class="paste"><p>把這首歌的歌詞整首貼進來，一行一句、照順序。<br>歌詞只存在這台裝置，不會放到網路上。</p>
       <textarea id="lyr-in" placeholder="還沒來得及習慣…">${esc(text)}</textarea>
