@@ -157,14 +157,14 @@ function render(){
   document.body.classList.toggle('play',!paste);
   const bg=`<div class="blur" style="background-image:url('${esc(sc.img)}')"></div><div class="bg" id="bg"><img src="${esc(sc.img)}" alt="${esc(sc.title)}的情境圖"><div class="shade" id="shade"></div>${starsHtml(sc)}
     ${Object.entries(sc.spots).map(([k,s])=>`<div class="spot" data-spot="${k}" style="left:${s.x}%;top:${s.y}%"><i></i><b>${esc(s.name)}</b></div>`).join('')}</div><div class="veil"></div>`;
-  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${esc(sc.artist)}・v8</span>${paste?'':'<button class="edit" data-act="audio" data-for="inst">＋伴奏</button><button class="edit" data-act="audio" data-for="orig">＋原唱</button><button class="edit" data-act="edit">改歌詞</button><div class="now" id="now"></div>'}</div>`;
+  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${esc(sc.artist)}・v9</span>${paste?'':'<button class="edit" data-act="audio" data-for="inst">＋伴奏</button><button class="edit" data-act="audio" data-for="orig">＋原唱</button><button class="edit" data-act="edit">改歌詞</button><div class="now" id="now"></div>'}</div>`;
   const body=paste
     ?`<div class="paste"><p>把這首歌的歌詞整首貼進來，一行一句、照順序。<br>歌詞只存在這台裝置，不會放到網路上。</p>
       <textarea id="lyr-in" placeholder="第一句歌詞…">${esc(text)}</textarea>
       <div class="row">${text?'<button class="btn ghost" data-act="cancel">取消</button>':''}<button class="btn" data-act="save">存好</button></div></div>`
     :`<div class="tap" id="tap" aria-label="點一下換下一段"></div><div class="sub" id="sub" aria-live="polite"></div>
       <div class="foot"><button data-act="prev" aria-label="上一段">‹ 上一段</button><span id="count"></span></div>
-      <div class="player" id="player" hidden></div><div class="hint" id="hint" hidden></div><input type="file" id="afile" accept="audio/*" hidden>`;
+      <div class="player" id="player" hidden></div><div class="hint" id="hint" hidden></div><input type="file" id="afile" hidden>`;
   app.innerHTML=bg+bar+body;
   show(cur,false);
   if(!paste)loadAudio();
@@ -282,6 +282,8 @@ function sync(){
 }
 app.addEventListener('change',async e=>{
   if(e.target.id!=='afile')return;const f=e.target.files[0];if(!f)return;
+  // 不設 accept：iPad 的「檔案」裡 OneDrive 的 mp3 常被認不出類型而變灰色選不到，改成選完再檢查
+  if(!/^audio\//.test(f.type)&&!/\.(mp3|m4a|aac|wav|aif|aiff|flac|ogg|opus|caf)$/i.test(f.name)){alert('這個檔案看起來不是音樂檔（mp3、m4a、wav…）');return}
   const which=e.target.dataset.for||'inst';
   try{await putFile(key+'|'+which,f)}catch(err){alert('這台裝置沒辦法存這個檔案');return}
   if(au)au.pause();rec=false;try{localStorage.setItem('scene-track',which)}catch(e){}await loadAudio(which);
