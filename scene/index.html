@@ -131,7 +131,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=14;
+const VER=15;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -270,7 +270,7 @@ function drawPlayer(){
   p.hidden=false;
   const has=getTimes().length>1;
   const sw=have.inst&&have.orig?`<button data-act="track" aria-label="切換伴奏或原唱">${TRACK[track]} ⇄</button>`:`<span>${TRACK[track]}</span>`;
-  p.innerHTML=sw+`<button data-act="play">${au.paused?'▶ 播放':'❚❚ 暫停'}</button><span class="t">${mmss(au.currentTime)} / ${mmss(au.duration)}</span><button data-act="rec" class="${rec?'rec':''}">${rec?'● 對拍中・按這完成':has?'整首重對':'對拍'}</button>`+(has&&!rec&&cur>0?'<button data-act="part">從這段改</button>':'')+(hasVocal&&!rec?'<button data-act="auto">自動對</button>':'');
+  p.innerHTML=sw+`<button data-act="play">${au.paused?'▶ 播放':'❚❚ 暫停'}</button><span class="t">${mmss(au.currentTime)} / ${mmss(au.duration)}</span><button data-act="rec" class="${rec?'rec':''}">${rec?'● 對拍中・按這完成':has?'整首重對':'對拍'}</button>`+(has&&!rec?'<button data-act="part">從這段改</button>':'')+(hasVocal&&!rec?'<button data-act="auto">自動對</button>':'');
 }
 function switchTrack(){
   if(!au)return;const at=au.currentTime,play=!au.paused,to=track==='inst'?'orig':'inst';
@@ -286,8 +286,10 @@ function toggleRec(){
 // 只改一部分：從這段前 5 秒開始放，這段真正開始時點一下；後面也要改就繼續點，按「完成」結束，沒點到的段照舊
 let recPart=false;
 function startPart(){
-  if(!au||cur<1)return;const t=getTimes();
-  rec=true;recPart=true;const at=Math.max(0,(t[cur]!=null?t[cur]:t[cur-1]||0)-5);show(cur-1);au.currentTime=at;au.play();
+  if(!au)return;const t=getTimes();rec=true;recPart=true;
+  // 第一段一定從頭開始，所以改第一段＝從頭播、第二段開始時點
+  if(cur===0){show(0);au.currentTime=0;au.play();hint('從頭播，唱到第二段開始時點一下螢幕。後面也要改就繼續點，改完按「完成」');drawPlayer();return}
+  const at=Math.max(0,(t[cur]!=null?t[cur]:t[cur-1]||0)-5);show(cur-1);au.currentTime=at;au.play();
   hint('等這段開始的時候點一下螢幕。後面也要改就繼續點，改完按「完成」');drawPlayer();
 }
 function finishPart(){
