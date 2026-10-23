@@ -48,6 +48,8 @@ body.play{overflow:hidden;height:100vh;touch-action:manipulation;user-select:non
 .tap{position:fixed;inset:0;z-index:2;cursor:pointer}
 .sub{position:fixed;z-index:3;left:50%;transform:translateX(-50%);width:min(680px,calc(100vw - 40px));bottom:calc(env(safe-area-inset-bottom,0px) + 8vh);pointer-events:none}
 .sub p{margin:0;font-family:var(--display);font-size:20px;line-height:1.6;color:#fff;text-shadow:0 0 14px rgba(242,194,123,.35),0 1px 10px rgba(0,0,0,.95),0 0 2px #000}
+.sub .cue{font-size:12.5px;color:var(--glow);letter-spacing:.06em;text-shadow:0 1px 6px #000;margin-bottom:4px}
+.sub .cue b{font-family:var(--display);font-size:15px;margin:0 4px}.sub .cue span{color:var(--muted);letter-spacing:0;margin-left:2px}
 .sub .next{margin-top:12px;opacity:.38}
 .sub .next small{display:block;font-size:11.5px;color:var(--glow);letter-spacing:.08em;margin-bottom:1px;text-shadow:0 1px 6px #000}
 .sub .next p{font-size:17px;text-shadow:0 1px 8px #000}
@@ -126,7 +128,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=11;
+const VER=12;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -160,7 +162,7 @@ function render(){
   document.body.classList.toggle('play',!paste);
   const bg=`<div class="blur" style="background-image:url('${esc(sc.img)}')"></div><div class="bg" id="bg"><img src="${esc(sc.img)}" alt="${esc(sc.title)}的情境圖"><div class="shade" id="shade"></div>${starsHtml(sc)}
     ${Object.entries(sc.spots).map(([k,s])=>`<div class="spot" data-spot="${k}" style="left:${s.x}%;top:${s.y}%"><i></i><b>${esc(s.name)}</b></div>`).join('')}</div><div class="veil"></div>`;
-  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${esc(sc.artist)}・v${VER}</span>${paste?'':'<button class="edit" data-act="audio" data-for="inst">＋伴奏</button><button class="edit" data-act="audio" data-for="orig">＋原唱</button><button class="edit" data-act="audio" data-for="vocal">＋人聲</button><button class="edit" data-act="edit">改歌詞</button><div class="now" id="now"></div>'}</div>`;
+  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${esc(sc.artist)}・v${VER}</span>${paste?'':'<button class="edit" data-act="audio" data-for="inst">＋伴奏</button><button class="edit" data-act="audio" data-for="orig">＋原唱</button><button class="edit" data-act="audio" data-for="vocal">＋人聲</button><button class="edit" data-act="edit">改歌詞</button>'}</div>`;
   const body=paste
     ?`<div class="paste"><p>把這首歌的歌詞整首貼進來，一行一句、照順序。<br>歌詞只存在這台裝置，不會放到網路上。</p>
       <textarea id="lyr-in" placeholder="第一句歌詞…">${esc(text)}</textarea>
@@ -191,11 +193,10 @@ function show(i,anim=true){
   if(sh)sh.style.background=ks.length>1?'rgba(0,0,0,.28)':`radial-gradient(circle at ${sp.x}% ${sp.y}%,rgba(0,0,0,0) 0,rgba(0,0,0,0) 9%,rgba(0,0,0,.45) 30%,rgba(0,0,0,.6) 100%)`;
   const stz=document.getElementById('stars');if(stz)stz.classList.toggle('on',ks.includes('stars'));
   document.querySelectorAll('.spot').forEach(el=>{const on=ks.includes(el.dataset.spot);el.classList.toggle('on',on);el.classList.toggle('dim',!on)});
-  const now=document.getElementById('now');if(now)now.innerHTML=`${esc(st.sec)}<b>${esc(namesOf(sc,st))} ${esc(st.word)}</b><span>${esc(st.cue)}</span>`;
   const sub=document.getElementById('sub');
   if(sub&&blocks){
     const nx=sc.steps[cur+1];
-    sub.innerHTML=`<p>${(blocks[cur]||[]).map(esc).join('<br>')}</p>`+(nx?`<div class="next"><small>下一段・${esc(namesOf(sc,nx))} ${esc(nx.word)}</small><p>${(blocks[cur+1]||[]).slice(0,2).map(esc).join('<br>')}</p></div>`:'<div class="next"><small>最後一段</small></div>');
+    sub.innerHTML=`<div class="cue">${esc(st.sec)}<b>${esc(namesOf(sc,st))} ${esc(st.word)}</b><span>${esc(st.cue)}</span></div><p>${(blocks[cur]||[]).map(esc).join('<br>')}</p>`+(nx?`<div class="next"><small>下一段・${esc(namesOf(sc,nx))} ${esc(nx.word)}</small><p>${(blocks[cur+1]||[]).slice(0,2).map(esc).join('<br>')}</p></div>`:'<div class="next"><small>最後一段</small></div>');
     if(anim){sub.classList.remove('swap');sub.offsetWidth;sub.classList.add('swap')}
   }
   const c=document.getElementById('count');if(c)c.textContent=`${cur+1} / ${n}`;
