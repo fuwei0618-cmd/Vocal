@@ -55,6 +55,13 @@ body.play{overflow:hidden;height:100vh;touch-action:manipulation;user-select:non
 @keyframes swap{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
 .foot{position:fixed;z-index:3;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;pointer-events:none}
 .foot button{pointer-events:auto;background:rgba(0,0,0,.45);border:1px solid var(--line);color:var(--ink);border-radius:99px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.player{position:fixed;z-index:3;left:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}
+.player button{background:rgba(0,0,0,.45);border:1px solid var(--line);color:var(--ink);border-radius:99px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.player button.rec{border-color:#e46b6b;color:#ffb4b4}
+.player .t{font-variant-numeric:tabular-nums;min-width:5.5em}
+@media (max-width:500px){.player .t{display:none}.player button,.foot button{padding:6px 10px}}
+.hint{position:fixed;z-index:3;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 56px);background:rgba(0,0,0,.65);border:1px solid var(--line);border-radius:99px;padding:6px 14px;font-size:13px;color:var(--ink);pointer-events:none;white-space:nowrap}
+.bar .edit+.edit{margin-left:0}
 .paste{position:relative;z-index:5;display:grid;gap:8px;margin:0 auto;max-width:560px;padding:calc(env(safe-area-inset-top,0px) + 56px) 16px 40px}
 .paste p{margin:0;color:var(--ink);font-size:14px;line-height:1.6;text-shadow:0 1px 6px #000}
 .paste textarea{width:100%;min-height:50vh;background:rgba(15,12,9,.82);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font:16px/1.6 var(--body)}
@@ -150,15 +157,17 @@ function render(){
   document.body.classList.toggle('play',!paste);
   const bg=`<div class="blur" style="background-image:url('${esc(sc.img)}')"></div><div class="bg" id="bg"><img src="${esc(sc.img)}" alt="${esc(sc.title)}的情境圖"><div class="shade" id="shade"></div>${starsHtml(sc)}
     ${Object.entries(sc.spots).map(([k,s])=>`<div class="spot" data-spot="${k}" style="left:${s.x}%;top:${s.y}%"><i></i><b>${esc(s.name)}</b></div>`).join('')}</div><div class="veil"></div>`;
-  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${esc(sc.artist)}・v6</span>${paste?'':'<button class="edit" data-act="edit">改歌詞</button><div class="now" id="now"></div>'}</div>`;
+  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${esc(sc.artist)}・v7</span>${paste?'':'<button class="edit" data-act="audio">♪ 伴奏</button><button class="edit" data-act="edit">改歌詞</button><div class="now" id="now"></div>'}</div>`;
   const body=paste
     ?`<div class="paste"><p>把這首歌的歌詞整首貼進來，一行一句、照順序。<br>歌詞只存在這台裝置，不會放到網路上。</p>
       <textarea id="lyr-in" placeholder="第一句歌詞…">${esc(text)}</textarea>
       <div class="row">${text?'<button class="btn ghost" data-act="cancel">取消</button>':''}<button class="btn" data-act="save">存好</button></div></div>`
     :`<div class="tap" id="tap" aria-label="點一下換下一段"></div><div class="sub" id="sub" aria-live="polite"></div>
-      <div class="foot"><button data-act="prev" aria-label="上一段">‹ 上一段</button><span id="count"></span></div>`;
+      <div class="foot"><button data-act="prev" aria-label="上一段">‹ 上一段</button><span id="count"></span></div>
+      <div class="player" id="player" hidden></div><div class="hint" id="hint" hidden></div><input type="file" id="afile" accept="audio/*" hidden>`;
   app.innerHTML=bg+bar+body;
   show(cur,false);
+  if(!paste)loadAudio();
 }
 
 // 圖固定不動。橫的螢幕：鋪滿（像 object-fit:cover）置中；直的手機：整張寬度放在上面，背後用同一張圖模糊鋪滿
@@ -196,18 +205,73 @@ app.addEventListener('click',e=>{
     if(act==='save'){const t=document.getElementById('lyr-in').value.trim();if(!t)return;saveLyrics(t);editing=false;cur=0;render();scrollTo(0,0)}
     else if(act==='edit'){editing=true;render();scrollTo(0,0)}
     else if(act==='cancel'){editing=false;render()}
-    else if(act==='prev')show(cur-1);
+    else if(act==='prev')step(cur-1);
+    else if(act==='audio')document.getElementById('afile').click();
+    else if(act==='play'){if(!au)return;au.paused?au.play():au.pause()}
+    else if(act==='rec')toggleRec();
     return}
-  if(e.target.id==='tap')show(e.clientX<innerWidth*.3?cur-1:cur+1);
+  if(e.target.id==='tap')step(e.clientX<innerWidth*.3?cur-1:cur+1);
 });
 // 鍵盤、藍牙翻頁踏板（多半送方向鍵、PageDown 或空白鍵）
 addEventListener('keydown',e=>{
   if(!SCENES[key]||!document.body.classList.contains('play')||e.target.tagName==='TEXTAREA')return;
-  if(['ArrowRight','ArrowDown','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();show(cur+1)}
-  else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();show(cur-1)}
+  if(['ArrowRight','ArrowDown','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();step(cur+1)}
+  else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();step(cur-1)}
 });
 addEventListener('resize',()=>place());
-addEventListener('hashchange',()=>{cur=0;editing=false;render()});
+addEventListener('hashchange',()=>{cur=0;editing=false;if(au){au.pause();au=null}render()});
+
+/* ---------- 伴奏：檔案存在這台裝置（IndexedDB），不會上傳 ---------- */
+// 對拍：播放時每到下一段點一下，記下每段開始的秒數；之後播放就自動換段
+const TKEY='scene-times-v1';
+let au=null,auUrl='',rec=false;
+function idb(){return new Promise((ok,no)=>{const r=indexedDB.open('scene-audio',1);r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
+async function getFile(k){try{const db=await idb();return await new Promise(ok=>{const q=db.transaction('files').objectStore('files').get(k);q.onsuccess=()=>ok(q.result||null);q.onerror=()=>ok(null)})}catch(e){return null}}
+async function putFile(k,f){const db=await idb();return new Promise((ok,no)=>{const t=db.transaction('files','readwrite');t.objectStore('files').put(f,k);t.oncomplete=ok;t.onerror=()=>no(t.error)})}
+function getTimes(){try{return (JSON.parse(localStorage.getItem(TKEY)||'{}')||{})[key]||[]}catch(e){return []}}
+function setTimes(a){let all={};try{all=JSON.parse(localStorage.getItem(TKEY)||'{}')||{}}catch(e){}all[key]=a;try{localStorage.setItem(TKEY,JSON.stringify(all))}catch(e){}}
+const mmss=t=>isFinite(t)?`${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')}`:'0:00';
+function hint(t){const h=document.getElementById('hint');if(!h)return;h.hidden=!t;h.textContent=t||''}
+async function loadAudio(){
+  const f=await getFile(key);if(!f)return;
+  if(auUrl)URL.revokeObjectURL(auUrl);auUrl=URL.createObjectURL(f);
+  au=new Audio(auUrl);au.preload='auto';
+  au.addEventListener('timeupdate',sync);au.addEventListener('play',drawPlayer);au.addEventListener('pause',drawPlayer);
+  au.addEventListener('ended',()=>{if(rec)toggleRec();drawPlayer()});au.addEventListener('loadedmetadata',drawPlayer);
+  drawPlayer();
+}
+function drawPlayer(){
+  const p=document.getElementById('player');if(!p||!au)return;p.hidden=false;
+  const has=getTimes().length>1;
+  p.innerHTML=`<button data-act="play">${au.paused?'▶ 播放':'❚❚ 暫停'}</button><span class="t">${mmss(au.currentTime)} / ${mmss(au.duration)}</span><button data-act="rec" class="${rec?'rec':''}">${rec?'● 對拍中・按這完成':has?'重新對拍':'對拍'}</button>`;
+}
+function toggleRec(){
+  if(!au)return;
+  if(rec){rec=false;hint('');drawPlayer();return}
+  rec=true;setTimes([0]);au.currentTime=0;show(0);au.play();
+  hint('跟著音樂，每到下一段就點一下螢幕');drawPlayer();
+}
+// 換段：對拍中就記秒數；有對過拍、正在播，就把音樂跳到那段
+function step(i){
+  const n=SCENES[key].steps.length;i=Math.max(0,Math.min(n-1,i));
+  if(au&&rec&&i===cur+1){const t=getTimes();t[i]=au.currentTime;setTimes(t.slice(0,i+1));show(i);if(i===n-1){rec=false;hint('對好了！之後播放會自動換段');setTimeout(()=>hint(''),2500);drawPlayer()}return}
+  const t=getTimes();
+  if(au&&!rec&&!au.paused&&t[i]!=null)au.currentTime=t[i];
+  show(i);
+}
+let lastDraw=0;
+function sync(){
+  if(Date.now()-lastDraw>500){lastDraw=Date.now();const s=document.querySelector('#player .t');if(s)s.textContent=`${mmss(au.currentTime)} / ${mmss(au.duration)}`}
+  if(rec)return;const t=getTimes();if(t.length<2)return;
+  let k=0;t.forEach((x,j)=>{if(x!=null&&au.currentTime>=x-.05)k=j});
+  if(k!==cur)show(k);
+}
+app.addEventListener('change',async e=>{
+  if(e.target.id!=='afile')return;const f=e.target.files[0];if(!f)return;
+  try{await putFile(key,f)}catch(err){alert('這台裝置沒辦法存這個檔案');return}
+  if(au)au.pause();rec=false;setTimes([]);await loadAudio();
+  hint('伴奏放好了，按「對拍」跟著音樂點一次，之後就會自動換段');setTimeout(()=>hint(''),4000);
+});
 render();
 </script>
 </body>
