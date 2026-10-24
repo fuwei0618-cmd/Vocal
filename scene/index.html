@@ -177,7 +177,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=24;
+const VER=25;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -285,6 +285,7 @@ app.addEventListener('click',e=>{
     else if(act==='pclr')clearInk();
     else if(act==='note')openNote(+a.dataset.l);
     else if(act==='nhl'||act==='nx'){const m=noteOf(noteL);m[act==='nhl'?'hl':'x']=!m[act==='nhl'?'hl':'x'];a.classList.toggle('on');saveNote(noteL,m)}
+    else if(act==='nline')startLine(noteL);
     else if(act==='nclr'){saveNote(noteL,{});closeNote()}
     else if(act==='ndone'){const m=noteOf(noteL);m.t=document.getElementById('nt-in').value.trim();saveNote(noteL,m);closeNote()}
     else if(act==='from'){const v=a.dataset;closeToc();playFrom(v.sec!=null?+v.sec:null,v.l!=null?+v.l:null)}
@@ -375,6 +376,15 @@ function startRec(sec){
   show(sec>0?sec-1:0);au.currentTime=sec===0?0:Math.max(0,from-5);au.play();
   hint(sec>0?'先點一下換到這段，唱第一句時再點一下，之後每句開頭點一下（點左邊退回）':'每句開頭點一下；換段時先點一下換段，再點一下是第一句（點左邊退回）');drawPlayer();lightLine();
 }
+// 從這句改：從那句前 4 秒開始播，唱到這句開頭點一下；後面也要改就繼續點，按「完成」結束
+function startLine(j){
+  if(!au||!blocks)return;snapshot();closeToc();closeNote();
+  const t=getTimes(),L=getLines(),s=secOfLine(j);
+  recLine=j;armed=s>0&&j===lineOff(s);rec=true;
+  const from=L[j]!=null?L[j]:t[s]!=null?t[s]:0;
+  show(s);au.currentTime=Math.max(0,from-4);au.play();
+  hint('唱到這句開頭點一下螢幕。後面也要改就繼續點，改完按「完成」');drawPlayer();lightLine();
+}
 function tapLine(back){
   const L=getLines(),N=lineCount(),s=secOfLine(recLine);
   if(back){
@@ -383,7 +393,10 @@ function tapLine(back){
     lightLine();return}
   const now=Math.round(au.currentTime*100)/100;
   if(recLine<N&&recLine===lineOff(s)&&s>0&&!armed){const t=getTimes();t[s]=now;setTimes(t);armed=true;show(s);lightLine();return}
-  L[recLine]=now;setLines(L);recLine++;armed=false;if(s!==cur)show(s);lightLine();
+  L[recLine]=now;setLines(L);
+  // 段的第一句改得比段開始還早，段的開始也跟著往前
+  if(s>0&&recLine===lineOff(s)){const t=getTimes();if(t[s]!=null&&t[s]>now){t[s]=Math.round(Math.max(L[recLine-1]!=null?L[recLine-1]+.1:0,now-.8)*100)/100;setTimes(t)}}
+  recLine++;armed=false;if(s!==cur)show(s);lightLine();
   if(recLine>=N)finishRec();
 }
 function finishRec(){
@@ -537,7 +550,7 @@ function lnHtml(l,j){const m=noteOf(j);return `<span class="ln${m.hl?' hl':''}${
 function refreshNotes(){const on=document.getElementById('toc');show(cur,false);lightLine();if(on){const y=on.scrollTop;openToc();document.getElementById('toc').scrollTop=y}}
 function openNote(j){
   closeNote();noteL=j;const m=noteOf(j),d=document.createElement('div');d.className='sheet';d.id='sheet';
-  d.innerHTML=`<div class="q">${esc(blocks.flat()[j])}</div><div class="row"><button data-act="nhl" class="${m.hl?'on':''}">🖍 螢光筆</button><button data-act="nx" class="${m.x?'on':''}">劃掉</button><button data-act="nclr">清除</button></div><input id="nt-in" placeholder="寫一句提醒，例如：換氣、放輕、笑著唱" value="${esc(m.t||'')}"><div class="row" style="justify-content:flex-end"><button data-act="ndone">完成</button></div>`;
+  d.innerHTML=`<div class="q">${esc(blocks.flat()[j])}</div><div class="row"><button data-act="nhl" class="${m.hl?'on':''}">🖍 螢光筆</button><button data-act="nx" class="${m.x?'on':''}">劃掉</button><button data-act="nclr">清除</button>${au?'<button data-act="nline">⏱ 從這句改對拍</button>':''}</div><input id="nt-in" placeholder="寫一句提醒，例如：換氣、放輕、笑著唱" value="${esc(m.t||'')}"><div class="row" style="justify-content:flex-end"><button data-act="ndone">完成</button></div>`;
   app.appendChild(d);
 }
 function closeNote(){const d=document.getElementById('sheet');if(d)d.remove()}
