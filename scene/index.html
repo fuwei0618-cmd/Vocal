@@ -168,7 +168,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=21;
+const VER=22;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -261,6 +261,7 @@ app.addEventListener('click',e=>{
     else if(act==='part')startPart();
     else if(act==='toc')openToc();
     else if(act==='tocx')closeToc();
+    else if(act==='undo')undoTimes();
     else if(act==='note')openNote(+a.dataset.l);
     else if(act==='nhl'||act==='nx'){const m=noteOf(noteL);m[act==='nhl'?'hl':'x']=!m[act==='nhl'?'hl':'x'];a.classList.toggle('on');saveNote(noteL,m)}
     else if(act==='nclr'){saveNote(noteL,{});closeNote()}
@@ -294,6 +295,11 @@ function setTimes(a){let all={};try{all=JSON.parse(localStorage.getItem(TKEY)||'
 const LNKEY='scene-lines-v1';
 function getLines(){try{return (JSON.parse(localStorage.getItem(LNKEY)||'{}')||{})[key]||[]}catch(e){return []}}
 function setLines(a){let all={};try{all=JSON.parse(localStorage.getItem(LNKEY)||'{}')||{}}catch(e){}all[key]=a;try{localStorage.setItem(LNKEY,JSON.stringify(all))}catch(e){}}
+// 復原：重對、自動對之前先把這首原本的時間存一份，歌詞表裡可以換回來
+const UKEY='scene-undo-v1';
+function getUndo(){try{return (JSON.parse(localStorage.getItem(UKEY)||'{}')||{})[key]||null}catch(e){return null}}
+function snapshot(){const t=getTimes(),L=getLines();if(t.length<2&&!L.length)return;let all={};try{all=JSON.parse(localStorage.getItem(UKEY)||'{}')||{}}catch(e){}all[key]={t,L,at:Date.now()};try{localStorage.setItem(UKEY,JSON.stringify(all))}catch(e){}}
+function undoTimes(){const u=getUndo();if(!u)return;if(!confirm('換回上一次的對拍？（現在的會變成可以再換回來的那份）'))return;const cur0={t:getTimes(),L:getLines(),at:Date.now()};setTimes(u.t);setLines(u.L);let all={};try{all=JSON.parse(localStorage.getItem(UKEY)||'{}')||{}}catch(e){}all[key]=cur0;try{localStorage.setItem(UKEY,JSON.stringify(all))}catch(e){}closeToc();show(cur);drawPlayer();hint('換回來了');hintT=setTimeout(()=>hint(''),2000)}
 const mmss=t=>isFinite(t)?`${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')}`:'0:00';
 let hintT=0;
 function hint(t){clearTimeout(hintT);const h=document.getElementById('hint');if(!h)return;h.hidden=!t;h.textContent=t||''}
@@ -340,7 +346,7 @@ function startPart(){startRec(cur)}
 // 換段要點兩下：第一下換到新段（黃字出來、間奏時先看），第二下才是那段第一句開唱
 let armed=false;
 function startRec(sec){
-  if(!au||!blocks)return;
+  if(!au||!blocks)return;snapshot();
   const n=SCENES[key].steps.length,t=getTimes(),L=getLines();
   if(t.length!==n){const f=[0];for(let i=1;i<n;i++)f.push(null);setTimes(f)}
   recLine=lineOff(sec);armed=false;rec=true;
@@ -395,6 +401,7 @@ app.addEventListener('change',async e=>{
   // 不設 accept：iPad 的「檔案」裡 OneDrive 的 mp3 常被認不出類型而變灰色選不到，改成選完再檢查
   if(!/^audio\//.test(f.type)&&!/\.(mp3|m4a|aac|wav|aif|aiff|flac|ogg|opus|caf)$/i.test(f.name)){alert('這個檔案看起來不是音樂檔（mp3、m4a、wav…）');return}
   const which=e.target.dataset.for||'inst';
+  if(!confirm(`要把「${f.name}」放到〈${SCENES[key].title}〉的${TRACK[which]}嗎？`))return;
   try{await putFile(key+'|'+which,f)}catch(err){alert('這台裝置沒辦法存這個檔案');return}
   if(which==='vocal'){hasVocal=true;drawPlayer();autoAlign(f);return}
   if(au)au.pause();rec=false;try{localStorage.setItem('scene-track',which)}catch(e){}await loadAudio(which);
@@ -416,7 +423,10 @@ async function autoAlign(file,redo,quiet){
   }catch(err){hint('');alert('這個人聲檔讀不出來，換 mp3 或 wav 試試');return}
   const res=alignTimes(buf,keep);
   if(!res){hint('這個檔案聽不太出唱歌的地方，用「對拍」手動點一次吧');hintT=setTimeout(()=>hint(''),4000);return}
-  if(!keep)setTimes(res.sec);setLines(res.lines);rec=false;drawPlayer();
+  // 已經有逐句時間（例如你手動點好的）就不蓋掉，只有按「自動對」才重算
+  const hadLines=getLines().length>0;
+  if(redo||!keep||!hadLines)snapshot();
+  if(!keep)setTimes(res.sec);if(redo||!hadLines)setLines(res.lines);rec=false;drawPlayer();
   if(!au||au.paused)show(cur);
   if(!quiet)hint(keep?'逐句對好了！段落照你原本點的，播放時唱到哪句哪句會亮':'自動對好了！播放會自己換段、逐句亮，哪段不準就停在那段按「從這段改」');hintT=setTimeout(()=>hint(''),4500);
 }
@@ -483,7 +493,7 @@ function playFrom(sec,l){
 function openToc(){
   if(!blocks)return;closeToc();const sc=SCENES[key],t=getTimes(),L=getLines();let o=0;
   const d=document.createElement('div');d.className='toc';d.id='toc';
-  d.innerHTML=`<div class="top"><b>${esc(sc.title)}</b><button data-act="from">▶ 從頭播</button><button data-act="tocx">關閉</button></div>`+
+  d.innerHTML=`<div class="top"><b>${esc(sc.title)}</b><button data-act="from">▶ 從頭播</button>${getUndo()?'<button data-act="undo">↶ 復原對拍</button>':''}<button data-act="tocx">關閉</button></div>`+
     sc.steps.map((st,i)=>{const ls=blocks[i]||[];const h=`<div class="sec"><button data-act="from" data-sec="${i}">${esc(st.sec)}<b>${esc(namesOf(sc,st))} ${esc(st.word)}</b>${t[i]!=null?mmss(t[i]):''} ▶</button>`+
       ls.map((x,k)=>{const j=o+k,m=noteOf(j);return `<div class="row"><button class="l${i===cur?' cur':''}${m.hl?' hl':''}${m.x?' x':''}" data-act="from" data-l="${j}">${esc(x)}${m.t?`<span class="nt">${esc(m.t)}</span>`:''}${L[j]!=null?`<small>${mmss(L[j])}</small>`:''}</button><button class="pen" data-act="note" data-l="${j}" aria-label="這句做筆記">✎</button></div>`}).join('')+'</div>';o+=ls.length;return h}).join('');
   app.appendChild(d);
