@@ -77,6 +77,7 @@ body.play{overflow:hidden;height:100vh;touch-action:manipulation;user-select:non
 .toc .l{display:block;width:100%;text-align:left;border:0;border-radius:8px;background:none;padding:7px 8px;margin:0 -8px;font-family:var(--display);font-size:18px;line-height:1.45;color:var(--ink)}
 .toc .l:active,.toc .l.cur{background:var(--glow-soft)}
 .toc .l small{color:var(--muted);font-family:var(--body);font-size:11px;margin-left:8px}
+.sub .ln2{pointer-events:auto;cursor:pointer}
 .sub .ln{pointer-events:auto;cursor:pointer;display:inline-block;position:relative}
 .ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none}
 .ink path{fill:none;stroke-linecap:round;stroke-linejoin:round}
@@ -177,7 +178,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=25;
+const VER=26;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -251,7 +252,7 @@ function show(i,anim=true){
   if(sub&&blocks){
     const nx=sc.steps[cur+1];
     const off=blocks.slice(0,cur).reduce((a,b)=>a+b.length,0);
-    sub.innerHTML=`<div class="cue">${esc(st.sec)}<b>${esc(namesOf(sc,st))} ${esc(st.word)}</b><span>${esc(st.cue)}</span></div><p class="cur">${(blocks[cur]||[]).map((l,k)=>lnHtml(l,off+k)).join('<br>')}</p>`+(nx?`<div class="next"><small>下一段・${esc(namesOf(sc,nx))} ${esc(nx.word)}</small><p>${(blocks[cur+1]||[]).slice(0,2).map(esc).join('<br>')}</p></div>`:'<div class="next"><small>最後一段</small></div>');
+    sub.innerHTML=`<div class="cue">${esc(st.sec)}<b>${esc(namesOf(sc,st))} ${esc(st.word)}</b><span>${esc(st.cue)}</span></div><p class="cur">${(blocks[cur]||[]).map((l,k)=>lnHtml(l,off+k)).join('<br>')}</p>`+(nx?`<div class="next"><small>下一段・${esc(namesOf(sc,nx))} ${esc(nx.word)}</small><p>${(blocks[cur+1]||[]).slice(0,2).map((l,k)=>`<span class="ln2" data-l="${off+(blocks[cur]||[]).length+k}">${esc(l)}</span>`).join('<br>')}</p></div>`:'<div class="next"><small>最後一段</small></div>');
     if(anim){sub.classList.remove('swap');sub.offsetWidth;sub.classList.add('swap')}
   }
   const c=document.getElementById('count');if(c)c.textContent=`${cur+1} / ${n}`;
@@ -291,7 +292,7 @@ app.addEventListener('click',e=>{
     else if(act==='from'){const v=a.dataset;closeToc();playFrom(v.sec!=null?+v.sec:null,v.l!=null?+v.l:null)}
     else if(act==='auto'){if(getTimes().length>1&&!confirm('用人聲重新算每段時間？你原本點的段會被換掉'))return;autoAlign(null,true)}
     return}
-  const ln=e.target.closest('.sub .ln');
+  const ln=e.target.closest('.sub .ln,.sub .ln2');
   if(ln&&!rec){playFrom(null,+ln.dataset.l);return}
   if(e.target.id==='tap'){if(au&&rec){tapLine(e.clientX<innerWidth*.3);return}step(e.clientX<innerWidth*.3?cur-1:cur+1)}
 });
@@ -420,7 +421,7 @@ function sync(){
   if(Date.now()-lastDraw>500){lastDraw=Date.now();const s=document.querySelector('#player .t');if(s)s.textContent=`${mmss(au.currentTime)} / ${mmss(au.duration)}`}
   if(rec){lightLine();return}const t=getTimes();if(t.length<2){lightLine();return}
   let k=0;t.forEach((x,j)=>{if(x!=null&&au.currentTime>=x-.05)k=j});
-  if(k!==cur)show(k);
+  if(k!==cur&&Date.now()-browsing>8000)show(k);
   lightLine();
 }
 // 逐句：正在唱的那句亮、唱過的變淡（有人聲分析過才有）
@@ -521,7 +522,7 @@ function playFrom(sec,l){
   if(rec)return;const t=getTimes(),L=getLines();let at=0,s=0;
   if(l!=null){s=secOfLine(l);at=L[l]!=null?Math.max(0,L[l]-.5):(t[s]||0)}
   else if(sec!=null){s=sec;at=t[sec]||0}
-  show(s);if(!au){hint('先放原曲或伴奏才能播');hintT=setTimeout(()=>hint(''),2500);return}
+  browsing=0;show(s);if(!au){hint('先放原曲或伴奏才能播');hintT=setTimeout(()=>hint(''),2500);return}
   au.currentTime=at;au.play();
 }
 function openToc(){
@@ -535,10 +536,15 @@ function openToc(){
 }
 function closeToc(){const d=document.getElementById('toc');if(d)d.remove()}
 // 在圖上左右滑：換段（正在播就跳到那段）
-let tx0=null;
-app.addEventListener('touchstart',e=>{if(e.target.id==='tap')tx0=[e.touches[0].clientX,e.touches[0].clientY]},{passive:true});
-app.addEventListener('touchend',e=>{if(tx0==null)return;const dx=e.changedTouches[0].clientX-tx0[0],dy=e.changedTouches[0].clientY-tx0[1];tx0=null;
-  if(!rec&&Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){e.preventDefault();step(dx<0?cur+1:cur-1)}});
+// 上下滑：翻歌詞找位置（音樂不跳），找到後點那一句就從那句播；8 秒沒動作就回到正在唱的地方
+let tx0=null,browsing=0;
+function browse(i){const n=SCENES[key].steps.length;if(i<0||i>=n)return;browsing=Date.now();show(i);hint('點一句，就從那句開始播');hintT=setTimeout(()=>hint(''),1800)}
+app.addEventListener('touchstart',e=>{if(e.target.id==='tap'||e.target.closest('.sub'))tx0=[e.touches[0].clientX,e.touches[0].clientY]},{passive:true});
+app.addEventListener('touchend',e=>{if(tx0==null)return;const dx=e.changedTouches[0].clientX-tx0[0],dy=e.changedTouches[0].clientY-tx0[1];tx0=null;if(rec||document.getElementById('pad'))return;
+  if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){e.preventDefault();step(dx<0?cur+1:cur-1)}
+  else if(Math.abs(dy)>50&&Math.abs(dy)>Math.abs(dx)*1.2){e.preventDefault();browse(dy<0?cur+1:cur-1)}});
+let wheelT=0;
+app.addEventListener('wheel',e=>{if(rec||!document.body.classList.contains('play')||document.getElementById('toc'))return;if(Date.now()-wheelT<450||Math.abs(e.deltaY)<20)return;wheelT=Date.now();browse(e.deltaY>0?cur+1:cur-1)},{passive:true});
 /* ---------- 筆記：每句可以上螢光筆、劃掉、寫一句小字，播放時跟著歌詞出來 ---------- */
 // 用「那句歌詞＋第幾次出現」當鑰匙，之後補歌詞、插行，筆記也不會跑到別句
 const NKEY='scene-notes-v1';let noteL=-1;
