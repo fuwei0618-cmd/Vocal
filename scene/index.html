@@ -77,7 +77,16 @@ body.play{overflow:hidden;height:100vh;touch-action:manipulation;user-select:non
 .toc .l{display:block;width:100%;text-align:left;border:0;border-radius:8px;background:none;padding:7px 8px;margin:0 -8px;font-family:var(--display);font-size:18px;line-height:1.45;color:var(--ink)}
 .toc .l:active,.toc .l.cur{background:var(--glow-soft)}
 .toc .l small{color:var(--muted);font-family:var(--body);font-size:11px;margin-left:8px}
-.sub .ln{pointer-events:auto;cursor:pointer}
+.sub .ln{pointer-events:auto;cursor:pointer;display:inline-block;position:relative}
+.ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none}
+.ink path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+#pad{position:fixed;inset:0;z-index:15;touch-action:none;cursor:crosshair}
+.pentools{position:fixed;z-index:16;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 14px);display:flex;gap:6px;align-items:center;background:rgba(20,16,12,.85);border:1px solid var(--line);border-radius:99px;padding:6px 8px;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.pentools button{background:none;border:1px solid transparent;color:var(--ink);border-radius:99px;padding:6px 10px;font:inherit;font-size:13px;cursor:pointer}
+.pentools button.on{border-color:var(--glow)}
+.pentools i{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px}
+body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
+@media (max-width:640px){.pentools{left:10px;right:10px;transform:none;flex-wrap:wrap;justify-content:center;border-radius:18px}.pentools button{white-space:nowrap;padding:6px 8px}}
 .ln.hl,.toc .l.hl{background:linear-gradient(transparent 35%,rgba(240,140,80,.45) 35%,rgba(240,140,80,.45) 92%,transparent 92%);border-radius:3px}
 .ln.x,.toc .l.x{text-decoration:line-through;text-decoration-color:rgba(255,120,110,.9);text-decoration-thickness:2px}
 .ln .nt,.toc .l .nt{font-family:var(--body);font-size:12.5px;color:#ffb48a;margin-left:8px;letter-spacing:0;text-shadow:0 1px 6px #000}
@@ -168,7 +177,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=23;
+const VER=24;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -199,7 +208,7 @@ function render(){
   key=(location.hash||'#jiayi').slice(1);
   const sc=SCENES[key];
   if(!sc){app.innerHTML=`<div class="bar"><a href="../#songs">← 歌單</a></div><div class="empty">這首歌還沒有情境圖</div>`;return}
-  document.title=sc.title+'・情境圖';
+  document.title=sc.title+'・情境圖';document.body.classList.remove('drawing');
   document.body.classList.toggle('lay-top',sc.layout==='top');document.body.classList.toggle('bright',(sc.dim||1)<1);
   const text=loadLyrics();blocks=text?split(text,sc.steps):null;const paste=!blocks||editing;
   document.body.classList.toggle('play',!paste);
@@ -211,7 +220,7 @@ function render(){
       <textarea id="lyr-in" placeholder="第一句歌詞…">${esc(text)}</textarea>
       <div class="row">${text?'<button class="btn ghost" data-act="cancel">取消</button>':''}<button class="btn" data-act="save">存好</button></div></div>`
     :`<div class="tap" id="tap" aria-label="點一下換下一段"></div><div class="sub" id="sub" aria-live="polite"></div>
-      <div class="foot"><button data-act="toc">歌詞表</button><button data-act="prev" aria-label="上一段">‹ 上一段</button><span id="count"></span></div>
+      <div class="foot"><button data-act="pen">✏️ 畫</button><button data-act="toc">歌詞表</button><button data-act="prev" aria-label="上一段">‹ 上一段</button><span id="count"></span></div>
       <div class="player" id="player" hidden></div><div class="hint" id="hint" hidden></div><input type="file" id="afile" hidden>`;
   app.innerHTML=bg+bar+body;
   show(cur,false);
@@ -248,6 +257,7 @@ function show(i,anim=true){
   const c=document.getElementById('count');if(c)c.textContent=`${cur+1} / ${n}`;
   if(typeof au!=='undefined'&&au)drawPlayer();
   place();
+  drawInk();
 }
 
 app.addEventListener('click',e=>{
@@ -267,6 +277,12 @@ app.addEventListener('click',e=>{
     else if(act==='toc')openToc();
     else if(act==='tocx')closeToc();
     else if(act==='undo')undoTimes();
+    else if(act==='pen')startDraw();
+    else if(act==='pdone')stopDraw();
+    else if(act==='pcol'){pen=+a.dataset.i;drawTools()}
+    else if(act==='pundo')undoInk();
+    else if(act==='pprev'||act==='pnext'){inkHist=[];show(cur+(act==='pnext'?1:-1))}
+    else if(act==='pclr')clearInk();
     else if(act==='note')openNote(+a.dataset.l);
     else if(act==='nhl'||act==='nx'){const m=noteOf(noteL);m[act==='nhl'?'hl':'x']=!m[act==='nhl'?'hl':'x'];a.classList.toggle('on');saveNote(noteL,m)}
     else if(act==='nclr'){saveNote(noteL,{});closeNote()}
@@ -284,7 +300,7 @@ addEventListener('keydown',e=>{
   if(['ArrowRight','ArrowDown','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();step(cur+1)}
   else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();step(cur-1)}
 });
-addEventListener('resize',()=>place());
+addEventListener('resize',()=>{place();drawInk()});
 addEventListener('hashchange',()=>{cur=0;editing=false;if(au){au.pause();au=null}render()});
 
 /* ---------- 伴奏：檔案存在這台裝置（IndexedDB），不會上傳 ---------- */
@@ -525,6 +541,49 @@ function openNote(j){
   app.appendChild(d);
 }
 function closeNote(){const d=document.getElementById('sheet');if(d)d.remove()}
+/* ---------- 畫筆：用 Apple Pencil 或手指直接在歌詞上畫，畫的東西黏在最近的那句，跟著歌詞跑 ---------- */
+// 座標用那句字的大小（em）來記，換 iPad／手機、字放大縮小都還是畫在同一個位置
+const IKEY='scene-ink-v1',PENS=[{n:'紅',c:'#ff6b5b',w:.09,o:1},{n:'藍',c:'#6fb3ff',w:.09,o:1},{n:'螢光',c:'#ffd84d',w:.55,o:.4}];
+let pen=0,inkHist=[];
+function allInk(){try{return JSON.parse(localStorage.getItem(IKEY)||'{}')||{}}catch(e){return {}}}
+function saveInk(a){try{localStorage.setItem(IKEY,JSON.stringify(a))}catch(e){}}
+function drawInk(){
+  if(!blocks)return;const mine=allInk()[key]||{};
+  document.querySelectorAll('.sub .ln').forEach(el=>{
+    const old=el.querySelector('.ink');if(old)old.remove();
+    const st=mine[lineKey(+el.dataset.l)];if(!st||!st.length)return;
+    const fs=parseFloat(getComputedStyle(el).fontSize)||20;
+    el.insertAdjacentHTML('beforeend',`<svg class="ink">${st.map(k=>{const P=PENS[k.c]||PENS[0];return `<path d="${k.p.map((q,i)=>(i?'L':'M')+(q[0]*fs).toFixed(1)+' '+(q[1]*fs).toFixed(1)).join('')}" stroke="${P.c}" stroke-width="${(P.w*fs).toFixed(1)}" stroke-opacity="${P.o}"/>`}).join('')}</svg>`);
+  });
+}
+function drawTools(){
+  const t=document.getElementById('pentools');if(!t)return;
+  t.innerHTML=PENS.map((P,i)=>`<button data-act="pcol" data-i="${i}" class="${i===pen?'on':''}"><i style="background:${P.c};opacity:${P.o<1?.7:1}"></i> ${P.n}</button>`).join('')+`<button data-act="pprev" aria-label="上一段">‹</button><button data-act="pnext" aria-label="下一段">›</button><button data-act="pundo">↶ 上一筆</button><button data-act="pclr">清這段</button><button data-act="pdone">完成</button>`;
+}
+function startDraw(){
+  if(!blocks||document.getElementById('pad'))return;if(au&&!au.paused)au.pause();
+  document.body.classList.add('drawing');inkHist=[];
+  app.insertAdjacentHTML('beforeend','<canvas id="pad"></canvas><div class="pentools" id="pentools"></div>');drawTools();
+  const cv=document.getElementById('pad'),dpr=devicePixelRatio||1;cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;
+  const g=cv.getContext('2d');g.scale(dpr,dpr);g.lineCap='round';g.lineJoin='round';
+  let pts=null;
+  cv.addEventListener('pointerdown',e=>{e.preventDefault();cv.setPointerCapture(e.pointerId);pts=[[e.clientX,e.clientY]];
+    const ln=nearLine(e.clientY),fs=ln?parseFloat(getComputedStyle(ln).fontSize):20,P=PENS[pen];g.strokeStyle=P.c;g.globalAlpha=P.o;g.lineWidth=P.w*fs});
+  cv.addEventListener('pointermove',e=>{if(!pts)return;const ev=e.getCoalescedEvents?e.getCoalescedEvents():[e];
+    ev.forEach(q=>{const a=pts[pts.length-1];g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(q.clientX,q.clientY);g.stroke();pts.push([q.clientX,q.clientY])})});
+  const end=()=>{if(!pts)return;const P=pts;pts=null;g.clearRect(0,0,innerWidth,innerHeight);if(P.length<2)P.push([P[0][0]+1,P[0][1]]);addStroke(P)};
+  cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+}
+function nearLine(y){let best=null,bd=1e9;document.querySelectorAll('.sub p.cur .ln').forEach(el=>{const r=el.getBoundingClientRect(),d=y<r.top?r.top-y:y>r.bottom?y-r.bottom:0;if(d<bd){bd=d;best=el}});return best}
+function addStroke(P){
+  const ys=P.map(q=>q[1]).sort((a,b)=>a-b),ln=nearLine(ys[ys.length>>1]);if(!ln)return;
+  const r=ln.getBoundingClientRect(),fs=parseFloat(getComputedStyle(ln).fontSize)||20;
+  const k=lineKey(+ln.dataset.l),a=allInk(),o=a[key]||(a[key]={});(o[k]||(o[k]=[])).push({c:pen,p:P.map(q=>[+((q[0]-r.left)/fs).toFixed(2),+((q[1]-r.top)/fs).toFixed(2)])});
+  saveInk(a);inkHist.push(k);drawInk();
+}
+function undoInk(){const k=inkHist.pop();if(!k)return;const a=allInk(),o=a[key]||{};if(o[k]&&o[k].length){o[k].pop();if(!o[k].length)delete o[k]}saveInk(a);drawInk()}
+function clearInk(){if(!confirm('把這一段畫的都清掉？'))return;const a=allInk(),o=a[key]||{};document.querySelectorAll('.sub p.cur .ln').forEach(el=>delete o[lineKey(+el.dataset.l)]);saveInk(a);inkHist=[];drawInk()}
+function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementById(id);if(e)e.remove()});document.body.classList.remove('drawing')}
 render();
 </script>
 </body>
