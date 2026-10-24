@@ -108,6 +108,7 @@ button:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
 /* 物品在畫面下半部的歌（lay-top）：橫的螢幕歌詞放上面 */
 @media (orientation:landscape){
   body.lay-top .veil{background:linear-gradient(to bottom,rgba(0,0,0,.6) 0,rgba(0,0,0,.45) 45%,rgba(0,0,0,0) 62%)}
+  body.lay-top.bright .veil{background:linear-gradient(to bottom,rgba(0,0,0,.34) 0,rgba(0,0,0,.22) 40%,rgba(0,0,0,0) 58%)}
   body.lay-top .sub{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 96px)}
 }
 @media (prefers-reduced-motion:reduce){.stars i,.spot.on i,.sub.swap{animation:none}.shade,.spot{transition:none}}
@@ -133,6 +134,20 @@ const SCENES={
       {sec:'最後副歌',spot:'door',word:'全開',cue:'最滿，最後「同情」收輕',n:7}
     ]
   },
+  hug:{
+    title:'大大的擁抱',artist:'',img:'hug.jpg?v=1',ratio:1024/572,layout:'top',dim:.55,
+    spots:{door:{x:75,y:50,name:'敞開的門'},kite:{x:31,y:11,name:'風箏'},rainbow:{x:30,y:42,name:'彩虹'},sea:{x:12,y:58,name:'海洋'},compass:{x:44,y:79,name:'指南針'},photo:{x:44,y:91,name:'照片'},cups:{x:54,y:75,name:'兩杯咖啡'},blanket:{x:83,y:80,name:'毛毯'}},
+    steps:[
+      {sec:'開場',spot:'door',word:'開',cue:'門打開，笑著出來',n:1},
+      {sec:'主歌',spot:['kite','photo','compass'],word:'跳',cue:'像在說今天的好消息',n:5},
+      {sec:'導歌',spot:['sea','kite'],word:'暖',cue:'把手打開，往外送',n:3},
+      {sec:'副歌',spot:'blanket',word:'抱',cue:'看著人唱，一起 la la',n:11},
+      {sec:'主歌',spot:['rainbow','cups'],word:'圓',cue:'分開也不缺一角',n:5},
+      {sec:'導歌',spot:['sea','kite'],word:'暖',cue:'比第一次更大方',n:3},
+      {sec:'副歌',spot:'blanket',word:'抱',cue:'抱得更緊一點',n:8},
+      {sec:'導歌',spot:['sea','rainbow','kite'],word:'揚',cue:'往上揚，帶大家一起',n:4},
+      {sec:'最後副歌',spot:['blanket','door','kite'],word:'全開',cue:'笑著收，邀大家一起唱',n:11},
+    ]},
   houlai:{
     title:'後來',artist:'劉若英',img:'houlai.jpg?v=6',ratio:1024/572,layout:'top',
     // 星空是後製加的：在窗戶的天空範圍裡畫小星星（x0,y0,x1,y1，百分比）
@@ -153,7 +168,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=19;
+const VER=20;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -182,12 +197,12 @@ function render(){
   const sc=SCENES[key];
   if(!sc){app.innerHTML=`<div class="bar"><a href="../#songs">← 歌單</a></div><div class="empty">這首歌還沒有情境圖</div>`;return}
   document.title=sc.title+'・情境圖';
-  document.body.classList.toggle('lay-top',sc.layout==='top');
+  document.body.classList.toggle('lay-top',sc.layout==='top');document.body.classList.toggle('bright',(sc.dim||1)<1);
   const text=loadLyrics();blocks=text?split(text,sc.steps):null;const paste=!blocks||editing;
   document.body.classList.toggle('play',!paste);
   const bg=`<div class="blur" style="background-image:url('${esc(sc.img)}')"></div><div class="bg" id="bg"><img src="${esc(sc.img)}" alt="${esc(sc.title)}的情境圖"><div class="shade" id="shade"></div>${starsHtml(sc)}
     ${Object.entries(sc.spots).map(([k,s])=>`<div class="spot" data-spot="${k}" style="left:${s.x}%;top:${s.y}%"><i></i><b>${esc(s.name)}</b></div>`).join('')}</div><div class="veil"></div>`;
-  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${esc(sc.artist)}・v${VER}</span>${paste?'':'<button class="edit" data-act="audio" data-for="inst">＋伴奏</button><button class="edit" data-act="audio" data-for="orig">＋原唱</button><button class="edit" data-act="audio" data-for="vocal">＋人聲</button><button class="edit" data-act="edit">改歌詞</button>'}</div>`;
+  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${sc.artist?esc(sc.artist)+'・':''}v${VER}</span>${paste?'':'<button class="edit" data-act="audio" data-for="inst">＋伴奏</button><button class="edit" data-act="audio" data-for="orig">＋原唱</button><button class="edit" data-act="audio" data-for="vocal">＋人聲</button><button class="edit" data-act="edit">改歌詞</button>'}</div>`;
   const body=paste
     ?`<div class="paste"><p>把這首歌的歌詞整首貼進來，一行一句、照順序。<br>歌詞只存在這台裝置，不會放到網路上。</p>
       <textarea id="lyr-in" placeholder="第一句歌詞…">${esc(text)}</textarea>
@@ -215,7 +230,9 @@ function show(i,anim=true){
   const sc=SCENES[key];const n=sc.steps.length;cur=Math.max(0,Math.min(n-1,i));
   const st=sc.steps[cur],ks=spotsOf(st),sp=sc.spots[ks[0]];
   const sh=document.getElementById('shade');
-  if(sh)sh.style.background=ks.length>1?'rgba(0,0,0,.28)':`radial-gradient(circle at ${sp.x}% ${sp.y}%,rgba(0,0,0,0) 0,rgba(0,0,0,0) 9%,rgba(0,0,0,.45) 30%,rgba(0,0,0,.6) 100%)`;
+  // dim：明亮的歌暗得少一點，畫面才不會變陰沉
+  const dm=sc.dim||1;
+  if(sh)sh.style.background=ks.length>1?`rgba(0,0,0,${.28*dm})`:`radial-gradient(circle at ${sp.x}% ${sp.y}%,rgba(0,0,0,0) 0,rgba(0,0,0,0) 9%,rgba(0,0,0,${.45*dm}) 30%,rgba(0,0,0,${.6*dm}) 100%)`;
   const stz=document.getElementById('stars');if(stz)stz.classList.toggle('on',ks.includes('stars'));
   document.querySelectorAll('.spot').forEach(el=>{const on=ks.includes(el.dataset.spot);el.classList.toggle('on',on);el.classList.toggle('dim',!on)});
   const sub=document.getElementById('sub');
