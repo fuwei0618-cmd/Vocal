@@ -78,6 +78,17 @@ body.play{overflow:hidden;height:100vh;touch-action:manipulation;user-select:non
 .toc .l:active,.toc .l.cur{background:var(--glow-soft)}
 .toc .l small{color:var(--muted);font-family:var(--body);font-size:11px;margin-left:8px}
 .sub .ln{pointer-events:auto;cursor:pointer}
+.ln.hl,.toc .l.hl{background:linear-gradient(transparent 35%,rgba(240,140,80,.45) 35%,rgba(240,140,80,.45) 92%,transparent 92%);border-radius:3px}
+.ln.x,.toc .l.x{text-decoration:line-through;text-decoration-color:rgba(255,120,110,.9);text-decoration-thickness:2px}
+.ln .nt,.toc .l .nt{font-family:var(--body);font-size:12.5px;color:#ffb48a;margin-left:8px;letter-spacing:0;text-shadow:0 1px 6px #000}
+.toc .row{display:flex;align-items:center;gap:4px}.toc .row .l{flex:1}
+.toc .pen{border:0;background:none;color:var(--muted);font-size:15px;padding:6px 8px}
+.sheet{position:fixed;z-index:30;left:0;right:0;bottom:0;background:#1a1612;border-top:1px solid var(--line);border-radius:16px 16px 0 0;padding:16px 18px calc(env(safe-area-inset-bottom,0px) + 18px);display:grid;gap:10px;max-width:640px;margin:0 auto;box-shadow:0 -10px 40px rgba(0,0,0,.6)}
+.sheet .q{font-family:var(--display);font-size:17px}
+.sheet .row{display:flex;gap:8px;flex-wrap:wrap}
+.sheet button{background:rgba(0,0,0,.45);border:1px solid var(--line);color:var(--ink);border-radius:99px;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer}
+.sheet button.on{border-color:var(--glow);color:var(--glow)}
+.sheet input{width:100%;box-sizing:border-box;background:rgba(0,0,0,.4);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font:16px var(--body)}
 .paste{position:relative;z-index:5;display:grid;gap:8px;margin:0 auto;max-width:560px;padding:calc(env(safe-area-inset-top,0px) + 56px) 16px 40px}
 .paste p{margin:0;color:var(--ink);font-size:14px;line-height:1.6;text-shadow:0 1px 6px #000}
 .paste textarea{width:100%;min-height:50vh;background:rgba(15,12,9,.82);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font:16px/1.6 var(--body)}
@@ -142,7 +153,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=18;
+const VER=19;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -211,7 +222,7 @@ function show(i,anim=true){
   if(sub&&blocks){
     const nx=sc.steps[cur+1];
     const off=blocks.slice(0,cur).reduce((a,b)=>a+b.length,0);
-    sub.innerHTML=`<div class="cue">${esc(st.sec)}<b>${esc(namesOf(sc,st))} ${esc(st.word)}</b><span>${esc(st.cue)}</span></div><p class="cur">${(blocks[cur]||[]).map((l,k)=>`<span class="ln" data-l="${off+k}">${esc(l)}</span>`).join('<br>')}</p>`+(nx?`<div class="next"><small>下一段・${esc(namesOf(sc,nx))} ${esc(nx.word)}</small><p>${(blocks[cur+1]||[]).slice(0,2).map(esc).join('<br>')}</p></div>`:'<div class="next"><small>最後一段</small></div>');
+    sub.innerHTML=`<div class="cue">${esc(st.sec)}<b>${esc(namesOf(sc,st))} ${esc(st.word)}</b><span>${esc(st.cue)}</span></div><p class="cur">${(blocks[cur]||[]).map((l,k)=>lnHtml(l,off+k)).join('<br>')}</p>`+(nx?`<div class="next"><small>下一段・${esc(namesOf(sc,nx))} ${esc(nx.word)}</small><p>${(blocks[cur+1]||[]).slice(0,2).map(esc).join('<br>')}</p></div>`:'<div class="next"><small>最後一段</small></div>');
     if(anim){sub.classList.remove('swap');sub.offsetWidth;sub.classList.add('swap')}
   }
   const c=document.getElementById('count');if(c)c.textContent=`${cur+1} / ${n}`;
@@ -233,6 +244,10 @@ app.addEventListener('click',e=>{
     else if(act==='part')startPart();
     else if(act==='toc')openToc();
     else if(act==='tocx')closeToc();
+    else if(act==='note')openNote(+a.dataset.l);
+    else if(act==='nhl'||act==='nx'){const m=noteOf(noteL);m[act==='nhl'?'hl':'x']=!m[act==='nhl'?'hl':'x'];a.classList.toggle('on');saveNote(noteL,m)}
+    else if(act==='nclr'){saveNote(noteL,{});closeNote()}
+    else if(act==='ndone'){const m=noteOf(noteL);m.t=document.getElementById('nt-in').value.trim();saveNote(noteL,m);closeNote()}
     else if(act==='from'){const v=a.dataset;closeToc();playFrom(v.sec!=null?+v.sec:null,v.l!=null?+v.l:null)}
     else if(act==='auto'){if(getTimes().length>1&&!confirm('用人聲重新算每段時間？你原本點的段會被換掉'))return;autoAlign(null,true)}
     return}
@@ -242,7 +257,7 @@ app.addEventListener('click',e=>{
 });
 // 鍵盤、藍牙翻頁踏板（多半送方向鍵、PageDown 或空白鍵）
 addEventListener('keydown',e=>{
-  if(!SCENES[key]||!document.body.classList.contains('play')||e.target.tagName==='TEXTAREA')return;
+  if(!SCENES[key]||!document.body.classList.contains('play')||e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
   if(['ArrowRight','ArrowDown','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();step(cur+1)}
   else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();step(cur-1)}
 });
@@ -453,7 +468,7 @@ function openToc(){
   const d=document.createElement('div');d.className='toc';d.id='toc';
   d.innerHTML=`<div class="top"><b>${esc(sc.title)}</b><button data-act="from">▶ 從頭播</button><button data-act="tocx">關閉</button></div>`+
     sc.steps.map((st,i)=>{const ls=blocks[i]||[];const h=`<div class="sec"><button data-act="from" data-sec="${i}">${esc(st.sec)}<b>${esc(namesOf(sc,st))} ${esc(st.word)}</b>${t[i]!=null?mmss(t[i]):''} ▶</button>`+
-      ls.map((x,k)=>{const j=o+k;return `<button class="l${i===cur?' cur':''}" data-act="from" data-l="${j}">${esc(x)}${L[j]!=null?`<small>${mmss(L[j])}</small>`:''}</button>`}).join('')+'</div>';o+=ls.length;return h}).join('');
+      ls.map((x,k)=>{const j=o+k,m=noteOf(j);return `<div class="row"><button class="l${i===cur?' cur':''}${m.hl?' hl':''}${m.x?' x':''}" data-act="from" data-l="${j}">${esc(x)}${m.t?`<span class="nt">${esc(m.t)}</span>`:''}${L[j]!=null?`<small>${mmss(L[j])}</small>`:''}</button><button class="pen" data-act="note" data-l="${j}" aria-label="這句做筆記">✎</button></div>`}).join('')+'</div>';o+=ls.length;return h}).join('');
   app.appendChild(d);
   const c=d.querySelector('.l.cur');if(c)c.scrollIntoView({block:'center'});
 }
@@ -463,6 +478,21 @@ let tx0=null;
 app.addEventListener('touchstart',e=>{if(e.target.id==='tap')tx0=[e.touches[0].clientX,e.touches[0].clientY]},{passive:true});
 app.addEventListener('touchend',e=>{if(tx0==null)return;const dx=e.changedTouches[0].clientX-tx0[0],dy=e.changedTouches[0].clientY-tx0[1];tx0=null;
   if(!rec&&Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){e.preventDefault();step(dx<0?cur+1:cur-1)}});
+/* ---------- 筆記：每句可以上螢光筆、劃掉、寫一句小字，播放時跟著歌詞出來 ---------- */
+// 用「那句歌詞＋第幾次出現」當鑰匙，之後補歌詞、插行，筆記也不會跑到別句
+const NKEY='scene-notes-v1';let noteL=-1;
+function lineKey(j){const all=blocks.flat(),x=all[j];let n=0;for(let i=0;i<j;i++)if(all[i]===x)n++;return x+'#'+n}
+function allNotes(){try{return JSON.parse(localStorage.getItem(NKEY)||'{}')||{}}catch(e){return {}}}
+function noteOf(j){if(!blocks)return {};return Object.assign({},(allNotes()[key]||{})[lineKey(j)]||{})}
+function saveNote(j,m){const a=allNotes(),o=a[key]||(a[key]={}),k=lineKey(j);if(m.hl||m.x||m.t)o[k]=m;else delete o[k];try{localStorage.setItem(NKEY,JSON.stringify(a))}catch(e){}refreshNotes()}
+function lnHtml(l,j){const m=noteOf(j);return `<span class="ln${m.hl?' hl':''}${m.x?' x':''}" data-l="${j}">${esc(l)}${m.t?`<span class="nt">${esc(m.t)}</span>`:''}</span>`}
+function refreshNotes(){const on=document.getElementById('toc');show(cur,false);lightLine();if(on){const y=on.scrollTop;openToc();document.getElementById('toc').scrollTop=y}}
+function openNote(j){
+  closeNote();noteL=j;const m=noteOf(j),d=document.createElement('div');d.className='sheet';d.id='sheet';
+  d.innerHTML=`<div class="q">${esc(blocks.flat()[j])}</div><div class="row"><button data-act="nhl" class="${m.hl?'on':''}">🖍 螢光筆</button><button data-act="nx" class="${m.x?'on':''}">劃掉</button><button data-act="nclr">清除</button></div><input id="nt-in" placeholder="寫一句提醒，例如：換氣、放輕、笑著唱" value="${esc(m.t||'')}"><div class="row" style="justify-content:flex-end"><button data-act="ndone">完成</button></div>`;
+  app.appendChild(d);
+}
+function closeNote(){const d=document.getElementById('sheet');if(d)d.remove()}
 render();
 </script>
 </body>
