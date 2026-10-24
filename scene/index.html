@@ -168,7 +168,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=22;
+const VER=23;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -180,7 +180,10 @@ const namesOf=(sc,st)=>spotsOf(st).map(k=>sc.spots[k].name).join('・');
 function loadLyrics(){try{return (JSON.parse(localStorage.getItem(LKEY)||'{}')||{})[key]||''}catch(e){return ''}}
 function saveLyrics(t){let all={};try{all=JSON.parse(localStorage.getItem(LKEY)||'{}')||{}}catch(e){}all[key]=t;try{localStorage.setItem(LKEY,JSON.stringify(all))}catch(e){alert('這台裝置沒辦法存歌詞')}}
 // 依每段行數切歌詞（略過空行和分隔線）；多出來的行併到最後一段
+// 歌詞裡空一行＝換段：空出來的段數剛好等於這首的段數，就照你空的分；不然照預設每段幾行
+function groupsOf(text){const g=[];let c=[];text.split(/\r?\n/).map(s=>s.trim()).forEach(l=>{if(!l||/^[-—=_~*·.]+$/.test(l)){if(c.length){g.push(c);c=[]}}else c.push(l)});if(c.length)g.push(c);return g}
 function split(text,steps){
+  const g=groupsOf(text);if(g.length===steps.length)return g;
   const lines=text.split(/\r?\n/).map(s=>s.trim()).filter(s=>s&&!/^[-—=_~*·.]+$/.test(s));let i=0;
   return steps.map((s,k)=>{const take=k===steps.length-1?lines.length-i:s.n;const L=lines.slice(i,i+take);i+=take;return L});
 }
@@ -204,7 +207,7 @@ function render(){
     ${Object.entries(sc.spots).map(([k,s])=>`<div class="spot" data-spot="${k}" style="left:${s.x}%;top:${s.y}%"><i></i><b>${esc(s.name)}</b></div>`).join('')}</div><div class="veil"></div>`;
   const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${sc.artist?esc(sc.artist)+'・':''}v${VER}</span>${paste?'':'<button class="edit" data-act="audio" data-for="orig">＋原曲</button><button class="edit" data-act="audio" data-for="inst">＋伴奏</button><button class="edit" data-act="audio" data-for="vocal">＋人聲</button><button class="edit" data-act="edit">改歌詞</button>'}</div>`;
   const body=paste
-    ?`<div class="paste"><p>把這首歌的歌詞整首貼進來，一行一句、照順序。<br>歌詞只存在這台裝置，不會放到網路上。</p>
+    ?`<div class="paste"><p>把這首歌的歌詞整首貼進來，一行一句、照順序。<br>每段中間空一行，就會照你空的地方分段（這首有 ${SCENES[key].steps.length} 段：${esc(SCENES[key].steps.map(x=>x.sec).join('、'))}）。<br>歌詞只存在這台裝置，不會放到網路上。</p>
       <textarea id="lyr-in" placeholder="第一句歌詞…">${esc(text)}</textarea>
       <div class="row">${text?'<button class="btn ghost" data-act="cancel">取消</button>':''}<button class="btn" data-act="save">存好</button></div></div>`
     :`<div class="tap" id="tap" aria-label="點一下換下一段"></div><div class="sub" id="sub" aria-live="polite"></div>
@@ -250,7 +253,9 @@ function show(i,anim=true){
 app.addEventListener('click',e=>{
   const a=e.target.closest('[data-act]');
   if(a){const act=a.dataset.act;
-    if(act==='save'){const t=document.getElementById('lyr-in').value.trim();if(!t)return;saveLyrics(t);editing=false;cur=0;render();scrollTo(0,0)}
+    if(act==='save'){const t=document.getElementById('lyr-in').value.trim();if(!t)return;saveLyrics(t);editing=false;cur=0;render();scrollTo(0,0);
+      const g=groupsOf(t).length,N=SCENES[key].steps.length;
+      hint(g===N?`照你空的行分成 ${N} 段`:`你空出 ${g} 段，這首有 ${N} 段（${SCENES[key].steps.map(x=>x.sec).join('、')}），先照預設行數分`);hintT=setTimeout(()=>hint(''),g===N?2500:6000)}
     else if(act==='edit'){editing=true;render();scrollTo(0,0)}
     else if(act==='cancel'){editing=false;render()}
     else if(act==='prev')step(cur-1);
