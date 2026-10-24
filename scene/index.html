@@ -131,7 +131,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=15;
+const VER=16;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -222,7 +222,7 @@ app.addEventListener('click',e=>{
     else if(act==='part')startPart();
     else if(act==='auto'){if(getTimes().length>1&&!confirm('用人聲重新算每段時間？你原本點的段會被換掉'))return;autoAlign(null,true)}
     return}
-  if(e.target.id==='tap')step(e.clientX<innerWidth*.3?cur-1:cur+1);
+  if(e.target.id==='tap'){if(au&&rec){tapLine(e.clientX<innerWidth*.3);return}step(e.clientX<innerWidth*.3?cur-1:cur+1)}
 });
 // 鍵盤、藍牙翻頁踏板（多半送方向鍵、PageDown 或空白鍵）
 addEventListener('keydown',e=>{
@@ -277,39 +277,56 @@ function switchTrack(){
   try{localStorage.setItem('scene-track',to)}catch(e){}
   loadAudio(to,at,play);
 }
+// 對拍＝一句一句點：唱到每句開頭點一下螢幕（點左邊退回一句）。換到下一段的第一句時自動換段
+// 「整首重對」從第一句開始；「從這段改」從這段第一句開始。按「完成」結束，沒點到的照舊
+let recLine=0;
+const lineCount=()=>blocks?blocks.reduce((a,b)=>a+b.length,0):0;
+const lineOff=i=>blocks.slice(0,i).reduce((a,b)=>a+b.length,0);
+function secOfLine(k){let o=0;for(let i=0;i<blocks.length;i++){if(k<o+blocks[i].length)return i;o+=blocks[i].length}return blocks.length-1}
 function toggleRec(){
   if(!au)return;
-  if(rec){rec=false;hint('');if(recPart)finishPart();drawPlayer();return}
-  rec=true;recPart=false;setTimes([0]);au.currentTime=0;show(0);au.play();
-  hint('跟著音樂，每到下一段就點一下螢幕');drawPlayer();
+  if(rec){finishRec();return}
+  startRec(0);
 }
-// 只改一部分：從這段前 5 秒開始放，這段真正開始時點一下；後面也要改就繼續點，按「完成」結束，沒點到的段照舊
-let recPart=false;
-function startPart(){
-  if(!au)return;const t=getTimes();rec=true;recPart=true;
-  // 第一段一定從頭開始，所以改第一段＝從頭播、第二段開始時點
-  if(cur===0){show(0);au.currentTime=0;au.play();hint('從頭播，唱到第二段開始時點一下螢幕。後面也要改就繼續點，改完按「完成」');drawPlayer();return}
-  const at=Math.max(0,(t[cur]!=null?t[cur]:t[cur-1]||0)-5);show(cur-1);au.currentTime=at;au.play();
-  hint('等這段開始的時候點一下螢幕。後面也要改就繼續點，改完按「完成」');drawPlayer();
+function startPart(){startRec(cur)}
+function startRec(sec){
+  if(!au||!blocks)return;
+  const n=SCENES[key].steps.length,t=getTimes(),L=getLines();
+  if(t.length!==n){const f=[0];for(let i=1;i<n;i++)f.push(null);setTimes(f)}
+  recLine=lineOff(sec);rec=true;
+  const from=L[recLine]!=null?L[recLine]:t[sec]!=null?t[sec]:0;
+  show(sec);au.currentTime=sec===0?0:Math.max(0,from-5);au.play();
+  hint('唱到每一句的開頭就點一下螢幕（點左邊＝退回一句）。改完按「完成」');drawPlayer();lightLine();
 }
-function finishPart(){
-  recPart=false;const t=getTimes();
-  for(let j=1;j<t.length;j++)if(t[j]==null||t[j]<=t[j-1])t[j]=Math.round((t[j-1]+.5)*100)/100;
-  setTimes(t);if(hasVocal)autoAlign(null,false,true);
-  hint('改好了');hintT=setTimeout(()=>hint(''),2000);
+function tapLine(back){
+  const L=getLines(),N=lineCount();
+  if(back){if(recLine>0)recLine--;show(secOfLine(Math.max(0,recLine-1)));lightLine();return}
+  const now=Math.round(au.currentTime*100)/100;L[recLine]=now;setLines(L);
+  const s=secOfLine(recLine);
+  if(recLine===lineOff(s)&&s>0){const t=getTimes();t[s]=Math.round(Math.max(L[recLine-1]!=null?L[recLine-1]+.1:0,now-.8)*100)/100;setTimes(t)}
+  recLine++;if(s!==cur)show(s);lightLine();
+  if(recLine>=N)finishRec();
 }
-// 換段：對拍中就記秒數；有對過拍、正在播，就把音樂跳到那段
+function finishRec(){
+  rec=false;const t=getTimes(),L=getLines();
+  for(let j=1;j<t.length;j++)if(t[j]!=null&&t[j-1]!=null&&t[j]<=t[j-1])t[j]=Math.round((t[j-1]+.5)*100)/100;
+  setTimes(t);
+  for(let j=1;j<L.length;j++)if(L[j]!=null&&L[j-1]!=null&&L[j]<=L[j-1])L[j]=Math.round((L[j-1]+.3)*100)/100;
+  setLines(L);
+  hint('對好了！之後播放會自動換段、逐句亮');hintT=setTimeout(()=>hint(''),2500);drawPlayer();lightLine();
+}
+// 換段：對拍中就是點一句；有對過拍、正在播，就把音樂跳到那段
 function step(i){
+  if(au&&rec){tapLine(i<cur);return}
   const n=SCENES[key].steps.length;i=Math.max(0,Math.min(n-1,i));
-  if(au&&rec&&i===cur+1){const t=getTimes();t[i]=Math.round(au.currentTime*100)/100;setTimes(recPart?t:t.slice(0,i+1));show(i);if(i===n-1){rec=false;if(recPart){finishPart();drawPlayer();return}hint('對好了！之後播放會自動換段');hintT=setTimeout(()=>hint(''),2500);drawPlayer()}return}
   const t=getTimes();
-  if(au&&!rec&&!au.paused&&t[i]!=null)au.currentTime=t[i];
+  if(au&&!au.paused&&t[i]!=null)au.currentTime=t[i];
   show(i);
 }
 let lastDraw=0;
 function sync(){
   if(Date.now()-lastDraw>500){lastDraw=Date.now();const s=document.querySelector('#player .t');if(s)s.textContent=`${mmss(au.currentTime)} / ${mmss(au.duration)}`}
-  if(rec)return;const t=getTimes();if(t.length<2){lightLine();return}
+  if(rec){lightLine();return}const t=getTimes();if(t.length<2){lightLine();return}
   let k=0;t.forEach((x,j)=>{if(x!=null&&au.currentTime>=x-.05)k=j});
   if(k!==cur)show(k);
   lightLine();
@@ -317,8 +334,8 @@ function sync(){
 // 逐句：正在唱的那句亮、唱過的變淡（有人聲分析過才有）
 function lightLine(){
   const L=getLines(),sub=document.getElementById('sub');if(!sub)return;
-  const on=au&&!au.paused&&!rec&&L.length;sub.classList.toggle('lines',!!on);if(!on)return;
-  let k=-1;L.forEach((x,j)=>{if(x!=null&&au.currentTime>=x-.3)k=j});
+  const on=au&&(rec||(!au.paused&&L.length));sub.classList.toggle('lines',!!on);if(!on)return;
+  let k=-1;if(rec)k=recLine-1;else L.forEach((x,j)=>{if(x!=null&&au.currentTime>=x-.3)k=j});
   sub.querySelectorAll('.ln').forEach(el=>{const j=+el.dataset.l;el.classList.toggle('on',j===k);el.classList.toggle('past',j<k)});
 }
 app.addEventListener('change',async e=>{
