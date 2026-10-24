@@ -67,6 +67,17 @@ body.play{overflow:hidden;height:100vh;touch-action:manipulation;user-select:non
 .hint{position:fixed;z-index:3;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 56px);background:rgba(0,0,0,.65);border:1px solid var(--line);border-radius:99px;padding:6px 14px;font-size:13px;color:var(--ink);pointer-events:none;white-space:nowrap}
 @media (max-width:640px){.hint{bottom:calc(env(safe-area-inset-bottom,0px) + 100px)}}
 .bar .edit+.edit{margin-left:0}
+.toc{position:fixed;inset:0;z-index:20;background:rgba(10,8,6,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top,0px) + 14px) 20px calc(env(safe-area-inset-bottom,0px) + 40px)}
+.toc .top{position:sticky;top:0;display:flex;gap:8px;align-items:center;padding:6px 0 12px;background:linear-gradient(rgba(10,8,6,.98) 70%,rgba(10,8,6,0))}
+.toc .top b{flex:1;font-family:var(--display);font-size:17px}
+.toc button{background:rgba(0,0,0,.45);border:1px solid var(--line);color:var(--ink);border-radius:99px;padding:7px 14px;font:inherit;font-size:14px;cursor:pointer}
+.toc .sec{max-width:680px;margin:0 auto 18px}
+.toc .sec>button{border:0;background:none;padding:4px 0;color:var(--glow);font-size:13px;letter-spacing:.06em}
+.toc .sec>button b{font-family:var(--display);font-size:15px;margin:0 4px}
+.toc .l{display:block;width:100%;text-align:left;border:0;border-radius:8px;background:none;padding:7px 8px;margin:0 -8px;font-family:var(--display);font-size:18px;line-height:1.45;color:var(--ink)}
+.toc .l:active,.toc .l.cur{background:var(--glow-soft)}
+.toc .l small{color:var(--muted);font-family:var(--body);font-size:11px;margin-left:8px}
+.sub .ln{pointer-events:auto;cursor:pointer}
 .paste{position:relative;z-index:5;display:grid;gap:8px;margin:0 auto;max-width:560px;padding:calc(env(safe-area-inset-top,0px) + 56px) 16px 40px}
 .paste p{margin:0;color:var(--ink);font-size:14px;line-height:1.6;text-shadow:0 1px 6px #000}
 .paste textarea{width:100%;min-height:50vh;background:rgba(15,12,9,.82);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font:16px/1.6 var(--body)}
@@ -131,7 +142,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=17;
+const VER=18;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -171,7 +182,7 @@ function render(){
       <textarea id="lyr-in" placeholder="第一句歌詞…">${esc(text)}</textarea>
       <div class="row">${text?'<button class="btn ghost" data-act="cancel">取消</button>':''}<button class="btn" data-act="save">存好</button></div></div>`
     :`<div class="tap" id="tap" aria-label="點一下換下一段"></div><div class="sub" id="sub" aria-live="polite"></div>
-      <div class="foot"><button data-act="prev" aria-label="上一段">‹ 上一段</button><span id="count"></span></div>
+      <div class="foot"><button data-act="toc">歌詞表</button><button data-act="prev" aria-label="上一段">‹ 上一段</button><span id="count"></span></div>
       <div class="player" id="player" hidden></div><div class="hint" id="hint" hidden></div><input type="file" id="afile" hidden>`;
   app.innerHTML=bg+bar+body;
   show(cur,false);
@@ -220,8 +231,13 @@ app.addEventListener('click',e=>{
     else if(act==='play'){if(!au)return;au.paused?au.play():au.pause()}
     else if(act==='rec')toggleRec();
     else if(act==='part')startPart();
+    else if(act==='toc')openToc();
+    else if(act==='tocx')closeToc();
+    else if(act==='from'){const v=a.dataset;closeToc();playFrom(v.sec!=null?+v.sec:null,v.l!=null?+v.l:null)}
     else if(act==='auto'){if(getTimes().length>1&&!confirm('用人聲重新算每段時間？你原本點的段會被換掉'))return;autoAlign(null,true)}
     return}
+  const ln=e.target.closest('.sub .ln');
+  if(ln&&!rec){playFrom(null,+ln.dataset.l);return}
   if(e.target.id==='tap'){if(au&&rec){tapLine(e.clientX<innerWidth*.3);return}step(e.clientX<innerWidth*.3?cur-1:cur+1)}
 });
 // 鍵盤、藍牙翻頁踏板（多半送方向鍵、PageDown 或空白鍵）
@@ -423,6 +439,30 @@ function lineTimes(ph,start,want){
   });
   return out;
 }
+/* ---------- 歌詞表：滑整首歌詞，點一句或一段就從那裡播；也能從頭播 ---------- */
+// 從第 l 句播（早 0.5 秒進）或從第 sec 段播；都沒給就從頭
+function playFrom(sec,l){
+  if(rec)return;const t=getTimes(),L=getLines();let at=0,s=0;
+  if(l!=null){s=secOfLine(l);at=L[l]!=null?Math.max(0,L[l]-.5):(t[s]||0)}
+  else if(sec!=null){s=sec;at=t[sec]||0}
+  show(s);if(!au){hint('先放伴奏或原唱才能播');hintT=setTimeout(()=>hint(''),2500);return}
+  au.currentTime=at;au.play();
+}
+function openToc(){
+  if(!blocks)return;closeToc();const sc=SCENES[key],t=getTimes(),L=getLines();let o=0;
+  const d=document.createElement('div');d.className='toc';d.id='toc';
+  d.innerHTML=`<div class="top"><b>${esc(sc.title)}</b><button data-act="from">▶ 從頭播</button><button data-act="tocx">關閉</button></div>`+
+    sc.steps.map((st,i)=>{const ls=blocks[i]||[];const h=`<div class="sec"><button data-act="from" data-sec="${i}">${esc(st.sec)}<b>${esc(namesOf(sc,st))} ${esc(st.word)}</b>${t[i]!=null?mmss(t[i]):''} ▶</button>`+
+      ls.map((x,k)=>{const j=o+k;return `<button class="l${i===cur?' cur':''}" data-act="from" data-l="${j}">${esc(x)}${L[j]!=null?`<small>${mmss(L[j])}</small>`:''}</button>`}).join('')+'</div>';o+=ls.length;return h}).join('');
+  app.appendChild(d);
+  const c=d.querySelector('.l.cur');if(c)c.scrollIntoView({block:'center'});
+}
+function closeToc(){const d=document.getElementById('toc');if(d)d.remove()}
+// 在圖上左右滑：換段（正在播就跳到那段）
+let tx0=null;
+app.addEventListener('touchstart',e=>{if(e.target.id==='tap')tx0=[e.touches[0].clientX,e.touches[0].clientY]},{passive:true});
+app.addEventListener('touchend',e=>{if(tx0==null)return;const dx=e.changedTouches[0].clientX-tx0[0],dy=e.changedTouches[0].clientY-tx0[1];tx0=null;
+  if(!rec&&Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){e.preventDefault();step(dx<0?cur+1:cur-1)}});
 render();
 </script>
 </body>
