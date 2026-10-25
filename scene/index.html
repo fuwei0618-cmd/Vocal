@@ -196,7 +196,7 @@ const SCENES={
       {sec:'主歌',spot:['fruit','curtain'],word:'鬆',cue:'放手的語氣，不用用力',n:6},
       {sec:'副歌',spot:['letter','chair'],word:'問',cue:'不是質問，是想起',n:6},
       {sec:'導歌',spot:'sea',word:'淡',cue:'像看海，遠遠的',n:2},
-      {sec:'副歌',spot:['letter','chair'],word:'放',cue:'情緒拉高，聲音別推',n:6},
+      {sec:'副歌',spot:['letter','chair'],word:'問',cue:'',n:6},
       {sec:'主歌',spot:['fruit','lamp'],word:'暖',cue:'承認還在想',n:6},
       {sec:'導歌',spot:'sea',word:'淡',cue:'比第一次更放',n:2},
       {sec:'尾聲',spot:'pillow',word:'輕',cue:'像在耳邊說',n:1},
@@ -235,7 +235,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=30;
+const VER=31;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
