@@ -189,6 +189,18 @@ const SCENES={
       {sec:'最後副歌',spot:'door',word:'全開',cue:'最滿，最後「同情」收輕',n:7}
     ]
   },
+  summer:{
+    title:'盛夏的果實',artist:'莫文蔚',img:'summer.jpg?v=1',ratio:1024/572,layout:'top',dim:.7,
+    spots:{fruit:{x:32,y:62,name:'盛夏的果實'},letter:{x:32,y:80,name:'沒寄出的信'},chair:{x:60,y:82,name:'背對的椅子'},sea:{x:30,y:42,name:'潮起潮落'},pillow:{x:66,y:70,name:'枕頭'},lamp:{x:16,y:72,name:'燈'},curtain:{x:66,y:30,name:'窗簾'}},
+    steps:[
+      {sec:'主歌',spot:['fruit','curtain'],word:'鬆',cue:'放手的語氣，不用用力',n:6},
+      {sec:'副歌',spot:['letter','chair'],word:'問',cue:'不是質問，是想起',n:6},
+      {sec:'導歌',spot:'sea',word:'淡',cue:'像看海，遠遠的',n:2},
+      {sec:'副歌・換 Key',spot:['letter','chair'],word:'升',cue:'往上，但更溫柔',n:6},
+      {sec:'主歌',spot:['fruit','lamp'],word:'暖',cue:'承認還在想',n:6},
+      {sec:'導歌',spot:'sea',word:'淡',cue:'比第一次更放',n:2},
+      {sec:'尾聲',spot:'pillow',word:'輕',cue:'像在耳邊說',n:1},
+    ]},
   hug:{
     title:'大大的擁抱',artist:'',img:'hug.jpg?v=1',ratio:1024/572,layout:'top',dim:.55,
     spots:{door:{x:75,y:50,name:'敞開的門'},kite:{x:31,y:11,name:'風箏'},rainbow:{x:30,y:42,name:'彩虹'},sea:{x:12,y:58,name:'海洋'},compass:{x:44,y:79,name:'指南針'},photo:{x:44,y:91,name:'照片'},cups:{x:54,y:75,name:'兩杯咖啡'},blanket:{x:83,y:80,name:'毛毯'}},
@@ -223,7 +235,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=28;
+const VER=29;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
