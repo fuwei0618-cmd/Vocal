@@ -202,19 +202,19 @@ const SCENES={
       {sec:'尾聲',spot:'pillow',word:'輕',cue:'像在耳邊說',n:1},
     ]},
   darwin:{
-    title:'達爾文',artist:'蔡健雅',img:'darwin.jpg?v=1',ratio:1024/572,layout:'top',dim:.55,
-    spots:{mirror:{x:49,y:16,name:'鏡子'},letters:{x:61,y:55,name:'綁起來的舊信'},book:{x:65,y:82,name:'進化論'},plant:{x:30,y:45,name:'冒新葉的植物'},shoes:{x:80,y:61,name:'準備出門的鞋'},door:{x:84,y:32,name:'開著的門'},tea:{x:81,y:75,name:'一杯茶'}},
+    title:'達爾文',artist:'蔡健雅',img:'darwin.jpg?v=2',ratio:1280/714,layout:'top',dim:.55,
+    spots:{mirror:{x:47,y:22,name:'鏡子'},letters:{x:45,y:57,name:'綁起來的舊信'},plants:{x:22,y:56,name:'從小芽長大的植物'},oldshoes:{x:61,y:62,name:'穿舊的鞋'},newshoes:{x:68,y:65,name:'新的那雙'},door:{x:74,y:30,name:'開著的門'},calendar:{x:88,y:13,name:'劃掉的日子'},notebooks:{x:86,y:46,name:'寫滿的筆記本'},flowers:{x:60,y:20,name:'乾燥花'},book:{x:67,y:85,name:'進化論'},tea:{x:80,y:74,name:'一杯茶'}},
     steps:[
       {sec:'回頭看',spot:'mirror',word:'看',cue:'看著鏡子裡的自己，不後悔',n:4},
-      {sec:'情緒拉扯',spot:'letters',word:'拉',cue:'在想和不想之間',n:4},
-      {sec:'重新開始',spot:'shoes',word:'起',cue:'放下，往前一步',n:2},
-      {sec:'打開',spot:['plant','door'],word:'開',cue:'相信自己變好了',n:4},
+      {sec:'情緒拉扯',spot:['letters','calendar'],word:'拉',cue:'一圈一圈轉過來',n:4},
+      {sec:'重新開始',spot:'oldshoes',word:'起',cue:'走過這麼多輪',n:2},
+      {sec:'打開',spot:['notebooks','newshoes'],word:'開',cue:'相信自己變好了',n:4},
       {sec:'回頭看',spot:['mirror','book'],word:'笑',cue:'笑以前的自己很單純',n:4},
-      {sec:'情緒拉扯',spot:'letters',word:'放',cue:'舊的都綁好收起來',n:4},
-      {sec:'重新開始',spot:'shoes',word:'起',cue:'',n:2},
-      {sec:'打開',spot:['plant','door'],word:'開',cue:'',n:4},
-      {sec:'重新開始',spot:'shoes',word:'走',cue:'比剛才更篤定',n:2},
-      {sec:'打開',spot:['plant','door'],word:'全開',cue:'最大聲的一次',n:4},
+      {sec:'情緒拉扯',spot:['letters','flowers'],word:'放',cue:'舊的都靜下來了',n:4},
+      {sec:'重新開始',spot:['oldshoes','calendar'],word:'起',cue:'',n:2},
+      {sec:'打開',spot:['plants','newshoes'],word:'開',cue:'',n:4},
+      {sec:'重新開始',spot:'newshoes',word:'走',cue:'比剛才更篤定',n:2},
+      {sec:'打開',spot:['plants','door'],word:'全開',cue:'最大聲的一次',n:4},
       {sec:'尾聲',spot:'tea',word:'穩',cue:'溫柔地收',n:3},
     ]},
   hug:{
@@ -251,7 +251,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=32;
+const VER=33;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
