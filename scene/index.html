@@ -251,7 +251,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=33;
+const VER=34;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -354,6 +354,7 @@ app.addEventListener('click',e=>{
     else if(act==='toc')openToc();
     else if(act==='tocx')closeToc();
     else if(act==='undo')undoTimes();
+    else if(act==='base'){setBase(a.dataset.to);openMenu();sync()}
     else if(act==='pen')startDraw();
     else if(act==='pdone')stopDraw();
     else if(act==='pcol'){pen=+a.dataset.i;drawTools()}
@@ -391,16 +392,27 @@ const TRACK={inst:'伴奏',orig:'原曲',vocal:'人聲'};let hasVocal=false;
 function idb(){return new Promise((ok,no)=>{const r=indexedDB.open('scene-audio',1);r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 async function getFile(k){try{const db=await idb();return await new Promise(ok=>{const q=db.transaction('files').objectStore('files').get(k);q.onsuccess=()=>ok(q.result||null);q.onerror=()=>ok(null)})}catch(e){return null}}
 async function putFile(k,f){const db=await idb();return new Promise((ok,no)=>{const t=db.transaction('files','readwrite');t.objectStore('files').put(f,k);t.oncomplete=ok;t.onerror=()=>no(t.error)})}
-function getTimes(){try{return (JSON.parse(localStorage.getItem(TKEY)||'{}')||{})[key]||[]}catch(e){return []}}
-function setTimes(a){let all={};try{all=JSON.parse(localStorage.getItem(TKEY)||'{}')||{}}catch(e){}all[key]=a;try{localStorage.setItem(TKEY,JSON.stringify(all))}catch(e){}}
+// 原曲和伴奏常常不是同一個來源，開頭長度不一樣：記下「對拍是用哪一軌對的」和「伴奏比原曲晚幾秒」，換軌播放時自動加減
+const kv=(k,v)=>{let all={};try{all=JSON.parse(localStorage.getItem(k)||'{}')||{}}catch(e){}if(v===undefined)return all[key];all[key]=v;try{localStorage.setItem(k,JSON.stringify(all))}catch(e){}};
+const getBase=()=>kv('scene-base-v1')||'orig',setBase=v=>kv('scene-base-v1',v);
+const getOff=()=>+kv('scene-off-v1')||0;
+const shiftFor=tr=>tr===getBase()?0:tr==='inst'?getOff():-getOff();
+const r2=x=>Math.round(x*100)/100;
+const conv=(a,d)=>d?a.map(x=>x==null?x:r2(Math.max(0,x+d))):a;
+function rawTimes(){try{return (JSON.parse(localStorage.getItem(TKEY)||'{}')||{})[key]||[]}catch(e){return []}}
+function rawSetTimes(a){let all={};try{all=JSON.parse(localStorage.getItem(TKEY)||'{}')||{}}catch(e){}all[key]=a;try{localStorage.setItem(TKEY,JSON.stringify(all))}catch(e){}}
+function getTimes(tr){return conv(rawTimes(),shiftFor(tr||track))}
+function setTimes(a,tr){rawSetTimes(conv(a,-shiftFor(tr||track)))}
 const LNKEY='scene-lines-v1';
-function getLines(){try{return (JSON.parse(localStorage.getItem(LNKEY)||'{}')||{})[key]||[]}catch(e){return []}}
-function setLines(a){let all={};try{all=JSON.parse(localStorage.getItem(LNKEY)||'{}')||{}}catch(e){}all[key]=a;try{localStorage.setItem(LNKEY,JSON.stringify(all))}catch(e){}}
+function rawLines(){try{return (JSON.parse(localStorage.getItem(LNKEY)||'{}')||{})[key]||[]}catch(e){return []}}
+function rawSetLines(a){let all={};try{all=JSON.parse(localStorage.getItem(LNKEY)||'{}')||{}}catch(e){}all[key]=a;try{localStorage.setItem(LNKEY,JSON.stringify(all))}catch(e){}}
+function getLines(tr){return conv(rawLines(),shiftFor(tr||track))}
+function setLines(a,tr){rawSetLines(conv(a,-shiftFor(tr||track)))}
 // 復原：重對、自動對之前先把這首原本的時間存一份，歌詞表裡可以換回來
 const UKEY='scene-undo-v1';
 function getUndo(){try{return (JSON.parse(localStorage.getItem(UKEY)||'{}')||{})[key]||null}catch(e){return null}}
-function snapshot(){const t=getTimes(),L=getLines();if(t.length<2&&!L.length)return;let all={};try{all=JSON.parse(localStorage.getItem(UKEY)||'{}')||{}}catch(e){}all[key]={t,L,at:Date.now()};try{localStorage.setItem(UKEY,JSON.stringify(all))}catch(e){}}
-function undoTimes(){const u=getUndo();if(!u)return;if(!confirm('換回上一次的對拍？（現在的會變成可以再換回來的那份）'))return;const cur0={t:getTimes(),L:getLines(),at:Date.now()};setTimes(u.t);setLines(u.L);let all={};try{all=JSON.parse(localStorage.getItem(UKEY)||'{}')||{}}catch(e){}all[key]=cur0;try{localStorage.setItem(UKEY,JSON.stringify(all))}catch(e){}closeToc();show(cur);drawPlayer();hint('換回來了');hintT=setTimeout(()=>hint(''),2000)}
+function snapshot(){const t=rawTimes(),L=rawLines();if(t.length<2&&!L.length)return;let all={};try{all=JSON.parse(localStorage.getItem(UKEY)||'{}')||{}}catch(e){}all[key]={t,L,at:Date.now()};try{localStorage.setItem(UKEY,JSON.stringify(all))}catch(e){}}
+function undoTimes(){const u=getUndo();if(!u)return;if(!confirm('換回上一次的對拍？（現在的會變成可以再換回來的那份）'))return;const cur0={t:rawTimes(),L:rawLines(),at:Date.now()};rawSetTimes(u.t);rawSetLines(u.L);let all={};try{all=JSON.parse(localStorage.getItem(UKEY)||'{}')||{}}catch(e){}all[key]=cur0;try{localStorage.setItem(UKEY,JSON.stringify(all))}catch(e){}closeToc();show(cur);drawPlayer();hint('換回來了');hintT=setTimeout(()=>hint(''),2000)}
 const mmss=t=>isFinite(t)?`${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')}`:'0:00';
 let hintT=0;
 function hint(t){clearTimeout(hintT);const h=document.getElementById('hint');if(!h)return;h.hidden=!t;h.textContent=t||''}
@@ -411,6 +423,7 @@ async function loadAudio(want,at,play){
   if(hasVocal&&!getLines().length&&!loadAudio.did){loadAudio.did=1;autoAlign()}  // 之前放過人聲：補算逐句一次
   try{track=want||localStorage.getItem('scene-track')||'inst'}catch(e){track=want||'inst'}
   if(!have[track])track=have.inst?'inst':'orig';
+  if(fi&&fo&&!kv('scene-offat-v1'))findOffset(fi,fo);
   const f=track==='inst'?fi:fo;if(!f){drawPlayer();return}
   if(au)au.pause();
   if(auUrl)URL.revokeObjectURL(auUrl);auUrl=URL.createObjectURL(f);
@@ -459,6 +472,7 @@ function openMenu(){
       ${has?`<button data-act="part" ${au?'':'disabled'}>從這段改（第 ${cur+1} 段）</button>`:''}
       ${hasVocal?'<button data-act="auto">用人聲自動對</button>':''}
       ${getUndo()?'<button data-act="undo">↶ 復原上一次</button>':''}</div>
+      ${have.inst&&have.orig&&getOff()&&has?`<div class="mrow"><span>對拍時聽的是<small>伴奏和原曲差 ${Math.abs(getOff()).toFixed(1)} 秒，選錯會整首差這麼多</small></span><div class="seg"><button data-act="base" data-to="orig" class="${getBase()==='orig'?'on':''}">原曲</button><button data-act="base" data-to="inst" class="${getBase()==='inst'?'on':''}">伴奏</button></div></div>`:''}
       <small class="tip">${au?'只改某一句：在畫面上長按那句歌詞':'先放原曲或伴奏才能對拍'}</small></div>
     <div class="grp"><small>歌詞</small><div class="row"><button data-act="edit">改歌詞／分段</button><button data-act="toc">整首歌詞表</button></div></div>
     <div class="row" style="justify-content:flex-end"><button data-act="mclose">關閉</button></div>`;
@@ -485,7 +499,7 @@ function startPart(){startRec(cur)}
 // 換段要點兩下：第一下換到新段（黃字出來、間奏時先看），第二下才是那段第一句開唱
 let armed=false;
 function startRec(sec){
-  if(!au||!blocks)return;snapshot();
+  if(!au||!blocks)return;snapshot();rebase();
   const n=SCENES[key].steps.length,t=getTimes(),L=getLines();
   if(t.length!==n){const f=[0];for(let i=1;i<n;i++)f.push(null);setTimes(f)}
   recLine=lineOff(sec);armed=false;rec=true;
@@ -495,7 +509,7 @@ function startRec(sec){
 }
 // 從這句改：從那句前 4 秒開始播，唱到這句開頭點一下；後面也要改就繼續點，按「完成」結束
 function startLine(j){
-  if(!au||!blocks)return;snapshot();closeToc();closeNote();
+  if(!au||!blocks)return;snapshot();rebase();closeToc();closeNote();
   const t=getTimes(),L=getLines(),s=secOfLine(j);
   recLine=j;armed=s>0&&j===lineOff(s);rec=true;
   const from=L[j]!=null?L[j]:t[s]!=null?t[s]:0;
@@ -555,15 +569,49 @@ app.addEventListener('change',async e=>{
   if(!confirm(`要把「${f.name}」放到〈${SCENES[key].title}〉的${TRACK[which]}嗎？`))return;
   try{await putFile(key+'|'+which,f)}catch(err){alert('這台裝置沒辦法存這個檔案');return}
   if(which==='vocal'){hasVocal=true;drawPlayer();autoAlign(f);return}
-  if(au)au.pause();rec=false;try{localStorage.setItem('scene-track',which)}catch(e){}await loadAudio(which);
+  if(au)au.pause();rec=false;try{localStorage.setItem('scene-track',which)}catch(e){}kv('scene-offat-v1',0);await loadAudio(which);
   hint(getTimes().length>1?`${TRACK[which]}放好了，可以直接播放`:`${TRACK[which]}放好了。要對拍：右上「⋯」→「開始對拍」`);hintT=setTimeout(()=>hint(''),4000);
 });
+/* ---------- 原曲和伴奏對齊：比兩個檔的節奏起伏，算出伴奏比原曲早或晚幾秒 ---------- */
+// 對拍的秒數存成「對的那一軌」的時間；用另一軌播放就自動加減這個差
+function rebase(){const b=getBase();if(b===track)return;const t=getTimes(),L=getLines();setBase(track);setTimes(t);setLines(L)}
+async function decodeHead(f,sec){
+  const C=window.AudioContext||window.webkitAudioContext,ctx=new C();
+  try{const ab=await f.arrayBuffer();return await new Promise((ok,no)=>{const p=ctx.decodeAudioData(ab,ok,no);if(p&&p.then)p.then(ok,no)})}finally{ctx.close&&ctx.close()}
+}
+function onsets(buf,dt,max){
+  const sr=buf.sampleRate,hop=Math.round(sr*dt),nf=Math.min(Math.floor(buf.length/hop),Math.round(max/dt));
+  const ch=[];for(let c=0;c<buf.numberOfChannels;c++)ch.push(buf.getChannelData(c));
+  const e=new Float32Array(nf),o=new Float32Array(nf);
+  for(let f=0;f<nf;f++){let s=0;const a=f*hop;for(let i=a;i<a+hop;i+=2){let v=0;for(const d of ch)v+=d[i];s+=v*v}e[f]=Math.log(1e-6+s/(hop/2))}
+  for(let f=1;f<nf;f++)o[f]=Math.max(0,e[f]-e[f-1]);
+  let m=0;for(const x of o)m+=x;m/=nf||1;for(let f=0;f<nf;f++)o[f]-=m;return o;
+}
+// 回傳 伴奏時間 − 原曲時間（秒）
+function lagOf(a,b,dt,range){
+  const R=Math.round(range/dt);let best=0,bv=-Infinity,sum=0,cnt=0;
+  for(let L=-R;L<=R;L++){let s=0,n=0;for(let i=Math.max(0,-L);i<a.length&&i+L<b.length;i++){s+=a[i]*b[i+L];n++}s/=n||1;sum+=s;cnt++;if(s>bv){bv=s;best=L}}
+  return {lag:best*dt,score:bv,mean:sum/cnt};
+}
+async function findOffset(fi,fo){
+  if(findOffset.busy)return;findOffset.busy=1;const k=key;
+  try{
+    const [bi,bo]=await Promise.all([decodeHead(fi),decodeHead(fo)]);
+    const dt=.02,a=onsets(bo,dt,150),b=onsets(bi,dt,165);
+    const r=lagOf(a,b,dt,15);
+    if(k!==key)return;
+    const off=r.score>r.mean*3&&Math.abs(r.lag)>.06?r2(r.lag):0;
+    kv('scene-off-v1',off);kv('scene-offat-v1',Date.now());
+    if(off){hint(`原曲和伴奏開頭差了 ${Math.abs(off).toFixed(1)} 秒，已經自動對齊`);hintT=setTimeout(()=>hint(''),4000)}
+    drawPlayer();sync&&au&&sync();
+  }catch(e){}finally{findOffset.busy=0}
+}
 /* ---------- 自動對拍：用 Moises 分出來的純人聲，找出每句歌開始唱的位置 ---------- */
 // 人聲檔只拿來分析，不播放。和伴奏、原唱是同一首分出來的，所以秒數直接共用
 // 已經手動對過段：只補逐句，段的秒數照你點的（除非按「自動對」整個重算）
 async function autoAlign(file,redo,quiet){
   file=file||await getFile(key+'|vocal');if(!file)return;
-  const keep=!redo&&getTimes().length===SCENES[key].steps.length?getTimes():null;
+  const keep=!redo&&rawTimes().length===SCENES[key].steps.length?getTimes('orig'):null;
   if(!quiet)hint('正在聽人聲，找每段開始的地方…');
   let buf;
   try{
@@ -575,9 +623,9 @@ async function autoAlign(file,redo,quiet){
   const res=alignTimes(buf,keep);
   if(!res){hint('這個檔案聽不太出唱歌的地方，用「對拍」手動點一次吧');hintT=setTimeout(()=>hint(''),4000);return}
   // 已經有逐句時間（例如你手動點好的）就不蓋掉，只有按「自動對」才重算
-  const hadLines=getLines().length>0;
+  const hadLines=rawLines().length>0;
   if(redo||!keep||!hadLines)snapshot();
-  if(!keep)setTimes(res.sec);if(redo||!hadLines)setLines(res.lines);rec=false;drawPlayer();
+  if(!keep)setTimes(res.sec,'orig');if(redo||!hadLines)setLines(res.lines,'orig');rec=false;drawPlayer();
   if(!au||au.paused)show(cur);
   if(!quiet)hint(keep?'逐句對好了！段落照你原本點的，播放時唱到哪句哪句會亮':'自動對好了！播放會自己換段、逐句亮，哪段不準就停在那段按「從這段改」');hintT=setTimeout(()=>hint(''),4500);
 }
