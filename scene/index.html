@@ -251,7 +251,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=34;
+const VER=35;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -423,8 +423,9 @@ async function loadAudio(want,at,play){
   if(hasVocal&&!getLines().length&&!loadAudio.did){loadAudio.did=1;autoAlign()}  // 之前放過人聲：補算逐句一次
   try{track=want||localStorage.getItem('scene-track')||'inst'}catch(e){track=want||'inst'}
   if(!have[track])track=have.inst?'inst':'orig';
-  if(fi&&fo&&!kv('scene-offat-v1'))findOffset(fi,fo);
-  const f=track==='inst'?fi:fo;if(!f){drawPlayer();return}
+  const f0=track==='inst'?fi:fo;if(!f0){drawPlayer();return}
+  const f=await playable(key+'|'+track,f0);
+  if(fi&&fo&&!kv('scene-offat-v1'))setTimeout(()=>findOffset(fi,fo),1500);
   if(au)au.pause();
   if(auUrl)URL.revokeObjectURL(auUrl);auUrl=URL.createObjectURL(f);
   au=new Audio(auUrl);au.preload='auto';
@@ -572,6 +573,30 @@ app.addEventListener('change',async e=>{
   if(au)au.pause();rec=false;try{localStorage.setItem('scene-track',which)}catch(e){}kv('scene-offat-v1',0);await loadAudio(which);
   hint(getTimes().length>1?`${TRACK[which]}放好了，可以直接播放`:`${TRACK[which]}放好了。要對拍：右上「⋯」→「開始對拍」`);hintT=setTimeout(()=>hint(''),4000);
 });
+/* ---------- mp3 轉成 wav 再播 ---------- */
+// iPad 的 Safari 播 mp3 時，跳到某一秒（點某句、拖進度條、從這句改）常常落在不對的位置，而且每次差的不一樣。
+// wav 跳秒數是準的：第一次打開時在這台裝置轉一次存起來，之後直接用
+const isMp3=f=>/mpeg|mp3/i.test(f.type||'')||/\.mp3$/i.test(f.name||'');
+function toWav(buf){
+  const nc=Math.min(2,buf.numberOfChannels),len=buf.length,sr=buf.sampleRate,ab=new ArrayBuffer(44+len*nc*2),v=new DataView(ab);
+  const w=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))};
+  w(0,'RIFF');v.setUint32(4,36+len*nc*2,true);w(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,nc,true);
+  v.setUint32(24,sr,true);v.setUint32(28,sr*nc*2,true);v.setUint16(32,nc*2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,len*nc*2,true);
+  const ch=[];for(let c=0;c<nc;c++)ch.push(buf.getChannelData(c));
+  const out=new Int16Array(ab,44);let o=0;
+  for(let i=0;i<len;i++)for(let c=0;c<nc;c++){const x=Math.max(-1,Math.min(1,ch[c][i]));out[o++]=x<0?x*32768:x*32767}
+  return new Blob([ab],{type:'audio/wav'});
+}
+async function playable(k,f){
+  if(!isMp3(f))return f;
+  const c=await getFile(k+'|wav');if(c&&c.size===f.size&&c.blob)return c.blob;
+  try{
+    hint('第一次打開，正在整理音檔（讓跳到哪一句都準）…');
+    const wav=toWav(await decodeHead(f));
+    try{await putFile(k+'|wav',{size:f.size,blob:wav})}catch(e){}
+    hint('');return wav;
+  }catch(e){hint('');return f}
+}
 /* ---------- 原曲和伴奏對齊：比兩個檔的節奏起伏，算出伴奏比原曲早或晚幾秒 ---------- */
 // 對拍的秒數存成「對的那一軌」的時間；用另一軌播放就自動加減這個差
 function rebase(){const b=getBase();if(b===track)return;const t=getTimes(),L=getLines();setBase(track);setTimes(t);setLines(L)}
@@ -596,8 +621,7 @@ function lagOf(a,b,dt,range){
 async function findOffset(fi,fo){
   if(findOffset.busy)return;findOffset.busy=1;const k=key;
   try{
-    const [bi,bo]=await Promise.all([decodeHead(fi),decodeHead(fo)]);
-    const dt=.02,a=onsets(bo,dt,150),b=onsets(bi,dt,165);
+    const dt=.02,a=onsets(await decodeHead(fo),dt,150),b=onsets(await decodeHead(fi),dt,165);
     const r=lagOf(a,b,dt,15);
     if(k!==key)return;
     const off=r.score>r.mean*3&&Math.abs(r.lag)>.06?r2(r.lag):0;
