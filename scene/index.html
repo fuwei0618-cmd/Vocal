@@ -252,7 +252,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=36;
+const VER=37;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -485,7 +485,7 @@ function openMenu(){
       ${getUndo()?'<button data-act="undo">↶ 復原上一次</button>':''}</div>
       ${have.inst&&have.orig&&getOff()&&has?`<div class="mrow"><span>對拍時聽的是<small>伴奏和原曲差 ${Math.abs(getOff()).toFixed(1)} 秒，選錯會整首差這麼多</small></span><div class="seg"><button data-act="base" data-to="orig" class="${getBase()==='orig'?'on':''}">原曲</button><button data-act="base" data-to="inst" class="${getBase()==='inst'?'on':''}">伴奏</button></div></div>`:''}
       <small class="tip">${au?'只改某一句：在畫面上長按那句歌詞':'先放原曲或伴奏才能對拍'}</small></div>
-    <div class="grp"><small>錄音</small><div class="row"><button data-act="mic" ${au?'':'disabled'}>🎙 開始錄音</button>${hasTake?'<button data-act="take">上次的錄音</button>':''}</div><small class="tip">戴耳機錄，錄進去的才只有你的聲音</small></div>
+    <div class="grp"><small>錄音</small><div class="row"><button data-act="mic" ${au?'':'disabled'}>🎙 開始錄音</button>${hasTake?'<button data-act="take">上次的錄音</button>':''}</div><small class="tip">不用戴耳機，app 會盡量把伴奏的聲音扣掉</small></div>
     <div class="grp"><small>歌詞</small><div class="row"><button data-act="edit">改歌詞／分段</button><button data-act="toc">整首歌詞表</button></div></div>
     <div class="row" style="justify-content:flex-end"><button data-act="mclose">關閉</button></div>`;
   app.appendChild(d);
@@ -591,7 +591,7 @@ async function startMic(){
   if(!au||mic)return;closeMenu();closeTake();stopTake();
   if(rec)finishRec();
   let st;
-  try{st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}})}
+  try{st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:false,autoGainControl:false}})}
   catch(e){alert('沒辦法用麥克風：到「設定 → Safari → 麥克風」允許，或重新打開再按一次');return}
   const type=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||'';
   const mr=new MediaRecorder(st,type?{mimeType:type}:{}),chunks=[];
@@ -635,13 +635,25 @@ function playTake(both){
   };
   if(both&&take.track&&take.track!==track&&have[take.track]){loadAudio(take.track,take.start,false).then(()=>setTimeout(go,300))}else go();
 }
+// 算出錄音裡「伴奏漏進來」的音量：把伴奏對到錄音的時間，找出喇叭到麥克風大概小了幾倍
+async function bleed(take,buf){
+  const tr=take.track||track,f=await getFile(key+'|'+tr)||(tr==='inst'?await getFile(key):null);if(!f)return null;
+  let b;try{b=await decodeHead(f)}catch(e){return null}
+  const er=envOf(buf),eb=envOf(b),d=Math.round((take.start-take.lead)/.05),n=er.length,m=new Float32Array(n);
+  // 伴奏音量往前後各放 0.1 秒取最大，喇叭延遲和回音才扣得乾淨
+  for(let f=0;f<n;f++){let x=0;for(let k=-2;k<=2;k++){const j=f+d+k;if(j>=0&&j<eb.length&&eb[j]>x)x=eb[j]}m[f]=x}
+  const r=[];for(let f=0;f<n;f++)if(m[f]>1e-3)r.push(er[f]/m[f]);if(r.length<20)return null;
+  r.sort((a,b)=>a-b);const k=r[Math.floor(r.length*.3)];
+  if(k<.02)return null;  // 幾乎沒漏進來（有戴耳機）
+  for(let f=0;f<n;f++)m[f]*=k*1.4;return m;
+}
 async function alignTake(){
   const take=openTake.cur;if(!take)return;
   if(getTimes().length>1&&!confirm('用這次錄音重新算每一句的時間？現在的對拍會先備份，不喜歡可以復原'))return;
   hint('正在聽你的錄音，找每一句開始的地方…');
   let buf;try{buf=await decodeHead(take.blob)}catch(e){hint('');alert('這段錄音讀不出來');return}
-  const res=alignTimes(buf,null);
-  if(!res){hint('聽不太出唱歌的地方，戴耳機再錄一次試試');hintT=setTimeout(()=>hint(''),4000);return}
+  const res=alignTimes(buf,null,await bleed(take,buf));
+  if(!res){hint('聽不太出唱歌的地方，再錄一次試試');hintT=setTimeout(()=>hint(''),4000);return}
   const d=take.start-take.lead,mv=a=>a.map(x=>x==null?x:r2(Math.max(0,x+d)));
   snapshot();setTimes(mv(res.sec),take.track||track);setLines(mv(res.lines),take.track||track);
   closeTake();show(cur);drawPlayer();
@@ -728,11 +740,17 @@ async function autoAlign(file,redo,quiet){
   if(!quiet)hint(keep?'逐句對好了！段落照你原本點的，播放時唱到哪句哪句會亮':'自動對好了！播放會自己換段、逐句亮，哪段不準就停在那段按「從這段改」');hintT=setTimeout(()=>hint(''),4500);
 }
 // 每 50 毫秒算一次音量 → 有聲音的地方連成一句一句 → 依每段幾行歌詞分組，段和段之間盡量切在比較長的空檔
-function alignTimes(buf,keep){
-  const sr=buf.sampleRate,hop=Math.round(sr*.05),nf=Math.floor(buf.length/hop),dt=hop/sr;
+function envOf(buf){
+  const sr=buf.sampleRate,hop=Math.round(sr*.05),nf=Math.floor(buf.length/hop);
   const ch=[];for(let c=0;c<buf.numberOfChannels;c++)ch.push(buf.getChannelData(c));
   const e=new Float32Array(nf);
   for(let f=0;f<nf;f++){let s=0;const a=f*hop;for(let i=a;i<a+hop;i+=2){let v=0;for(const d of ch)v+=d[i];s+=v*v}e[f]=Math.sqrt(s/(hop/2))/ch.length}
+  return e;
+}
+// sub：沒戴耳機錄的時候，喇叭放出來的伴奏也會被錄進去，先把那部分的音量扣掉
+function alignTimes(buf,keep,sub){
+  const dt=.05,e=envOf(buf),nf=e.length;
+  if(sub)for(let f=0;f<nf;f++)e[f]=Math.max(0,e[f]-(sub[f]||0));
   const sorted=Array.from(e).sort((a,b)=>a-b),p95=sorted[Math.floor(nf*.95)]||0;
   if(p95<1e-4)return null;
   const th=Math.max(p95*.1,sorted[Math.floor(nf*.2)]*3);
