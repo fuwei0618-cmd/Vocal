@@ -252,7 +252,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=37;
+const VER=38;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -857,12 +857,20 @@ function drawInk(){
     const old=el.querySelector('.ink');if(old)old.remove();
     const st=mine[lineKey(+el.dataset.l)];if(!st||!st.length)return;
     const fs=parseFloat(getComputedStyle(el).fontSize)||20;
-    el.insertAdjacentHTML('beforeend',`<svg class="ink">${st.map(k=>{const P=PENS[k.c]||PENS[0];return `<path d="${k.p.map((q,i)=>(i?'L':'M')+(q[0]*fs).toFixed(1)+' '+(q[1]*fs).toFixed(1)).join('')}" stroke="${P.c}" stroke-width="${(P.w*fs).toFixed(1)}" stroke-opacity="${P.o}"/>`}).join('')}</svg>`);
+    el.insertAdjacentHTML('beforeend',`<svg class="ink">${st.map(k=>strokeSvg(k,fs)).join('')}</svg>`);
   });
+}
+// 有壓力（Apple Pencil）的筆畫：每一小段照當時的力道決定粗細；螢光筆和舊的筆畫一樣粗
+const pw=(P,q,fs)=>P.w*fs*(P.o<1||q[2]==null?1:.35+1.3*q[2]);
+function strokeSvg(k,fs){
+  const P=PENS[k.c]||PENS[0],X=q=>(q[0]*fs).toFixed(1),Y=q=>(q[1]*fs).toFixed(1);
+  if(P.o<1||k.p.length<2||k.p[0][2]==null)return `<path d="${k.p.map((q,i)=>(i?'L':'M')+X(q)+' '+Y(q)).join('')}" stroke="${P.c}" stroke-width="${(P.w*fs).toFixed(1)}" stroke-opacity="${P.o}"/>`;
+  let o='';for(let i=1;i<k.p.length;i++){const a=k.p[i-1],b=k.p[i];o+=`<path d="M${X(a)} ${Y(a)}L${X(b)} ${Y(b)}" stroke="${P.c}" stroke-width="${pw(P,[0,0,(a[2]+b[2])/2],fs).toFixed(2)}"/>`}
+  return o;
 }
 function drawTools(){
   const t=document.getElementById('pentools');if(!t)return;
-  t.innerHTML=PENS.map((P,i)=>`<button data-act="pcol" data-i="${i}" class="${i===pen?'on':''}"><i style="background:${P.c};opacity:${P.o<1?.7:1}"></i> ${P.n}</button>`).join('')+`<button data-act="pprev" aria-label="上一段">‹</button><button data-act="pnext" aria-label="下一段">›</button><button data-act="pundo">↶ 上一筆</button><button data-act="pclr">清這段</button><button data-act="pdone">完成</button>`;
+  t.innerHTML=PENS.map((P,i)=>`<button data-act="pcol" data-i="${i}" class="${i===pen?'on':''}"><i style="background:${P.c};opacity:${P.o<1?.7:1}"></i> ${P.n}</button>`).join('')+`<button data-act="pcol" data-i="-1" class="${pen<0?'on':''}">◻︎ 橡皮擦</button><button data-act="pprev" aria-label="上一段">‹</button><button data-act="pnext" aria-label="下一段">›</button><button data-act="pundo">↶ 上一筆</button><button data-act="pclr">清這段</button><button data-act="pdone">完成</button>`;
 }
 function startDraw(){
   if(!blocks||document.getElementById('pad'))return;if(au&&!au.paused)au.pause();
@@ -870,22 +878,51 @@ function startDraw(){
   app.insertAdjacentHTML('beforeend','<canvas id="pad"></canvas><div class="pentools" id="pentools"></div>');drawTools();
   const cv=document.getElementById('pad'),dpr=devicePixelRatio||1;cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;
   const g=cv.getContext('2d');g.scale(dpr,dpr);g.lineCap='round';g.lineJoin='round';
-  let pts=null;
-  cv.addEventListener('pointerdown',e=>{e.preventDefault();cv.setPointerCapture(e.pointerId);pts=[[e.clientX,e.clientY]];
-    const ln=nearLine(e.clientY),fs=ln?parseFloat(getComputedStyle(ln).fontSize):20,P=PENS[pen];g.strokeStyle=P.c;g.globalAlpha=P.o;g.lineWidth=P.w*fs});
-  cv.addEventListener('pointermove',e=>{if(!pts)return;const ev=e.getCoalescedEvents?e.getCoalescedEvents():[e];
-    ev.forEach(q=>{const a=pts[pts.length-1];g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(q.clientX,q.clientY);g.stroke();pts.push([q.clientX,q.clientY])})});
-  const end=()=>{if(!pts)return;const P=pts;pts=null;g.clearRect(0,0,innerWidth,innerHeight);if(P.length<2)P.push([P[0][0]+1,P[0][1]]);addStroke(P)};
+  let pts=null,fs0=20,id0=null;
+  // 力道：Apple Pencil 用真的壓力；手指和滑鼠沒有壓力，當作中等
+  const prs=q=>q.pointerType==='pen'?Math.max(.05,Math.min(1,q.pressure||.5)):.5;
+  const seg=(a,b)=>{const P=PENS[pen];g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.lineWidth=pw(P,[0,0,(a[2]+b[2])/2],fs0);g.stroke()};
+  cv.addEventListener('pointerdown',e=>{e.preventDefault();
+    // 用 Apple Pencil 畫時，手掌碰到螢幕不算
+    if(pts&&e.pointerType!=='pen')return;if(pts&&id0!==e.pointerId){pts=null;g.clearRect(0,0,innerWidth,innerHeight)}
+    id0=e.pointerId;try{cv.setPointerCapture(e.pointerId)}catch(_){}
+    if(pen<0){pts=[];eraseAt(e.clientX,e.clientY);return}
+    pts=[[e.clientX,e.clientY,prs(e)]];
+    const ln=nearLine(e.clientY),P=PENS[pen];fs0=ln?parseFloat(getComputedStyle(ln).fontSize):20;g.strokeStyle=P.c;g.globalAlpha=P.o;
+    if(P.o<1){g.globalCompositeOperation='copy'}else g.globalCompositeOperation='source-over';
+    g.beginPath();g.arc(e.clientX,e.clientY,pw(P,pts[0],fs0)/2,0,7);g.fillStyle=P.c;g.fill()});
+  cv.addEventListener('pointermove',e=>{if(!pts||e.pointerId!==id0)return;const ev=e.getCoalescedEvents&&e.getCoalescedEvents().length?e.getCoalescedEvents():[e];
+    if(pen<0){ev.forEach(q=>eraseAt(q.clientX,q.clientY));return}
+    const P=PENS[pen];
+    if(P.o<1){ev.forEach(q=>pts.push([q.clientX,q.clientY,.5]));g.clearRect(0,0,innerWidth,innerHeight);g.globalCompositeOperation='source-over';g.lineWidth=P.w*fs0;g.beginPath();pts.forEach((q,i)=>i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));g.stroke();return}
+    ev.forEach(q=>{const b=[q.clientX,q.clientY,prs(q)],a=pts[pts.length-1];if(Math.hypot(b[0]-a[0],b[1]-a[1])<.6)return;seg(a,b);pts.push(b)})});
+  const end=e=>{if(!pts||(e&&e.pointerId!==id0))return;const P=pts;pts=null;g.clearRect(0,0,innerWidth,innerHeight);if(pen<0)return;if(P.length<2)P.push([P[0][0]+.5,P[0][1],P[0][2]]);addStroke(P)};
   cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
 }
 function nearLine(y){let best=null,bd=1e9;document.querySelectorAll('.sub p.cur .ln').forEach(el=>{const r=el.getBoundingClientRect(),d=y<r.top?r.top-y:y>r.bottom?y-r.bottom:0;if(d<bd){bd=d;best=el}});return best}
 function addStroke(P){
   const ys=P.map(q=>q[1]).sort((a,b)=>a-b),ln=nearLine(ys[ys.length>>1]);if(!ln)return;
   const r=ln.getBoundingClientRect(),fs=parseFloat(getComputedStyle(ln).fontSize)||20;
-  const k=lineKey(+ln.dataset.l),a=allInk(),o=a[key]||(a[key]={});(o[k]||(o[k]=[])).push({c:pen,p:P.map(q=>[+((q[0]-r.left)/fs).toFixed(2),+((q[1]-r.top)/fs).toFixed(2)])});
-  saveInk(a);inkHist.push(k);drawInk();
+  const k=lineKey(+ln.dataset.l),a=allInk(),o=a[key]||(a[key]={});const hl=PENS[pen].o<1;(o[k]||(o[k]=[])).push({c:pen,p:P.map(q=>{const v=[+((q[0]-r.left)/fs).toFixed(3),+((q[1]-r.top)/fs).toFixed(3)];if(!hl)v.push(+q[2].toFixed(2));return v})});
+  saveInk(a);inkHist.push({k});drawInk();
 }
-function undoInk(){const k=inkHist.pop();if(!k)return;const a=allInk(),o=a[key]||{};if(o[k]&&o[k].length){o[k].pop();if(!o[k].length)delete o[k]}saveInk(a);drawInk()}
+function undoInk(){const h=inkHist.pop();if(!h)return;const a=allInk(),o=a[key]||(a[key]={}),k=h.k;
+  if(h.del){(o[k]||(o[k]=[])).splice(Math.min(h.i,o[k].length),0,h.del)}
+  else if(o[k]&&o[k].length){o[k].pop();if(!o[k].length)delete o[k]}
+  saveInk(a);drawInk()}
+// 橡皮擦：筆尖碰到的那一整筆擦掉（跟 GoodNotes 的「擦整筆」一樣），可以用「上一筆」救回來
+function eraseAt(x,y){
+  const a=allInk(),o=a[key];if(!o)return;let hit=false;
+  document.querySelectorAll('.sub p.cur .ln').forEach(el=>{
+    const k=lineKey(+el.dataset.l),st=o[k];if(!st||!st.length)return;
+    const r=el.getBoundingClientRect(),fs=parseFloat(getComputedStyle(el).fontSize)||20,px=(x-r.left)/fs,py=(y-r.top)/fs,R=.45;
+    for(let i=st.length-1;i>=0;i--){const P=PENS[st[i].c]||PENS[0],rr=R+P.w/2,p=st[i].p;
+      let on=false;for(let j=0;j<p.length&&!on;j++){const b=p[j],c=p[j+1]||b,dx=c[0]-b[0],dy=c[1]-b[1],L=dx*dx+dy*dy,t=L?Math.max(0,Math.min(1,((px-b[0])*dx+(py-b[1])*dy)/L)):0;on=Math.hypot(px-b[0]-t*dx,py-b[1]-t*dy)<rr}
+      if(on){inkHist.push({k,del:st[i],i});st.splice(i,1);hit=true}}
+    if(!st.length)delete o[k];
+  });
+  if(hit){saveInk(a);drawInk()}
+}
 function clearInk(){if(!confirm('把這一段畫的都清掉？'))return;const a=allInk(),o=a[key]||{};document.querySelectorAll('.sub p.cur .ln').forEach(el=>delete o[lineKey(+el.dataset.l)]);saveInk(a);inkHist=[];drawInk()}
 function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementById(id);if(e)e.remove()});document.body.classList.remove('drawing')}
 render();
