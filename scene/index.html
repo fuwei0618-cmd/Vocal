@@ -100,6 +100,7 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 .sheet button.on{border-color:var(--glow);color:var(--glow)}
 .sheet input{width:100%;box-sizing:border-box;background:rgba(0,0,0,.4);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font:16px var(--body)}
 .paste{position:relative;z-index:5;display:grid;gap:8px;margin:0 auto;max-width:560px;padding:calc(env(safe-area-inset-top,0px) + 56px) 16px 40px}
+.paste{pointer-events:none}.paste>*{pointer-events:auto}
 .paste p{margin:0;color:var(--ink);font-size:14px;line-height:1.6;text-shadow:0 1px 6px #000}
 .paste textarea{width:100%;min-height:50vh;background:rgba(15,12,9,.82);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font:16px/1.6 var(--body)}
 .paste .row{display:flex;gap:8px;justify-content:flex-end}
@@ -109,6 +110,12 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 /* ---------- 播放介面：下面一條播放列，平常用不到的收進右上角「⋯」 ---------- */
 .foot{display:none}
 .bar{align-items:center}
+.bar .pgpill{margin-left:auto;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--muted);border-radius:99px;height:30px;padding:0 10px;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}.bar .pgpill span{color:#f2c27b;letter-spacing:1px}
+.bar .pgpill+.menu{margin-left:0}
+.menu-sheet .pgl{gap:6px}.menu-sheet .pgl button{display:flex;align-items:center;gap:10px;text-align:left;justify-content:flex-start;padding:10px 12px;font-size:15px}
+.menu-sheet .pgl button b{width:24px;height:24px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:12px;flex:none}
+.menu-sheet .pgl button.on{border-color:#f2c27b;color:#f2c27b}.menu-sheet .pgl button.on b{background:#f2c27b;color:#1a1410;border-color:#f2c27b}
+.menu-sheet .pgl small{margin-left:auto;color:var(--muted);font-size:12px}
 .bar .menu{margin-left:auto;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--ink);border-radius:99px;width:38px;height:30px;font-size:18px;line-height:1;cursor:pointer;padding:0}
 .player{left:0;right:0;bottom:0;display:block;padding:6px 16px calc(env(safe-area-inset-bottom,0px) + 10px);background:linear-gradient(rgba(10,8,6,0),rgba(10,8,6,.78) 35%,rgba(10,8,6,.9));z-index:6;color:var(--muted);flex-wrap:nowrap}
 .prog{position:relative;height:28px;max-width:920px;margin:0 auto;cursor:pointer;touch-action:none}
@@ -307,7 +314,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=52;
+const VER=53;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -344,7 +351,7 @@ function render(){
   document.body.classList.toggle('play',!paste);
   const bg=`<div class="blur" style="background-image:url('${esc(sc.img)}')"></div><div class="bg" id="bg"><img src="${esc(sc.img)}" alt="${esc(sc.title)}的情境圖"><div class="shade" id="shade"></div>${starsHtml(sc)}
     ${Object.entries(sc.spots).map(([k,s])=>`<div class="spot" data-spot="${k}" style="left:${s.x}%;top:${s.y}%"><i></i><b>${esc(s.name)}</b></div>`).join('')}</div><div class="veil"></div>`;
-  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${sc.artist?esc(sc.artist)+'・':''}v${VER}</span>${paste?'':'<button class="menu" data-act="menu" aria-label="設定：放音樂、對拍、改歌詞">⋯</button>'}</div>`;
+  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${sc.artist?esc(sc.artist)+'・':''}v${VER}</span><button class="pgpill" data-act="pg" aria-label="練習進度">${pgDots(key)}</button>${paste?'':'<button class="menu" data-act="menu" aria-label="設定：放音樂、對拍、改歌詞">⋯</button>'}</div>`;
   const body=paste
     ?`<div class="paste"><p>把這首歌的歌詞整首貼進來，一行一句、照順序。<br>每段中間空一行，就會照你空的地方分段（這首有 ${SCENES[key].steps.length} 段：${esc(SCENES[key].steps.map(x=>x.sec).join('、'))}）。<br>歌詞只存在這台裝置，不會放到網路上。</p>
       <textarea id="lyr-in" placeholder="第一句歌詞…">${esc(text)}</textarea>
@@ -404,6 +411,8 @@ app.addEventListener('click',e=>{
     else if(act==='track'){if(a.dataset.to!==track)switchTrack()}
     else if(act==='next'){if(au){au.currentTime=Math.min(au.duration||1e9,au.currentTime+5);updateProg();sync()}else step(cur+1)}
     else if(act==='menu')openMenu();
+    else if(act==='pg')openPg();
+    else if(act==='pgs'){pgToggle(key,a.dataset.s);openPg();const b=document.querySelector('.bar .pgpill');if(b)b.innerHTML=pgDots(key)}
     else if(act==='mclose')closeMenu();
     else if(act==='rback')tapLine(true);
     else if(act==='play'){if(!au)return;au.paused?au.play():au.pause()}
@@ -542,6 +551,16 @@ function openMenu(){
     <div class="row" style="justify-content:flex-end"><button data-act="mclose">關閉</button></div>`;
   app.appendChild(d);
 }
+// 練習進度：每首歌一份，存在這台裝置（總表的情境圖清單也讀同一份，兩邊點哪邊都算）
+const PG=[['tap','句對拍'],['lyr','背詞'],['rec','錄音通關'],['sv','SV 通關'],['live','上街演']];
+function pgAll(){try{return JSON.parse(localStorage.getItem('scene-prog-v1'))||{}}catch(e){return {}}}
+function pgToggle(k,id){const a=pgAll(),m=a[k]||(a[k]={});if(m[id])delete m[id];else{const d=new Date();m[id]=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}}
+function pgDots(k){const m=pgAll()[k]||{},n=PG.filter(([id])=>m[id]).length;return `<span>${PG.map(([id])=>m[id]?'●':'○').join('')}</span> ${n}/${PG.length}`}
+function openPg(){
+  closeMenu();const m=pgAll()[key]||{};const d=document.createElement('div');d.className='sheet menu-sheet';d.id='menu';
+  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div><div class="grp pgl">${PG.map(([id,t],i)=>`<button data-act="pgs" data-s="${id}" class="${m[id]?'on':''}"><b>${m[id]?'✓':i+1}</b>${t}<small>${m[id]?m[id].slice(5).replace('-','/')+' 完成':''}</small></button>`).join('')}</div>
+    <small class="tip">點一下打勾，再點一下取消。歌單的情境圖清單也會一起更新</small><div class="row" style="justify-content:flex-end"><button data-act="mclose">關閉</button></div>`;
+  app.appendChild(d)}
 function closeMenu(){const d=document.getElementById('menu');if(d){d.remove();wakePlayer()}}
 function switchTrack(){
   if(!au)return;const at=au.currentTime,play=!au.paused,to=track==='inst'?'orig':'inst';
@@ -952,6 +971,6 @@ function clearInk(){if(!confirm('把這一段畫的都清掉？'))return;const a
 function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementById(id);if(e)e.remove()});document.body.classList.remove('drawing')}
 render();
 </script>
-<script src="studio.js?v=52"></script>
+<script src="studio.js?v=53"></script>
 </body>
 </html>

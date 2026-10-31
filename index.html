@@ -71,6 +71,7 @@ h2{font-size:20px} h3{font-size:16px}
 .row .title{font-weight:500}
 .row .sub{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
 .chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.pgrow{padding:0 12px 10px;gap:6px;flex-wrap:wrap}.pgrow .chip{border:0;font:inherit;font-size:12px;padding:4px 10px;cursor:pointer}
 .chip.accent{background:var(--accent-soft);color:var(--accent)}
 .chip.coin{background:var(--coin-bg);color:var(--coin)}
 .chip.warn{background:var(--warn-bg);color:var(--warn)}
@@ -300,7 +301,7 @@ const COLS=['songs','venues','records','gear','checks','cards','meta'];
 const GROUPS=['前一晚充電','出門準備','其他','隨身','當日'];
 const ONSITE=['現場・表演','現場・設備','現場・腳架'];
 const SONG_GROUPS=['溫馨','開放','商演','RenewSV'];
-const SCENES=[{title:'甲乙丙丁',href:'scene/?v=52#jiayi',tl:'外套 輕｜照片 推｜項鍊 收｜門 打｜照片 穩｜門 全開'},{title:'盛夏的果實',href:'scene/?v=52#summer',tl:'果實 鬆｜信 問｜潮 淡｜信 問｜果實 暖｜潮 淡｜枕頭 輕'},{title:'達爾文',href:'scene/?v=52#darwin',tl:'鏡子 看｜信 拉｜舊鞋 起｜筆記 開｜鏡子 笑｜乾燥花 放｜新鞋 走｜全開｜茶 穩'},{title:'大大的擁抱',href:'scene/?v=52#hug',tl:'門 開｜風箏 跳｜海 暖｜毛毯 抱｜彩虹 圓｜全開'},{title:'後來',href:'scene/?v=52#houlai',tl:'人海 輕｜花 甜｜星光 暖｜照片 問｜人海 悔｜照片 柔｜人海 放'}];   // 歌曲情境圖（scene/ 頁）
+const SCENES=[{title:'甲乙丙丁',href:'scene/?v=53#jiayi',tl:'外套 輕｜照片 推｜項鍊 收｜門 打｜照片 穩｜門 全開'},{title:'盛夏的果實',href:'scene/?v=53#summer',tl:'果實 鬆｜信 問｜潮 淡｜信 問｜果實 暖｜潮 淡｜枕頭 輕'},{title:'達爾文',href:'scene/?v=53#darwin',tl:'鏡子 看｜信 拉｜舊鞋 起｜筆記 開｜鏡子 笑｜乾燥花 放｜新鞋 走｜全開｜茶 穩'},{title:'大大的擁抱',href:'scene/?v=53#hug',tl:'門 開｜風箏 跳｜海 暖｜毛毯 抱｜彩虹 圓｜全開'},{title:'後來',href:'scene/?v=53#houlai',tl:'人海 輕｜花 甜｜星光 暖｜照片 問｜人海 悔｜照片 柔｜人海 放'}];   // 歌曲情境圖（scene/ 頁）
 // 10/20：歌先照「我想成為誰」分身份，每首歌知道自己是哪一個我在唱，才不會飄
 const WHO=[['Teresa','找回聲音・唱給自己','鄧麗君、葉柄桓、李芷婷：溫柔、回家、玩聲音'],['Shakira','為眾生・火','唱給大家、熱場、有力量'],['Elva','燕尾蝶・愛','G.E.M.、Elva：情歌、做自己、敢愛'],['Faye','富偉・水','Chiara、Faye：空靈、流動、安靜']];
 const LEVELS=['練習中','可上台','拿手'];
@@ -732,13 +733,18 @@ function venueSheet(id){
 }
 
 /* ---------- 歌單 ---------- */
+// 情境圖的練習進度（和情境頁共用 scene-prog-v1，存在這台裝置）
+const PG=[['tap','句對拍'],['lyr','背詞'],['rec','錄音通關'],['sv','SV 通關'],['live','上街演']];
+function pgAll(){try{return JSON.parse(localStorage.getItem('scene-prog-v1'))||{}}catch(e){return {}}}
+function pgToggle(k,id){const a=pgAll(),m=a[k]||(a[k]={});if(m[id])delete m[id];else{const d=new Date();m[id]=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}}
+addEventListener('pageshow',e=>{if(e.persisted)render()});
 function vSongs(){
   const st=stats();
   const songs=sorted('songs').filter(s=>(songFilter==='全部'||(s.groups||[]).includes(songFilter)||(songFilter==='未設定熟練度'&&!s.level))&&(whoF==='全部'||(whoF==='未分類'?!s.who:s.who===whoF)));
   let h=`<section class="sec"><label class="f"><span class="label">搜尋歌名或原唱</span><input id="song-q" type="search" value="${esc(songQ)}" autocomplete="off"></label>
     <div class="f" style="margin:4px 0 0"><span class="label">哪一個我在唱</span><div class="chips">${['全部',...WHO.map(w=>w[0]),'未分類'].map(g=>`<button class="chip ${g===whoF?'accent':''}" data-who-f="${esc(g)}">${esc(g)}</button>`).join('')}</div></div>
     <div class="f" style="margin:4px 0 0"><span class="label">場合</span><div class="chips">${['全部',...SONG_GROUPS].map(g=>`<button class="chip ${g===songFilter?'accent':''}" data-song-f="${esc(g)}">${esc(g)}</button>`).join('')}</div></div></section>`;
-  h+=`<section class="sec"><div class="sec-head"><h2>情境圖</h2></div><ul class="list">${SCENES.map(x=>`<li><a class="row" href="${esc(x.href)}" style="text-decoration:none;color:inherit"><div class="main"><div class="title">${esc(x.title)}</div><div class="sub">${esc(x.tl)}</div></div><span class="link">打開 ↗</span></a></li>`).join('')}</ul></section>`;
+  h+=`<section class="sec"><div class="sec-head"><h2>情境圖</h2></div><ul class="list">${SCENES.map(x=>{const k=x.href.split('#')[1],m=pgAll()[k]||{},n=PG.filter(([id])=>m[id]).length;return `<li><a class="row" href="${esc(x.href)}" style="text-decoration:none;color:inherit"><div class="main"><div class="title">${esc(x.title)} <span class="chip ${n===PG.length?'ok':n?'warn':''}">${n}/${PG.length}</span></div><div class="sub">${esc(x.tl)}</div></div><span class="link">打開 ↗</span></a><div class="chips pgrow">${PG.map(([id,t])=>`<button class="chip ${m[id]?'ok':''}" data-pg="${esc(k)}" data-pgs="${id}">${m[id]?'✓ ':''}${t}</button>`).join('')}</div></li>`}).join('')}</ul></section>`;
   if(!songs.length)return h+`<div class="empty">這個分組還沒有歌。</div>`;
   const ns=next().setlist||[];
   const row=s=>{const c=st.songCount[s.id]||0,last=st.songLast[s.id];
@@ -948,6 +954,7 @@ document.addEventListener('click',e=>{if(Date.now()-dragSup<350&&e.target.closes
 document.addEventListener('click',e=>{
   const t=e.target.closest('button,[data-act]'); if(!t)return;
   const d=t.dataset;
+  if(d.pg){pgToggle(d.pg,d.pgs);render();return}
   if(d.tab){tab=d.tab;try{localStorage.setItem(LS+'-tab',tab)}catch(_){}window.scrollTo(0,0);render();return}
   if(d.logseg){logSeg=d.logseg;render();return}
   if(d.vspot){siteSel=d.vspot;render();return}
