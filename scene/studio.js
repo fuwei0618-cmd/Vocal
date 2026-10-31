@@ -30,7 +30,7 @@ async function openStudio(){
     <div class="s-bot">
       <div class="s-l"><button data-act="spic" id="s-picb">🖼 大畫面</button><button data-act="szoom" id="s-zoom">整首</button><button data-act="sloop" id="s-loop" class="on">🔁 重複</button></div>
       <div class="s-c"><button data-act="shome" aria-label="回到開頭">⏮</button><button data-act="splay" class="s-pp" id="s-pp">▶</button><button data-act="srec" class="s-rec" id="s-rec" aria-label="錄音"><i></i></button></div>
-      <div class="s-r"><label class="s-hp"><input type="checkbox" data-act="shp" ${mix().hp?'checked':''}> 🎧 有戴耳機</label></div>
+      <div class="s-r"><span class="s-tip" id="s-tip">點波形或歌詞選從哪裡開始錄</span></div>
     </div>
     <div class="s-msg" id="s-msg">載入中…</div>`;
   app.appendChild(d);document.body.classList.add('studio');
@@ -49,11 +49,11 @@ function toMono(b){const o=S.ctx.createBuffer(1,b.length,b.sampleRate),d=o.getCh
 function closeStudio(){
   if(!S)return;if(S.recd)sRecStop(true);sStop();stSave();
   const p=S.pos;removeEventListener('resize',sLayout);
-  const d=document.getElementById('studio');if(d)d.remove();document.body.classList.remove('studio');S=null;
+  const d=document.getElementById('studio');if(d)d.remove();document.body.classList.remove('studio','studio-big');S=null;
   if(au){au.currentTime=p;show(secAt(p+.05))}drawPlayer();
 }
 // 大畫面：軌道收成一條細的，情境圖撐滿；錄音時自動切過去，錄完回來
-function sBig(){const d=document.getElementById('studio');if(!d)return;const on=!!(S.big||S.recd);d.classList.toggle('big',on);const b=document.getElementById('s-picb');if(b){b.classList.toggle('on',on);b.textContent=on?'🎚 軌道':'🖼 大畫面'}setTimeout(sLayout,320)}
+function sBig(){const d=document.getElementById('studio');if(!d)return;const on=!!(S.big||S.recd);S.bigOn=on;d.classList.toggle('big',on);document.body.classList.toggle('studio-big',on);if(on){const p=sNow();show(secAt(p+.05),false);lightLine()}const b=document.getElementById('s-picb');if(b){b.classList.toggle('on',on);b.textContent=on?'🎚 軌道':'🖼 大畫面'}setTimeout(sLayout,320)}
 function sMsg(t){const e=document.getElementById('s-msg');if(e){e.textContent=t;e.hidden=!t}}
 function peaksOf(buf){
   const hop=Math.round(buf.sampleRate*.02),n=Math.ceil(buf.length/hop),p=new Float32Array(n),ch=[];
@@ -116,6 +116,7 @@ function sHead(){
   // 錄音中：紅色區塊跟著長，不重畫波形（省力，錄音才不會被拖累）
   const rb=document.getElementById('s-rb');if(S.recd&&S.recd.from!=null){const me=document.querySelector('#studio canvas[data-l=me]'),a=Math.max(S.recd.keep,S.view[0]);
     rb.hidden=false;rb.style.left=(me.offsetLeft+sX(a,me.clientWidth))+'px';rb.style.top=me.offsetTop+'px';rb.style.height=me.clientHeight+'px';rb.style.width=Math.max(0,sX(p,me.clientWidth)-sX(a,me.clientWidth))+'px'}else rb.hidden=true;
+  if(S.bigOn&&getTimes().length>1){const k=secAt(p+.05);if(k!==cur)show(k);lightLine()}
   const ly=document.getElementById('s-lyr');if(ly&&blocks){const s=secAt(p+.05),L=getLines(),off=lineOff(s);let k=-1;L.forEach((x,j)=>{if(x!=null&&p>=x-.3)k=j});
     const html=`<small>${esc(SCENES[key].steps[s].sec)}</small>`+(blocks[s]||[]).map((l,j)=>`<p class="${off+j===k?'on':off+j<k?'past':''}">${esc(l)}</p>`).join('');
     if(ly.dataset.h!==html){ly.innerHTML=html;ly.dataset.h=html}}
@@ -152,12 +153,16 @@ if(this.n>=4096){this.port.postMessage({t:this.t,d:this.b.slice(0,this.n)});this
 async function sRecStart(){
   if(S.recd)return sRecStop();sStop();
   const m=mix();let st;
-  try{st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:!m.hp,noiseSuppression:false,autoGainControl:false,channelCount:1}})}
+  // 不開「消除回音」：iPad 開了會切到通話模式（音質差、會卡）。喇叭的歌會被錄進去一點，剛好拿來對齊
+  try{st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}})}
   catch(e){alert('沒辦法用麥克風：到「設定 → Safari → 麥克風」允許，或重新打開再按一次');return}
+  // 麥克風打開後 iPad 會換音訊設定，舊的引擎會卡；拿到麥克風之後才開新的引擎
+  try{const old=actx;actx=null;S.ctx=audioCtx();old&&old.close&&old.close()}catch(e){}
   const c=S.ctx;if(c.state==='suspended')await c.resume();
-  const keep=S.sel?Math.max(0,S.sel[0]-.5):S.pos,from=Math.max(0,(S.sel?S.sel[0]:S.pos)-2),until=S.sel?Math.min(S.dur,S.sel[1]+.5):0;
+  // 從播放頭開始錄（前面多播 2 秒預備）；播放頭在選的段落裡，唱到段尾自動停
+  const p0=S.pos,keep=Math.max(0,p0-.3),from=Math.max(0,p0-2),until=S.sel&&p0<S.sel[1]-.5?Math.min(S.dur,S.sel[1]+.5):0;
   const inp=c.createMediaStreamSource(st),z=c.createGain();z.gain.value=0;z.connect(c.destination);
-  const r={st,inp,z,node:null,chunks:[],start:null,len:0,until,keep,from};S.recd=r;
+  const r={st,inp,z,node:null,chunks:[],start:null,len:0,until,keep,from,p0,heard:S.lanes.filter(l=>l.id!=='me'&&l.buf&&audible(l)).map(l=>l.id)};S.recd=r;
   // 你聽到的歌比引擎晚 outputLatency，麥克風收到的聲音又晚一點；先估一個，錄完再用原曲自動對齊
   const lat=(c.outputLatency||0)+(c.baseLatency||0)*2;
   const onChunk=(t,d)=>{if(S&&S.recd===r){if(r.start==null)r.start=S.from+(t-S.T)-lat;r.chunks.push(d);r.len+=d.length}};
@@ -174,30 +179,45 @@ async function sRecStop(cancel){
   const r=S&&S.recd;if(!r)return;S.recd=null;sStop();
   try{r.inp.disconnect();r.node.disconnect();r.z.disconnect()}catch(e){}r.st.getTracks().forEach(t=>t.stop());
   document.getElementById('s-rec').classList.remove('on');document.getElementById('studio').classList.remove('recording');sBig();
-  // iPad 用過麥克風後聲音會一直停在「通話模式」（音質差、會切），換一個新的音訊引擎就恢復
+  // 麥克風關掉後 iPad 又換回一般音訊設定，再換一個新的引擎
   try{const old=actx;actx=null;S.ctx=audioCtx();old&&old.close&&old.close()}catch(e){}
   if(cancel||!r.len||r.start==null){sDraw();return}
   const sr=r.node&&r.node.context?r.node.context.sampleRate:44100,all=new Float32Array(r.len);let o=0;r.chunks.forEach(ch=>{all.set(ch,o);o+=ch.length});
   const cut=Math.max(0,Math.round((r.keep-r.start)*sr)),data=all.subarray(cut);if(data.length<sr*.5){sDraw();return}
   const buf=S.ctx.createBuffer(1,data.length,sr);buf.copyToChannel(data,0);
-  const take={id:Date.now(),blob:toWav(buf),start:r2(r.start+cut/sr),lead:0,track,end:r2(r.start+(cut+data.length)/sr),at:Date.now(),ec:!mix().hp,adj:0};
+  const take={id:Date.now(),blob:toWav(buf),start:r2(r.start+cut/sr),lead:0,track,end:r2(r.start+(cut+data.length)/sr),at:Date.now(),heard:r.heard,adj:0};
   takes.push(take);S.bufs.set(take.id,{buf,peaks:peaksOf(buf)});
   const lag=sAutoAdj(take);await saveTakes();
-  S.pos=Math.max(0,(S.sel?S.sel[0]:take.start)-1);S.selTake=null;sDraw();
-  hint(lag!=null?`錄好了，已經自動對齊（挪了 ${Math.abs(lag).toFixed(2)} 秒）。按 ▶ 聽聽看`:'錄好了！按 ▶ 聽你和歌一起');hintT=setTimeout(()=>hint(''),3500);
+  S.pos=Math.max(0,r.p0-1);S.selTake=null;sDraw();
+  hint(lag!=null?`錄好了，已經自動對齊。按 ▶ 聽聽看`:'錄好了，但這次對不太出來，點你的錄音用「早一點／晚一點」調');hintT=setTimeout(()=>hint(''),3500);
 }
-// 自動對齊：拿你的聲音跟原唱（有放人聲檔用人聲，沒有就用原曲）比每個字開口的節奏，找出差幾秒
+// 自動對齊：
+// 1. 錄音裡會有一點喇叭放出來的歌，跟原本的歌比對，找出差幾毫秒（最準）
+// 2. 對不出來（戴耳機）就拿你的聲音跟原唱比開口的節奏
 function sAutoAdj(k){
-  const ref=S.lanes.find(l=>l.id==='vocal'&&l.buf)||S.lanes.find(l=>l.id==='orig'&&l.buf);const v=S.bufs.get(k.id);if(!ref||!v)return null;
-  const dt=.01,on=(buf,t0,t1)=>{const sr=buf.sampleRate,hop=Math.round(sr*dt),a=Math.max(0,Math.round(t0*sr)),n=Math.max(0,Math.floor((Math.min(buf.length,Math.round(t1*sr))-a)/hop)),ch=buf.getChannelData(0),e=new Float32Array(n),o=new Float32Array(n);
-    for(let f=0;f<n;f++){let s=0;const b=a+f*hop;for(let i=b;i<b+hop;i+=2)s+=ch[i]*ch[i];e[f]=Math.log(1e-7+s/(hop/2))}
-    for(let f=1;f<n;f++)o[f]=Math.max(0,e[f]-e[f-1]);let m=0;for(const x of o)m+=x;m/=n||1;for(let f=0;f<n;f++)o[f]-=m;return o};
-  const R=.5,A=k.start,B=k.end,x=on(v.buf,0,v.buf.duration),y=on(ref.buf,Math.max(0,A-R),B+R),base=Math.round((A-Math.max(0,A-R))/dt);
-  let best=0,bv=-Infinity,sum=0,cnt=0;
-  for(let L=-Math.round(R/dt);L<=Math.round(R/dt);L++){let s=0,n=0;for(let i=0;i<x.length;i++){const j=i+base+L;if(j<0||j>=y.length)continue;s+=x[i]*y[j];n++}if(!n)continue;s/=n;sum+=s;cnt++;if(s>bv){bv=s;best=L}}
-  if(!cnt||bv<=0||bv<(sum/cnt)*4)return null;
-  k.adj=r2(best*dt);return k.adj;
+  const v=S.bufs.get(k.id);if(!v)return null;
+  const env=(buf,t0,t1,dt)=>{const sr=buf.sampleRate,hop=Math.max(1,Math.round(sr*dt)),a=Math.max(0,Math.round(t0*sr)),n=Math.max(0,Math.floor((Math.min(buf.length,Math.round(t1*sr))-a)/hop)),e=new Float32Array(n),C=[];
+    for(let c=0;c<Math.min(2,buf.numberOfChannels);c++)C.push(buf.getChannelData(c));
+    for(let f=0;f<n;f++){let s=0;const b=a+f*hop;for(let i=b;i<b+hop;i++){let x=0;for(const d of C)x+=d[i];s+=x*x}e[f]=Math.log(1e-9+s/hop)}
+    const o=new Float32Array(n);for(let f=1;f<n;f++)o[f]=Math.max(0,e[f]-e[f-1]);let m=0;for(const x of o)m+=x;m/=n||1;let q=0;for(let f=0;f<n;f++){o[f]-=m;q+=o[f]*o[f]}q=Math.sqrt(q/(n||1))||1;for(let f=0;f<n;f++)o[f]/=q;return o};
+  const lagOf=(ref,dt,R)=>{const A=k.start,B=k.end,x=env(v.buf,0,v.buf.duration,dt),a0=Math.max(0,A-R),y=env(ref,a0,B+R,dt),base=Math.round((A-a0)/dt);
+    let best=0,bv=-Infinity,sum=0,s2=0,cnt=0;
+    for(let L=-Math.round(R/dt);L<=Math.round(R/dt);L++){let s=0,n=0;for(let i=0;i<x.length;i+=2){const j=i+base+L;if(j<0||j>=y.length)continue;s+=x[i]*y[j];n++}if(!n)continue;s/=n;sum+=s;s2+=s*s;cnt++;if(s>bv){bv=s;best=L}}
+    if(!cnt)return null;const mu=sum/cnt,sd=Math.sqrt(Math.max(1e-9,s2/cnt-mu*mu));return (bv-mu)/sd>8?best*dt:null};
+  // 1. 錄音當下有在播的那幾軌混在一起
+  const heard=(k.heard||[k.track]).map(id=>S.lanes.find(l=>l.id===id&&l.buf)).filter(Boolean);
+  if(heard.length){const b0=heard[0].buf,sr=b0.sampleRate,a=Math.max(0,Math.floor((k.start-1)*sr)),b=Math.min(b0.length,Math.ceil((k.end+1)*sr)),mixd=S.ctx.createBuffer(1,Math.max(1,b-a),sr),d=mixd.getChannelData(0);
+    // 只取錄音前後那一段來混（整首太大）
+    heard.forEach(l=>{const c=l.buf.getChannelData(0),c1=l.buf.numberOfChannels>1?l.buf.getChannelData(1):c,g=l.vol;for(let i=a;i<b&&i<l.buf.length;i++)d[i-a]+=(c[i]+c1[i])/2*g});
+    const shift=a/sr,kk={start:k.start-shift,end:k.end-shift},save=k.start;
+    const lg=(()=>{const o=k.start,oe=k.end;k.start=kk.start;k.end=kk.end;try{return lagOf(mixd,.005,.45)}finally{k.start=o;k.end=oe}})();
+    if(lg!=null){k.adj=r2(lg);return k.adj}}
+  // 2. 跟原唱比
+  const ref=S.lanes.find(l=>l.id==='vocal'&&l.buf)||S.lanes.find(l=>l.id==='orig'&&l.buf);if(!ref)return null;
+  const lg=lagOf(ref.buf,.01,.4);if(lg==null)return null;k.adj=r2(lg);return k.adj;
 }
+// 給情境頁用：錄音室在「大畫面」時，情境頁的換段、逐句亮跟著錄音室的時間走
+function studioClock(){return S&&S.bigOn?sNow():null}
 // 手勢
 const pts=new Map();let g0=null;
 function laneAt(y){return [...document.querySelectorAll('#studio .s-lane')].find(el=>{const r=el.getBoundingClientRect();return y>=r.top&&y<=r.bottom})}
@@ -233,13 +253,12 @@ app.addEventListener('click',e=>{
   else if(act==='splay'){if(S.recd)sRecStop();else if(S.playing)sStop();else sPlay(S.pos)}
   else if(act==='srec')sRecStart();
   else if(act==='shome'){const was=S.playing;S.pos=S.sel?Math.max(0,S.sel[0]-1):0;if(was)sPlay(S.pos);else sHead()}
-  else if(act==='ssec'){const i=+a.dataset.i,[x,y]=secRange(i);if(S.sel&&Math.abs(S.sel[0]-x)<.01){S.sel=null}else{S.sel=[x,y];sView0();S.pos=Math.max(0,x-1);if(S.playing)sPlay(S.pos)}sDraw()}
+  else if(act==='ssec'){const i=+a.dataset.i,[x,y]=secRange(i);if(S.sel&&Math.abs(S.sel[0]-x)<.01){S.sel=null}else{S.sel=[x,y];sView0();S.pos=x;if(S.playing)sPlay(S.pos)}sDraw()}
   else if(act==='szoom'){const whole=S.view[0]>0.5||S.view[1]<S.dur-.5;if(whole)S.view=[0,S.dur];else sView0();sDraw()}
   else if(act==='sloop'){S.loop=!S.loop;sDraw()}
   else if(act==='spic'){S.big=!S.big;sBig()}
   else if(act==='smute'){const l=lane(a.dataset.l);l.mute=!l.mute;if(l.mute)l.solo=false;sGains();sDraw();stSave()}
   else if(act==='ssolo'){const l=lane(a.dataset.l);l.solo=!l.solo;if(l.solo)l.mute=false;sGains();sDraw()}
-  else if(act==='shp')setMix({hp:a.checked});
   else if(act==='sadj'){const k=takes.find(x=>x.id===S.selTake);if(!k)return;k.adj=r2((k.adj||0)+(+a.dataset.d)*.02);saveTakes();if(S.playing)sPlay(sNow());sDraw()}
   else if(act==='sauto'){const k=takes.find(x=>x.id===S.selTake);if(!k)return;const old=k.adj;k.adj=0;const lag=sAutoAdj(k);if(lag==null){k.adj=old;hint(S.lanes.some(l=>(l.id==='orig'||l.id==='vocal')&&l.buf)?'這次聽不出來，用早一點／晚一點手動調':'要先放原曲（或人聲檔）才能自動對齊')}else{hint(`對齊了（挪了 ${Math.abs(lag).toFixed(2)} 秒）`);saveTakes()}hintT=setTimeout(()=>hint(''),2500);if(S.playing)sPlay(sNow());sDraw()}
   else if(act==='sdel'){if(!confirm('刪掉這次錄音？'))return;takes=takes.filter(k=>k.id!==S.selTake);S.selTake=null;saveTakes();if(S.playing)sPlay(sNow());sDraw()}
@@ -247,3 +266,6 @@ app.addEventListener('click',e=>{
   else if(act==='talign'){const k=takes.find(x=>x.id===S.selTake);if(k)alignTake(k)}
 },true);
 app.addEventListener('input',e=>{if(!S)return;const a=e.target;if(a.dataset.act!=='svol')return;const l=S.lanes.find(x=>x.id===a.dataset.l);l.vol=+a.value;sGains();stSave()});
+// 大畫面時點情境頁上的歌詞：從那句開始（錄音也從那句錄）
+function studioPickLine(l){if(!S||S.recd)return;const L=getLines(),t=getTimes(),sec=secOfLine(l);const x=L[l]!=null?Math.max(0,L[l]-.4):(t[sec]||0);const was=S.playing;S.pos=x;if(was)sPlay(x);else{sHead();show(sec);lightLine()}
+  const tp=document.getElementById('s-tip');if(tp)tp.textContent=`從 ${mmss(x)} 開始`}

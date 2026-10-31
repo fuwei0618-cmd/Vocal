@@ -148,8 +148,16 @@ body.studio{overflow:hidden}
 .s-top{display:flex;align-items:center;gap:12px;padding:10px 16px}.s-top b{font-size:17px}.s-tr{color:var(--muted);font-size:12px}.s-time{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted)}
 .s-pic{position:relative;margin:0 16px;border-radius:14px;overflow:hidden;background:#000 center/cover no-repeat;min-height:0}
 .s-pic::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,8,6,.72),rgba(10,8,6,.35) 55%,rgba(10,8,6,0))}
-#studio.big{grid-template-rows:auto minmax(0,1fr) 0 72px auto auto}#studio.big .s-ruler{visibility:hidden;height:0}
-#studio.big .s-lane:not(.me){display:none}#studio.big .s-lanes{min-height:0}#studio.big .s-take{display:none}
+/* 大畫面：錄音室變透明，底下就是原本的情境頁（動態的圖、亮點、字幕），只留上面一條、下面我的聲音和按鈕 */
+#studio.big{background:transparent;pointer-events:none;grid-template-rows:auto minmax(0,1fr) 0 64px auto auto}
+#studio.big>.s-top,#studio.big>.s-lanes,#studio.big>.s-bot{pointer-events:auto}
+#studio.big .s-pic{visibility:hidden}#studio.big .s-ruler{visibility:hidden;height:0}
+#studio.big .s-lane:not(.me){display:none}#studio.big .s-lanes{min-height:0;background:linear-gradient(rgba(10,8,6,0),rgba(10,8,6,.85) 40%);padding-top:4px}#studio.big .s-take{display:none}
+#studio.big .s-top{background:linear-gradient(rgba(10,8,6,.75),rgba(10,8,6,0))}#studio.big .s-bot{background:rgba(10,8,6,.88)}
+#studio.big.recording .s-top{background:linear-gradient(rgba(140,40,30,.7),rgba(140,40,30,0))}
+body.studio-big .player{display:none}body.studio-big .bar{visibility:hidden}
+body.studio-big .sub{bottom:calc(env(safe-area-inset-bottom,0px) + 190px)!important}
+.s-tip{font-size:12px;color:var(--muted)}
 .s-lyr{position:relative;height:100%;box-sizing:border-box;padding:12px 24px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-shadow:0 1px 8px rgba(0,0,0,.6)}.s-lyr small{color:var(--glow);font-size:12px;letter-spacing:.06em}
 .s-lyr p{margin:2px 0;font-size:clamp(16px,2.3vw,22px);color:rgba(255,255,255,.55);line-height:1.35}.s-lyr p.on{color:#fff;font-weight:600}.s-lyr p.past{color:rgba(255,255,255,.3)}
 .s-ruler{position:relative;height:40px;margin:0 16px 0 128px}
@@ -297,7 +305,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=42;
+const VER=43;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -381,6 +389,7 @@ function show(i,anim=true){
 
 app.addEventListener('click',e=>{
   if(e.target.closest('#studio'))return;
+  if(document.body.classList.contains('studio-big')){const ln=e.target.closest('.sub .ln,.sub .ln2');if(ln)studioPickLine(+ln.dataset.l);return}
   const a=e.target.closest('[data-act]');
   if(a){const act=a.dataset.act;if(a.closest('#menu')&&act!=='menu')closeMenu();
     if(act==='save'){const t=document.getElementById('lyr-in').value.trim();if(!t)return;saveLyrics(t);editing=false;cur=0;render();scrollTo(0,0);
@@ -593,6 +602,7 @@ function finishRec(){
 }
 // 換段：對拍中就是點一句；有對過拍、正在播，就把音樂跳到那段
 function step(i){
+  if(document.body.classList.contains('studio-big'))return;
   if(au&&rec){tapLine(i<cur);return}
   const n=SCENES[key].steps.length;i=Math.max(0,Math.min(n-1,i));
   const t=getTimes();
@@ -610,8 +620,9 @@ function sync(){
 // 逐句：正在唱的那句亮、唱過的變淡（有人聲分析過才有）
 function lightLine(){
   const L=getLines(),sub=document.getElementById('sub');if(!sub)return;
-  const on=au&&(rec||(!au.paused&&L.length));sub.classList.toggle('lines',!!on);if(!on)return;
-  let k=-1;if(rec)k=armed?-1:recLine-1;else L.forEach((x,j)=>{if(x!=null&&au.currentTime>=x-.3)k=j});
+  const sc=typeof studioClock==='function'?studioClock():null,now=sc!=null?sc:au?au.currentTime:0;
+  const on=sc!=null?L.length>0:au&&(rec||(!au.paused&&L.length));sub.classList.toggle('lines',!!on);if(!on)return;
+  let k=-1;if(rec)k=armed?-1:recLine-1;else L.forEach((x,j)=>{if(x!=null&&now>=x-.3)k=j});
   sub.querySelectorAll('.ln').forEach(el=>{const j=+el.dataset.l;el.classList.toggle('on',j===k);el.classList.toggle('past',j<k)});
 }
 app.addEventListener('change',async e=>{
@@ -831,7 +842,7 @@ function closeToc(){const d=document.getElementById('toc');if(d)d.remove()}
 // 上下滑：翻歌詞找位置（音樂不跳），找到後點那一句就從那句播；8 秒沒動作就回到正在唱的地方
 let tx0=null,browsing=0,lpT=0,lpFired=false,lp0=null;
 // 長按一句歌詞：打開這句的工具（螢光筆、劃掉、小字、從這句改對拍）
-app.addEventListener('pointerdown',e=>{const ln=e.target.closest('.sub .ln');lpFired=false;if(!ln||rec)return;lp0=[e.clientX,e.clientY];clearTimeout(lpT);lpT=setTimeout(()=>{lpFired=true;openNote(+ln.dataset.l)},550)});
+app.addEventListener('pointerdown',e=>{const ln=e.target.closest('.sub .ln');lpFired=false;if(!ln||rec||document.body.classList.contains('studio-big'))return;lp0=[e.clientX,e.clientY];clearTimeout(lpT);lpT=setTimeout(()=>{lpFired=true;openNote(+ln.dataset.l)},550)});
 app.addEventListener('pointermove',e=>{if(lp0&&Math.hypot(e.clientX-lp0[0],e.clientY-lp0[1])>10){clearTimeout(lpT);lp0=null}});
 ['pointerup','pointercancel'].forEach(t=>app.addEventListener(t,()=>{clearTimeout(lpT);lp0=null}));
 app.addEventListener('contextmenu',e=>{if(e.target.closest('.sub'))e.preventDefault()});
@@ -939,6 +950,6 @@ function clearInk(){if(!confirm('把這一段畫的都清掉？'))return;const a
 function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementById(id);if(e)e.remove()});document.body.classList.remove('drawing')}
 render();
 </script>
-<script src="studio.js?v=42"></script>
+<script src="studio.js?v=43"></script>
 </body>
 </html>
