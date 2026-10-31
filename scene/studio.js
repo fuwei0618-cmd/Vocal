@@ -20,7 +20,7 @@ async function openStudio(){
      playing:false,srcs:[],gains:{},T:0,from:0,loop:true,recd:null,selTake:null,bufs:new Map(),raf:0};
   const d=document.createElement('div');d.id='studio';d.innerHTML=`
     <div class="s-top"><button data-act="sx">← 歌詞</button><b>${esc(SCENES[key].title)}</b><span class="s-time" id="s-time">0:00</span></div>
-    <div class="s-lyr" id="s-lyr"></div>
+    <div class="s-pic" style="background-image:url('${SCENES[key].img}')"><div class="s-lyr" id="s-lyr"></div></div>
     <div class="s-ruler" id="s-ruler"></div>
     <div class="s-lanes" id="s-lanes">${lanes.map(l=>`
       <div class="s-lane${l.id==='me'?' me':''}" data-l="${l.id}"><div class="s-h"><b>${l.name}</b><div class="s-ms"><button data-act="smute" data-l="${l.id}" aria-label="靜音">M</button><button data-act="ssolo" data-l="${l.id}" aria-label="只聽這條">S</button></div><input type="range" min="0" max="${l.id==='me'?2:1.5}" step=".05" value="${l.vol}" data-act="svol" data-l="${l.id}"></div><canvas data-l="${l.id}"></canvas></div>`).join('')}
@@ -28,7 +28,7 @@ async function openStudio(){
     </div>
     <div class="s-take" id="s-take" hidden></div>
     <div class="s-bot">
-      <div class="s-l"><button data-act="szoom" id="s-zoom">整首</button><button data-act="sloop" id="s-loop" class="on">🔁 重複</button></div>
+      <div class="s-l"><button data-act="spic" id="s-picb">🖼 大畫面</button><button data-act="szoom" id="s-zoom">整首</button><button data-act="sloop" id="s-loop" class="on">🔁 重複</button></div>
       <div class="s-c"><button data-act="shome" aria-label="回到開頭">⏮</button><button data-act="splay" class="s-pp" id="s-pp">▶</button><button data-act="srec" class="s-rec" id="s-rec" aria-label="錄音"><i></i></button></div>
       <div class="s-r"><label class="s-hp"><input type="checkbox" data-act="shp" ${mix().hp?'checked':''}> 🎧 有戴耳機</label></div>
     </div>
@@ -52,6 +52,8 @@ function closeStudio(){
   const d=document.getElementById('studio');if(d)d.remove();document.body.classList.remove('studio');S=null;
   if(au){au.currentTime=p;show(secAt(p+.05))}drawPlayer();
 }
+// 大畫面：軌道收成一條細的，情境圖撐滿；錄音時自動切過去，錄完回來
+function sBig(){const d=document.getElementById('studio');if(!d)return;const on=!!(S.big||S.recd);d.classList.toggle('big',on);const b=document.getElementById('s-picb');if(b){b.classList.toggle('on',on);b.textContent=on?'🎚 軌道':'🖼 大畫面'}setTimeout(sLayout,320)}
 function sMsg(t){const e=document.getElementById('s-msg');if(e){e.textContent=t;e.hidden=!t}}
 function peaksOf(buf){
   const hop=Math.round(buf.sampleRate*.02),n=Math.ceil(buf.length/hop),p=new Float32Array(n),ch=[];
@@ -64,7 +66,7 @@ async function takeBuf(k){if(S.bufs.has(k.id))return S.bufs.get(k.id);let b=null
 function sView0(){if(S.sel){const [a,b]=S.sel,pad=Math.max(2,(b-a)*.08);S.view=[Math.max(0,a-pad),Math.min(S.dur||b+pad,b+pad)]}else S.view=[0,S.dur||60]}
 function sX(t,w){const [v0,v1]=S.view;return (t-v0)/(v1-v0)*w}
 function sT(x,w){const [v0,v1]=S.view;return v0+x/w*(v1-v0)}
-function cvs(){return [...document.querySelectorAll('#studio canvas')]}
+function cvs(){return [...document.querySelectorAll('#studio canvas')].filter(c=>c.offsetParent)}
 function sLayout(){
   if(!S)return;
   // 軌道高度：歌的軌用記住的高度，我的聲音填滿剩下的
@@ -165,13 +167,13 @@ async function sRecStart(){
   }catch(e){
     const pr=c.createScriptProcessor(4096,1,1);pr.onaudioprocess=e=>{const d=e.inputBuffer.getChannelData(0);onChunk((e.playbackTime||c.currentTime)-d.length/c.sampleRate*2,new Float32Array(d))};inp.connect(pr);pr.connect(z);r.node=pr;
   }
-  document.getElementById('s-rec').classList.add('on');document.getElementById('studio').classList.add('recording');
+  document.getElementById('s-rec').classList.add('on');document.getElementById('studio').classList.add('recording');sBig();
   sPlay(from);
 }
 async function sRecStop(cancel){
   const r=S&&S.recd;if(!r)return;S.recd=null;sStop();
   try{r.inp.disconnect();r.node.disconnect();r.z.disconnect()}catch(e){}r.st.getTracks().forEach(t=>t.stop());
-  document.getElementById('s-rec').classList.remove('on');document.getElementById('studio').classList.remove('recording');
+  document.getElementById('s-rec').classList.remove('on');document.getElementById('studio').classList.remove('recording');sBig();
   // iPad 用過麥克風後聲音會一直停在「通話模式」（音質差、會切），換一個新的音訊引擎就恢復
   try{const old=actx;actx=null;S.ctx=audioCtx();old&&old.close&&old.close()}catch(e){}
   if(cancel||!r.len||r.start==null){sDraw();return}
@@ -234,6 +236,7 @@ app.addEventListener('click',e=>{
   else if(act==='ssec'){const i=+a.dataset.i,[x,y]=secRange(i);if(S.sel&&Math.abs(S.sel[0]-x)<.01){S.sel=null}else{S.sel=[x,y];sView0();S.pos=Math.max(0,x-1);if(S.playing)sPlay(S.pos)}sDraw()}
   else if(act==='szoom'){const whole=S.view[0]>0.5||S.view[1]<S.dur-.5;if(whole)S.view=[0,S.dur];else sView0();sDraw()}
   else if(act==='sloop'){S.loop=!S.loop;sDraw()}
+  else if(act==='spic'){S.big=!S.big;sBig()}
   else if(act==='smute'){const l=lane(a.dataset.l);l.mute=!l.mute;if(l.mute)l.solo=false;sGains();sDraw();stSave()}
   else if(act==='ssolo'){const l=lane(a.dataset.l);l.solo=!l.solo;if(l.solo)l.mute=false;sGains();sDraw()}
   else if(act==='shp')setMix({hp:a.checked});

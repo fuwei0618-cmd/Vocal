@@ -141,12 +141,16 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 @media (max-width:640px){.ctl{grid-template-columns:1fr 1fr;grid-template-areas:"c c" "l r";row-gap:2px}.ctl .c{grid-area:c;justify-content:center}.ctl .l{grid-area:l}.ctl .r{grid-area:r}
   .hint,.sub{bottom:calc(env(safe-area-inset-bottom,0px) + 168px)!important}}
 /* 錄音室 */
-#studio{position:fixed;inset:0;z-index:40;background:#14110d;display:grid;grid-template-rows:auto minmax(90px,1fr) auto minmax(0,2fr) auto auto;color:var(--ink);padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);user-select:none;-webkit-user-select:none}
+#studio{position:fixed;inset:0;z-index:40;background:#14110d;display:grid;grid-template-rows:auto minmax(150px,1.3fr) auto minmax(0,2fr) auto auto;transition:grid-template-rows .3s ease;color:var(--ink);padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);user-select:none;-webkit-user-select:none}
 body.studio{overflow:hidden}
 #studio button{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--ink);border-radius:99px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer}
 #studio button.on{background:rgba(242,194,123,.22);border-color:var(--glow);color:var(--glow)}
 .s-top{display:flex;align-items:center;gap:12px;padding:10px 16px}.s-top b{font-size:17px}.s-tr{color:var(--muted);font-size:12px}.s-time{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted)}
-.s-lyr{padding:4px 24px;overflow:hidden;display:flex;flex-direction:column;justify-content:center}.s-lyr small{color:var(--glow);font-size:12px;letter-spacing:.06em}
+.s-pic{position:relative;margin:0 16px;border-radius:14px;overflow:hidden;background:#000 center/cover no-repeat;min-height:0}
+.s-pic::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,8,6,.72),rgba(10,8,6,.35) 55%,rgba(10,8,6,0))}
+#studio.big{grid-template-rows:auto minmax(0,1fr) 0 72px auto auto}#studio.big .s-ruler{visibility:hidden;height:0}
+#studio.big .s-lane:not(.me){display:none}#studio.big .s-lanes{min-height:0}#studio.big .s-take{display:none}
+.s-lyr{position:relative;height:100%;box-sizing:border-box;padding:12px 24px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-shadow:0 1px 8px rgba(0,0,0,.6)}.s-lyr small{color:var(--glow);font-size:12px;letter-spacing:.06em}
 .s-lyr p{margin:2px 0;font-size:clamp(16px,2.3vw,22px);color:rgba(255,255,255,.55);line-height:1.35}.s-lyr p.on{color:#fff;font-weight:600}.s-lyr p.past{color:rgba(255,255,255,.3)}
 .s-ruler{position:relative;height:40px;margin:0 16px 0 128px}
 .s-ruler button{position:absolute;top:4px;height:32px;border-radius:8px!important;padding:0 6px!important;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:12px!important;background:rgba(255,255,255,.08)!important}
@@ -171,7 +175,7 @@ body.studio{overflow:hidden}
 #studio.recording .s-top{background:rgba(224,90,78,.25)}
 .s-hp{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}.s-hp input{accent-color:#f2c27b}
 .s-msg{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);background:rgba(0,0,0,.7);padding:10px 16px;border-radius:12px}
-@media (max-width:640px){.s-lane{grid-template-columns:70px 1fr}.s-h input{display:none}.s-h b{font-size:11px}
+@media (max-width:640px){.s-pic{margin:0 8px}#studio .s-bot button{white-space:nowrap;padding:6px 10px}.s-l{gap:5px}.s-hp{font-size:12px}.s-lane{grid-template-columns:70px 1fr}.s-h input{display:none}.s-h b{font-size:11px}
   .s-bot{grid-template-columns:1fr 1fr;grid-template-areas:"c c" "l r"}.s-c{grid-area:c;justify-content:center}.s-l{grid-area:l}.s-r{grid-area:r}#studio{grid-template-rows:auto minmax(100px,1fr) auto minmax(0,1.6fr) auto auto}}
 .recbar{grid-column:1/-1;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:6px 0}
 .recbar b{color:#ff8a80}.recbar span{color:var(--ink);font-size:14px}
@@ -293,7 +297,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=41;
+const VER=42;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -935,6 +939,6 @@ function clearInk(){if(!confirm('把這一段畫的都清掉？'))return;const a
 function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementById(id);if(e)e.remove()});document.body.classList.remove('drawing')}
 render();
 </script>
-<script src="studio.js?v=41"></script>
+<script src="studio.js?v=42"></script>
 </body>
 </html>
