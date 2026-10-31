@@ -358,7 +358,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=58;
+const VER=59;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -372,6 +372,13 @@ function saveLyrics(t){let all={};try{all=JSON.parse(localStorage.getItem(LKEY)|
 // 依每段行數切歌詞（略過空行和分隔線）；多出來的行併到最後一段
 // 歌詞裡空一行＝換段：空出來的段數剛好等於這首的段數，就照你空的分；不然照預設每段幾行
 function groupsOf(text){const g=[];let c=[];text.split(/\r?\n/).map(s=>s.trim()).forEach(l=>{if(!l||/^[-—=_~*·.]+$/.test(l)){if(c.length){g.push(c);c=[]}}else c.push(l)});if(c.length)g.push(c);return g}
+// 你空行分出的段數跟預設不一樣：每一段變成一頁，沿用它落在預設哪一段的圖點和提示字（已經對過拍、段數不合的舊歌照舊）
+function stepsFor(sc,text){
+  const base=sc.base||(sc.base=sc.steps);const g=text?groupsOf(text):[];const rt=rawTimes();
+  if(g.length<2||g.length===base.length||(rt.length>1&&rt.length===base.length))return base;
+  const ends=[];let c=0;base.forEach(s=>{c+=s.n;ends.push(c)});const tot=g.reduce((a,b)=>a+b.length,0);let at=0;
+  return g.map(b=>{const m=(at+b.length/2)/tot*c;at+=b.length;let k=ends.findIndex(e=>m<e);if(k<0)k=base.length-1;return Object.assign({},base[k],{n:b.length})});
+}
 function split(text,steps){
   const g=groupsOf(text);if(g.length===steps.length)return g;
   const lines=text.split(/\r?\n/).map(s=>s.trim()).filter(s=>s&&!/^[-—=_~*·.]+$/.test(s));let i=0;
@@ -391,13 +398,13 @@ function render(){
   if(!sc){app.innerHTML=`<div class="bar"><a href="../#songs">← 歌單</a></div><div class="empty">這首歌還沒有情境圖</div>`;return}
   document.title=sc.title+'・情境圖';document.body.classList.remove('drawing');
   document.body.classList.toggle('lay-top',sc.layout==='top');document.body.classList.toggle('bright',(sc.dim||1)<1);
-  const text=loadLyrics();blocks=text?split(text,sc.steps):null;const paste=!blocks||editing;
+  const text=loadLyrics();sc.steps=stepsFor(sc,text);blocks=text?split(text,sc.steps):null;const paste=!blocks||editing;
   document.body.classList.toggle('play',!paste);
   const bg=`<div class="blur" style="background-image:url('${esc(sc.img)}')"></div><div class="bg" id="bg"><img src="${esc(sc.img)}" alt="${esc(sc.title)}的情境圖"><div class="shade" id="shade"></div>${starsHtml(sc)}
     ${Object.entries(sc.spots).map(([k,s])=>`<div class="spot" data-spot="${k}" style="left:${s.x}%;top:${s.y}%"><i></i><b>${esc(s.name)}</b></div>`).join('')}</div><div class="veil"></div>`;
   const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${sc.artist?esc(sc.artist)+'・':''}v${VER}</span><button class="pgpill" data-act="pg" aria-label="練習進度">${pgDots(key)}</button>${paste?'':'<button class="menu" data-act="menu" aria-label="設定：放音樂、對拍、改歌詞">⋯</button>'}</div>`;
   const body=paste
-    ?`<div class="paste"><p>把這首歌的歌詞整首貼進來，一行一句、照順序。<br>每段中間空一行，就會照你空的地方分段（這首有 ${SCENES[key].steps.length} 段：${esc(SCENES[key].steps.map(x=>x.sec).join('、'))}）。<br>歌詞只存在這台裝置，不會放到網路上。</p>
+    ?`<div class="paste"><p>把這首歌的歌詞整首貼進來，一行一句、照順序。<br>每段中間空一行，就會照你空的地方分段；沒空行就照預設分（${esc((SCENES[key].base||SCENES[key].steps).map(x=>x.sec).join('、'))}）。<br>歌詞只存在這台裝置，不會放到網路上。</p>
       <textarea id="lyr-in" placeholder="第一句歌詞…">${esc(text)}</textarea>
       <div class="row">${text?'<button class="btn ghost" data-act="cancel">取消</button>':''}<button class="btn" data-act="save">存好</button></div></div>`
     :`<div class="tap" id="tap" aria-label="點一下換下一段"></div><div class="sub" id="sub" aria-live="polite"></div>
@@ -447,7 +454,7 @@ app.addEventListener('click',e=>{
   if(a){const act=a.dataset.act;if(a.closest('#menu')&&act!=='menu')closeMenu();
     if(act==='save'){const t=document.getElementById('lyr-in').value.trim();if(!t)return;saveLyrics(t);editing=false;cur=0;render();scrollTo(0,0);
       const g=groupsOf(t).length,N=SCENES[key].steps.length;
-      hint(g===N?`照你空的行分成 ${N} 段`:`你空出 ${g} 段，這首有 ${N} 段（${SCENES[key].steps.map(x=>x.sec).join('、')}），先照預設行數分`);hintT=setTimeout(()=>hint(''),g===N?2500:6000)}
+      hint(g===N?`照你空的行分成 ${N} 段`:g<2?`你沒空行，先照預設行數分成 ${N} 段`:`這首已經對過拍，先照原本的 ${N} 段`);hintT=setTimeout(()=>hint(''),g===N?2500:6000)}
     else if(act==='edit'){editing=true;render();scrollTo(0,0)}
     else if(act==='cancel'){editing=false;render()}
     else if(act==='prev'){if(au){au.currentTime=Math.max(0,au.currentTime-5);updateProg();sync()}else step(cur-1)}
@@ -1015,6 +1022,6 @@ function clearInk(){if(!confirm('把這一段畫的都清掉？'))return;const a
 function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementById(id);if(e)e.remove()});document.body.classList.remove('drawing')}
 render();
 </script>
-<script src="studio.js?v=58"></script>
+<script src="studio.js?v=59"></script>
 </body>
 </html>
