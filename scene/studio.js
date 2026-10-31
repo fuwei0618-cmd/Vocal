@@ -226,13 +226,17 @@ function laneAt(y){return [...document.querySelectorAll('#studio .s-lane')].find
 app.addEventListener('pointerdown',e=>{if(!S||!e.target.closest('#studio canvas'))return;e.preventDefault();try{e.target.setPointerCapture(e.pointerId)}catch(_){}
   pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
   const c=cvs()[0],w=c.clientWidth;
-  if(pts.size===1)g0={mode:'tap',x:e.clientX,y:e.clientY,view:S.view.slice(),w,target:e.target};
+  if(pts.size===1){g0={mode:'tap',x:e.clientX,y:e.clientY,view:S.view.slice(),w,target:e.target};
+    // 按在「我的聲音」的某次錄音上左右拖＝把那次錄音往前／往後挪（對齊用）
+    if(e.target.dataset.l==='me'&&!S.recd){const r=e.target.getBoundingClientRect(),x=sT(e.clientX-r.left,r.width),hit=sCover().find(({a,b})=>x>=a&&x<=b);
+      if(hit)g0.take={k:hit.k,adj0:hit.k.adj||0}}}
   else if(pts.size===2){const [p,q]=[...pts.values()];g0={mode:'pinch',dx:Math.abs(p.x-q.x)||1,dy:Math.abs(p.y-q.y)||1,cx:(p.x+q.x)/2,view:S.view.slice(),w,
     lane:(laneAt((p.y+q.y)/2)||{}).dataset,hs:Object.fromEntries(S.lanes.map(l=>[l.id,l.h]))}}
 });
 app.addEventListener('pointermove',e=>{if(!S||!pts.has(e.pointerId)||!g0)return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
   const c=cvs()[0],left=c.getBoundingClientRect().left;
-  if(g0.mode==='tap'&&Math.abs(e.clientX-g0.x)>8)g0.mode='pan';
+  if(g0.mode==='tap'&&Math.abs(e.clientX-g0.x)>8){g0.mode=g0.take?'move':'pan';if(g0.take){S.selTake=g0.take.k.id;sTake()}}
+  if(g0.mode==='move'){const [v0,v1]=g0.view,k=g0.take.k;k.adj=r2(g0.take.adj0+(e.clientX-g0.x)/g0.w*(v1-v0));sDraw();sTake();return}
   if(g0.mode==='pan'){const [v0,v1]=g0.view,sp=v1-v0,d=-(e.clientX-g0.x)/g0.w*sp,a=Math.max(0,Math.min(S.dur-sp,v0+d));S.view=[a,a+sp];sDraw()}
   else if(g0.mode==='pinch'&&pts.size>=2){const [p,q]=[...pts.values()],dx=Math.abs(p.x-q.x)||1,dy=Math.abs(p.y-q.y)||1;
     const [v0,v1]=g0.view,sp=v1-v0,ct=v0+(g0.cx-left)/g0.w*sp,nsp=Math.max(2,Math.min(S.dur,sp*g0.dx/dx)),f=(g0.cx-left)/g0.w;
@@ -246,6 +250,7 @@ app.addEventListener('pointermove',e=>{if(!S||!pts.has(e.pointerId)||!g0)return;
   if(g0&&g0.mode==='tap'&&t==='pointerup'&&!S.recd){const c=g0.target,r=c.getBoundingClientRect(),x=Math.max(0,Math.min(S.dur,sT(e.clientX-r.left,r.width)));
     if(c.dataset.l==='me'){const hit=sCover().find(({a,b})=>x>=a&&x<=b);S.selTake=hit?hit.k.id:null}
     const was=S.playing;S.pos=x;if(was)sPlay(x);else sHead();sDraw()}
+  if(g0&&g0.mode==='move'){saveTakes();if(S.playing)sPlay(sNow())}
   if(!pts.size){if(g0&&g0.mode==='pinch')stSave();g0=null}else if(g0&&g0.mode==='pinch')g0=null;
 }));
 app.addEventListener('click',e=>{
