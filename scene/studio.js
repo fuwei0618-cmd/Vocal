@@ -193,7 +193,7 @@ async function sRecStop(cancel){
   const take={id:Date.now(),blob:toWav(buf),start:r2(start0+cut/sr),lead:0,track,end:r2(start0+(cut+data.length)/sr),at:Date.now(),heard:r.heard,adj:0};
   takes.push(take);S.bufs.set(take.id,{buf,peaks:peaksOf(buf)});
   // 自動對不出來，就用她上次手動挪好的量
-  let lag=sAutoAdj(take);if(lag==null&&lsGet('scene-recadj-v1')){take.adj=+lsGet('scene-recadj-v1')||0;if(take.adj)lag=take.adj}await saveTakes();
+  let lag=sAutoAdj(take);if(lag!=null)lsSet('scene-recadj-v1',String(lag));else if(lsGet('scene-recadj-v1')){take.adj=+lsGet('scene-recadj-v1')||0;if(take.adj)lag=take.adj}await saveTakes();
   S.pos=Math.max(0,r.p0-1);S.selTake=null;sDraw();
   hint(lag!=null?`錄好了，已經自動對齊。按 ▶ 聽聽看`:'錄好了，但這次對不太出來，點你的錄音用「早一點／晚一點」調');hintT=setTimeout(()=>hint(''),3500);
 }
@@ -202,17 +202,20 @@ async function sRecStop(cancel){
 // 2. 對不出來（戴耳機）就拿你的聲音跟原唱比開口的節奏
 function sAutoAdj(k){
   const v=S.bufs.get(k.id);if(!v)return null;
-  const env=(buf,t0,t1,dt)=>{const sr=buf.sampleRate,hop=Math.max(1,Math.round(sr*dt)),a=Math.max(0,Math.round(t0*sr)),n=Math.max(0,Math.floor((Math.min(buf.length,Math.round(t1*sr))-a)/hop)),e=new Float32Array(n),C=[];
+  const env=(buf,t0,t1,dt,lvl)=>{const sr=buf.sampleRate,hop=Math.max(1,Math.round(sr*dt)),a=Math.max(0,Math.round(t0*sr)),n=Math.max(0,Math.floor((Math.min(buf.length,Math.round(t1*sr))-a)/hop)),e=new Float32Array(n),C=[];
     for(let c=0;c<Math.min(2,buf.numberOfChannels);c++)C.push(buf.getChannelData(c));
     for(let f=0;f<n;f++){let s=0;const b=a+f*hop;for(let i=b;i<b+hop;i++){let x=0;for(const d of C)x+=d[i];s+=x*x}e[f]=Math.log(1e-9+s/hop)}
-    const o=new Float32Array(n);for(let f=1;f<n;f++)o[f]=Math.max(0,e[f]-e[f-1]);let m=0;for(const x of o)m+=x;m/=n||1;let q=0;for(let f=0;f<n;f++){o[f]-=m;q+=o[f]*o[f]}q=Math.sqrt(q/(n||1))||1;for(let f=0;f<n;f++)o[f]/=q;return o};
-  const lagOf=(ref,dt,R)=>{const A=k.start,B=k.end,x=env(v.buf,0,v.buf.duration,dt),a0=Math.max(0,A-R),y=env(ref,a0,B+R,dt),base=Math.round((A-a0)/dt);
+    // lvl：比「哪裡有在唱」（音量起伏），不比開口瞬間；她跟著唱時這個最穩
+    if(lvl){let mx=-Infinity;for(const x of e)if(x>mx)mx=x;for(let f=0;f<n;f++)e[f]=Math.max(e[f],mx-7)}
+    const o=new Float32Array(n);if(lvl)o.set(e);else for(let f=1;f<n;f++)o[f]=Math.max(0,e[f]-e[f-1]);let m=0;for(const x of o)m+=x;m/=n||1;let q=0;for(let f=0;f<n;f++){o[f]-=m;q+=o[f]*o[f]}q=Math.sqrt(q/(n||1))||1;for(let f=0;f<n;f++)o[f]/=q;return o};
+  const lagOf=(ref,dt,R,lvl,Z)=>{const A=k.start,B=k.end,x=env(v.buf,0,v.buf.duration,dt,lvl),a0=Math.max(0,A-R),y=env(ref,a0,B+R,dt,lvl),base=Math.round((A-a0)/dt);
     let best=0,bv=-Infinity,sum=0,s2=0,cnt=0;
     for(let L=-Math.round(R/dt);L<=Math.round(R/dt);L++){let s=0,n=0;for(let i=0;i<x.length;i+=2){const j=i+base+L;if(j<0||j>=y.length)continue;s+=x[i]*y[j];n++}if(!n)continue;s/=n;sum+=s;s2+=s*s;cnt++;if(s>bv){bv=s;best=L}}
-    if(!cnt)return null;const mu=sum/cnt,sd=Math.sqrt(Math.max(1e-9,s2/cnt-mu*mu));return (bv-mu)/sd>8?best*dt:null};
+    if(!cnt)return null;const mu=sum/cnt,sd=Math.sqrt(Math.max(1e-9,s2/cnt-mu*mu));return (bv-mu)/sd>(Z||8)?best*dt:null};
   // 1. 錄音當下有在播的那幾軌混在一起
   const heard=(k.heard||[k.track]).map(id=>S.lanes.find(l=>l.id===id&&l.buf)).filter(Boolean);
-  if(heard.length){const b0=heard[0].buf,sr=b0.sampleRate,a=Math.max(0,Math.floor((k.start-1)*sr)),b=Math.min(b0.length,Math.ceil((k.end+1)*sr)),mixd=S.ctx.createBuffer(1,Math.max(1,b-a),sr),d=mixd.getChannelData(0);
+  // iPad 一定要開消除回音才錄得到，喇叭聲幾乎被消掉，這步多半對不出來；改成非常有把握才用
+  if(heard.length&&false){const b0=heard[0].buf,sr=b0.sampleRate,a=Math.max(0,Math.floor((k.start-1)*sr)),b=Math.min(b0.length,Math.ceil((k.end+1)*sr)),mixd=S.ctx.createBuffer(1,Math.max(1,b-a),sr),d=mixd.getChannelData(0);
     // 只取錄音前後那一段來混（整首太大）
     heard.forEach(l=>{const c=l.buf.getChannelData(0),c1=l.buf.numberOfChannels>1?l.buf.getChannelData(1):c,g=l.vol;for(let i=a;i<b&&i<l.buf.length;i++)d[i-a]+=(c[i]+c1[i])/2*g});
     const shift=a/sr,kk={start:k.start-shift,end:k.end-shift},save=k.start;
@@ -220,7 +223,8 @@ function sAutoAdj(k){
     if(lg!=null){k.adj=r2(lg);return k.adj}}
   // 2. 跟原唱比
   const ref=S.lanes.find(l=>l.id==='vocal'&&l.buf)||S.lanes.find(l=>l.id==='orig'&&l.buf);if(!ref)return null;
-  const lg=lagOf(ref.buf,.01,.8);if(lg==null)return null;k.adj=r2(lg);return k.adj;
+  // 先比「哪裡有在唱」（±1.5 秒），對不出來再比開口
+  const lg=lagOf(ref.buf,.02,1.5,true,3.5)??lagOf(ref.buf,.01,.8);if(lg==null)return null;k.adj=r2(lg);return k.adj;
 }
 // 給情境頁用：錄音室在「大畫面」時，情境頁的換段、逐句亮跟著錄音室的時間走
 function studioClock(){return S&&S.bigOn?sNow():null}
