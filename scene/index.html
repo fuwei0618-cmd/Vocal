@@ -314,7 +314,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=53;
+const VER=54;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -552,13 +552,13 @@ function openMenu(){
   app.appendChild(d);
 }
 // 練習進度：每首歌一份，存在這台裝置（總表的情境圖清單也讀同一份，兩邊點哪邊都算）
-const PG=[['tap','句對拍'],['lyr','背詞'],['rec','錄音通關'],['sv','SV 通關'],['live','上街演']];
+const PG=[['tap','句對拍'],['lyr','背詞'],['rec','錄音通關'],['ppl','唱給人聽'],['sv','SV 通關']];
 function pgAll(){try{return JSON.parse(localStorage.getItem('scene-prog-v1'))||{}}catch(e){return {}}}
 function pgToggle(k,id){const a=pgAll(),m=a[k]||(a[k]={});if(m[id])delete m[id];else{const d=new Date();m[id]=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}}
 function pgDots(k){const m=pgAll()[k]||{},n=PG.filter(([id])=>m[id]).length;return `<span>${PG.map(([id])=>m[id]?'●':'○').join('')}</span> ${n}/${PG.length}`}
 function openPg(){
   closeMenu();const m=pgAll()[key]||{};const d=document.createElement('div');d.className='sheet menu-sheet';d.id='menu';
-  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div><div class="grp pgl">${PG.map(([id,t],i)=>`<button data-act="pgs" data-s="${id}" class="${m[id]?'on':''}"><b>${m[id]?'✓':i+1}</b>${t}<small>${m[id]?m[id].slice(5).replace('-','/')+' 完成':''}</small></button>`).join('')}</div>
+  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div><div class="grp pgl">${PG.map(([id,t],i)=>`<button data-act="pgs" data-s="${id}" class="${m[id]?'on':''}"><b>${m[id]?'✓':i+1}</b>${t}<small>${m[id]?m[id].slice(5).replace('-','/')+' 完成':id==='ppl'?'上課、朋友 KTV':id==='sv'?'街演':''}</small></button>`).join('')}</div>
     <small class="tip">點一下打勾，再點一下取消。歌單的情境圖清單也會一起更新</small><div class="row" style="justify-content:flex-end"><button data-act="mclose">關閉</button></div>`;
   app.appendChild(d)}
 function closeMenu(){const d=document.getElementById('menu');if(d){d.remove();wakePlayer()}}
@@ -971,6 +971,6 @@ function clearInk(){if(!confirm('把這一段畫的都清掉？'))return;const a
 function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementById(id);if(e)e.remove()});document.body.classList.remove('drawing')}
 render();
 </script>
-<script src="studio.js?v=53"></script>
+<script src="studio.js?v=54"></script>
 </body>
 </html>
