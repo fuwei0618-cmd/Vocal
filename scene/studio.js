@@ -220,10 +220,12 @@ function sAutoAdj(k){
     if(!cnt)return null;const mu=sum/cnt,sd=Math.sqrt(Math.max(1e-9,s2/cnt-mu*mu));return (bv-mu)/sd>(Z||8)?best*dt:null};
   // 比「哪裡有在唱」：音量起伏的相關係數（0～1），最像的那個位置夠像（>0.25）就用
   const lagLvl=(ref,dt,R)=>{const A=k.start,B=k.end,x=env(v.buf,0,v.buf.duration,dt,true),a0=Math.max(0,A-R),y=env(ref,a0,B+R,dt,true),base=Math.round((A-a0)/dt),M=Math.round(R/dt);
-    let best=0,bv=-2;for(let L=-M;L<=M;L++){let sxy=0,sx=0,sy=0,sxx=0,syy=0,n=0;
+    let best=0,bv=-2;const cs=new Map();for(let L=-M;L<=M;L++){let sxy=0,sx=0,sy=0,sxx=0,syy=0,n=0;
       for(let i=0;i<x.length;i++){const j=i+base+L;if(j<0||j>=y.length)continue;const a=x[i],b=y[j];sxy+=a*b;sx+=a;sy+=b;sxx+=a*a;syy+=b*b;n++}
-      if(n<x.length*.6)continue;const c=(sxy-sx*sy/n)/Math.sqrt(Math.max(1e-9,(sxx-sx*sx/n)*(syy-sy*sy/n)));if(c>bv){bv=c;best=L}}
-    S.lastCorr=bv;return bv>.25&&Math.abs(best)<M?best*dt:null};
+      if(n<x.length*.6)continue;const c=(sxy-sx*sy/n)/Math.sqrt(Math.max(1e-9,(sxx-sx*sx/n)*(syy-sy*sy/n)));cs.set(L,c);if(c>bv){bv=c;best=L}}
+    // 第二像的位置（離最佳 0.3 秒以外）不能差不多像，不然是節奏重複造成的假對齊
+    let b2=-2;cs.forEach((c,L)=>{if(Math.abs(L-best)*dt>.3&&c>b2)b2=c});
+    S.lastCorr=[bv,b2];return bv>.25&&bv-b2>.06&&Math.abs(best)<M?best*dt:null};
   // 1. 錄音當下有在播的那幾軌混在一起
   const heard=(k.heard||[k.track]).map(id=>S.lanes.find(l=>l.id===id&&l.buf)).filter(Boolean);
   // iPad 一定要開消除回音才錄得到，喇叭聲幾乎被消掉，這步多半對不出來；改成非常有把握才用
