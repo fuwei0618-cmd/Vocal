@@ -152,9 +152,10 @@ function sLoop(){
 async function sRecStart(){
   if(S.recd)return sRecStop();sStop();
   const m=mix();let st;
-  // 先用高音質（不開消除回音＝不進 iPad 通話模式、不破音）；這樣錄到靜音的話，記下來之後改用通話模式（一定錄得到）
-  const ec=lsGet('scene-ec-v1')==='1';
-  try{st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:ec,noiseSuppression:false,autoGainControl:false}})}
+  // 她的 iPad 不開消除回音就錄成靜音（v43、v44、v47 都是），只能用 iPad 預設的錄音設定。
+  // 之前關掉「自動音量」會讓大聲唱的地方爆掉（破音），所以全部用預設
+  const ec=true;
+  try{st=await navigator.mediaDevices.getUserMedia({audio:true})}
   catch(e){alert('沒辦法用麥克風：到「設定 → Safari → 麥克風」允許，或重新打開再按一次');return}
   const c=S.ctx;if(c.state==='suspended')await c.resume();
   // 從播放頭開始錄（前面多播 2 秒預備）；播放頭在選的段落裡，唱到段尾自動停
@@ -186,8 +187,7 @@ async function sRecStop(cancel){
   // 錄音器開始的那一刻＝歌的第幾秒（之後再用錄進去的喇叭聲精準對齊）
   const sr=all.sampleRate,lat=Math.min(.5,(c0.outputLatency||0)+(c0.baseLatency||0)),start0=r.from+(r.t0-T)-lat,d0=all.getChannelData(0);
   let pk=0;for(let i=0;i<d0.length;i+=64){const v=Math.abs(d0[i]);if(v>pk)pk=v}
-  if(pk<.002){if(!r.ec){lsSet('scene-ec-v1','1');alert('高音質模式在這台 iPad 錄不到聲音，已經自動改成一定錄得到的模式（音質會像講電話）。再按一次錄音')}
-    else alert('錄到的是靜音：請到 iPad「設定 → Safari → 麥克風」確認是「允許」，再錄一次');sDraw();return}
+  if(pk<.002){alert('錄到的是靜音：請到 iPad「設定 → Safari → 麥克風」確認是「允許」，再錄一次');sDraw();return}
   const cut=Math.max(0,Math.round((r.keep-start0)*sr)),data=new Float32Array(d0.subarray(cut));if(data.length<sr*.5){sDraw();return}
   const buf=S.ctx.createBuffer(1,data.length,sr);buf.copyToChannel(data,0);
   const take={id:Date.now(),blob:toWav(buf),start:r2(start0+cut/sr),lead:0,track,end:r2(start0+(cut+data.length)/sr),at:Date.now(),heard:r.heard,adj:0};
