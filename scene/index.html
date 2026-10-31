@@ -280,6 +280,50 @@ const SCENES={
       {sec:'打開',spot:['plants','door'],word:'全開',cue:'最大聲的一次',n:4},
       {sec:'尾聲',spot:'tea',word:'穩',cue:'溫柔地收',n:3},
     ]},
+  hands:{
+    title:'小手拉大手',artist:'梁靜茹',img:'hands.jpg?v=1',ratio:1600/893,layout:'top',dim:.55,
+    spots:{stage:{x:84,y:47,name:'小舞台'},leaves:{x:56,y:36,name:'深秋的落葉'},candy:{x:16,y:52,name:'遊樂園的攤位'},bubbles:{x:28,y:31,name:'泡泡'},balloons:{x:13,y:40,name:'氣球'},cups:{x:76,y:85,name:'熱可可'},
+      shoes:{x:23,y:84,name:'大大的鞋'},kidshoes:{x:49,y:82,name:'小小的鞋'},drawing:{x:64,y:86,name:'牽手的畫'},basket:{x:88,y:72,name:'野餐籃'},ticket:{x:84,y:88,name:'音樂會門票'}},
+    steps:[
+      {sec:'主歌',spot:['ticket','stage','candy'],word:'記',cue:'像在翻相簿，笑著想起來',n:4},
+      {sec:'主歌',spot:['cups','bubbles'],word:'暖',cue:'小小的事都很珍貴',n:4},
+      {sec:'導歌',spot:['shoes','kidshoes'],word:'謝',cue:'大大的勇敢、小小的關懷',n:4},
+      {sec:'副歌',spot:['drawing','basket'],word:'牽',cue:'輕快，像要出發去玩',n:4},
+      {sec:'副歌',spot:['balloons','leaves'],word:'揮',cue:'笑著跟昨天揮手',n:4},
+      {sec:'主歌',spot:['ticket','stage','candy'],word:'記',cue:'',n:4},
+      {sec:'主歌',spot:['cups','bubbles'],word:'暖',cue:'',n:4},
+      {sec:'導歌',spot:['shoes','kidshoes'],word:'謝',cue:'看著小朋友唱',n:4},
+      {sec:'副歌',spot:['drawing','basket'],word:'牽',cue:'',n:4},
+      {sec:'副歌',spot:['balloons','leaves'],word:'揮',cue:'',n:4},
+      {sec:'副歌',spot:['drawing','basket','stage'],word:'牽',cue:'再大方一點',n:4},
+      {sec:'副歌',spot:['balloons','bubbles','leaves'],word:'揚',cue:'哇～最大聲',n:5},
+      {sec:'尾聲',spot:['shoes','kidshoes','drawing'],word:'收',cue:'捨不得，慢下來',n:3},
+      {sec:'尾聲',spot:['bubbles','stage'],word:'唱',cue:'邀大家一起 la la',n:4},
+    ]},
+  prank:{
+    title:'惡作劇',artist:'王藍茵',img:'prank.jpg?v=1',ratio:1600/893,layout:'top',dim:.55,
+    spots:{notes:{x:56,y:72,name:'貼滿便利貼的腳踏車'},cat:{x:50,y:58,name:'偷可頌的貓'},plane:{x:17,y:21,name:'雨棚上的紙飛機'},petals:{x:62,y:30,name:'飄落的花瓣'},
+      face:{x:42,y:88,name:'粉筆鬼臉'},arrow:{x:63,y:86,name:'粉筆箭頭'},couple:{x:83,y:66,name:'牽手的背影'},window:{x:41,y:18,name:'飄起的窗簾'}},
+    steps:[
+      {sec:'主歌',spot:['notes','cat','plane'],word:'擋',cue:'擋不住、說不清，有點好笑',n:6},
+      {sec:'副歌',spot:['face','couple'],word:'疑',cue:'先懷疑，再勇敢投入',n:4},
+      {sec:'主歌',spot:['petals','window','arrow'],word:'亮',cue:'你很耀眼，眼睛亮起來',n:6},
+      {sec:'副歌',spot:['face','couple','notes'],word:'投',cue:'任性一點，玩起來',n:5},
+    ]},
+  zhizu:{
+    title:'知足',artist:'五月天',img:'zhizu.jpg?v=1',ratio:1600/893,layout:'top',dim:.55,
+    spots:{rainbow:{x:52,y:18,name:'彩虹'},kite:{x:77,y:24,name:'風箏'},jar:{x:62,y:66,name:'紙星星罐'},cups:{x:46,y:68,name:'兩杯茶'},guitar:{x:71,y:81,name:'吉他'},book:{x:55,y:70,name:'歌本'},
+      city:{x:35,y:34,name:'人海'},family:{x:18,y:62,name:'野餐的一家人'},kids:{x:35,y:55,name:'放風箏的小孩'}},
+    steps:[
+      {sec:'主歌',spot:['rainbow','kite'],word:'想',cue:'輕輕問自己',n:4},
+      {sec:'主歌',spot:'jar',word:'收',cue:'收藏你的笑',n:4},
+      {sec:'副歌',spot:['kite','city'],word:'放',cue:'風箏飛上天，祝福',n:4},
+      {sec:'主歌',spot:['guitar','book'],word:'憶',cue:'那個山丘、那一年的歌',n:4},
+      {sec:'副歌',spot:['kite','city'],word:'放',cue:'更寬、更遠',n:4},
+      {sec:'副歌',spot:['kite','rainbow','kids'],word:'揚',cue:'最大聲，笑著唱',n:4},
+      {sec:'主歌',spot:['jar','cups'],word:'收',cue:'再不是為我，輕一點',n:4},
+      {sec:'尾聲',spot:['family','cups'],word:'足',cue:'知足，溫柔地收',n:2},
+    ]},
   hug:{
     title:'大大的擁抱',artist:'',img:'hug.jpg?v=1',ratio:1024/572,layout:'top',dim:.55,
     spots:{door:{x:75,y:50,name:'敞開的門'},kite:{x:31,y:11,name:'風箏'},rainbow:{x:30,y:42,name:'彩虹'},sea:{x:12,y:58,name:'海洋'},compass:{x:44,y:79,name:'指南針'},photo:{x:44,y:91,name:'照片'},cups:{x:54,y:75,name:'兩杯咖啡'},blanket:{x:83,y:80,name:'毛毯'}},
@@ -314,7 +358,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=57;
+const VER=58;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -971,6 +1015,6 @@ function clearInk(){if(!confirm('把這一段畫的都清掉？'))return;const a
 function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementById(id);if(e)e.remove()});document.body.classList.remove('drawing')}
 render();
 </script>
-<script src="studio.js?v=57"></script>
+<script src="studio.js?v=58"></script>
 </body>
 </html>
