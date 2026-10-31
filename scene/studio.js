@@ -55,6 +55,9 @@ function closeStudio(){
 }
 // 大畫面：軌道收成一條細的，情境圖撐滿；錄音時自動切過去，錄完回來
 function sBig(){const d=document.getElementById('studio');if(!d)return;const on=!!(S.big||S.recd);S.bigOn=on;d.classList.toggle('big',on);document.body.classList.toggle('studio-big',on);if(on){const p=sNow();show(secAt(p+.05),false);lightLine()}const b=document.getElementById('s-picb');if(b){b.classList.toggle('on',on);b.textContent=on?'🎚 軌道':'🖼 大畫面'}setTimeout(sLayout,320)}
+// 錄音室裡的提示放在右下那行（原本的提示框會被錄音室蓋住，看起來像沒反應）
+let sHintT=0;function sHint(t){const e=document.getElementById('s-tip');if(!e)return;clearTimeout(sHintT);e.textContent=t;e.classList.add('say');
+  sHintT=setTimeout(()=>{e.classList.remove('say');e.textContent='點波形或歌詞選從哪裡開始錄'},5000)}
 function sMsg(t){const e=document.getElementById('s-msg');if(e){e.textContent=t;e.hidden=!t}}
 function peaksOf(buf){
   const hop=Math.round(buf.sampleRate*.02),n=Math.ceil(buf.length/hop),p=new Float32Array(n),ch=[];
@@ -132,7 +135,10 @@ function sGains(){S.lanes.forEach(l=>{const g=S.gains[l.id];if(g)g.gain.value=au
 function sPlay(from){
   sStop();const c=S.ctx;if(c.state==='suspended')c.resume();
   const T=c.currentTime+.08;S.T=T;S.from=from;S.playing=true;S.srcs=[];S.gains={};
-  S.lanes.forEach(l=>{const g=c.createGain();g.connect(c.destination);S.gains[l.id]=g;
+  // 錄音時 iPad 會把喇叭壓小聲：錄音時整體放大 3 倍，再用壓縮器防爆音
+  let out=c.destination;if(S.recd){const cp=c.createDynamicsCompressor();cp.threshold.value=-10;cp.knee.value=6;cp.ratio.value=12;cp.attack.value=.003;cp.release.value=.2;
+    const mg=c.createGain();mg.gain.value=3;mg.connect(cp);cp.connect(c.destination);out=mg;S.gains._m=mg;S.gains._c=cp}
+  S.lanes.forEach(l=>{const g=c.createGain();g.connect(out);S.gains[l.id]=g;
     if(l.id!=='me'){if(l.buf&&from<l.buf.duration){const s=c.createBufferSource();s.buffer=l.buf;s.connect(g);s.start(T,from);S.srcs.push(s)}return}
     if(S.recd)return;  // 錄音時不放舊的錄音
     sCover().forEach(({k,a,b,o})=>{const v=S.bufs.get(k.id);if(!v||b<=from)return;const st=Math.max(a,from),off=st-o;if(off<0||off>=v.buf.duration)return;
@@ -195,7 +201,7 @@ async function sRecStop(cancel){
   // 自動對不出來，就用她上次手動挪好的量
   let lag=sAutoAdj(take);if(lag!=null)lsSet('scene-recadj-v1',String(lag));else if(lsGet('scene-recadj-v1')){take.adj=+lsGet('scene-recadj-v1')||0;if(take.adj)lag=take.adj}await saveTakes();
   S.pos=Math.max(0,r.p0-1);S.selTake=null;sDraw();
-  hint(lag!=null?`錄好了，已經自動對齊。按 ▶ 聽聽看`:'錄好了，但這次對不太出來，點你的錄音用「早一點／晚一點」調');hintT=setTimeout(()=>hint(''),3500);
+  sHint(lag!=null?`錄好了，已經自動對齊。按 ▶ 聽聽看`:'錄好了，但這次對不太出來，點你的錄音用「早一點／晚一點」調');
 }
 // 自動對齊：
 // 1. 錄音裡會有一點喇叭放出來的歌，跟原本的歌比對，找出差幾毫秒（最準）
@@ -208,10 +214,16 @@ function sAutoAdj(k){
     // lvl：比「哪裡有在唱」（音量起伏），不比開口瞬間；她跟著唱時這個最穩
     if(lvl){let mx=-Infinity;for(const x of e)if(x>mx)mx=x;for(let f=0;f<n;f++)e[f]=Math.max(e[f],mx-7)}
     const o=new Float32Array(n);if(lvl)o.set(e);else for(let f=1;f<n;f++)o[f]=Math.max(0,e[f]-e[f-1]);let m=0;for(const x of o)m+=x;m/=n||1;let q=0;for(let f=0;f<n;f++){o[f]-=m;q+=o[f]*o[f]}q=Math.sqrt(q/(n||1))||1;for(let f=0;f<n;f++)o[f]/=q;return o};
-  const lagOf=(ref,dt,R,lvl,Z)=>{const A=k.start,B=k.end,x=env(v.buf,0,v.buf.duration,dt,lvl),a0=Math.max(0,A-R),y=env(ref,a0,B+R,dt,lvl),base=Math.round((A-a0)/dt);
+  const lagOf=(ref,dt,R,lvl,Z)=>{if(lvl)return lagLvl(ref,dt,R);const A=k.start,B=k.end,x=env(v.buf,0,v.buf.duration,dt,lvl),a0=Math.max(0,A-R),y=env(ref,a0,B+R,dt,lvl),base=Math.round((A-a0)/dt);
     let best=0,bv=-Infinity,sum=0,s2=0,cnt=0;
     for(let L=-Math.round(R/dt);L<=Math.round(R/dt);L++){let s=0,n=0;for(let i=0;i<x.length;i+=2){const j=i+base+L;if(j<0||j>=y.length)continue;s+=x[i]*y[j];n++}if(!n)continue;s/=n;sum+=s;s2+=s*s;cnt++;if(s>bv){bv=s;best=L}}
     if(!cnt)return null;const mu=sum/cnt,sd=Math.sqrt(Math.max(1e-9,s2/cnt-mu*mu));return (bv-mu)/sd>(Z||8)?best*dt:null};
+  // 比「哪裡有在唱」：音量起伏的相關係數（0～1），最像的那個位置夠像（>0.25）就用
+  const lagLvl=(ref,dt,R)=>{const A=k.start,B=k.end,x=env(v.buf,0,v.buf.duration,dt,true),a0=Math.max(0,A-R),y=env(ref,a0,B+R,dt,true),base=Math.round((A-a0)/dt),M=Math.round(R/dt);
+    let best=0,bv=-2;for(let L=-M;L<=M;L++){let sxy=0,sx=0,sy=0,sxx=0,syy=0,n=0;
+      for(let i=0;i<x.length;i++){const j=i+base+L;if(j<0||j>=y.length)continue;const a=x[i],b=y[j];sxy+=a*b;sx+=a;sy+=b;sxx+=a*a;syy+=b*b;n++}
+      if(n<x.length*.6)continue;const c=(sxy-sx*sy/n)/Math.sqrt(Math.max(1e-9,(sxx-sx*sx/n)*(syy-sy*sy/n)));if(c>bv){bv=c;best=L}}
+    S.lastCorr=bv;return bv>.25&&Math.abs(best)<M?best*dt:null};
   // 1. 錄音當下有在播的那幾軌混在一起
   const heard=(k.heard||[k.track]).map(id=>S.lanes.find(l=>l.id===id&&l.buf)).filter(Boolean);
   // iPad 一定要開消除回音才錄得到，喇叭聲幾乎被消掉，這步多半對不出來；改成非常有把握才用
@@ -224,7 +236,7 @@ function sAutoAdj(k){
   // 2. 跟原唱比
   const ref=S.lanes.find(l=>l.id==='vocal'&&l.buf)||S.lanes.find(l=>l.id==='orig'&&l.buf);if(!ref)return null;
   // 先比「哪裡有在唱」（±1.5 秒），對不出來再比開口
-  const lg=lagOf(ref.buf,.02,1.5,true,3.5)??lagOf(ref.buf,.01,.8);if(lg==null)return null;k.adj=r2(lg);return k.adj;
+  const lg=lagOf(ref.buf,.02,1.5,true)??lagOf(ref.buf,.01,.8);if(lg==null)return null;k.adj=r2(lg);return k.adj;
 }
 // 給情境頁用：錄音室在「大畫面」時，情境頁的換段、逐句亮跟著錄音室的時間走
 function studioClock(){return S&&S.bigOn?sNow():null}
@@ -276,7 +288,7 @@ app.addEventListener('click',e=>{
   else if(act==='smute'){const l=lane(a.dataset.l);l.mute=!l.mute;if(l.mute)l.solo=false;sGains();sDraw();stSave()}
   else if(act==='ssolo'){const l=lane(a.dataset.l);l.solo=!l.solo;if(l.solo)l.mute=false;sGains();sDraw()}
   else if(act==='sadj'){const k=takes.find(x=>x.id===S.selTake);if(!k)return;k.adj=r2((k.adj||0)+(+a.dataset.d)*.02);saveTakes();lsSet('scene-recadj-v1',String(k.adj));if(S.playing)sPlay(sNow());sDraw()}
-  else if(act==='sauto'){const k=takes.find(x=>x.id===S.selTake);if(!k)return;const old=k.adj;k.adj=0;const lag=sAutoAdj(k);if(lag==null){k.adj=old;hint(S.lanes.some(l=>(l.id==='orig'||l.id==='vocal')&&l.buf)?'這次聽不出來，用早一點／晚一點手動調':'要先放原曲（或人聲檔）才能自動對齊')}else{hint(`對齊了（挪了 ${Math.abs(lag).toFixed(2)} 秒）`);saveTakes()}hintT=setTimeout(()=>hint(''),2500);if(S.playing)sPlay(sNow());sDraw()}
+  else if(act==='sauto'){const k=takes.find(x=>x.id===S.selTake);if(!k)return;const old=k.adj;k.adj=0;const lag=sAutoAdj(k);if(lag==null){k.adj=old;sHint(S.lanes.some(l=>(l.id==='orig'||l.id==='vocal')&&l.buf)?'這次聽不出來，用早一點／晚一點手動調':'要先放原曲（或人聲檔）才能自動對齊')}else{sHint(`對齊了（挪了 ${Math.abs(lag).toFixed(2)} 秒）`);saveTakes()}if(S.playing)sPlay(sNow());sDraw()}
   else if(act==='sdel'){if(!confirm('刪掉這次錄音？'))return;takes=takes.filter(k=>k.id!==S.selTake);S.selTake=null;saveTakes();if(S.playing)sPlay(sNow());sDraw()}
   else if(act==='sdesel'){S.selTake=null;sDraw()}
   else if(act==='talign'){const k=takes.find(x=>x.id===S.selTake);if(k)alignTake(k)}
