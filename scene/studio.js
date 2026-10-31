@@ -1,5 +1,5 @@
 /* ---------- 錄音室：像 Cubasis 一樣，原曲／伴奏／人聲／我的聲音一條一條排開 ---------- */
-// 所有聲音都用同一個 Web Audio 引擎排好時間一起播；錄音在音訊執行緒收（AudioWorklet），畫面忙的時候也不會切聲
+// 所有聲音都用同一個 Web Audio 引擎排好時間一起播；錄音用 iPad 內建錄音器，錄完靠錄進去的喇叭聲對齊
 // 兩指捏合：左右＝放大縮小時間，上下＝把軌道拉高拉矮；一指左右拖＝移動畫面；點一下＝從那裡播
 const LATKEY='scene-lat-v1',STKEY='scene-studio-v1';
 let S=null;
@@ -146,10 +146,7 @@ function sLoop(){
     else if(p>=S.dur){sStop();S.pos=S.sel?S.sel[0]:0;sHead();return}
     sHead();sLoop()});
 }
-// 錄音：在音訊執行緒收麥克風，每 4096 個取樣送一包回來，附上那包的時間
-const WORKLET=`class R extends AudioWorkletProcessor{constructor(){super();this.b=new Float32Array(4096);this.n=0;this.t=0}
-process(i){const c=i[0]&&i[0][0];if(!c)return true;if(this.n===0)this.t=currentTime;this.b.set(c,this.n);this.n+=c.length;
-if(this.n>=4096){this.port.postMessage({t:this.t,d:this.b.slice(0,this.n)});this.n=0}return true}}registerProcessor('rec-proc',R)`;
+// 錄音
 async function sRecStart(){
   if(S.recd)return sRecStop();sStop();
   const m=mix();let st;
@@ -161,31 +158,34 @@ async function sRecStart(){
   const c=S.ctx;if(c.state==='suspended')await c.resume();
   // 從播放頭開始錄（前面多播 2 秒預備）；播放頭在選的段落裡，唱到段尾自動停
   const p0=S.pos,keep=Math.max(0,p0-.3),from=Math.max(0,p0-2),until=S.sel&&p0<S.sel[1]-.5?Math.min(S.dur,S.sel[1]+.5):0;
-  const inp=c.createMediaStreamSource(st),z=c.createGain();z.gain.value=0;z.connect(c.destination);
-  const r={st,inp,z,node:null,chunks:[],start:null,len:0,until,keep,from,p0,heard:S.lanes.filter(l=>l.id!=='me'&&l.buf&&audible(l)).map(l=>l.id)};S.recd=r;
-  // 你聽到的歌比引擎晚 outputLatency，麥克風收到的聲音又晚一點；先估一個，錄完再用原曲自動對齊
-  const lat=(c.outputLatency||0)+(c.baseLatency||0)*2;
-  const onChunk=(t,d)=>{if(S&&S.recd===r){if(r.start==null)r.start=S.from+(t-S.T)-lat;r.chunks.push(d);r.len+=d.length}};
-  try{
-    if(!c.__rec){await c.audioWorklet.addModule(URL.createObjectURL(new Blob([WORKLET],{type:'application/javascript'})));c.__rec=1}
-    const n=new AudioWorkletNode(c,'rec-proc',{numberOfInputs:1,numberOfOutputs:1,channelCount:1});n.port.onmessage=e=>onChunk(e.data.t,e.data.d);inp.connect(n);n.connect(z);r.node=n;
-  }catch(e){
-    const pr=c.createScriptProcessor(4096,1,1);pr.onaudioprocess=e=>{const d=e.inputBuffer.getChannelData(0);onChunk((e.playbackTime||c.currentTime)-d.length/c.sampleRate*2,new Float32Array(d))};inp.connect(pr);pr.connect(z);r.node=pr;
-  }
+  // 用 iPad 自己的錄音器（MediaRecorder）錄，Web Audio 直接收麥克風在 iPad 上會收到一片靜音
+  const type=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||'';
+  const mr=new MediaRecorder(st,type?{mimeType:type}:{});
+  const r={st,mr,type,chunks:[],t0:null,until,keep,from,p0,heard:S.lanes.filter(l=>l.id!=='me'&&l.buf&&audible(l)).map(l=>l.id)};S.recd=r;
+  mr.ondataavailable=e=>{if(e.data&&e.data.size)r.chunks.push(e.data)};
+  await new Promise(ok=>{mr.onstart=()=>{r.t0=c.currentTime;ok()};mr.start(1000);setTimeout(ok,1500)});
+  if(r.t0==null)r.t0=c.currentTime;
   document.getElementById('s-rec').classList.add('on');document.getElementById('studio').classList.add('recording');sBig();
   sPlay(from);
 }
 async function sRecStop(cancel){
   const r=S&&S.recd;if(!r)return;S.recd=null;sStop();
-  try{r.inp.disconnect();r.node.disconnect();r.z.disconnect()}catch(e){}r.st.getTracks().forEach(t=>t.stop());
+  const done=new Promise(ok=>{r.mr.onstop=ok;setTimeout(ok,3000)});try{r.mr.stop()}catch(e){}await done;r.st.getTracks().forEach(t=>t.stop());
   document.getElementById('s-rec').classList.remove('on');document.getElementById('studio').classList.remove('recording');sBig();
+  const T=S.T,c0=S.ctx;
   // 麥克風關掉後 iPad 又換回一般音訊設定，再換一個新的引擎
   try{const old=actx;actx=null;S.ctx=audioCtx();old&&old.close&&old.close()}catch(e){}
-  if(cancel||!r.len||r.start==null){sDraw();return}
-  const sr=r.node&&r.node.context?r.node.context.sampleRate:44100,all=new Float32Array(r.len);let o=0;r.chunks.forEach(ch=>{all.set(ch,o);o+=ch.length});
-  const cut=Math.max(0,Math.round((r.keep-r.start)*sr)),data=all.subarray(cut);if(data.length<sr*.5){sDraw();return}
+  if(cancel||!r.chunks.length){sDraw();return}
+  sMsg('整理錄音…');
+  let all;try{all=await decodeHead(new Blob(r.chunks,{type:r.mr.mimeType||r.type||'audio/mp4'}))}catch(e){sMsg('');alert('這次錄音讀不出來，再錄一次試試');sDraw();return}
+  sMsg('');
+  // 錄音器開始的那一刻＝歌的第幾秒（之後再用錄進去的喇叭聲精準對齊）
+  const sr=all.sampleRate,start0=r.from+(r.t0-T),d0=all.getChannelData(0);
+  let pk=0;for(let i=0;i<d0.length;i+=64){const v=Math.abs(d0[i]);if(v>pk)pk=v}
+  if(pk<.002){alert('錄到的是靜音：請到 iPad「設定 → Safari → 麥克風」確認是「允許」，再錄一次');sDraw();return}
+  const cut=Math.max(0,Math.round((r.keep-start0)*sr)),data=new Float32Array(d0.subarray(cut));if(data.length<sr*.5){sDraw();return}
   const buf=S.ctx.createBuffer(1,data.length,sr);buf.copyToChannel(data,0);
-  const take={id:Date.now(),blob:toWav(buf),start:r2(r.start+cut/sr),lead:0,track,end:r2(r.start+(cut+data.length)/sr),at:Date.now(),heard:r.heard,adj:0};
+  const take={id:Date.now(),blob:toWav(buf),start:r2(start0+cut/sr),lead:0,track,end:r2(start0+(cut+data.length)/sr),at:Date.now(),heard:r.heard,adj:0};
   takes.push(take);S.bufs.set(take.id,{buf,peaks:peaksOf(buf)});
   const lag=sAutoAdj(take);await saveTakes();
   S.pos=Math.max(0,r.p0-1);S.selTake=null;sDraw();
@@ -210,11 +210,11 @@ function sAutoAdj(k){
     // 只取錄音前後那一段來混（整首太大）
     heard.forEach(l=>{const c=l.buf.getChannelData(0),c1=l.buf.numberOfChannels>1?l.buf.getChannelData(1):c,g=l.vol;for(let i=a;i<b&&i<l.buf.length;i++)d[i-a]+=(c[i]+c1[i])/2*g});
     const shift=a/sr,kk={start:k.start-shift,end:k.end-shift},save=k.start;
-    const lg=(()=>{const o=k.start,oe=k.end;k.start=kk.start;k.end=kk.end;try{return lagOf(mixd,.005,.45)}finally{k.start=o;k.end=oe}})();
+    const lg=(()=>{const o=k.start,oe=k.end;k.start=kk.start;k.end=kk.end;try{return lagOf(mixd,.005,.9)}finally{k.start=o;k.end=oe}})();
     if(lg!=null){k.adj=r2(lg);return k.adj}}
   // 2. 跟原唱比
   const ref=S.lanes.find(l=>l.id==='vocal'&&l.buf)||S.lanes.find(l=>l.id==='orig'&&l.buf);if(!ref)return null;
-  const lg=lagOf(ref.buf,.01,.4);if(lg==null)return null;k.adj=r2(lg);return k.adj;
+  const lg=lagOf(ref.buf,.01,.8);if(lg==null)return null;k.adj=r2(lg);return k.adj;
 }
 // 給情境頁用：錄音室在「大畫面」時，情境頁的換段、逐句亮跟著錄音室的時間走
 function studioClock(){return S&&S.bigOn?sNow():null}
