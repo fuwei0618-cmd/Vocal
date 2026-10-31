@@ -1,3 +1,4 @@
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 /* ---------- 錄音室：像 Cubasis 一樣，原曲／伴奏／人聲／我的聲音一條一條排開 ---------- */
 // 所有聲音都用同一個 Web Audio 引擎排好時間一起播；錄音用 iPad 內建錄音器，錄完靠錄進去的喇叭聲對齊
 // 兩指捏合：左右＝放大縮小時間，上下＝把軌道拉高拉矮；一指左右拖＝移動畫面；點一下＝從那裡播
@@ -151,8 +152,9 @@ function sLoop(){
 async function sRecStart(){
   if(S.recd)return sRecStop();sStop();
   const m=mix();let st;
-  // 用 v36 在她 iPad 上確定錄得到聲音的設定（關掉消除回音、指定單聲道在 iPad 上會錄成靜音）
-  try{st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:false,autoGainControl:false}})}
+  // 先用高音質（不開消除回音＝不進 iPad 通話模式、不破音）；這樣錄到靜音的話，記下來之後改用通話模式（一定錄得到）
+  const ec=lsGet('scene-ec-v1')==='1';
+  try{st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:ec,noiseSuppression:false,autoGainControl:false}})}
   catch(e){alert('沒辦法用麥克風：到「設定 → Safari → 麥克風」允許，或重新打開再按一次');return}
   const c=S.ctx;if(c.state==='suspended')await c.resume();
   // 從播放頭開始錄（前面多播 2 秒預備）；播放頭在選的段落裡，唱到段尾自動停
@@ -160,7 +162,7 @@ async function sRecStart(){
   // 用 iPad 自己的錄音器（MediaRecorder）錄，Web Audio 直接收麥克風在 iPad 上會收到一片靜音
   const type=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||'';
   const mr=new MediaRecorder(st,type?{mimeType:type}:{});
-  const r={st,mr,type,chunks:[],t0:null,until,keep,from,p0,heard:S.lanes.filter(l=>l.id!=='me'&&l.buf&&audible(l)).map(l=>l.id)};S.recd=r;
+  const r={ec,st,mr,type,chunks:[],t0:null,until,keep,from,p0,heard:S.lanes.filter(l=>l.id!=='me'&&l.buf&&audible(l)).map(l=>l.id)};S.recd=r;
   mr.ondataavailable=e=>{if(e.data&&e.data.size)r.chunks.push(e.data)};
   const tr0=st.getAudioTracks()[0];r.bad=()=>!tr0||tr0.readyState==='ended'||tr0.muted;
   await new Promise(ok=>{mr.onstart=()=>{r.t0=c.currentTime;ok()};mr.start(1000);setTimeout(ok,1500)});
@@ -182,14 +184,16 @@ async function sRecStop(cancel){
   let all;try{all=await decodeHead(new Blob(r.chunks,{type:r.mr.mimeType||r.type||'audio/mp4'}))}catch(e){sMsg('');alert('這次錄音讀不出來，再錄一次試試');sDraw();return}
   sMsg('');
   // 錄音器開始的那一刻＝歌的第幾秒（之後再用錄進去的喇叭聲精準對齊）
-  const sr=all.sampleRate,start0=r.from+(r.t0-T),d0=all.getChannelData(0);
+  const sr=all.sampleRate,lat=Math.min(.5,(c0.outputLatency||0)+(c0.baseLatency||0)),start0=r.from+(r.t0-T)-lat,d0=all.getChannelData(0);
   let pk=0;for(let i=0;i<d0.length;i+=64){const v=Math.abs(d0[i]);if(v>pk)pk=v}
-  if(pk<.002){alert('錄到的是靜音：請到 iPad「設定 → Safari → 麥克風」確認是「允許」，再錄一次');sDraw();return}
+  if(pk<.002){if(!r.ec){lsSet('scene-ec-v1','1');alert('高音質模式在這台 iPad 錄不到聲音，已經自動改成一定錄得到的模式（音質會像講電話）。再按一次錄音')}
+    else alert('錄到的是靜音：請到 iPad「設定 → Safari → 麥克風」確認是「允許」，再錄一次');sDraw();return}
   const cut=Math.max(0,Math.round((r.keep-start0)*sr)),data=new Float32Array(d0.subarray(cut));if(data.length<sr*.5){sDraw();return}
   const buf=S.ctx.createBuffer(1,data.length,sr);buf.copyToChannel(data,0);
   const take={id:Date.now(),blob:toWav(buf),start:r2(start0+cut/sr),lead:0,track,end:r2(start0+(cut+data.length)/sr),at:Date.now(),heard:r.heard,adj:0};
   takes.push(take);S.bufs.set(take.id,{buf,peaks:peaksOf(buf)});
-  const lag=sAutoAdj(take);await saveTakes();
+  // 自動對不出來，就用她上次手動挪好的量
+  let lag=sAutoAdj(take);if(lag==null&&lsGet('scene-recadj-v1')){take.adj=+lsGet('scene-recadj-v1')||0;if(take.adj)lag=take.adj}await saveTakes();
   S.pos=Math.max(0,r.p0-1);S.selTake=null;sDraw();
   hint(lag!=null?`錄好了，已經自動對齊。按 ▶ 聽聽看`:'錄好了，但這次對不太出來，點你的錄音用「早一點／晚一點」調');hintT=setTimeout(()=>hint(''),3500);
 }
@@ -250,7 +254,7 @@ app.addEventListener('pointermove',e=>{if(!S||!pts.has(e.pointerId)||!g0)return;
   if(g0&&g0.mode==='tap'&&t==='pointerup'&&!S.recd){const c=g0.target,r=c.getBoundingClientRect(),x=Math.max(0,Math.min(S.dur,sT(e.clientX-r.left,r.width)));
     if(c.dataset.l==='me'){const hit=sCover().find(({a,b})=>x>=a&&x<=b);S.selTake=hit?hit.k.id:null}
     const was=S.playing;S.pos=x;if(was)sPlay(x);else sHead();sDraw()}
-  if(g0&&g0.mode==='move'){saveTakes();if(S.playing)sPlay(sNow())}
+  if(g0&&g0.mode==='move'){saveTakes();lsSet('scene-recadj-v1',String(g0.take.k.adj||0));if(S.playing)sPlay(sNow())}
   if(!pts.size){if(g0&&g0.mode==='pinch')stSave();g0=null}else if(g0&&g0.mode==='pinch')g0=null;
 }));
 app.addEventListener('click',e=>{
@@ -267,7 +271,7 @@ app.addEventListener('click',e=>{
   else if(act==='spic'){S.big=!S.big;sBig()}
   else if(act==='smute'){const l=lane(a.dataset.l);l.mute=!l.mute;if(l.mute)l.solo=false;sGains();sDraw();stSave()}
   else if(act==='ssolo'){const l=lane(a.dataset.l);l.solo=!l.solo;if(l.solo)l.mute=false;sGains();sDraw()}
-  else if(act==='sadj'){const k=takes.find(x=>x.id===S.selTake);if(!k)return;k.adj=r2((k.adj||0)+(+a.dataset.d)*.02);saveTakes();if(S.playing)sPlay(sNow());sDraw()}
+  else if(act==='sadj'){const k=takes.find(x=>x.id===S.selTake);if(!k)return;k.adj=r2((k.adj||0)+(+a.dataset.d)*.02);saveTakes();lsSet('scene-recadj-v1',String(k.adj));if(S.playing)sPlay(sNow());sDraw()}
   else if(act==='sauto'){const k=takes.find(x=>x.id===S.selTake);if(!k)return;const old=k.adj;k.adj=0;const lag=sAutoAdj(k);if(lag==null){k.adj=old;hint(S.lanes.some(l=>(l.id==='orig'||l.id==='vocal')&&l.buf)?'這次聽不出來，用早一點／晚一點手動調':'要先放原曲（或人聲檔）才能自動對齊')}else{hint(`對齊了（挪了 ${Math.abs(lag).toFixed(2)} 秒）`);saveTakes()}hintT=setTimeout(()=>hint(''),2500);if(S.playing)sPlay(sNow());sDraw()}
   else if(act==='sdel'){if(!confirm('刪掉這次錄音？'))return;takes=takes.filter(k=>k.id!==S.selTake);S.selTake=null;saveTakes();if(S.playing)sPlay(sNow());sDraw()}
   else if(act==='sdesel'){S.selTake=null;sDraw()}
