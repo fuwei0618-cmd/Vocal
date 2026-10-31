@@ -199,9 +199,10 @@ async function sRecStop(cancel){
   const take={id:Date.now(),blob:toWav(buf),start:r2(start0+cut/sr),lead:0,track,end:r2(start0+(cut+data.length)/sr),at:Date.now(),heard:r.heard,adj:0};
   takes.push(take);S.bufs.set(take.id,{buf,peaks:peaksOf(buf)});
   // 自動對不出來，就用她上次手動挪好的量
-  let lag=sAutoAdj(take);if(lag!=null)lsSet('scene-recadj-v1',String(lag));else if(lsGet('scene-recadj-v1')){take.adj=+lsGet('scene-recadj-v1')||0;if(take.adj)lag=take.adj}await saveTakes();
+  // 她說自動對齊不準、先手動：新錄音不自動挪，直接套她上次手動拖好的量
+  let lag=null;if(lsGet('scene-recadj-v1')){take.adj=+lsGet('scene-recadj-v1')||0;if(take.adj)lag=take.adj}await saveTakes();
   S.pos=Math.max(0,r.p0-1);S.selTake=null;sDraw();
-  sHint(lag!=null?`錄好了，已經自動對齊。按 ▶ 聽聽看`:'錄好了，但這次對不太出來，點你的錄音用「早一點／晚一點」調');
+  sHint(lag!=null?`錄好了，已經照你上次拖的量挪好。按 ▶ 聽聽看`:'錄好了。按住你的波形左右拖就能對齊，之後的錄音會照這個量');
 }
 // 自動對齊：
 // 1. 錄音裡會有一點喇叭放出來的歌，跟原本的歌比對，找出差幾毫秒（最準）
