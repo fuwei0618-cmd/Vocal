@@ -29,7 +29,7 @@ async function openStudio(){
     <div class="s-take" id="s-take" hidden></div>
     <div class="s-bot">
       <div class="s-l"><button data-act="spic" id="s-picb">🖼 大畫面</button><button data-act="szoom" id="s-zoom">整首</button><button data-act="sloop" id="s-loop" class="on">🔁 重複</button></div>
-      <div class="s-c"><button data-act="shome" aria-label="回到開頭">⏮</button><button data-act="splay" class="s-pp" id="s-pp">▶</button><button data-act="srec" class="s-rec" id="s-rec" aria-label="錄音"><i></i></button></div>
+      <div class="s-c"><button data-act="shome" aria-label="回到開頭">⏮</button><button data-act="srec0" class="s-rec0" aria-label="從頭錄">⏺ 從頭錄</button><button data-act="splay" class="s-pp" id="s-pp">▶</button><button data-act="srec" class="s-rec" id="s-rec" aria-label="錄音"><i></i></button></div>
       <div class="s-r"><span class="s-tip" id="s-tip">點波形或歌詞選從哪裡開始錄</span></div>
     </div>
     <div class="s-msg" id="s-msg">載入中…</div>`;
@@ -141,7 +141,8 @@ function sPlay(from){
 function sStop(){if(!S)return;if(S.playing)S.pos=Math.min(S.dur,sNow());S.srcs.forEach(s=>{try{s.stop()}catch(e){}});S.srcs=[];Object.values(S.gains).forEach(g=>{try{g.disconnect()}catch(e){}});S.gains={};S.playing=false;cancelAnimationFrame(S.raf);S.raf=0;const pp=document.getElementById('s-pp');if(pp)pp.textContent='▶';sHead()}
 function sLoop(){
   S.raf=requestAnimationFrame(()=>{if(!S||!S.playing)return;const p=sNow();
-    if(S.recd){if((S.recd.until&&p>=S.recd.until)||p>=S.dur){sRecStop();return}}
+    if(S.recd){if((S.recd.until&&p>=S.recd.until)||p>=S.dur){sRecStop();return}
+      const tp=document.getElementById('s-tip');if(tp){const kb=S.recd.chunks.reduce((a,b)=>a+b.size,0)/1024|0;tp.textContent=S.recd.bad()?'⚠️ 麥克風被關掉了':`● 錄音中 ${mmss(Math.max(0,p-S.recd.p0))}　已收到 ${kb} KB`}}
     else if(S.sel&&S.loop&&p>=S.sel[1]){sPlay(Math.max(0,S.sel[0]-1));return}
     else if(p>=S.dur){sStop();S.pos=S.sel?S.sel[0]:0;sHead();return}
     sHead();sLoop()});
@@ -150,11 +151,9 @@ function sLoop(){
 async function sRecStart(){
   if(S.recd)return sRecStop();sStop();
   const m=mix();let st;
-  // 不開「消除回音」：iPad 開了會切到通話模式（音質差、會卡）。喇叭的歌會被錄進去一點，剛好拿來對齊
-  try{st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}})}
+  // 用 v36 在她 iPad 上確定錄得到聲音的設定（關掉消除回音、指定單聲道在 iPad 上會錄成靜音）
+  try{st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:false,autoGainControl:false}})}
   catch(e){alert('沒辦法用麥克風：到「設定 → Safari → 麥克風」允許，或重新打開再按一次');return}
-  // 麥克風打開後 iPad 會換音訊設定，舊的引擎會卡；拿到麥克風之後才開新的引擎
-  try{const old=actx;actx=null;S.ctx=audioCtx();old&&old.close&&old.close()}catch(e){}
   const c=S.ctx;if(c.state==='suspended')await c.resume();
   // 從播放頭開始錄（前面多播 2 秒預備）；播放頭在選的段落裡，唱到段尾自動停
   const p0=S.pos,keep=Math.max(0,p0-.3),from=Math.max(0,p0-2),until=S.sel&&p0<S.sel[1]-.5?Math.min(S.dur,S.sel[1]+.5):0;
@@ -163,6 +162,7 @@ async function sRecStart(){
   const mr=new MediaRecorder(st,type?{mimeType:type}:{});
   const r={st,mr,type,chunks:[],t0:null,until,keep,from,p0,heard:S.lanes.filter(l=>l.id!=='me'&&l.buf&&audible(l)).map(l=>l.id)};S.recd=r;
   mr.ondataavailable=e=>{if(e.data&&e.data.size)r.chunks.push(e.data)};
+  const tr0=st.getAudioTracks()[0];r.bad=()=>!tr0||tr0.readyState==='ended'||tr0.muted;
   await new Promise(ok=>{mr.onstart=()=>{r.t0=c.currentTime;ok()};mr.start(1000);setTimeout(ok,1500)});
   if(r.t0==null)r.t0=c.currentTime;
   document.getElementById('s-rec').classList.add('on');document.getElementById('studio').classList.add('recording');sBig();
@@ -175,7 +175,9 @@ async function sRecStop(cancel){
   const T=S.T,c0=S.ctx;
   // 麥克風關掉後 iPad 又換回一般音訊設定，再換一個新的引擎
   try{const old=actx;actx=null;S.ctx=audioCtx();old&&old.close&&old.close()}catch(e){}
-  if(cancel||!r.chunks.length){sDraw();return}
+  const tp=document.getElementById('s-tip');if(tp)tp.textContent='點波形或歌詞選從哪裡開始錄';
+  if(cancel){sDraw();return}
+  if(!r.chunks.length){alert('iPad 的錄音器沒有給任何資料：請關掉 Vocal 重新打開再錄一次；如果還是一樣，告訴我');sDraw();return}
   sMsg('整理錄音…');
   let all;try{all=await decodeHead(new Blob(r.chunks,{type:r.mr.mimeType||r.type||'audio/mp4'}))}catch(e){sMsg('');alert('這次錄音讀不出來，再錄一次試試');sDraw();return}
   sMsg('');
@@ -252,6 +254,7 @@ app.addEventListener('click',e=>{
   if(act==='sx')closeStudio();
   else if(act==='splay'){if(S.recd)sRecStop();else if(S.playing)sStop();else sPlay(S.pos)}
   else if(act==='srec')sRecStart();
+  else if(act==='srec0'){if(S.recd)return sRecStop();S.sel=null;S.loop=false;S.pos=0;sRecStart()}
   else if(act==='shome'){const was=S.playing;S.pos=S.sel?Math.max(0,S.sel[0]-1):0;if(was)sPlay(S.pos);else sHead()}
   else if(act==='ssec'){const i=+a.dataset.i,[x,y]=secRange(i);if(S.sel&&Math.abs(S.sel[0]-x)<.01){S.sel=null}else{S.sel=[x,y];sView0();S.pos=x;if(S.playing)sPlay(S.pos)}sDraw()}
   else if(act==='szoom'){const whole=S.view[0]>0.5||S.view[1]<S.dur-.5;if(whole)S.view=[0,S.dur];else sView0();sDraw()}

@@ -179,6 +179,7 @@ body.studio-big .sub{bottom:calc(env(safe-area-inset-bottom,0px) + 190px)!import
 #studio .s-pp{width:58px;height:58px;padding:0;border-radius:50%;background:var(--ink);color:#15110c;font-size:22px;border:0}
 #studio .s-rec{width:64px;height:64px;padding:0;border-radius:50%;background:#2a1c18;border:3px solid #e05a4e;display:grid;place-items:center}
 #studio .s-rec i{width:30px;height:30px;border-radius:50%;background:#e05a4e;transition:all .2s}
+#studio .s-rec0{font-size:13px;padding:6px 10px;border-radius:16px;border:1px solid #e05a4e;color:#f3b3ab;background:#2a1c18;white-space:nowrap}
 #studio .s-rec.on i{border-radius:5px;width:24px;height:24px}
 #studio.recording .s-top{background:rgba(224,90,78,.25)}
 .s-hp{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}.s-hp input{accent-color:#f2c27b}
@@ -305,7 +306,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=44;
+const VER=45;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -950,6 +951,6 @@ function clearInk(){if(!confirm('把這一段畫的都清掉？'))return;const a
 function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementById(id);if(e)e.remove()});document.body.classList.remove('drawing')}
 render();
 </script>
-<script src="studio.js?v=44"></script>
+<script src="studio.js?v=45"></script>
 </body>
 </html>
