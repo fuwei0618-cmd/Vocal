@@ -132,6 +132,14 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 .player .seg button{border:0;border-radius:0;background:none;padding:6px 11px;color:var(--muted);font-size:13px}
 .player .seg button.on{background:rgba(242,194,123,.2);color:var(--glow)}
 .menu-sheet a.btn{display:inline-block;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--ink);border-radius:99px;padding:8px 14px;font-size:14px;text-decoration:none}
+.player .chip{background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--muted);border-radius:99px;padding:5px 10px;font-size:13px;margin-left:6px}
+.player .chip.on{background:rgba(242,194,123,.22);border-color:var(--glow);color:var(--glow)}
+.player .ctl .c .sk{font-size:17px;font-weight:600;min-width:46px}
+.menu-sheet .mchk{display:flex;gap:8px;align-items:flex-start;justify-content:flex-start;text-align:left;color:var(--ink);font-size:13px;line-height:1.45}.menu-sheet .mchk input{flex:none;width:18px;height:18px;margin:1px 0 0;accent-color:#f2c27b}
+.menu-sheet input[type=range]{flex:1;max-width:260px;accent-color:#f2c27b}
+.menu-sheet button.go{background:#e05a4e;border-color:#e05a4e;color:#fff;font-weight:700}
+@media (max-width:640px){.ctl{grid-template-columns:1fr 1fr;grid-template-areas:"c c" "l r";row-gap:2px}.ctl .c{grid-area:c;justify-content:center}.ctl .l{grid-area:l}.ctl .r{grid-area:r}
+  .hint,.sub{bottom:calc(env(safe-area-inset-bottom,0px) + 168px)!important}}
 .recbar{grid-column:1/-1;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:6px 0}
 .recbar b{color:#ff8a80}.recbar span{color:var(--ink);font-size:14px}
 .player .recbar button{background:rgba(0,0,0,.45);border:1px solid var(--line);color:var(--ink);border-radius:99px;padding:8px 14px;font-size:14px}
@@ -252,7 +260,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=38;
+const VER=39;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -342,10 +350,10 @@ app.addEventListener('click',e=>{
       hint(g===N?`照你空的行分成 ${N} 段`:`你空出 ${g} 段，這首有 ${N} 段（${SCENES[key].steps.map(x=>x.sec).join('、')}），先照預設行數分`);hintT=setTimeout(()=>hint(''),g===N?2500:6000)}
     else if(act==='edit'){editing=true;render();scrollTo(0,0)}
     else if(act==='cancel'){editing=false;render()}
-    else if(act==='prev')step(cur-1);
+    else if(act==='prev'){if(au){au.currentTime=Math.max(0,au.currentTime-5);updateProg();sync()}else step(cur-1)}
     else if(act==='audio'){const f=document.getElementById('afile');f.dataset.for=a.dataset.for;f.value='';f.click()}
     else if(act==='track'){if(a.dataset.to!==track)switchTrack()}
-    else if(act==='next')step(cur+1);
+    else if(act==='next'){if(au){au.currentTime=Math.min(au.duration||1e9,au.currentTime+5);updateProg();sync()}else step(cur+1)}
     else if(act==='menu')openMenu();
     else if(act==='mclose')closeMenu();
     else if(act==='rback')tapLine(true);
@@ -357,13 +365,18 @@ app.addEventListener('click',e=>{
     else if(act==='undo')undoTimes();
     else if(act==='base'){setBase(a.dataset.to);openMenu();sync()}
     else if(act==='pen')startDraw();
-    else if(act==='mic')startMic();
+    else if(act==='mic'||act==='take')openRec();
+    else if(act==='mrec')startMic(a.dataset.m);
     else if(act==='mstop')stopMic();
-    else if(act==='take')openTake();
-    else if(act==='tboth'||act==='tme')playTake(act==='tboth');
-    else if(act==='tstop')stopTake();
+    else if(act==='tplay')playTakeAt(a.dataset.id);
+    else if(act==='tdel')delTake(a.dataset.id);
+    else if(act==='tclr')clearTakes();
     else if(act==='talign')alignTake();
-    else if(act==='tclose'){stopTake();closeTake()}
+    else if(act==='rclose')closeRec();
+    else if(act==='mhp')setMix({hp:a.checked});
+    else if(act==='mon'){setMix({on:a.checked});syncMe(true);drawPlayer()}
+    else if(act==='meon'){const m=setMix({on:!mix().on});syncMe(true);drawPlayer();hint(m.on?'我的聲音：開':'我的聲音：關');hintT=setTimeout(()=>hint(''),1500)}
+    else if(act==='loop'){loopSec=loopSec>=0?-1:cur;drawPlayer();hint(loopSec>=0?`重複播：${SCENES[key].steps[cur].sec}`:'不重複了');hintT=setTimeout(()=>hint(''),1800);if(loopSec>=0&&au){const [x,y]=secRange(cur);if(au.currentTime<x||au.currentTime>y)au.currentTime=x}}
     else if(act==='pdone')stopDraw();
     else if(act==='pcol'){pen=+a.dataset.i;drawTools()}
     else if(act==='pundo')undoInk();
@@ -397,7 +410,7 @@ addEventListener('hashchange',()=>{cur=0;editing=false;if(au){au.pause();au=null
 // 對拍：播放時每到下一段點一下，記下每段開始的秒數；之後播放就自動換段
 const TKEY='scene-times-v1';
 let au=null,auUrl='',rec=false,track='inst',have={inst:false,orig:false};
-const TRACK={inst:'伴奏',orig:'原曲',vocal:'人聲'};let hasVocal=false,hasTake=false;
+const TRACK={inst:'伴奏',orig:'原曲',vocal:'人聲'};let hasVocal=false;
 function idb(){return new Promise((ok,no)=>{const r=indexedDB.open('scene-audio',1);r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 async function getFile(k){try{const db=await idb();return await new Promise(ok=>{const q=db.transaction('files').objectStore('files').get(k);q.onsuccess=()=>ok(q.result||null);q.onerror=()=>ok(null)})}catch(e){return null}}
 async function putFile(k,f){const db=await idb();return new Promise((ok,no)=>{const t=db.transaction('files','readwrite');t.objectStore('files').put(f,k);t.oncomplete=ok;t.onerror=()=>no(t.error)})}
@@ -428,7 +441,7 @@ function hint(t){clearTimeout(hintT);const h=document.getElementById('hint');if(
 // 伴奏和原唱各存一份；對拍秒數兩個共用（同一個錄音分出來的，時間一樣）
 async function loadAudio(want,at,play){
   const fi=await getFile(key+'|inst')||await getFile(key),fo=await getFile(key+'|orig');
-  have={inst:!!fi,orig:!!fo};hasTake=!!await getFile(key+'|take');hasVocal=!!await getFile(key+'|vocal');
+  have={inst:!!fi,orig:!!fo};await loadTakes();hasVocal=!!await getFile(key+'|vocal');
   if(hasVocal&&!getLines().length&&!loadAudio.did){loadAudio.did=1;autoAlign()}  // 之前放過人聲：補算逐句一次
   try{track=want||localStorage.getItem('scene-track')||'inst'}catch(e){track=want||'inst'}
   if(!have[track])track=have.inst?'inst':'orig';
@@ -437,7 +450,7 @@ async function loadAudio(want,at,play){
   if(fi&&fo&&!kv('scene-offat-v1'))setTimeout(()=>findOffset(fi,fo),1500);
   if(au)au.pause();
   if(auUrl)URL.revokeObjectURL(auUrl);auUrl=URL.createObjectURL(f);
-  au=new Audio(auUrl);au.preload='auto';
+  au=new Audio(auUrl);au.preload='auto';hookAu();
   au.addEventListener('timeupdate',sync);au.addEventListener('play',wakePlayer);au.addEventListener('pause',wakePlayer);au.addEventListener('play',drawPlayer);au.addEventListener('pause',()=>{drawPlayer();lightLine()});
   au.addEventListener('ended',()=>{if(rec)toggleRec();drawPlayer()});au.addEventListener('loadedmetadata',()=>{if(at)au.currentTime=at;if(play)au.play();drawPlayer()});
   drawPlayer();
@@ -451,8 +464,9 @@ function drawPlayer(){
   if(mic){ctl.innerHTML=`<div class="recbar"><b>● 錄音中 <span id="mict">0:00</span></b><span>跟著唱，唱完按停止</span><button data-act="mstop" class="done">■ 停止</button></div>`;updateProg();return}
   if(rec){ctl.innerHTML=`<div class="recbar"><b>● 對拍中</b><span>唱到每句開頭點一下螢幕</span><button data-act="rback">↶ 退一句</button><button data-act="rec" class="done">完成</button></div>`;updateProg();return}
   const sw=au?(have.inst&&have.orig?`<div class="seg" role="group" aria-label="原曲或伴奏"><button data-act="track" data-to="orig" class="${track==='orig'?'on':''}">原曲</button><button data-act="track" data-to="inst" class="${track==='inst'?'on':''}">伴奏</button></div>`:`<span class="lab">${TRACK[track]}</span>`):'';
-  const mid=`<button data-act="prev" aria-label="上一段">⏮</button>`+(au?`<button data-act="play" class="pp" aria-label="${au.paused?'播放':'暫停'}">${au.paused?'▶':'❚❚'}</button>`:`<button data-act="menu" class="add">＋ 放音樂</button>`)+`<button data-act="next" aria-label="下一段">⏭</button>`;
-  ctl.innerHTML=`<div class="l">${sw}<span class="cnt">${cur+1} / ${n}</span></div><div class="c">${mid}</div><div class="r">${au?'<button data-act="mic" aria-label="錄音" class="micb">🎙</button>':''}<button data-act="pen" aria-label="畫筆">✏️</button><button data-act="toc" aria-label="整首歌詞">☰</button></div>`;
+  const mid=`<button data-act="prev" aria-label="倒退 5 秒" class="sk">${au?'↺5':'⏮'}</button>`+(au?`<button data-act="play" class="pp" aria-label="${au.paused?'播放':'暫停'}">${au.paused?'▶':'❚❚'}</button>`:`<button data-act="menu" class="add">＋ 放音樂</button>`)+`<button data-act="next" aria-label="快轉 5 秒" class="sk">${au?'5↻':'⏭'}</button>`;
+  const chips=au?`<button data-act="loop" class="chip${loopSec>=0?' on':''}" aria-label="重複這段">🔁</button>`+(takes.length?`<button data-act="meon" class="chip${mix().on?' on':''}" aria-label="我的聲音">我</button>`:''):'';
+  ctl.innerHTML=`<div class="l">${sw}${chips}<span class="cnt">${cur+1} / ${n}</span></div><div class="c">${mid}</div><div class="r">${au?'<button data-act="mic" aria-label="錄音" class="micb">🎙</button>':''}<button data-act="pen" aria-label="畫筆">✏️</button><button data-act="toc" aria-label="整首歌詞">☰</button></div>`;
   updateProg();
 }
 function updateProg(){
@@ -463,7 +477,7 @@ function updateProg(){
 }
 // 播放中 3 秒沒動就把播放列收起來，只留一條細細的進度線；點螢幕下方再叫出來。暫停、對拍時一直顯示
 let plT=0;
-function wakePlayer(){document.body.classList.remove('pl-hide');clearTimeout(plT);if(au&&!au.paused&&!rec&&!mic&&!document.getElementById('menu')&&!document.getElementById('takes'))plT=setTimeout(()=>document.body.classList.add('pl-hide'),3000)}
+function wakePlayer(){document.body.classList.remove('pl-hide');clearTimeout(plT);if(au&&!au.paused&&!rec&&!mic&&!document.getElementById('menu')&&!document.getElementById('recs'))plT=setTimeout(()=>document.body.classList.add('pl-hide'),3000)}
 app.addEventListener('pointerdown',e=>{if(e.target.closest('#player'))wakePlayer()},true);
 // 拖進度條
 let dragging=false;
@@ -485,7 +499,7 @@ function openMenu(){
       ${getUndo()?'<button data-act="undo">↶ 復原上一次</button>':''}</div>
       ${have.inst&&have.orig&&getOff()&&has?`<div class="mrow"><span>對拍時聽的是<small>伴奏和原曲差 ${Math.abs(getOff()).toFixed(1)} 秒，選錯會整首差這麼多</small></span><div class="seg"><button data-act="base" data-to="orig" class="${getBase()==='orig'?'on':''}">原曲</button><button data-act="base" data-to="inst" class="${getBase()==='inst'?'on':''}">伴奏</button></div></div>`:''}
       <small class="tip">${au?'只改某一句：在畫面上長按那句歌詞':'先放原曲或伴奏才能對拍'}</small></div>
-    <div class="grp"><small>錄音</small><div class="row"><button data-act="mic" ${au?'':'disabled'}>🎙 開始錄音</button>${hasTake?'<button data-act="take">上次的錄音</button>':''}</div><small class="tip">不用戴耳機，app 會盡量把伴奏的聲音扣掉</small></div>
+    <div class="grp"><small>錄音</small><div class="row"><button data-act="mic" ${au?'':'disabled'}>🎙 錄音・我的聲音${takes.length?`（${takes.length}）`:''}</button></div></div>
     <div class="grp"><small>歌詞</small><div class="row"><button data-act="edit">改歌詞／分段</button><button data-act="toc">整首歌詞表</button></div></div>
     <div class="row" style="justify-content:flex-end"><button data-act="mclose">關閉</button></div>`;
   app.appendChild(d);
@@ -573,6 +587,7 @@ function lightLine(){
   let k=-1;if(rec)k=armed?-1:recLine-1;else L.forEach((x,j)=>{if(x!=null&&au.currentTime>=x-.3)k=j});
   sub.querySelectorAll('.ln').forEach(el=>{const j=+el.dataset.l;el.classList.toggle('on',j===k);el.classList.toggle('past',j<k)});
 }
+app.addEventListener('input',e=>{const a=e.target;if(a.dataset.act==='vme')setMix({me:+a.value});else if(a.dataset.act==='vsong')setMix({song:+a.value})});
 app.addEventListener('change',async e=>{
   if(e.target.id!=='afile')return;const f=e.target.files[0];if(!f)return;
   // 不設 accept：iPad 的「檔案」裡 OneDrive 的 mp3 常被認不出類型而變灰色選不到，改成選完再檢查
@@ -584,58 +599,104 @@ app.addEventListener('change',async e=>{
   if(au)au.pause();rec=false;try{localStorage.setItem('scene-track',which)}catch(e){}kv('scene-offat-v1',0);await loadAudio(which);
   hint(getTimes().length>1?`${TRACK[which]}放好了，可以直接播放`:`${TRACK[which]}放好了。要對拍：右上「⋯」→「開始對拍」`);hintT=setTimeout(()=>hint(''),4000);
 });
-/* ---------- 錄音：配著伴奏（或原曲）唱，錄完可以回放，也可以拿來自動對拍 ---------- */
-// 錄音存在這台裝置（每首只留最新一次）。記下「開始錄時歌曲在第幾秒」和「錄音第幾秒時歌開始跑」，回放和對拍才對得上
-let mic=null,micT=0,tk=null,tkUrl='';
-async function startMic(){
-  if(!au||mic)return;closeMenu();closeTake();stopTake();
-  if(rec)finishRec();
-  let st;
-  try{st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:false,autoGainControl:false}})}
+/* ---------- 錄音（像 Cubasis）：配原曲或伴奏唱，錄完你的聲音疊在歌上一起播 ---------- */
+// 每次錄音都留著（只存這台裝置），播放時同一個時間點用最新錄的那次。可以錄整首、只錄一段、或從現在開始
+// 記下「錄音開始時歌在第幾秒」和「錄音第幾秒歌才開始跑」，疊回去才對得上
+let mic=null,micT=0,takes=[],me=null,meTake=null,loopSec=-1,raf=0,lastSync=0;
+const MIXKEY='scene-mix-v1';
+function mix(){let m={};try{m=JSON.parse(localStorage.getItem(MIXKEY)||'{}')||{}}catch(e){}return Object.assign({on:true,me:1,song:1,hp:false},m)}
+function setMix(o){const m=Object.assign(mix(),o);try{localStorage.setItem(MIXKEY,JSON.stringify(m))}catch(e){}applyVol();return m}
+async function loadTakes(){
+  let t=await getFile(key+'|takes');
+  if(!t){const old=await getFile(key+'|take');t=old?[Object.assign({id:old.at||1},old)]:[]}
+  takes=Array.isArray(t)?t:[];
+}
+async function saveTakes(){try{await putFile(key+'|takes',takes)}catch(e){alert('這台裝置空間不夠，錄音沒存到')}}
+// 音量：iPad 的 Safari 不能直接調音量，要接到 Web Audio 才行；調過才接，沒調過就照原本播（比較不會出事）
+let actx=null;const gains=new WeakMap();
+function audioCtx(){if(!actx){const C=window.AudioContext||window.webkitAudioContext;actx=new C()}if(actx.state==='suspended')actx.resume();return actx}
+function route(el){if(!el||gains.has(el))return gains.get(el);try{const c=audioCtx(),s=c.createMediaElementSource(el),g=c.createGain();s.connect(g);g.connect(c.destination);gains.set(el,g);return g}catch(e){return null}}
+function applyVol(){const m=mix();[[au,m.song],[me,m.me]].forEach(([el,v])=>{if(!el)return;const g=gains.get(el)||(v!==1?route(el):null);if(g)g.gain.value=v})}
+function secRange(i){const t=getTimes(),d=au&&isFinite(au.duration)?au.duration:1e9;return [t[i]!=null?t[i]:0,t[i+1]!=null?t[i+1]:d]}
+function secAt(x){const t=getTimes();let k=0;t.forEach((v,j)=>{if(v!=null&&x>=v-.05)k=j});return k}
+// 播放中每一格畫面檢查：重複段落、錄一段時到段尾自動停、我的聲音跟歌對齊
+function tick(){
+  raf=0;if(!au||au.paused)return;const t=au.currentTime;
+  if(mic&&mic.until&&t>=mic.until){stopMic();return}
+  if(!mic&&loopSec>=0){const [a,b]=secRange(loopSec);if(t<a-1.5||t>b+1.5)loopSec=secAt(t);else if(t>=b-.04){au.currentTime=a;syncMe(true)}}
+  if(performance.now()-lastSync>200){lastSync=performance.now();syncMe()}
+  raf=requestAnimationFrame(tick);
+}
+function startTick(){if(!raf)raf=requestAnimationFrame(tick)}
+function syncMe(force){
+  const m=mix();
+  if(!au||au.paused||mic||!m.on||!takes.length){if(me&&!me.paused)me.pause();return}
+  const t=au.currentTime;let w=null;
+  takes.forEach(k=>{if(k.start<=t&&t<k.end-.1&&(!w||k.at>w.at))w=k});
+  if(!w){if(me&&!me.paused)me.pause();return}
+  if(meTake!==w){if(me){me.pause();URL.revokeObjectURL(me.src)}me=new Audio(URL.createObjectURL(w.blob));me.preload='auto';meTake=w;applyVol();force=true}
+  const want=t-w.start+w.lead;
+  if(me.paused){try{me.currentTime=want}catch(e){}me.play().catch(()=>{})}
+  else if(force||Math.abs(me.currentTime-want)>.12){try{me.currentTime=want}catch(e){}}
+}
+function hookAu(){au.addEventListener('play',()=>{if(actx)audioCtx();startTick();syncMe(true)});au.addEventListener('pause',()=>syncMe());au.addEventListener('seeked',()=>syncMe(true));au.addEventListener('ended',()=>{if(mic)stopMic()});applyVol()}
+// 錄音面板：錄哪裡、聽哪一軌、有沒有戴耳機；下面是錄過的每一次，可以聽、存、刪
+function openRec(){
+  closeMenu();closeRec();if(!au)return;
+  const m=mix(),sc=SCENES[key],st=sc.steps[cur]||{},[a,b]=secRange(cur);
+  const list=takes.slice().sort((x,y)=>y.at-x.at).map(k=>{const s=secAt(k.start+.5),d=new Date(k.at);
+    return `<div class="mrow"><span>${mmss(k.start)}–${mmss(k.end)}<small>${esc((sc.steps[s]||{}).sec||'')}・配${TRACK[k.track]||''}・${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}</small></span><button data-act="tplay" data-id="${k.id}">▶ 聽</button><a class="btn" data-act="tdl" download="${esc(sc.title)}-${mmss(k.start).replace(':','')}.${/webm/.test(k.blob.type)?'webm':'m4a'}" href="${URL.createObjectURL(k.blob)}">存</a><button data-act="tdel" data-id="${k.id}">🗑</button></div>`}).join('');
+  const full=takes.find(k=>k.start<2&&isFinite(au.duration)&&k.end>au.duration*.85);
+  const d=document.createElement('div');d.className='sheet menu-sheet';d.id='recs';
+  d.innerHTML=`<div class="q">🎙 錄音・${esc(sc.title)}</div>
+    <div class="grp"><small>錄哪裡（會播${TRACK[track]}，要換在播放列切換）</small><div class="row">
+      <button data-act="mrec" data-m="sec" class="go">● 錄這段：${esc(st.sec||'')}</button>
+      <button data-act="mrec" data-m="here">● 從 ${mmss(au.currentTime)} 開始</button>
+      <button data-act="mrec" data-m="all">● 整首</button></div>
+      <small class="tip">錄這段：從段落前 3 秒開始播，唱到段尾自動停（${mmss(a)}–${mmss(Math.min(b,au.duration||b))}）</small>
+      <label class="mchk"><input type="checkbox" data-act="mhp" ${m.hp?'checked':''}> 有戴耳機（音質比較好；沒戴耳機時 iPad 會把喇叭的歌扣掉，你的聲音會像講電話）</label></div>
+    ${takes.length?`<div class="grp"><small>我的聲音</small>
+      <label class="mchk"><input type="checkbox" data-act="mon" ${m.on?'checked':''}> 播放時把我的聲音疊上去</label>
+      <div class="mrow"><span>我的聲音</span><input type="range" min="0" max="2" step=".05" value="${m.me}" data-act="vme"></div>
+      <div class="mrow"><span>${TRACK[track]}</span><input type="range" min="0" max="1.5" step=".05" value="${m.song}" data-act="vsong"></div>
+      ${list}
+      <div class="row">${full?'<button data-act="talign">用整首那次自動對拍</button>':''}<button data-act="tclr">全部刪掉</button></div></div>`:''}
+    <div class="row" style="justify-content:flex-end"><button data-act="rclose">關閉</button></div>`;
+  app.appendChild(d);
+}
+function closeRec(){const d=document.getElementById('recs');if(d)d.remove()}
+async function startMic(mode){
+  if(!au||mic)return;closeRec();closeMenu();if(rec)finishRec();
+  const m=mix();let st;
+  try{st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:!m.hp,noiseSuppression:false,autoGainControl:false}})}
   catch(e){alert('沒辦法用麥克風：到「設定 → Safari → 麥克風」允許，或重新打開再按一次');return}
+  let from=au.currentTime,until=0;
+  if(mode==='all')from=0;
+  if(mode==='sec'){const [a,b]=secRange(cur);from=Math.max(0,a-3);until=Math.min(b+.3,isFinite(au.duration)?au.duration:b+.3)}
+  au.pause();au.currentTime=from;
   const type=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||'';
   const mr=new MediaRecorder(st,type?{mimeType:type}:{}),chunks=[];
-  mic={mr,st,start:au.currentTime,lead:0,t0:0,track};
+  mic={mr,st,start:from,lead:0,t0:0,track,until,ec:!m.hp};
   mr.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
   mr.onstop=async()=>{
     st.getTracks().forEach(t=>t.stop());
-    const m=mic;mic=null;clearInterval(micT);drawPlayer();
+    const k=mic;mic=null;clearInterval(micT);
     const blob=new Blob(chunks,{type:mr.mimeType||type||'audio/mp4'});
-    const take={blob,start:m.start,lead:m.lead,track:m.track,end:au?au.currentTime:0,at:Date.now()};
-    try{await putFile(key+'|take',take);hasTake=true}catch(e){}
-    openTake(take);
+    const take={id:Date.now(),blob,start:k.start,lead:k.lead,track:k.track,end:au?au.currentTime:k.start,at:Date.now(),ec:k.ec};
+    if(take.end-take.start>.5){takes.push(take);await saveTakes();setMix({on:true})}
+    drawPlayer();if(au){au.currentTime=take.start;show(secAt(take.start+3))}
+    hint(`錄好了！按 ▶ 會從 ${mmss(take.start)} 播，你的聲音疊在${TRACK[take.track]}上`);hintT=setTimeout(()=>hint(''),5000);
   };
-  mr.onstart=()=>{mic.t0=performance.now();au.addEventListener('playing',function f(){au.removeEventListener('playing',f);if(mic)mic.lead=(performance.now()-mic.t0)/1000},{once:true});au.play()};
+  mr.onstart=()=>{mic.t0=performance.now();au.addEventListener('playing',function f(){au.removeEventListener('playing',f);if(mic)mic.lead=(performance.now()-mic.t0)/1000});au.play()};
   mr.start(1000);
   drawPlayer();micT=setInterval(()=>{const e=document.getElementById('mict');if(e&&mic&&mic.t0)e.textContent=mmss((performance.now()-mic.t0)/1000)},500);
 }
 function stopMic(){if(!mic)return;if(au)au.pause();try{mic.mr.stop()}catch(e){}}
-async function openTake(take){
-  take=take||await getFile(key+'|take');if(!take)return;closeTake();closeMenu();
-  const full=take.start<2&&au&&isFinite(au.duration)&&take.end>au.duration*.85;
-  const d=document.createElement('div');d.className='sheet menu-sheet';d.id='takes';
-  d.innerHTML=`<div class="q">錄音・${esc(SCENES[key].title)}</div>
-    <small class="tip">${mmss(take.start)} 到 ${mmss(take.end)}，配${TRACK[take.track]||'伴奏'}錄的</small>
-    <div class="row"><button data-act="tboth">▶ 配${TRACK[take.track]||'伴奏'}聽</button><button data-act="tme">▶ 只聽我的聲音</button><button data-act="tstop">■ 停</button></div>
-    <div class="row">${full?'<button data-act="talign">用這次錄音自動對拍</button>':''}<a class="btn" data-act="tdl" download="${esc(SCENES[key].title)}-錄音.${/webm/.test(take.blob.type)?'webm':'m4a'}" href="${URL.createObjectURL(take.blob)}">存到檔案</a></div>
-    ${full?'':'<small class="tip">要拿錄音自動對拍：從頭錄到尾</small>'}
-    <div class="row" style="justify-content:flex-end"><button data-act="tclose">關閉</button></div>`;
-  app.appendChild(d);openTake.cur=take;
-}
-function closeTake(){const d=document.getElementById('takes');if(d)d.remove()}
-function stopTake(){if(tk){tk.pause();tk=null}if(au&&openTake.both){au.pause();openTake.both=0}}
-function playTake(both){
-  const take=openTake.cur;if(!take)return;stopTake();
-  if(tkUrl)URL.revokeObjectURL(tkUrl);tkUrl=URL.createObjectURL(take.blob);tk=new Audio(tkUrl);
-  const go=()=>{
-    if(both&&au){
-      const at=take.start;const pre=Math.max(0,take.lead-.05);
-      tk.currentTime=pre;au.currentTime=at;openTake.both=1;Promise.all([tk.play(),au.play()]).catch(()=>{});
-    }else{tk.currentTime=0;tk.play()}
-  };
-  if(both&&take.track&&take.track!==track&&have[take.track]){loadAudio(take.track,take.start,false).then(()=>setTimeout(go,300))}else go();
-}
-// 算出錄音裡「伴奏漏進來」的音量：把伴奏對到錄音的時間，找出喇叭到麥克風大概小了幾倍
+function playTakeAt(id){const k=takes.find(x=>x.id==id);if(!k||!au)return;closeRec();setMix({on:true});
+  const go=()=>{au.currentTime=k.start;show(secAt(k.start+3));au.play()};
+  if(k.track&&k.track!==track&&have[k.track])loadAudio(k.track,k.start,false).then(()=>setTimeout(go,300));else go()}
+async function delTake(id){if(!confirm('刪掉這次錄音？'))return;takes=takes.filter(k=>k.id!=id);if(meTake&&meTake.id==id){if(me)me.pause();meTake=null}await saveTakes();openRec();drawPlayer()}
+async function clearTakes(){if(!confirm('把這首的錄音全部刪掉？'))return;takes=[];if(me)me.pause();meTake=null;await saveTakes();openRec();drawPlayer()}
 async function bleed(take,buf){
   const tr=take.track||track,f=await getFile(key+'|'+tr)||(tr==='inst'?await getFile(key):null);if(!f)return null;
   let b;try{b=await decodeHead(f)}catch(e){return null}
@@ -648,7 +709,7 @@ async function bleed(take,buf){
   for(let f=0;f<n;f++)m[f]*=k*1.4;return m;
 }
 async function alignTake(){
-  const take=openTake.cur;if(!take)return;
+  const take=takes.find(k=>k.start<2&&au&&isFinite(au.duration)&&k.end>au.duration*.85);if(!take)return;
   if(getTimes().length>1&&!confirm('用這次錄音重新算每一句的時間？現在的對拍會先備份，不喜歡可以復原'))return;
   hint('正在聽你的錄音，找每一句開始的地方…');
   let buf;try{buf=await decodeHead(take.blob)}catch(e){hint('');alert('這段錄音讀不出來');return}
@@ -656,7 +717,7 @@ async function alignTake(){
   if(!res){hint('聽不太出唱歌的地方，再錄一次試試');hintT=setTimeout(()=>hint(''),4000);return}
   const d=take.start-take.lead,mv=a=>a.map(x=>x==null?x:r2(Math.max(0,x+d)));
   snapshot();setTimes(mv(res.sec),take.track||track);setLines(mv(res.lines),take.track||track);
-  closeTake();show(cur);drawPlayer();
+  closeRec();show(cur);drawPlayer();
   hint('對好了！播放看看，哪一句不準就長按那句改');hintT=setTimeout(()=>hint(''),4500);
 }
 /* ---------- mp3 轉成 wav 再播 ---------- */
