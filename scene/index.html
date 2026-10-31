@@ -152,10 +152,11 @@ body.studio{overflow:hidden}
 .s-ruler button{position:absolute;top:4px;height:32px;border-radius:8px!important;padding:0 6px!important;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:12px!important;background:rgba(255,255,255,.08)!important}
 .s-ruler button.on{background:rgba(242,194,123,.3)!important;border-color:var(--glow)!important;color:#fff!important}
 .s-nosec{color:var(--muted);font-size:12px;line-height:40px}
-.s-lanes{position:relative;display:grid;grid-template-rows:1fr 1fr;gap:6px;padding:0 16px;min-height:150px}
-.s-lane{display:grid;grid-template-columns:106px 1fr;gap:6px;min-height:0}
-.s-h{background:rgba(255,255,255,.05);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;justify-content:center}.s-h b{font-size:13px}
-.s-h button{padding:3px 0!important;width:34px;border-radius:6px!important;font-weight:700}.s-h input{width:100%;accent-color:#f2c27b}
+.s-lanes{position:relative;display:flex;flex-direction:column;gap:5px;padding:0 16px;min-height:150px;overflow:hidden}
+.s-lane{display:grid;grid-template-columns:112px 1fr;gap:6px;min-height:28px}
+.s-h{background:rgba(255,255,255,.05);border-radius:10px;padding:4px 8px;display:flex;flex-direction:column;gap:3px;justify-content:center;overflow:hidden;min-height:0}.s-h b{font-size:12px;white-space:nowrap}.s-ms{display:flex;gap:4px}
+.s-h button{padding:1px 0!important;width:30px;border-radius:6px!important;font-weight:700;font-size:12px!important}.s-h button[data-act=ssolo].on{background:rgba(140,200,255,.25)!important;border-color:#8cc8ff!important;color:#cfe8ff!important}
+.s-rb{position:absolute;background:rgba(224,90,78,.4);border-radius:6px;pointer-events:none}.s-h input{width:100%;accent-color:#f2c27b}
 .s-lane canvas{width:100%;height:100%;background:rgba(255,255,255,.035);border-radius:10px;touch-action:none;cursor:pointer;min-height:0}
 .s-lane.me .s-h input{accent-color:#ff8a80}
 .s-ph{position:absolute;top:0;bottom:0;left:0;width:2px;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.6);pointer-events:none}
@@ -170,7 +171,7 @@ body.studio{overflow:hidden}
 #studio.recording .s-top{background:rgba(224,90,78,.25)}
 .s-hp{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}.s-hp input{accent-color:#f2c27b}
 .s-msg{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);background:rgba(0,0,0,.7);padding:10px 16px;border-radius:12px}
-@media (max-width:640px){.s-ruler{margin-left:16px}.s-lane{grid-template-columns:1fr;grid-template-rows:auto 1fr}.s-h{flex-direction:row;align-items:center;padding:4px 8px}.s-h input{flex:1}
+@media (max-width:640px){.s-lane{grid-template-columns:70px 1fr}.s-h input{display:none}.s-h b{font-size:11px}
   .s-bot{grid-template-columns:1fr 1fr;grid-template-areas:"c c" "l r"}.s-c{grid-area:c;justify-content:center}.s-l{grid-area:l}.s-r{grid-area:r}#studio{grid-template-rows:auto minmax(100px,1fr) auto minmax(0,1.6fr) auto auto}}
 .recbar{grid-column:1/-1;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:6px 0}
 .recbar b{color:#ff8a80}.recbar span{color:var(--ink);font-size:14px}
@@ -292,7 +293,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=40;
+const VER=41;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -934,6 +935,6 @@ function clearInk(){if(!confirm('把這一段畫的都清掉？'))return;const a
 function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementById(id);if(e)e.remove()});document.body.classList.remove('drawing')}
 render();
 </script>
-<script src="studio.js?v=40"></script>
+<script src="studio.js?v=41"></script>
 </body>
 </html>
