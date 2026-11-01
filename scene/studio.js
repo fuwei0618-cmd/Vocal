@@ -29,7 +29,7 @@ async function openStudio(){
     </div>
     <div class="s-take" id="s-take" hidden></div>
     <div class="s-bot">
-      <div class="s-l"><button data-act="spic" id="s-picb">🖼 大畫面</button><button data-act="szoom" id="s-zoom">整首</button><button data-act="sloop" id="s-loop" class="on">🔁 重複</button></div>
+      <div class="s-l"><button data-act="spic" id="s-picb">🖼 大畫面</button><button data-act="szoom" id="s-zoom">整首</button><button data-act="sloop" id="s-loop" class="on">🔁 重複</button><span class="s-key"><button data-act="skey" data-d="-1" aria-label="降半音">−</button><b id="s-keyv">${keyTxt(getKey())}</b><button data-act="skey" data-d="1" aria-label="升半音">＋</button></span></div>
       <div class="s-c"><button data-act="shome" aria-label="回到開頭">⏮</button><button data-act="srec0" class="s-rec0" aria-label="從頭錄">⏺ 從頭錄</button><button data-act="splay" class="s-pp" id="s-pp">▶</button><button data-act="srec" class="s-rec" id="s-rec" aria-label="錄音"><i></i></button></div>
       <div class="s-r"><span class="s-tip" id="s-tip">點波形或歌詞選從哪裡開始錄</span></div>
     </div>
@@ -37,14 +37,24 @@ async function openStudio(){
   app.appendChild(d);document.body.classList.add('studio');
   sView0();sLayout();
   try{
-    for(const l of lanes){if(l.id==='me')continue;
-      const f=l.id==='inst'?await getFile(key+'|inst')||await getFile(key):await getFile(key+'|'+l.id);if(!f)continue;
-      let buf=await decodeHead(await playable(key+'|'+l.id,f));
-      if(l.id!==track&&buf.numberOfChannels>1)buf=toMono(buf);  // 不是正在用的那軌存單聲道，省記憶體
-      l.buf=buf;l.peaks=peaksOf(buf);S.dur=Math.max(S.dur,buf.duration);sDraw()}
+    await sLoadLanes();
     for(const k of takes)await takeBuf(k);
   }catch(e){sMsg('這首的音檔讀不出來');return}
   if(!S.view)sView0();sMsg('');sLayout();addEventListener('resize',sLayout);
+}
+async function sLoadLanes(){
+  for(const l of S.lanes){if(l.id==='me')continue;
+    const f=l.id==='inst'?await getFile(key+'|inst')||await getFile(key):await getFile(key+'|'+l.id);if(!f)continue;
+    let buf=await decodeHead(await playable(key+'|'+l.id,f,sMsg));if(!S)return;
+    if(l.id!==track&&buf.numberOfChannels>1)buf=toMono(buf);  // 不是正在用的那軌存單聲道，省記憶體
+    l.buf=buf;l.peaks=peaksOf(buf);S.dur=Math.max(S.dur,buf.duration);sDraw()}
+}
+// 錄音室裡換 Key：停下來、每一軌重新變調，外面的播放器也換成新的 Key
+async function sReloadKey(){
+  if(!S||S.recd)return;const was=S.playing,p=sNow();sStop();
+  try{await sLoadLanes()}catch(e){sMsg('變調失敗');return}
+  if(!S)return;sMsg('');sHint(`現在是 ${keyTxt(getKey())}`);if(was)sPlay(p);
+  if(au)loadAudio(track,au.currentTime,false);
 }
 function toMono(b){const o=S.ctx.createBuffer(1,b.length,b.sampleRate),d=o.getChannelData(0),c0=b.getChannelData(0),c1=b.getChannelData(1);for(let i=0;i<b.length;i++)d[i]=(c0[i]+c1[i])/2;return o}
 function closeStudio(){
@@ -280,6 +290,7 @@ app.addEventListener('click',e=>{
   if(!S)return;const a=e.target.closest('#studio [data-act]');if(!a)return;const act=a.dataset.act;
   const lane=id=>S.lanes.find(x=>x.id===id);
   if(act==='sx')closeStudio();
+  else if(act==='skey'){if(S.recd)return;keyStep(+a.dataset.d)}
   else if(act==='splay'){if(S.recd)sRecStop();else if(S.playing)sStop();else sPlay(S.pos)}
   else if(act==='srec')sRecStart();
   else if(act==='srec0'){if(S.recd)return sRecStop();S.sel=null;S.loop=false;S.pos=0;sRecStart()}
