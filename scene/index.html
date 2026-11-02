@@ -216,7 +216,7 @@ body.pl-hide .prog{transform:translateY(calc(66px + env(safe-area-inset-bottom,0
 .mrow{display:flex;align-items:center;gap:10px}.mrow span{flex:1;font-size:15px}.mrow span small{display:block;color:var(--muted);font-size:11.5px}
 .mrow em{font-style:normal;color:var(--glow);font-size:12px}
 .sheet button:disabled{opacity:.4}
-@media (max-width:640px){.hint{bottom:calc(env(safe-area-inset-bottom,0px) + 118px)}.player{right:0;bottom:0}.player .ctl .c{gap:4px}.player .ctl .c .pp{width:50px;height:50px}.player .ctl .r button{width:36px;height:36px}.ctl .cnt{display:none}.kbar button{width:24px}.kbar b{min-width:2.2em;font-size:11px}.kbar i{display:none}.ctl .l{gap:5px}.ctl{grid-template-columns:1fr auto}.ctl .seg{flex-shrink:0}}
+@media (max-width:640px){.hint{bottom:calc(env(safe-area-inset-bottom,0px) + 118px)}.player{right:0;bottom:0}.player .ctl .c{gap:4px}.player .ctl .c .pp{width:50px;height:50px}.player .ctl .r button{width:36px;height:36px}.ctl .cnt{display:none}.kbar button{width:24px}.kbar b{min-width:2.2em;font-size:11px}.kbar i{display:none}.ctl .l{gap:5px}.player .ctl .r .plh{position:absolute;left:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 58px)}.ctl{grid-template-columns:1fr auto}.ctl .seg{flex-shrink:0}}
 button:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
 /* 直的手機：圖在上面一整張，歌詞在圖下面 */
 @media (orientation:portrait){
@@ -367,7 +367,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=65;
+const VER=66;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -465,6 +465,7 @@ app.addEventListener('click',e=>{
       const g=groupsOf(t).length,N=SCENES[key].steps.length;
       hint(g===N?`照你空的行分成 ${N} 段`:g<2?`你沒空行，先照預設行數分成 ${N} 段`:`這首已經對過拍，先照原本的 ${N} 段`);hintT=setTimeout(()=>hint(''),g===N?2500:6000)}
     else if(act==='key')keyStep(+a.dataset.d);
+    else if(act==='plhide'){document.body.classList.add('pl-hide');hint('點畫面最下面就會再出來');hintT=setTimeout(()=>hint(''),2200)}
     else if(act==='edit'){editing=true;render();scrollTo(0,0)}
     else if(act==='cancel'){editing=false;render()}
     else if(act==='prev'){if(au){au.currentTime=Math.max(0,au.currentTime-5);updateProg();sync()}else step(cur-1)}
@@ -578,7 +579,7 @@ function drawPlayer(){
   const sw=au?(have.inst&&have.orig?`<div class="seg" role="group" aria-label="原曲或伴奏"><button data-act="track" data-to="orig" class="${track==='orig'?'on':''}">原曲</button><button data-act="track" data-to="inst" class="${track==='inst'?'on':''}">伴奏</button></div>`:`<span class="lab">${TRACK[track]}</span>`):'';
   const mid=`<button data-act="prev" aria-label="倒退 5 秒" class="sk">${au?'↺5':'⏮'}</button>`+(au?`<button data-act="play" class="pp" aria-label="${au.paused?'播放':'暫停'}">${au.paused?'▶':'❚❚'}</button>`:`<button data-act="menu" class="add">＋ 放音樂</button>`)+`<button data-act="next" aria-label="快轉 5 秒" class="sk">${au?'5↻':'⏭'}</button>`;
   const chips=au?`<button data-act="loop" class="chip${loopSec>=0?' on':''}" aria-label="重複這段">🔁</button><span class="kbar" role="group" aria-label="升降 Key"><button data-act="key" data-d="-1" aria-label="降半音">−</button><b id="keyb">${keyHtml(getKey())}</b><button data-act="key" data-d="1" aria-label="升半音">＋</button></span>`:'';
-  ctl.innerHTML=`<div class="l">${sw}${chips}<span class="cnt">${cur+1} / ${n}</span></div><div class="c">${mid}</div><div class="r">${au?'<button data-act="mic" aria-label="錄音" class="micb">🎙</button>':''}<button data-act="pen" aria-label="畫筆">✏️</button><button data-act="toc" aria-label="整首歌詞">☰</button></div>`;
+  ctl.innerHTML=`<div class="l">${sw}${chips}<span class="cnt">${cur+1} / ${n}</span></div><div class="c">${mid}</div><div class="r">${au?'<button data-act="plhide" aria-label="收起播放列" class="plh">⌄</button><button data-act="mic" aria-label="錄音" class="micb">🎙</button>':''}<button data-act="pen" aria-label="畫筆">✏️</button><button data-act="toc" aria-label="整首歌詞">☰</button></div>`;
   updateProg();
 }
 function updateProg(){
@@ -589,7 +590,8 @@ function updateProg(){
 }
 // 播放中 3 秒沒動就把播放列收起來，只留一條細細的進度線；點螢幕下方再叫出來。暫停、對拍時一直顯示
 let plT=0;
-function wakePlayer(){document.body.classList.remove('pl-hide');clearTimeout(plT);if(au&&!au.paused&&!rec&&!document.getElementById('menu')&&!document.getElementById('studio'))plT=setTimeout(()=>document.body.classList.add('pl-hide'),3000)}
+// 播放列不會自己收起來：按右邊 ⌄ 收起，點畫面最下面那條再叫出來
+function wakePlayer(){document.body.classList.remove('pl-hide');clearTimeout(plT)}
 app.addEventListener('pointerdown',e=>{if(e.target.closest('#player'))wakePlayer()},true);
 // 拖進度條
 let dragging=false;
