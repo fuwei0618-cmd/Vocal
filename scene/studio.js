@@ -45,16 +45,16 @@ async function openStudio(){
 async function sLoadLanes(){
   for(const l of S.lanes){if(l.id==='me')continue;
     const f=l.id==='inst'?await getFile(key+'|inst')||await getFile(key):await getFile(key+'|'+l.id);if(!f)continue;
-    let buf=await decodeHead(await playable(key+'|'+l.id,f,sMsg));if(!S)return;
-    if(l.id!==track&&buf.numberOfChannels>1)buf=toMono(buf);  // 不是正在用的那軌存單聲道，省記憶體
+    let buf=au&&au.bufs&&au.bufs[l.id];   // 播放器已經解開的就直接用，不再多佔一份記憶體
+    if(!buf){buf=await decodeHead(await playable(key+'|'+l.id,f,sMsg));if(!S)return;
+      if(l.id!==track&&buf.numberOfChannels>1)buf=toMono(buf)}  // 不是正在用的那軌存單聲道，省記憶體
     l.buf=buf;l.peaks=peaksOf(buf);S.dur=Math.max(S.dur,buf.duration);sDraw()}
 }
 // 錄音室裡換 Key：停下來、每一軌重新變調，外面的播放器也換成新的 Key
 async function sReloadKey(){
   if(!S||S.recd)return;const was=S.playing,p=sNow();sStop();
-  try{await sLoadLanes()}catch(e){sMsg('變調失敗');return}
+  try{if(au)await loadAudio(track,au.currentTime,false);await sLoadLanes()}catch(e){sMsg('變調失敗');return}
   if(!S)return;sMsg('');sHint(`現在是 ${keyTxt(getKey())}`);if(was)sPlay(p);
-  if(au)loadAudio(track,au.currentTime,false);
 }
 function toMono(b){const o=S.ctx.createBuffer(1,b.length,b.sampleRate),d=o.getChannelData(0),c0=b.getChannelData(0),c1=b.getChannelData(1);for(let i=0;i<b.length;i++)d[i]=(c0[i]+c1[i])/2;return o}
 function closeStudio(){

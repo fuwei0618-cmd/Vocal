@@ -367,7 +367,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=64;
+const VER=65;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -555,11 +555,15 @@ async function loadAudio(want,at,play){
   try{track=want||localStorage.getItem('scene-track')||'inst'}catch(e){track=want||'inst'}
   if(!have[track])track=have.inst?'inst':'orig';
   const f0=track==='inst'?fi:fo;if(!f0){drawPlayer();return}
-  const f=await playable(key+'|'+track,f0);
   if(fi&&fo&&!kv('scene-offat-v1'))setTimeout(()=>findOffset(fi,fo),1500);
   if(au)au.pause();
-  if(auUrl)URL.revokeObjectURL(auUrl);auUrl=URL.createObjectURL(f);
-  au=new Audio(auUrl);au.preload='auto';hookAu();
+  // 原曲、伴奏兩軌都解開，用同一個 Web Audio 時鐘一起播；換軌只是換哪一軌有聲音（跟錄音室一樣，沒有切點）
+  const k0=key,bufs={};
+  for(const tr of ['inst','orig']){const f1=tr==='inst'?fi:fo;if(!f1)continue;
+    try{bufs[tr]=await decodeHead(await playable(key+'|'+tr,f1,typeof S!=='undefined'&&S?sMsg:hint))}catch(e){}}
+  if(key!==k0)return;
+  if(!bufs[track]){drawPlayer();return}
+  au=new Player(bufs,track);hookAu();
   au.addEventListener('timeupdate',sync);au.addEventListener('play',wakePlayer);au.addEventListener('pause',wakePlayer);au.addEventListener('play',drawPlayer);au.addEventListener('pause',()=>{drawPlayer();lightLine()});
   au.addEventListener('ended',()=>{if(rec)toggleRec();drawPlayer()});au.addEventListener('loadedmetadata',()=>{if(at)au.currentTime=at;if(play)au.play();drawPlayer()});
   drawPlayer();
@@ -633,9 +637,44 @@ function openPg(){
   app.appendChild(d)}
 function closeMenu(){const d=document.getElementById('menu');if(d){d.remove();wakePlayer()}}
 function switchTrack(){
-  if(!au)return;const at=au.currentTime,play=!au.paused,to=track==='inst'?'orig':'inst';
+  if(!au)return;const to=track==='inst'?'orig':'inst';
   try{localStorage.setItem('scene-track',to)}catch(e){}
-  loadAudio(to,at,play);
+  if(!au.bufs[to]){loadAudio(to,au.currentTime,!au.paused);return}
+  au.use(to,shiftFor(track),shiftFor(to));track=to;drawPlayer();sync();
+}
+// 播放器：模仿 <audio> 的用法（currentTime、paused、play/pause、事件），底下是 Web Audio
+// 兩軌同時在跑，聽得到的那軌音量 1、另一軌 0；換軌時 40 毫秒交叉淡入淡出
+class Player extends EventTarget{
+  constructor(bufs,tr){super();this.bufs=bufs;this.tr=tr;this.pos=0;this.paused=true;this.srcs=[];this.g={};this.T=0;this.from=0;this.tu=0;
+    setTimeout(()=>this.dispatchEvent(new Event('loadedmetadata')),0)}
+  get duration(){return this.bufs[this.tr].duration}
+  get currentTime(){return this.paused?this.pos:Math.min(this.duration,this.from+(actx.currentTime-this.T))}
+  set currentTime(v){v=Math.max(0,Math.min(this.duration,+v||0));if(this.paused){this.pos=v;this.dispatchEvent(new Event('timeupdate'))}else this._start(v)}
+  // 其他軌的時間 = 這軌時間 − 這軌偏移 + 那軌偏移
+  _start(at){
+    this._stop();const ctx=audioCtx(),t0=ctx.currentTime+.03,me=shiftFor(this.tr);
+    for(const [tr,b] of Object.entries(this.bufs)){
+      const off=at-me+shiftFor(tr),g=ctx.createGain();g.gain.value=tr===this.tr?1:0;g.connect(ctx.destination);this.g[tr]=g;
+      const s=ctx.createBufferSource();s.buffer=b;s.connect(g);
+      if(off>=0){if(off<b.duration)s.start(t0,off)}else s.start(t0-off,0);
+      if(tr===this.tr)s.onended=()=>{if(this.srcs.includes(s)&&!this.paused&&this.currentTime>=this.duration-.1){this._stop();this.paused=true;this.pos=this.duration;this.dispatchEvent(new Event('pause'));this.dispatchEvent(new Event('ended'))}};
+      this.srcs.push(s)}
+    this.T=t0;this.from=at;
+    clearInterval(this.tu);this.tu=setInterval(()=>this.dispatchEvent(new Event('timeupdate')),250);
+  }
+  _stop(){this.srcs.forEach(s=>{s.onended=null;try{s.stop()}catch(e){}try{s.disconnect()}catch(e){}});this.srcs=[];Object.values(this.g).forEach(g=>{try{g.disconnect()}catch(e){}});this.g={};clearInterval(this.tu)}
+  play(){if(!this.paused)return Promise.resolve();audioCtx();this.paused=false;if(this.pos>=this.duration-.05)this.pos=0;this._start(this.pos);this.dispatchEvent(new Event('play'));return Promise.resolve()}
+  pause(){if(this.paused)return;this.pos=this.currentTime;this._stop();this.paused=true;this.dispatchEvent(new Event('pause'))}
+  use(to,shFrom,shTo){
+    if(this.paused){this.pos=Math.max(0,this.pos-shFrom+shTo);this.tr=to;return}
+    const now=this.currentTime,ctx=actx,t=ctx.currentTime;
+    for(const [tr,g] of Object.entries(this.g)){g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(g.gain.value,t);g.gain.linearRampToValueAtTime(tr===to?1:0,t+.04)}
+    // 時鐘換成新那軌的時間
+    this.from=now-shFrom+shTo;this.T=t;this.tr=to;
+    const s=this.srcs[Object.keys(this.bufs).indexOf(to)];
+    if(s)s.onended=()=>{if(!this.paused&&this.currentTime>=this.duration-.1){this._stop();this.paused=true;this.pos=this.duration;this.dispatchEvent(new Event('pause'));this.dispatchEvent(new Event('ended'))}};
+    Object.keys(this.bufs).forEach((tr,i)=>{if(tr!==to&&this.srcs[i])this.srcs[i].onended=null});
+  }
 }
 // 對拍＝一句一句點：唱到每句開頭點一下螢幕（點左邊退回一句）。換到下一段的第一句時自動換段
 // 「整首重對」從第一句開始；「從這段改」從這段第一句開始。按「完成」結束，沒點到的照舊
@@ -1055,6 +1094,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=60"></script>
+<script src="studio.js?v=65"></script>
 </body>
 </html>
