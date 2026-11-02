@@ -307,10 +307,14 @@ const SCENES={
     spots:{notes:{x:56,y:72,name:'貼滿便利貼的腳踏車'},cat:{x:50,y:58,name:'偷可頌的貓'},plane:{x:17,y:21,name:'雨棚上的紙飛機'},petals:{x:62,y:30,name:'飄落的花瓣'},
       face:{x:42,y:88,name:'粉筆鬼臉'},arrow:{x:63,y:86,name:'粉筆箭頭'},couple:{x:83,y:66,name:'牽手的背影'},window:{x:41,y:18,name:'飄起的窗簾'}},
     steps:[
-      {sec:'主歌',spot:['notes','cat','plane'],word:'擋',cue:'擋不住、說不清，有點好笑',n:6},
-      {sec:'副歌',spot:['face','couple'],word:'疑',cue:'先懷疑，再勇敢投入',n:4},
-      {sec:'主歌',spot:['petals','window','arrow'],word:'亮',cue:'你很耀眼，眼睛亮起來',n:6},
-      {sec:'副歌',spot:['face','couple','notes'],word:'投',cue:'任性一點，玩起來',n:5},
+      {sec:'主歌',spot:'notes',word:'擋',cue:'擋不住的心動，貼滿整台車',n:4},
+      {sec:'主歌',spot:'cat',word:'偷',cue:'偷偷靠近，有點好笑',n:4},
+      {sec:'主歌',spot:'plane',word:'飛',cue:'心思飛出去，說不清',n:4},
+      {sec:'副歌',spot:'face',word:'疑',cue:'先懷疑：是不是惡作劇',n:4},
+      {sec:'主歌',spot:'petals',word:'亮',cue:'你很耀眼，眼睛亮起來',n:4},
+      {sec:'主歌',spot:'window',word:'望',cue:'探頭張望，心一直飄',n:4},
+      {sec:'主歌',spot:'arrow',word:'衝',cue:'跟著箭頭往前衝',n:4},
+      {sec:'副歌',spot:['couple','face'],word:'投',cue:'任性一點，勇敢投入',n:5},
     ]},
   zhizu:{
     title:'知足',artist:'五月天',img:'zhizu.jpg?v=1',ratio:1600/893,layout:'top',dim:.55,
@@ -360,7 +364,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=61;
+const VER=62;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
