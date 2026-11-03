@@ -10,7 +10,7 @@ function stSave(){if(!S)return;const o={mute:{},vol:{},h:{}};S.lanes.forEach(l=>
 const LANE_NAME={orig:'原曲',inst:'伴奏',vocal:'原唱人聲',me:'我的聲音'};
 async function openStudio(){
   if(!au){hint('先在右上「⋯」放原曲或伴奏');hintT=setTimeout(()=>hint(''),2500);return}
-  au.pause();closeMenu();if(rec)finishRec();
+  const wasPl=!au.paused;if(!wasPl)au.pause();closeMenu();if(rec)finishRec();
   const pf=stPrefs(),ids=[];
   if(have.orig)ids.push('orig');if(have.inst)ids.push('inst');if(hasVocal)ids.push('vocal');ids.push('me');
   const lanes=ids.map(id=>({id,name:LANE_NAME[id],buf:null,peaks:null,solo:false,
@@ -38,6 +38,8 @@ async function openStudio(){
   sView0();sLayout();
   try{
     await sLoadLanes();
+    // 外面正在播：錄音室接著同一個時間點播下去，外面的播放器在同一刻停（不會斷）
+    if(wasPl&&!au.paused&&S){const p=au.currentTime+.08;S.pos=p;sPlay(p);au.handoff(S.T)}else if(!au.paused)au.pause();
     for(const k of takes)await takeBuf(k);
   }catch(e){sMsg('這首的音檔讀不出來');return}
   if(!S.view)sView0();sMsg('');sLayout();addEventListener('resize',sLayout);
@@ -58,10 +60,16 @@ async function sReloadKey(){
 }
 function toMono(b){const o=S.ctx.createBuffer(1,b.length,b.sampleRate),d=o.getChannelData(0),c0=b.getChannelData(0),c1=b.getChannelData(1);for(let i=0;i<b.length;i++)d[i]=(c0[i]+c1[i])/2;return o}
 function closeStudio(){
-  if(!S)return;if(S.recd)sRecStop(true);sStop();stSave();
-  const p=S.pos;removeEventListener('resize',sLayout);
+  if(!S)return;if(S.recd)sRecStop(true);
+  let p,hand=false;
+  if(S.playing&&au&&!S.recd){  // 錄音室正在播：回到外面接著播，同一刻交棒
+    const T=S.ctx.currentTime+.08;p=sNow()+.08;au.playAt(p,T);hand=true;
+    S.srcs.forEach(s=>{try{s.stop(T)}catch(e){}});const gs=Object.values(S.gains);setTimeout(()=>gs.forEach(g=>{try{g.disconnect()}catch(e){}}),500);
+    S.srcs=[];S.gains={};S.playing=false;cancelAnimationFrame(S.raf);S.raf=0;S.pos=p}
+  else sStop();
+  stSave();p=S.pos;removeEventListener('resize',sLayout);
   const d=document.getElementById('studio');if(d)d.remove();document.body.classList.remove('studio','studio-big');S=null;
-  if(au){au.currentTime=p;show(secAt(p+.05))}drawPlayer();
+  if(au){if(!hand)au.currentTime=p;show(secAt(p+.05))}drawPlayer();
 }
 // 大畫面：軌道收成一條細的，情境圖撐滿；錄音時自動切過去，錄完回來
 function sBig(){const d=document.getElementById('studio');if(!d)return;const on=!!(S.big||S.recd);S.bigOn=on;d.classList.toggle('big',on);document.body.classList.toggle('studio-big',on);if(on){const p=sNow();show(secAt(p+.05),false);lightLine()}const b=document.getElementById('s-picb');if(b){b.classList.toggle('on',on);b.textContent=on?'🎚 軌道':'🖼 大畫面'}setTimeout(sLayout,320)}
@@ -295,7 +303,10 @@ app.addEventListener('click',e=>{
   else if(act==='srec')sRecStart();
   else if(act==='srec0'){if(S.recd)return sRecStop();S.sel=null;S.loop=false;S.pos=0;sRecStart()}
   else if(act==='shome'){const was=S.playing;S.pos=S.sel?Math.max(0,S.sel[0]-1):0;if(was)sPlay(S.pos);else sHead()}
-  else if(act==='ssec'){const i=+a.dataset.i,[x,y]=secRange(i);if(S.sel&&Math.abs(S.sel[0]-x)<.01){S.sel=null}else{S.sel=[x,y];sView0();S.pos=x;if(S.playing)sPlay(S.pos)}sDraw()}
+  else if(act==='ssec'){const i=+a.dataset.i,[x,y]=secRange(i);
+    // 點段名選範圍：沒選→選這段；點範圍外的段→範圍延伸到那段；點範圍裡面的段→取消
+    if(S.sel&&x>=S.sel[0]-.01&&y<=S.sel[1]+.01){S.sel=null}
+    else{const ext=!!S.sel;S.sel=ext?[Math.min(S.sel[0],x),Math.max(S.sel[1],y)]:[x,y];if(!ext)sView0();S.pos=S.sel[0];if(S.playing)sPlay(S.pos);if(ext)sHint('範圍延伸了，點範圍裡的段名可以取消')}sDraw()}
   else if(act==='szoom'){const whole=S.view[0]>0.5||S.view[1]<S.dur-.5;if(whole)S.view=[0,S.dur];else sView0();sDraw()}
   else if(act==='sloop'){S.loop=!S.loop;sDraw()}
   else if(act==='spic'){S.big=!S.big;sBig()}
