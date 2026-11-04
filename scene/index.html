@@ -380,7 +380,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=72;
+const VER=73;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -537,6 +537,7 @@ let au=null,auUrl='',rec=false,track='inst',have={inst:false,orig:false};
 const TRACK={inst:'伴奏',orig:'原曲',vocal:'人聲'};let hasVocal=false;
 function idb(){return new Promise((ok,no)=>{const r=indexedDB.open('scene-audio',1);r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 async function getFile(k){try{const db=await idb();return await new Promise(ok=>{const q=db.transaction('files').objectStore('files').get(k);q.onsuccess=()=>ok(q.result||null);q.onerror=()=>ok(null)})}catch(e){return null}}
+async function delFile(k){try{const db=await idb();db.transaction('files','readwrite').objectStore('files').delete(k)}catch(e){}}
 async function putFile(k,f){const db=await idb();return new Promise((ok,no)=>{const t=db.transaction('files','readwrite');t.objectStore('files').put(f,k);t.oncomplete=ok;t.onerror=()=>no(t.error)})}
 // 原曲和伴奏常常不是同一個來源，開頭長度不一樣：記下「對拍是用哪一軌對的」和「伴奏比原曲晚幾秒」，換軌播放時自動加減
 const kv=(k,v)=>{let all={};try{all=JSON.parse(localStorage.getItem(k)||'{}')||{}}catch(e){}if(v===undefined)return all[key];all[key]=v;try{localStorage.setItem(k,JSON.stringify(all))}catch(e){}};
@@ -563,7 +564,9 @@ const mmss=t=>isFinite(t)?`${Math.floor(t/60)}:${String(Math.floor(t%60)).padSta
 let hintT=0;
 function hint(t){clearTimeout(hintT);const h=document.getElementById('hint');if(!h)return;h.hidden=!t;h.textContent=t||''}
 // 伴奏和原唱各存一份；對拍秒數兩個共用（同一個錄音分出來的，時間一樣）
+let loadGen=0;
 async function loadAudio(want,at,play){
+  const gen=++loadGen;
   const fi=await getFile(key+'|inst')||await getFile(key),fo=await getFile(key+'|orig');
   have={inst:!!fi,orig:!!fo};await loadTakes();hasVocal=!!await getFile(key+'|vocal');
   if(hasVocal&&!getLines().length&&!loadAudio.did){loadAudio.did=1;autoAlign()}  // 之前放過人聲：補算逐句一次
@@ -575,8 +578,10 @@ async function loadAudio(want,at,play){
   // 原曲、伴奏兩軌都解開，用同一個 Web Audio 時鐘一起播；換軌只是換哪一軌有聲音（跟錄音室一樣，沒有切點）
   const k0=key,bufs={};
   for(const tr of ['inst','orig']){const f1=tr==='inst'?fi:fo;if(!f1)continue;
-    try{bufs[tr]=await decodeHead(await playable(key+'|'+tr,f1,typeof S!=='undefined'&&S?sMsg:hint))}catch(e){}}
-  if(key!==k0)return;
+    try{bufs[tr]=await decodeHead(await playable(key+'|'+tr,f1,typeof S!=='undefined'&&S?sMsg:hint,gen))}catch(e){if(e==='stale')return}
+    if(gen!==loadGen)return}
+  if(key!==k0||gen!==loadGen)return;
+  if(au)au.pause();
   if(!bufs[track]){drawPlayer();return}
   au=new Player(bufs,track);hookAu();
   au.addEventListener('timeupdate',sync);au.addEventListener('play',wakePlayer);au.addEventListener('pause',wakePlayer);au.addEventListener('play',drawPlayer);au.addEventListener('pause',()=>{drawPlayer();lightLine()});
@@ -873,15 +878,24 @@ function toWav(buf){
 const getKey=()=>+kv('scene-key-v1')||0,setKey=v=>kv('scene-key-v1',v);
 const keyHtml=v=>v?`<i>Key </i>${v>0?'+':'−'}${Math.abs(v)}`:'原調';
 const keyTxt=v=>v?`Key ${v>0?'+':'−'}${Math.abs(v)}`:'原調';
-async function playable(k,f,say){
-  const base=await playable0(k,f),s=getKey();if(!s||!window.keyShift)return base;
-  const c=await getFile(k+'|key');if(c&&c.size===f.size&&c.shift===s&&c.blob)return c.blob;
+// keyshift.js 是在頁面最後才載入的：音檔先讀好時要等它，不能直接用原調（以前會顯示 +2 卻放 +0）
+const keyReady=()=>window.keyShift?Promise.resolve():new Promise(ok=>{const t=setInterval(()=>{if(window.keyShift){clearInterval(t);ok()}},50);setTimeout(()=>{clearInterval(t);ok()},15000)});
+// 每個 Key 各存一份（最多留最近 3 個），切回剛剛用過的 Key 不用再算
+async function playable(k,f,say,gen){
+  const base=await playable0(k,f),s=getKey();if(!s)return base;
+  await keyReady();if(!window.keyShift){(say||hint)('變調工具沒載入，先用原調');return base}
+  const ck=k+'|key'+s,c=await getFile(ck);if(c&&c.size===f.size&&c.shift===s&&c.blob){keyKeep(k,s);return c.blob}
   say=say||hint;const lbl=TRACK[k.split('|').pop()]||'';
   try{say(`${lbl}變調中（${keyTxt(s)}）…`);
-    const o=await keyShift(await decodeHead(base),s,p=>say(`${lbl}變調中（${keyTxt(s)}）… ${Math.round(p*100)}%`));
-    const wav=toWav(o);try{await putFile(k+'|key',{size:f.size,shift:s,blob:wav})}catch(e){}say('');return wav;
-  }catch(e){say('變調失敗，先用原調');return base}
+    const o=await keyShift(await decodeHead(base),s,p=>{if(gen&&gen!==loadGen)throw 'stale';say(`${lbl}變調中（${keyTxt(s)}）… ${Math.round(p*100)}%`)});
+    const wav=toWav(o);try{await putFile(ck,{size:f.size,shift:s,blob:wav});keyKeep(k,s)}catch(e){}say('');return wav;
+  }catch(e){if(e==='stale')throw e;say('變調失敗，先用原調');return base}
 }
+// 記住這軌最近用過哪幾個 Key，超過 3 個就刪最舊的那份
+async function keyKeep(k,s){let L=[];try{L=JSON.parse(localStorage.getItem('scene-keys-v1')||'{}')[k]||[]}catch(e){}
+  L=[s,...L.filter(x=>x!==s)];const drop=L.slice(3);L=L.slice(0,3);
+  try{const all=JSON.parse(localStorage.getItem('scene-keys-v1')||'{}');all[k]=L;localStorage.setItem('scene-keys-v1',JSON.stringify(all))}catch(e){}
+  for(const x of drop)delFile(k+'|key'+x);delFile(k+'|key')}
 async function playable0(k,f){
   if(!isMp3(f))return f;
   const c=await getFile(k+'|wav');if(c&&c.size===f.size&&c.blob)return c.blob;
@@ -1137,6 +1151,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=69"></script>
+<script src="studio.js?v=73"></script>
 </body>
 </html>
