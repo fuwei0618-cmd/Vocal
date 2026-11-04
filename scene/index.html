@@ -386,6 +386,8 @@ const SCENES={
       {sec:'副歌',spot:'couple',word:'投',cue:'任性一點，勇敢投入',n:2},
     ]},
   zhizu:{
+    // 照簡譜：A＝怎麼去擁有；B＝如果我愛上（那天你和我同旋律，只有最後收尾不同）；C＝副歌；D＝尾聲
+    mel:['A','B','C','B','C','C','B','D'],
     title:'知足',artist:'五月天',img:'zhizu.jpg?v=1',ratio:1600/893,layout:'top',dim:.55,
     story:'草地上望著彩虹和風箏，我把你的笑收進紙星星罐。想起那個山丘、那一年的歌，最後放手讓風箏飛遠，知足地溫柔收起來。',
     spots:{rainbow:{x:52,y:18,name:'彩虹'},kite:{x:77,y:24,name:'風箏'},jar:{x:62,y:66,name:'紙星星罐'},cups:{x:46,y:68,name:'兩杯茶'},guitar:{x:71,y:81,name:'吉他'},book:{x:55,y:70,name:'歌本'},
@@ -436,7 +438,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=81;
+const VER=82;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1109,8 +1111,10 @@ function playFrom(sec,l){
 }
 // 整首歌詞：一頁排版（像她的 GoodNotes）—— 一段接一段往下排；回到唱過的段落（第一句一樣）就換到下一欄、對齊原本那一列，
 // 所以同樣的旋律永遠在同一列；同一段連續重複就往下接
+// 有 mel（照簡譜標的旋律代號）就照旋律對齊，沒有就比第一句歌詞
 function tocGrid(){const nm=x=>String(x||'').replace(/[\s，。、！？,.!?~～…「」]/g,''),pos=[],orig=[];let c=0,last=-1;
-  blocks.forEach((ls,i)=>{const f=nm(ls[0]);let m=-1;if(f)for(let j=0;j<i;j++)if(nm(blocks[j][0])===f){m=j;break}
+  const mel=SCENES[key].mel,id=i=>mel&&mel.length===blocks.length?mel[i]:nm(blocks[i][0]);
+  blocks.forEach((ls,i)=>{const f=id(i);let m=-1;if(f)for(let j=0;j<i;j++)if(id(j)===f){m=j;break}
     let r;if(m<0){r=last+1;orig[i]=i}else{orig[i]=orig[m];const tgt=pos[orig[m]].r;
       if(i&&orig[i-1]===orig[i])r=last+1;else if(tgt<=last){c++;r=tgt}else r=tgt}
     pos[i]={c,r};last=r});return pos}
@@ -1257,6 +1261,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=81"></script>
+<script src="studio.js?v=82"></script>
 </body>
 </html>
