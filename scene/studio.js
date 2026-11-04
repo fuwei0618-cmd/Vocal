@@ -1,7 +1,7 @@
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 /* ---------- 錄音室：像 Cubasis 一樣，原曲／伴奏／人聲／我的聲音一條一條排開 ---------- */
 // 所有聲音都用同一個 Web Audio 引擎排好時間一起播；錄音用 iPad 內建錄音器，錄完靠錄進去的喇叭聲對齊
-// 兩指捏合：左右＝放大縮小時間，上下＝把軌道拉高拉矮；一指左右拖＝移動畫面；點一下＝從那裡播
+// 手勢見下面「手勢」那段
 const LATKEY='scene-lat-v1',STKEY='scene-studio-v1';
 let S=null;
 const sGet=()=>{try{return +localStorage.getItem(LATKEY)||0}catch(e){return 0}};
@@ -17,8 +17,9 @@ async function openStudio(){
     mute:pf.mute[id]!=null?pf.mute[id]:(id==='me'?false:id==='vocal'?true:id!==track),
     vol:pf.vol[id]!=null?pf.vol[id]:1,h:pf.h[id]||(id==='me'?0:58)}));
   const [a,b]=secRange(cur),hasT=getTimes().length>1;
-  S={ctx:audioCtx(),lanes,dur:au.duration||0,sel:hasT?[a,b]:null,view:null,pos:hasT?Math.max(0,a-2):au.currentTime,
-     playing:false,srcs:[],gains:{},T:0,from:0,loop:true,recd:null,selTake:null,bufs:new Map(),raf:0};
+  const lp=hasT&&loopSec>=0,sel0=lp?loopRange():hasT?[a,b]:null;
+  S={ctx:audioCtx(),lanes,dur:au.duration||0,sel:sel0,view:null,pos:hasT?Math.max(0,sel0[0]-2):au.currentTime,
+     playing:false,srcs:[],gains:{},T:0,from:0,loop:lp,recd:null,selTake:null,bufs:new Map(),raf:0};
   const d=document.createElement('div');d.id='studio';d.innerHTML=`
     <div class="s-top"><button data-act="sx">← 歌詞</button><b>${esc(SCENES[key].title)}</b><span class="s-time" id="s-time">0:00</span></div>
     <div class="s-pic" style="background-image:url('${SCENES[key].img}')"><div class="s-lyr" id="s-lyr"></div></div>
@@ -58,6 +59,8 @@ async function sReloadKey(){
   try{if(au)await loadAudio(track,au.currentTime,false);await sLoadLanes()}catch(e){sMsg('變調失敗');return}
   if(!S)return;sMsg('');sHint(`現在是 ${keyTxt(getKey())}`);if(was)sPlay(p);
 }
+// 重複範圍跟外面同步：錄音室🔁開著＋有選範圍＝外面也重複同樣幾段
+function sSyncLoop(){if(S.sel&&S.loop){loopSec=secAt(S.sel[0]+.05);loopEnd=Math.max(loopSec,secAt(S.sel[1]-.3))}else loopSec=loopEnd=-1}
 function sHqBtn(){const b=document.getElementById('s-hq');if(b)b.classList.toggle('on',lsGet('scene-hq-v1')==='1')}
 function toMono(b){const o=S.ctx.createBuffer(1,b.length,b.sampleRate),d=o.getChannelData(0),c0=b.getChannelData(0),c1=b.getChannelData(1);for(let i=0;i<b.length;i++)d[i]=(c0[i]+c1[i])/2;return o}
 function closeStudio(){
@@ -225,7 +228,7 @@ async function sRecStop(cancel){
   // 自動對不出來，就用她上次手動挪好的量
   // 她說自動對齊不準、先手動：新錄音不自動挪，直接套她上次手動拖好的量
   let lag=null;if(lsGet('scene-recadj-v1')){take.adj=+lsGet('scene-recadj-v1')||0;if(take.adj)lag=take.adj}await saveTakes();
-  S.pos=Math.max(0,r.p0-1);S.selTake=null;sDraw();
+  S.pos=Math.max(0,r.p0-1);S.selTake=take.id;sDraw();sTake();
   sHint(lag!=null?`錄好了，已經照你上次拖的量挪好。按 ▶ 聽聽看`:'錄好了。按住你的波形左右拖就能對齊，之後的錄音會照這個量');
 }
 // 自動對齊：
@@ -270,35 +273,41 @@ function studioClock(){return S&&S.bigOn?sNow():null}
 // 手勢
 const pts=new Map();let g0=null;
 function laneAt(y){return [...document.querySelectorAll('#studio .s-lane')].find(el=>{const r=el.getBoundingClientRect();return y>=r.top&&y<=r.bottom})}
+// 手勢（照手機看照片的習慣）：
+// 一指左右滑＝捲動（放手會順勢滑一下）；兩指捏＝放大縮小，兩指一起移也能捲；點一下＝從那裡播
+// 挪錄音：先點一下那次錄音選起來（變亮），再按住它左右拖。沒選起來的錄音不會被拖到
+let fling=0;
+const sClampView=(a,sp)=>{sp=Math.max(2,Math.min(S.dur,sp));a=Math.max(0,Math.min(S.dur-sp,a));S.view=[a,a+sp]};
 app.addEventListener('pointerdown',e=>{if(!S||!e.target.closest('#studio canvas'))return;e.preventDefault();try{e.target.setPointerCapture(e.pointerId)}catch(_){}
+  cancelAnimationFrame(fling);
   pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  const c=cvs()[0],w=c.clientWidth;
-  if(pts.size===1){g0={mode:'tap',x:e.clientX,y:e.clientY,view:S.view.slice(),w,target:e.target};
-    // 按在「我的聲音」的某次錄音上左右拖＝把那次錄音往前／往後挪（對齊用）
-    if(e.target.dataset.l==='me'&&!S.recd){const r=e.target.getBoundingClientRect(),x=sT(e.clientX-r.left,r.width),hit=sCover().find(({a,b})=>x>=a&&x<=b);
-      if(hit)g0.take={k:hit.k,adj0:hit.k.adj||0}}}
-  else if(pts.size===2){const [p,q]=[...pts.values()];g0={mode:'pinch',dx:Math.abs(p.x-q.x)||1,dy:Math.abs(p.y-q.y)||1,cx:(p.x+q.x)/2,view:S.view.slice(),w,
-    lane:(laneAt((p.y+q.y)/2)||{}).dataset,hs:Object.fromEntries(S.lanes.map(l=>[l.id,l.h]))}}
+  const c=cvs()[0],w=c.clientWidth,left=c.getBoundingClientRect().left;
+  if(pts.size===1){g0={mode:'tap',x:e.clientX,y:e.clientY,view:S.view.slice(),w,target:e.target,lx:e.clientX,lt:performance.now(),v:0};
+    if(e.target.dataset.l==='me'&&!S.recd&&S.selTake){const r=e.target.getBoundingClientRect(),x=sT(e.clientX-r.left,r.width),hit=sCover().find(({a,b})=>x>=a&&x<=b);
+      if(hit&&hit.k.id===S.selTake)g0.take={k:hit.k,adj0:hit.k.adj||0}}}
+  else if(pts.size===2){const [p,q]=[...pts.values()],cx=(p.x+q.x)/2,[v0,v1]=S.view;
+    g0={mode:'pinch',d:Math.hypot(p.x-q.x,p.y-q.y)||1,sp:v1-v0,tm:v0+(cx-left)/w*(v1-v0),w}}
 });
 app.addEventListener('pointermove',e=>{if(!S||!pts.has(e.pointerId)||!g0)return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
   const c=cvs()[0],left=c.getBoundingClientRect().left;
-  if(g0.mode==='tap'&&Math.abs(e.clientX-g0.x)>8){g0.mode=g0.take?'move':'pan';if(g0.take){S.selTake=g0.take.k.id;sTake()}}
+  if(g0.mode==='tap'&&Math.abs(e.clientX-g0.x)>8)g0.mode=g0.take?'move':'pan';
   if(g0.mode==='move'){const [v0,v1]=g0.view,k=g0.take.k;k.adj=r2(g0.take.adj0+(e.clientX-g0.x)/g0.w*(v1-v0));sDraw();sTake();return}
-  if(g0.mode==='pan'){const [v0,v1]=g0.view,sp=v1-v0,d=-(e.clientX-g0.x)/g0.w*sp,a=Math.max(0,Math.min(S.dur-sp,v0+d));S.view=[a,a+sp];sDraw()}
-  else if(g0.mode==='pinch'&&pts.size>=2){const [p,q]=[...pts.values()],dx=Math.abs(p.x-q.x)||1,dy=Math.abs(p.y-q.y)||1;
-    const [v0,v1]=g0.view,sp=v1-v0,ct=v0+(g0.cx-left)/g0.w*sp,nsp=Math.max(2,Math.min(S.dur,sp*g0.dx/dx)),f=(g0.cx-left)/g0.w;
-    let a=Math.max(0,Math.min(S.dur-nsp,ct-f*nsp));S.view=[a,a+nsp];
-    // 上下捏：拉高拉矮那一條（在我的聲音上捏，就是把歌的軌一起縮小）
-    if(Math.abs(dy-g0.dy)>Math.abs(dx-g0.dx)*.7&&g0.lane){const r=dy/g0.dy;S.lanes.forEach(l=>{if(l.id==='me')return;const h0=g0.hs[l.id];
-      l.h=Math.round(Math.max(28,Math.min(240,g0.lane.l==='me'?h0/r:l.id===g0.lane.l?h0*r:h0)))});}
-    sLayout()}
+  if(g0.mode==='pan'){const [v0,v1]=g0.view,sp=v1-v0;sClampView(v0-(e.clientX-g0.x)/g0.w*sp,sp);
+    const now=performance.now(),dt=now-g0.lt;if(dt>0){g0.v=.8*((e.clientX-g0.lx)/dt)+.2*g0.v;g0.lx=e.clientX;g0.lt=now}sDraw()}
+  else if(g0.mode==='pinch'&&pts.size>=2){const [p,q]=[...pts.values()],d=Math.hypot(p.x-q.x,p.y-q.y)||1,cx=(p.x+q.x)/2;
+    const nsp=Math.max(2,Math.min(S.dur,g0.sp*g0.d/d));sClampView(g0.tm-(cx-left)/g0.w*nsp,nsp);sDraw()}
 });
 ['pointerup','pointercancel'].forEach(t=>app.addEventListener(t,e=>{if(!S||!pts.has(e.pointerId))return;pts.delete(e.pointerId);
   if(g0&&g0.mode==='tap'&&t==='pointerup'&&!S.recd){const c=g0.target,r=c.getBoundingClientRect(),x=Math.max(0,Math.min(S.dur,sT(e.clientX-r.left,r.width)));
-    if(c.dataset.l==='me'){const hit=sCover().find(({a,b})=>x>=a&&x<=b);S.selTake=hit?hit.k.id:null}
+    if(c.dataset.l==='me'){const hit=sCover().find(({a,b})=>x>=a&&x<=b);S.selTake=hit?hit.k.id:null;if(hit)sHint('選好這次錄音了：按住它左右拖可以對齊')}
     const was=S.playing;S.pos=x;if(was)sPlay(x);else sHead();sDraw()}
   if(g0&&g0.mode==='move'){saveTakes();lsSet('scene-recadj-v1',String(g0.take.k.adj||0));if(S.playing)sPlay(sNow())}
-  if(!pts.size){if(g0&&g0.mode==='pinch')stSave();g0=null}else if(g0&&g0.mode==='pinch')g0=null;
+  // 順勢滑一下
+  if(g0&&g0.mode==='pan'&&t==='pointerup'&&performance.now()-g0.lt<80&&Math.abs(g0.v)>.25){let v=g0.v,last=performance.now();const w=g0.w;
+    const step=now=>{if(!S)return;const dt=now-last;last=now;const [v0,v1]=S.view,sp=v1-v0;sClampView(v0-v*dt/w*sp,sp);sDraw();v*=Math.pow(.94,dt/16);if(Math.abs(v)>.02)fling=requestAnimationFrame(step)};
+    fling=requestAnimationFrame(step)}
+  if(!pts.size)g0=null;else if(g0&&g0.mode==='pinch'){  // 放開一指：剩下那指接著捲
+    const [p]=[...pts.values()];g0={mode:'pan',x:p.x,y:p.y,view:S.view.slice(),w:g0.w,lx:p.x,lt:performance.now(),v:0}}
 }));
 app.addEventListener('click',e=>{
   if(!S)return;const a=e.target.closest('#studio [data-act]');if(!a)return;const act=a.dataset.act;
@@ -313,9 +322,9 @@ app.addEventListener('click',e=>{
   else if(act==='ssec'){const i=+a.dataset.i,[x,y]=secRange(i);
     // 點段名選範圍：沒選→選這段；點範圍外的段→範圍延伸到那段；點範圍裡面的段→取消
     if(S.sel&&x>=S.sel[0]-.01&&y<=S.sel[1]+.01){S.sel=null}
-    else{const ext=!!S.sel;S.sel=ext?[Math.min(S.sel[0],x),Math.max(S.sel[1],y)]:[x,y];if(!ext)sView0();S.pos=S.sel[0];if(S.playing)sPlay(S.pos);if(ext)sHint('範圍延伸了，點範圍裡的段名可以取消')}sDraw()}
+    else{const ext=!!S.sel;S.sel=ext?[Math.min(S.sel[0],x),Math.max(S.sel[1],y)]:[x,y];if(!ext)sView0();S.pos=S.sel[0];if(S.playing)sPlay(S.pos);if(ext)sHint('範圍延伸了，點範圍裡的段名可以取消')}sSyncLoop();sDraw()}
   else if(act==='szoom'){const whole=S.view[0]>0.5||S.view[1]<S.dur-.5;if(whole)S.view=[0,S.dur];else sView0();sDraw()}
-  else if(act==='sloop'){S.loop=!S.loop;sDraw()}
+  else if(act==='sloop'){S.loop=!S.loop;if(S.loop&&!S.sel){const [x,y]=secRange(secAt(sNow()+.05));S.sel=[x,y]}sSyncLoop();sDraw()}
   else if(act==='spic'){S.big=!S.big;sBig()}
   else if(act==='smute'){const l=lane(a.dataset.l);l.mute=!l.mute;if(l.mute)l.solo=false;sGains();sDraw();stSave()}
   else if(act==='ssolo'){const l=lane(a.dataset.l);l.solo=!l.solo;if(l.solo)l.mute=false;sGains();sDraw()}
