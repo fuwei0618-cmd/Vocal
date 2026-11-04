@@ -747,7 +747,7 @@ function natHtml(m){
   <p class="nnote">→ 越往右，歌越是「你」發出來的：外面發出 → 你出聲 → 你腦內 → 用你的方式。<br>↓ 越往下，拿掉越多拐杖：原曲 → 伴奏 → 靜音。<br>浸泡和內化外表一樣安靜，差別在歌是誰發出來的：音樂一停歌就停＝浸泡；還接得下去＝內化。<br>每格右上角「考」：照那一欄上面寫的方法考過，就點一下（一天算一次）。不同天考過 3 次＝這格畢業 🎓。</p>`}
 // 自然養成搬到學歌地圖那一頁（圖＋表格）；這裡只留入口和摘要
 function natLink(m){const lit=PGN.filter(([id])=>natDays(m,id).length).length,gr=PGN.filter(([id])=>natDays(m,'v_'+id).length>=3).length;
-  return `<a class="natlink" href="learn.html?v=3&t=${encodeURIComponent(SCENES[key].title)}#${key}"><span><b>自然養成・學歌地圖</b><small>聽、出聲、腦內唱、我的唱法 × 原曲、伴奏、靜音</small></span><em>${lit}/${PGN.length}${gr?`・🎓${gr}`:''} ↗</em></a>`}
+  return `<a class="natlink" href="learn.html?v=4&t=${encodeURIComponent(SCENES[key].title)}#${key}"><span><b>自然養成・學歌地圖</b><small>聽、出聲、腦內唱、我的唱法 × 原曲、伴奏、靜音</small></span><em>${lit}/${PGN.length}${gr?`・🎓${gr}`:''} ↗</em></a>`}
 function openPg(){
   closeMenu();const m=pgAll()[key]||{};const d=document.createElement('div');d.className='sheet menu-sheet';d.id='menu';
   const tipOf={map:'蓋起來說得出整首順序',acap:'不靠伴奏唱完',ppl:'上課、朋友 KTV',sv:'街演'};

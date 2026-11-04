@@ -60,8 +60,10 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)
 .nat{max-width:1200px;margin:10px auto 0;padding:0 16px calc(env(safe-area-inset-bottom,0px) + 28px)}
 .pgh{margin:4px 2px 10px;color:var(--glow);font-size:15px;font-weight:600}.pgh small{margin-left:8px;color:var(--muted);font-weight:400;font-size:12px}
 .ngrid{display:grid;grid-template-columns:3em repeat(4,1fr);gap:10px;align-items:stretch}
-.nh{font-size:14px;color:var(--ink);text-align:center;font-weight:600;padding:4px;border-radius:12px;cursor:pointer;transition:background .3s}.nh small{display:block;font-size:11px;color:var(--muted);font-weight:400}
-.nh em{display:block;font-style:normal;font-size:11px;color:var(--glow);font-weight:400;margin-top:3px;line-height:1.35}.nh.on{background:var(--glow-soft)}
+.nh{font-size:14px;color:var(--ink);text-align:left;font-weight:600;padding:8px 10px;border:1px solid transparent;align-self:stretch;display:flex;flex-direction:column;gap:3px;border-radius:12px;cursor:pointer;transition:background .3s}.nh small{display:block;font-size:11px;color:var(--muted);font-weight:400}
+.nh em{display:block;font-style:normal;font-size:11px;color:var(--glow);font-weight:400;margin-top:3px;line-height:1.35}.nh.on{background:var(--glow-soft);border-color:rgba(242,194,123,.45)}
+.nh .nn{font-family:var(--display);font-size:19px}.nh .ng{font-size:11.5px;font-weight:400;line-height:1.45;color:var(--ink);opacity:.85}.nh .ng i{font-style:normal;color:var(--muted);margin-right:4px}
+.lead2{margin:0 2px 12px;font-size:13px;line-height:1.6;color:var(--muted)}.lead2 b{color:var(--glow);font-weight:600}
 .nl{font-size:13px;color:var(--muted);align-self:center}
 .nc{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--ink);font:inherit;min-width:0;cursor:pointer;transition:box-shadow .3s}
 .nc .pgt{font-family:var(--display);font-size:19px}.nc small{font-size:11.5px;color:var(--muted);line-height:1.35}
@@ -74,7 +76,7 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)
 .nnote{margin:12px 0 0;font-size:12.5px;line-height:1.7;color:var(--muted)}
 .ro .nc:not(.gone){cursor:default}.ro .vk{display:none}
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);background:rgba(0,0,0,.8);border:1px solid var(--line);border-radius:99px;padding:8px 16px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none}.toast.on{opacity:1}
-@media (max-width:640px){.ngrid{grid-template-columns:2.2em repeat(4,1fr);gap:5px}.nc{padding:8px 8px 24px}.nc .pgt{font-size:14px}.nc small{font-size:10px}.nc.gone{padding-bottom:8px}.nc.gone small{font-size:9.5px}.nc .vk{top:auto;bottom:5px;right:5px}.nh{font-size:12.5px}.nh em{font-size:9px}}
+@media (max-width:640px){.nh .ng{display:none}.nh{padding:4px}.nh .nn{font-size:14px}.ngrid{grid-template-columns:2.2em repeat(4,1fr);gap:5px}.nc{padding:8px 8px 24px}.nc .pgt{font-size:14px}.nc small{font-size:10px}.nc.gone{padding-bottom:8px}.nc.gone small{font-size:9.5px}.nc .vk{top:auto;bottom:5px;right:5px}.nh{font-size:12.5px}.nh em{font-size:9px}}
 </style>
 </head>
 <body>
@@ -84,7 +86,6 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)
   <div id="spots"></div>
 </div>
 <div class="songs" id="songs"></div>
-<div class="stage" id="stage">學會一首歌，就是把<em>「歌由誰撐著」</em>從外面一步步移到你身上。點圖上的小孩，看那個階段的目標和狀態。</div>
 <div class="nat" id="nat"></div>
 <div class="toast" id="toast"></div>
 <script>
@@ -116,15 +117,15 @@ function draw(){
     const [id,nm,tip]=c,d=natDays(m,id),last=d[d.length-1],v=natDays(m,'v_'+id),vt=v.includes(t);
     return `<button data-act="nat" data-s="${id}" class="nc lv${natLv(d.length)}${d.includes(t)?' today':''}${ci===col?' col':''}"><span class="pgt">${nm}</span><small>${d.length?`${d.length} 天・${last.slice(5).replace('-','/')}`:tip}</small><span class="vk${v.length>=3?' grad':v.length?' on':''}${vt?' vt':''}" data-act="natv" data-s="v_${id}">${v.length>=3?'🎓':v.length?'✓'+v.length:'考'}</span></button>`};
   document.getElementById('nat').innerHTML=`<div class="pgh">自然養成${title?`・${esc(title)}`:''}<small>${song?'沒有順序，碰到就點一下；點越多天越亮（今天再點一次＝取消）':'先在上面選一首歌，才會記到那首歌'}</small></div>
-  <div class="ngrid${song?'':' ro'}"><span></span>${STAGES.map((s,i)=>`<span class="nh${i===col?' on':''}" data-act="col" data-i="${i}">${s.n}<small>${s.sub}</small><em>考：${s.test}</em></span>`).join('')}
+  <p class="lead2">學會一首歌，就是把<b>「歌由誰撐著」</b>從外面移到你身上：→ 越往右，歌越是你發出來的；↓ 越往下，拿掉越多拐杖（原曲 → 伴奏 → 靜音）。</p>
+  <div class="ngrid${song?'':' ro'}"><span></span>${STAGES.map((s,i)=>`<span class="nh${i===col?' on':''}" data-act="col" data-i="${i}"><span class="nn">${i+1} ${s.n}</span><small>${s.sub}・${esc(s.who)}</small><span class="ng"><i>目標</i>${esc(s.goal)}</span><span class="ng"><i>做到時</i>${esc(s.state)}</span><em>考：${s.test}</em></span>`).join('')}
   ${GRID.map(r=>`<span class="nl">${r[0]}</span>`+r.slice(1).map((c,ci)=>cell(c,ci)).join('')).join('')}</div>
-  <p class="nnote">→ 越往右，歌越是「你」發出來的：外面發出 → 你出聲 → 你腦內 → 用你的方式。<br>↓ 越往下，拿掉越多拐杖：原曲 → 伴奏 → 靜音。<br>浸泡和內化外表一樣安靜，差別在歌是誰發出來的：音樂一停歌就停＝浸泡；還接得下去＝內化。<br>每格右上角「考」：照那一欄上面寫的方法考過，就點一下（一天算一次）。不同天考過 3 次＝這格畢業 🎓。</p>`;
+  <p class="nnote">浸泡和內化外表一樣安靜，差別在歌是誰發出來的：音樂一停歌就停＝浸泡；還接得下去＝內化。<br>每格右上角「考」：照那一欄上面寫的方法考過，就點一下（一天算一次）。不同天考過 3 次＝這格畢業 🎓。</p>`;
   document.querySelectorAll('.spot').forEach(b=>b.classList.toggle('on',+b.dataset.i===col));
-  const st=document.getElementById('stage');if(col>=0){const s=STAGES[col];st.innerHTML=`<b>${col+1} ${s.n}</b>圖上：${esc(s.who)}<br>目標：<em>${esc(s.goal)}</em>　做到時：<em>${esc(s.state)}</em>`}
 }
 document.getElementById('spots').innerHTML=STAGES.map((s,i)=>`<button class="spot" data-act="col" data-i="${i}" style="left:${s.spot.x}%;top:${s.spot.y}%"><i></i><b>${i+1} ${s.n}</b></button>`).join('');
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;
-  if(act==='col'){col=+a.dataset.i===col?-1:+a.dataset.i;draw();if(col>=0)document.getElementById('stage').scrollIntoView({behavior:'smooth',block:'nearest'})}
+  if(act==='col'){col=+a.dataset.i===col?-1:+a.dataset.i;draw();if(col>=0&&a.classList.contains('spot'))document.querySelector('.ngrid').scrollIntoView({behavior:'smooth',block:'start'})}
   else if(!song)toast('先選一首歌');
   else if(act==='natv'){toast(natTap(song,a.dataset.s)?'今天考過了 ✓':'取消今天這次考試');draw()}
   else if(act==='nat'){toast(natTap(song,a.dataset.s)?'點亮了':'取消今天這次');draw()}});
