@@ -114,6 +114,13 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 .pgh{margin:10px 2px 6px;color:var(--glow);font-size:13px;font-weight:600}.pgh small{margin-left:8px;color:var(--muted);font-weight:400;font-size:11px}
 @media (min-width:700px){.menu-sheet .pgl{display:grid;grid-template-columns:1fr 1fr;gap:8px}}
 .pgl .pgt{white-space:nowrap}.menu-sheet .pgl small{text-align:right}
+.nat{display:flex;flex-direction:column;gap:8px;margin-bottom:6px}.nrow{display:flex;gap:8px;align-items:stretch}.nrow .nc{flex:1}
+.ngrid{display:grid;grid-template-columns:3.6em repeat(3,1fr);gap:8px;align-items:stretch}.nh{font-size:11px;color:var(--muted);text-align:center}.nl{font-size:11px;color:var(--muted);align-self:center;min-width:3.6em}
+#menu .nc{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--ink);font:inherit;min-width:0}
+#menu .nc small{font-size:11px;color:var(--muted);line-height:1.3;text-align:left}
+#menu .nc.lv1{background:rgba(242,194,123,.10);border-color:rgba(242,194,123,.35)}#menu .nc.lv2{background:rgba(242,194,123,.22);border-color:rgba(242,194,123,.6)}#menu .nc.lv3{background:rgba(242,194,123,.38);border-color:#f2c27b;box-shadow:0 0 14px rgba(242,194,123,.35)}
+#menu .nc.today .pgt::after{content:' ✦';color:#f2c27b}
+@media (max-width:640px){.ngrid{grid-template-columns:3em repeat(3,1fr);gap:6px}#menu .nc{padding:8px}#menu .nc small{font-size:10px}}
 .pgpill i{font-style:normal;opacity:.5}
 .pgpill{margin-left:auto;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--muted);border-radius:99px;height:30px;padding:0 10px;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}.bar .pgpill span{color:#f2c27b;letter-spacing:1px}
 .bar .pgpill+.menu{margin-left:0}
@@ -372,7 +379,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=70;
+const VER=71;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -479,6 +486,7 @@ app.addEventListener('click',e=>{
     else if(act==='next'){if(au){au.currentTime=Math.min(au.duration||1e9,au.currentTime+5);updateProg();sync()}else step(cur+1)}
     else if(act==='menu')openMenu();
     else if(act==='pg')openPg();
+    else if(act==='nat'){const on=natTap(key,a.dataset.s);openPg();const b=document.querySelector('.bar .pgpill');if(b)b.innerHTML=pgDots(key);hint(on?'點亮了':'取消今天這次');hintT=setTimeout(()=>hint(''),1200)}
     else if(act==='pgs'){pgToggle(key,a.dataset.s);openPg();const b=document.querySelector('.bar .pgpill');if(b)b.innerHTML=pgDots(key)}
     else if(act==='mclose')closeMenu();
     else if(act==='rback')tapLine(true);
@@ -633,17 +641,33 @@ function openMenu(){
   app.appendChild(d);
 }
 // 練習進度：每首歌一份，存在這台裝置（總表的情境圖清單也讀同一份，兩邊點哪邊都算）
-// 兩排進度：刻意練習（PG）和自然養成（PGN，像學語言：浸泡→模仿→內化→自己的）
 const PG=[['tap','句對拍'],['lyr','情境歌詞'],['rec','錄音'],['acap','清唱'],['ppl','場域'],['sv','SV']];
-const PGN=[['n_listen','常聽','背景放著，耳朵先習慣'],['n_know','認得','前奏一出來就知道，也知道下一句往哪走'],['n_sing','跟唱','跟著原唱一起哼、一起唱'],['n_lead','搶先唱','原唱還沒唱，你先唱出下一句'],['n_head','腦內歌聲','沒放音樂，腦中自己唱起來'],['n_inst','伴奏腦內唱','只放伴奏，主唱在腦中（或小聲跟）'],['n_free','隨口唱','洗澡、走路，不看歌詞就唱出來'],['n_mine','我的版本','換速度、情緒、換氣，有自己的唱法']];
+// 自然養成：沒有順序，碰到就點一下（一天算一次，同一天再點＝取消），點越多天越亮
+const PGN=[['n_listen','常聽','背景放著，耳朵先習慣'],['n_know','認得','前奏一出來就知道下一句'],
+  ['n_sing','跟唱','放原曲，跟著一起唱'],['n_lead','搶先唱','放伴奏，自己唱出主唱'],['n_free','隨口唱','沒音樂，洗澡走路就唱出來'],
+  ['n_hear','腦內聽','放原曲，在腦中跟著唱'],['n_inst','腦內補唱','放伴奏，主唱在腦中唱'],['n_head','腦內歌聲','沒音樂，腦中自己響起來'],
+  ['n_mine','我的版本','換速度、情緒、換氣，有自己的唱法']];
+const pgToday=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const natDays=(m,id)=>Array.isArray(m[id])?m[id]:m[id]?[m[id]]:[];
+const natLv=n=>n>=5?3:n>=2?2:n?1:0;
+function natTap(k,id){const a=pgAll(),m=a[k]||(a[k]={}),t=pgToday();let d=natDays(m,id).slice();d=d.includes(t)?d.filter(x=>x!==t):d.concat(t);if(d.length)m[id]=d;else delete m[id];try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}return d.includes(t)}
 function pgAll(){try{return JSON.parse(localStorage.getItem('scene-prog-v1'))||{}}catch(e){return {}}}
 function pgToggle(k,id){const a=pgAll(),m=a[k]||(a[k]={});if(m[id])delete m[id];else{const d=new Date();m[id]=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}}
-function pgDots(k){const m=pgAll()[k]||{},c=L=>L.filter(([id])=>m[id]).length;return `自然 ${c(PGN)}/${PGN.length}<i>・</i>刻意 ${c(PG)}/${PG.length}`}
+function pgDots(k){const m=pgAll()[k]||{},c=L=>L.filter(([id])=>m[id]).length;return `自然 ${PGN.filter(([id])=>natDays(m,id).length).length}/${PGN.length}<i>・</i>刻意 ${c(PG)}/${PG.length}`}
+function natHtml(m){
+  const t=pgToday(),cell=id=>{const [,nm,tip]=PGN.find(x=>x[0]===id),d=natDays(m,id),last=d[d.length-1];
+    return `<button data-act="nat" data-s="${id}" class="nc lv${natLv(d.length)}${d.includes(t)?' today':''}"><span class="pgt">${nm}</span><small>${d.length?`${d.length} 天・${last.slice(5).replace('-','/')}`:tip}</small></button>`};
+  return `<div class="pgh">自然養成<small>沒有順序，碰到就點一下；點越多天越亮（今天再點一次＝取消）</small></div>
+  <div class="nat"><div class="nrow"><span class="nl">浸泡</span>${cell('n_listen')}${cell('n_know')}</div>
+  <div class="ngrid"><span></span><span class="nh">原曲</span><span class="nh">伴奏</span><span class="nh">沒音樂</span>
+    <span class="nl">出聲唱</span>${cell('n_sing')}${cell('n_lead')}${cell('n_free')}
+    <span class="nl">腦內唱</span>${cell('n_hear')}${cell('n_inst')}${cell('n_head')}</div>
+  <div class="nrow"><span class="nl">自己的</span>${cell('n_mine')}</div></div>`}
 function openPg(){
   closeMenu();const m=pgAll()[key]||{};const d=document.createElement('div');d.className='sheet menu-sheet';d.id='menu';
   const tipOf={acap:'不靠伴奏唱完',ppl:'上課、朋友 KTV',sv:'街演'};
   const grp=(L,name,sub)=>`<div class="pgh">${name}<small>${sub}</small></div><div class="grp pgl">${L.map(([id,t,tip],i)=>`<button data-act="pgs" data-s="${id}" class="${m[id]?'on':''}"><b>${m[id]?'✓':i+1}</b><span class="pgt">${t}</span><small>${m[id]?m[id].slice(5).replace('-','/')+' 完成':tip||tipOf[id]||''}</small></button>`).join('')}</div>`;
-  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div>${grp(PGN,'自然養成','浸泡 → 模仿 → 內化 → 自己的')}${grp(PG,'刻意練習','對拍、錄音、上台')}
+  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div>${natHtml(m)}${grp(PG,'刻意練習','對拍、錄音、上台')}
     <small class="tip">點一下打勾，再點一下取消。歌單的情境圖清單也會一起更新</small><div class="row" style="justify-content:flex-end"><button data-act="mclose">關閉</button></div>`;
   app.appendChild(d)}
 function closeMenu(){const d=document.getElementById('menu');if(d){d.remove();wakePlayer()}}
