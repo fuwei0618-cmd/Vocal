@@ -42,13 +42,15 @@ body.play{overflow:hidden;height:100vh;touch-action:manipulation;user-select:non
 .bar h1{font-family:var(--display);font-weight:700;font-size:18px;margin:0;letter-spacing:.04em;text-shadow:0 1px 6px #000}
 .bar .by{color:var(--muted);font-size:12px}
 .bar .edit{margin-left:auto;background:none;border:0;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;padding:0}
+.bar .story{flex:1 1 200px;min-width:0;font-size:12px;line-height:1.45;color:rgba(246,239,228,.82);text-shadow:0 1px 6px #000;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;align-self:center}
+@media (max-width:760px){.bar .story{order:8;flex-basis:100%;font-size:11.5px}}
 .chainbar{flex-basis:100%;order:9;display:flex;gap:4px;margin-top:6px}
 .chainbar button{min-width:38px;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:5px 8px;border-radius:9px;border:1px solid rgba(255,255,255,.16);background:rgba(20,16,12,.62);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);color:var(--ink);font:inherit;text-align:left;cursor:pointer;overflow:hidden}
 .chainbar button.on{background:rgba(242,194,123,.3);border-color:var(--glow)}
 .chainbar .cw{display:flex;align-items:baseline;gap:5px;white-space:nowrap;max-width:100%;overflow:hidden}.chainbar .cw b{flex:none}
 .chainbar .cw em{font-style:normal;font-size:11px;color:var(--muted)}.chainbar button.on .cw em{color:var(--glow)}
 .chainbar .cw b{font-family:var(--display);font-size:16px}
-.chainbar small{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.chainbar small.co{color:rgba(246,239,228,.85)}.chainbar small{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 @media (max-width:760px){.chainbar{gap:3px}.chainbar button{align-items:center;padding:4px 2px;min-width:24px}.chainbar small,.chainbar .cw em{display:none}.chainbar .cw b{font-size:14px}}
 .bar .now{flex-basis:100%;order:9;font-size:12.5px;color:var(--glow);letter-spacing:.06em;text-shadow:0 1px 6px #000;min-height:1.4em}
 .bar .now b{font-family:var(--display);font-size:15px;margin:0 4px}.bar .now span{color:var(--muted);letter-spacing:0;margin-left:2px}
@@ -139,13 +141,14 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 .pgh{margin:10px 2px 6px;color:var(--glow);font-size:13px;font-weight:600}.pgh small{margin-left:8px;color:var(--muted);font-weight:400;font-size:11px}
 @media (min-width:700px){.menu-sheet .pgl{display:grid;grid-template-columns:1fr 1fr;gap:8px}}
 .pgl .pgt{white-space:nowrap}.menu-sheet .pgl small{text-align:right}
-.nat{display:flex;flex-direction:column;gap:8px;margin-bottom:6px}.nrow{display:flex;gap:8px;align-items:stretch}.nrow .nc{flex:1}
-.ngrid{display:grid;grid-template-columns:3.6em repeat(3,1fr);gap:8px;align-items:stretch}.nh{font-size:11px;color:var(--muted);text-align:center}.nl{font-size:11px;color:var(--muted);align-self:center;min-width:3.6em}
+.ngrid{display:grid;grid-template-columns:2.8em repeat(4,1fr);gap:8px;align-items:stretch}.nh{font-size:12px;color:var(--ink);text-align:center;font-weight:600}.nh small{display:block;font-size:10.5px;color:var(--muted);font-weight:400}.nl{font-size:12px;color:var(--muted);align-self:center}
+#menu .nc.gone{opacity:.55;border-style:dashed;background:none}#menu .nc.gone s{font-size:12px;color:var(--muted);text-decoration-color:rgba(255,120,110,.8)}
+.nnote{margin:8px 0 4px;font-size:11.5px;line-height:1.6;color:var(--muted)}
 #menu .nc{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--ink);font:inherit;min-width:0}
 #menu .nc small{font-size:11px;color:var(--muted);line-height:1.3;text-align:left}
 #menu .nc.lv1{background:rgba(242,194,123,.10);border-color:rgba(242,194,123,.35)}#menu .nc.lv2{background:rgba(242,194,123,.22);border-color:rgba(242,194,123,.6)}#menu .nc.lv3{background:rgba(242,194,123,.38);border-color:#f2c27b;box-shadow:0 0 14px rgba(242,194,123,.35)}
 #menu .nc.today .pgt::after{content:' ✦';color:#f2c27b}
-@media (max-width:640px){.ngrid{grid-template-columns:3em repeat(3,1fr);gap:6px}#menu .nc{padding:8px}#menu .nc small{font-size:10px}}
+@media (max-width:640px){.ngrid{grid-template-columns:2.2em repeat(4,1fr);gap:5px}#menu .nc .pgt{font-size:13px}#menu .nc.gone small{font-size:9.5px}#menu .nc{padding:8px}#menu .nc small{font-size:10px}}
 .pgh .lmap{float:right;color:var(--glow);font-size:12px;font-weight:500;text-decoration:none}
 .pgpill i{font-style:normal;opacity:.5}
 .pgpill{margin-left:auto;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--muted);border-radius:99px;height:30px;padding:0 10px;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}.bar .pgpill span{color:#f2c27b;letter-spacing:1px}
@@ -268,7 +271,7 @@ button:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
 @media (orientation:landscape){
   body.lay-top .veil{background:linear-gradient(to bottom,rgba(0,0,0,.6) 0,rgba(0,0,0,.45) 45%,rgba(0,0,0,0) 62%)}
   body.lay-top.bright .veil{background:linear-gradient(to bottom,rgba(0,0,0,.34) 0,rgba(0,0,0,.22) 40%,rgba(0,0,0,0) 58%)}
-  body.lay-top .sub{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 150px)}
+  body.lay-top .sub{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 172px)}
 }
 @media (prefers-reduced-motion:reduce){.stars i,.spot.on i,.sub.swap{animation:none}.shade,.spot{transition:none}}
 </style>
@@ -282,6 +285,7 @@ button:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
 const SCENES={
   jiayi:{
     title:'甲乙丙丁',artist:'李佳薇',img:'jiayi.jpg?v=6',ratio:2752/1536,
+    story:'他走了，外套、照片、晚餐都還在，房間安靜得太大聲。我一件一件收好，把每個「怎麼」對著門問出去；被拉回來一次，站穩，最後把門整個打開。',
     spots:{coat:{x:39.5,y:57,name:'外套'},photo:{x:30.5,y:28,name:'照片'},neck:{x:21,y:61,name:'項鍊'},dinner:{x:58,y:60,name:'晚餐'},laundry:{x:70,y:52,name:'衣服'},door:{x:86,y:40,name:'門'}},
     steps:[
       {sec:'主歌',spot:'coat',word:'輕',cue:'他的東西還在，房間太安靜',n:4},
@@ -295,6 +299,7 @@ const SCENES={
   },
   summer:{
     title:'盛夏的果實',artist:'莫文蔚',img:'summer.jpg?v=1',ratio:1024/572,layout:'top',dim:.7,
+    story:'夕陽後的海邊臥房，桌上一碗果實、一封沒寄出的信。不是質問，只是想起；潮水來來去去，最後像在枕邊輕輕說。',
     spots:{fruit:{x:32,y:62,name:'盛夏的果實'},letter:{x:32,y:80,name:'沒寄出的信'},chair:{x:60,y:82,name:'背對的椅子'},sea:{x:30,y:42,name:'潮起潮落'},pillow:{x:66,y:70,name:'枕頭'},lamp:{x:16,y:72,name:'燈'},curtain:{x:66,y:30,name:'窗簾'}},
     steps:[
       {sec:'主歌',spot:['fruit','curtain'],word:'鬆',cue:'放手的語氣，不用用力',n:6},
@@ -307,6 +312,7 @@ const SCENES={
     ]},
   darwin:{
     title:'達爾文',artist:'蔡健雅',img:'darwin.jpg?v=2',ratio:1280/714,layout:'top',dim:.55,
+    story:'出門前的早晨，我看著鏡子裡的自己。舊信、穿舊的鞋，是走過的一輪又一輪；換上新的那雙、推開門，一次比一次篤定。',
     spots:{mirror:{x:47,y:22,name:'鏡子'},letters:{x:45,y:57,name:'綁起來的舊信'},plants:{x:22,y:56,name:'從小芽長大的植物'},oldshoes:{x:61,y:62,name:'穿舊的鞋'},newshoes:{x:68,y:65,name:'新的那雙'},door:{x:74,y:30,name:'開著的門'},calendar:{x:88,y:13,name:'劃掉的日子'},notebooks:{x:86,y:46,name:'寫滿的筆記本'},flowers:{x:60,y:20,name:'乾燥花'},book:{x:67,y:85,name:'進化論'},tea:{x:80,y:74,name:'一杯茶'}},
     steps:[
       {sec:'回頭看',spot:'mirror',word:'看',cue:'看著鏡子裡的自己，不後悔',n:4},
@@ -323,6 +329,7 @@ const SCENES={
     ]},
   hands:{
     title:'小手拉大手',artist:'梁靜茹',img:'hands.jpg?v=1',ratio:1600/893,layout:'top',dim:.55,
+    story:'秋天的遊樂園，像翻相簿一樣想起小時候。大大的鞋陪著小小的鞋，我們牽著手、笑著跟昨天揮手，最後邀大家一起唱。',
     spots:{stage:{x:84,y:47,name:'小舞台'},leaves:{x:56,y:36,name:'深秋的落葉'},candy:{x:16,y:52,name:'遊樂園的攤位'},bubbles:{x:28,y:31,name:'泡泡'},balloons:{x:13,y:40,name:'氣球'},cups:{x:76,y:85,name:'熱可可'},
       shoes:{x:23,y:84,name:'大大的鞋'},kidshoes:{x:49,y:82,name:'小小的鞋'},drawing:{x:64,y:86,name:'牽手的畫'},basket:{x:88,y:72,name:'野餐籃'},ticket:{x:84,y:88,name:'音樂會門票'}},
     steps:[
@@ -343,6 +350,7 @@ const SCENES={
     ]},
   prank:{
     title:'惡作劇',artist:'王藍茵',img:'prank.jpg?v=1',ratio:1600/893,layout:'top',dim:.55,
+    story:'城市街角，貼滿便利貼的腳踏車、偷可頌的貓、雨棚上的紙飛機，心動擋都擋不住。懷疑是不是惡作劇，還是忍不住笑，鼓起勇氣投入。',
     spots:{notes:{x:56,y:72,name:'貼滿便利貼的腳踏車'},cat:{x:50,y:58,name:'偷可頌的貓'},plane:{x:17,y:21,name:'雨棚上的紙飛機'},petals:{x:62,y:30,name:'飄落的花瓣'},
       face:{x:42,y:88,name:'粉筆鬼臉'},arrow:{x:63,y:86,name:'粉筆箭頭'},couple:{x:83,y:66,name:'牽手的背影'},window:{x:41,y:18,name:'飄起的窗簾'}},
     steps:[
@@ -359,6 +367,7 @@ const SCENES={
     ]},
   zhizu:{
     title:'知足',artist:'五月天',img:'zhizu.jpg?v=1',ratio:1600/893,layout:'top',dim:.55,
+    story:'草地上望著彩虹和風箏，我把你的笑收進紙星星罐。想起那個山丘、那一年的歌，最後放手讓風箏飛遠，知足地溫柔收起來。',
     spots:{rainbow:{x:52,y:18,name:'彩虹'},kite:{x:77,y:24,name:'風箏'},jar:{x:62,y:66,name:'紙星星罐'},cups:{x:46,y:68,name:'兩杯茶'},guitar:{x:71,y:81,name:'吉他'},book:{x:55,y:70,name:'歌本'},
       city:{x:35,y:34,name:'人海'},family:{x:18,y:62,name:'野餐的一家人'},kids:{x:35,y:55,name:'放風箏的小孩'}},
     steps:[
@@ -373,6 +382,7 @@ const SCENES={
     ]},
   hug:{
     title:'大大的擁抱',artist:'',img:'hug.jpg?v=1',ratio:1024/572,layout:'top',dim:.55,
+    story:'海邊白屋的門打開，笑著跑出來說今天的好消息。把手張開往外送，給每個人一個大大的擁抱，最後大家一起唱。',
     spots:{door:{x:75,y:50,name:'敞開的門'},kite:{x:31,y:11,name:'風箏'},rainbow:{x:30,y:42,name:'彩虹'},sea:{x:12,y:58,name:'海洋'},compass:{x:44,y:79,name:'指南針'},photo:{x:44,y:91,name:'照片'},cups:{x:54,y:75,name:'兩杯咖啡'},blanket:{x:83,y:80,name:'毛毯'}},
     steps:[
       {sec:'開場',spot:'door',word:'開',cue:'門打開，笑著出來',n:1},
@@ -387,6 +397,7 @@ const SCENES={
     ]},
   houlai:{
     title:'後來',artist:'劉若英',img:'houlai.jpg?v=6',ratio:1024/572,layout:'top',
+    story:'深夜桌前，梔子花、百褶裙、舊照片，聞得到十七歲那個夏天。輕輕問，不要答案；讓他消失在人海裡，最後回到花，輕輕收。',
     // 星空是後製加的：在窗戶的天空範圍裡畫小星星（x0,y0,x1,y1，百分比）
     stars:[[1,2,34,30],[41,2,51,28]],
     spots:{city:{x:18,y:58,name:'人海'},flower:{x:31,y:76,name:'梔子花'},skirt:{x:49,y:70,name:'百褶裙'},stars:{x:16,y:13,name:'星光'},photo:{x:67,y:81,name:'舊照片'}},
@@ -405,7 +416,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=76;
+const VER=77;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -435,7 +446,7 @@ function split(text,steps){
 function chainHtml(sc){const t=getTimes(),n=sc.steps.length,d=[];
   for(let i=0;i<n;i++)d.push(t[i]!=null&&t[i+1]!=null?t[i+1]-t[i]:null);
   const ok=d.filter(x=>x>0),avg=ok.length?ok.reduce((a,b)=>a+b,0)/ok.length:1;
-  return `<div class="chainbar" id="chainbar" aria-label="整首架構">${sc.steps.map((st,i)=>`<button data-act="chain" data-i="${i}" style="flex:${(d[i]>0?d[i]:avg).toFixed(1)} 1 0" title="${esc(st.sec)}・${esc(st.cue||'')}"><span class="cw"><b>${esc(st.word)}</b><em>${esc(st.sec)}</em></span><small>${esc(st.cue||'')}</small></button>`).join('')}</div>`}
+  return `<div class="chainbar" id="chainbar" aria-label="整首架構">${sc.steps.map((st,i)=>`<button data-act="chain" data-i="${i}" style="flex:${(d[i]>0?d[i]:avg).toFixed(1)} 1 0" title="${esc(st.sec)}・${esc(st.cue||'')}"><span class="cw"><b>${esc(st.word)}</b><em>${esc(st.sec)}</em></span><small class="co">${esc(namesOf(sc,st))}</small><small>${esc(st.cue||'')}</small></button>`).join('')}</div>`}
 // 星空後製：固定的假亂數，星星每次位置都一樣
 function starsHtml(sc){
   if(!sc.stars)return '';let seed=7,h='';const r=()=>(seed=(seed*16807)%2147483647)/2147483647;
@@ -454,7 +465,7 @@ function render(){
   document.body.classList.toggle('play',!paste);
   const bg=`<div class="blur" style="background-image:url('${esc(sc.img)}')"></div><div class="bg" id="bg"><img src="${esc(sc.img)}" alt="${esc(sc.title)}的情境圖"><div class="shade" id="shade"></div>${starsHtml(sc)}
     ${Object.entries(sc.spots).map(([k,s])=>`<div class="spot" data-spot="${k}" style="left:${s.x}%;top:${s.y}%"><i></i><b>${esc(s.name)}</b></div>`).join('')}</div><div class="veil"></div>`;
-  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${sc.artist?esc(sc.artist)+'・':''}v${VER}<b class="keyc" id="keyc">${getKey()?keyTxt(getKey()):''}</b></span><button class="pgpill" data-act="pg" aria-label="練習進度">${pgDots(key)}</button>${paste?'':'<button class="menu" data-act="menu" aria-label="設定：放音樂、對拍、改歌詞">⋯</button>'}${paste?'':chainHtml(sc)}</div>`;
+  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${sc.artist?esc(sc.artist)+'・':''}v${VER}<b class="keyc" id="keyc">${getKey()?keyTxt(getKey()):''}</b></span>${sc.story&&!paste?`<span class="story">${esc(sc.story)}</span>`:''}<button class="pgpill" data-act="pg" aria-label="練習進度">${pgDots(key)}</button>${paste?'':'<button class="menu" data-act="menu" aria-label="設定：放音樂、對拍、改歌詞">⋯</button>'}${paste?'':chainHtml(sc)}</div>`;
   const body=paste
     ?`<div class="paste"><p>把這首歌的歌詞整首貼進來，一行一句、照順序。<br>每段中間空一行，就會照你空的地方分段；沒空行就照預設分（${esc((SCENES[key].base||SCENES[key].steps).map(x=>x.sec).join('、'))}）。<br>歌詞只存在這台裝置，不會放到網路上。</p>
       <textarea id="lyr-in" placeholder="第一句歌詞…">${esc(text)}</textarea>
@@ -684,10 +695,10 @@ function openMenu(){
 // 練習進度：每首歌一份，存在這台裝置（總表的情境圖清單也讀同一份，兩邊點哪邊都算）
 const PG=[['tap','句對拍'],['map','背架構'],['lyr','情境歌詞'],['rec','錄音'],['acap','清唱'],['ppl','場域'],['sv','SV']];
 // 自然養成：沒有順序，碰到就點一下（一天算一次，同一天再點＝取消），點越多天越亮
-const PGN=[['n_listen','常聽','背景放著，耳朵先習慣'],['n_know','認得','前奏一出來就知道下一句'],
+const PGN=[['n_listen','常聽','放原曲，耳朵先習慣'],['n_know','認得','聽伴奏就知道唱到哪'],
   ['n_sing','跟唱','放原曲，跟著一起唱'],['n_lead','搶先唱','放伴奏，自己唱出主唱'],['n_free','隨口唱','沒音樂，洗澡走路就唱出來'],
   ['n_hear','腦內聽','放原曲，在腦中跟著唱'],['n_inst','腦內補唱','放伴奏，主唱在腦中唱'],['n_head','腦內歌聲','沒音樂，腦中自己響起來'],
-  ['n_mine','我的版本','換速度、情緒、換氣，有自己的唱法']];
+  ['n_mine','我的版本','放伴奏，換速度、情緒、換氣'],['n_solo','清唱版本','沒音樂，用自己的唱法唱完']];
 const pgToday=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const natDays=(m,id)=>Array.isArray(m[id])?m[id]:m[id]?[m[id]]:[];
 const natLv=n=>n>=5?3:n>=2?2:n?1:0;
@@ -698,12 +709,13 @@ function pgDots(k){const m=pgAll()[k]||{},c=L=>L.filter(([id])=>m[id]).length;re
 function natHtml(m){
   const t=pgToday(),cell=id=>{const [,nm,tip]=PGN.find(x=>x[0]===id),d=natDays(m,id),last=d[d.length-1];
     return `<button data-act="nat" data-s="${id}" class="nc lv${natLv(d.length)}${d.includes(t)?' today':''}"><span class="pgt">${nm}</span><small>${d.length?`${d.length} 天・${last.slice(5).replace('-','/')}`:tip}</small></button>`};
+  const gone=(t,why)=>`<div class="nc gone"><s>${t}</s><small>${why}</small></div>`;
   return `<div class="pgh">自然養成<a class="lmap" href="learn.html?t=${encodeURIComponent(SCENES[key].title)}#${key}">學歌地圖 ↗</a><small>沒有順序，碰到就點一下；點越多天越亮（今天再點一次＝取消）</small></div>
-  <div class="nat"><div class="nrow"><span class="nl">浸泡</span>${cell('n_listen')}${cell('n_know')}</div>
-  <div class="ngrid"><span></span><span class="nh">原曲</span><span class="nh">伴奏</span><span class="nh">沒音樂</span>
-    <span class="nl">出聲唱</span>${cell('n_sing')}${cell('n_lead')}${cell('n_free')}
-    <span class="nl">腦內唱</span>${cell('n_hear')}${cell('n_inst')}${cell('n_head')}</div>
-  <div class="nrow"><span class="nl">自己的</span>${cell('n_mine')}</div></div>`}
+  <div class="ngrid"><span></span><span class="nh">浸泡<small>聽</small></span><span class="nh">模仿<small>出聲</small></span><span class="nh">內化<small>腦內唱</small></span><span class="nh">風格化<small>我的唱法</small></span>
+    <span class="nl">原曲</span>${cell('n_listen')}${cell('n_sing')}${cell('n_hear')}${gone('風格化×原曲','原唱一直在旁邊，很難唱出自己的版本')}
+    <span class="nl">伴奏</span>${cell('n_know')}${cell('n_lead')}${cell('n_inst')}${cell('n_mine')}
+    <span class="nl">靜音</span>${gone('浸泡×靜音','沒聲音可聽；這時聽到的歌，其實已經是內化')}${cell('n_free')}${cell('n_head')}${cell('n_solo')}</div>
+  <p class="nnote">→ 越往右，歌越是「你」發出來的：外面發出 → 你出聲 → 你腦內 → 用你的方式。<br>↓ 越往下，拿掉越多拐杖：原曲 → 伴奏 → 靜音。<br>浸泡和內化外表一樣安靜，差別在歌是誰發出來的：音樂一停歌就停＝浸泡；還接得下去＝內化。</p>`}
 function openPg(){
   closeMenu();const m=pgAll()[key]||{};const d=document.createElement('div');d.className='sheet menu-sheet';d.id='menu';
   const tipOf={map:'蓋起來說得出整首順序',acap:'不靠伴奏唱完',ppl:'上課、朋友 KTV',sv:'街演'};
@@ -1201,6 +1213,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=76"></script>
+<script src="studio.js?v=77"></script>
 </body>
 </html>

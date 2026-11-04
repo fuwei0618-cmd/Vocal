@@ -303,7 +303,7 @@ const COLS=['songs','venues','records','gear','checks','cards','meta'];
 const GROUPS=['前一晚充電','出門準備','其他','隨身','當日'];
 const ONSITE=['現場・表演','現場・設備','現場・腳架'];
 const SONG_GROUPS=['溫馨','開放','商演','RenewSV'];
-const SCENES=[{title:'甲乙丙丁',href:'scene/?v=76#jiayi',tl:'外套 輕｜照片 推｜項鍊 收｜門 打｜照片 穩｜門 全開'},{title:'盛夏的果實',href:'scene/?v=76#summer',tl:'果實 鬆｜信 問｜潮 淡｜信 問｜果實 暖｜潮 淡｜枕頭 輕'},{title:'達爾文',href:'scene/?v=76#darwin',tl:'鏡子 看｜信 拉｜舊鞋 起｜筆記 開｜鏡子 笑｜乾燥花 放｜新鞋 走｜全開｜茶 穩'},{title:'大大的擁抱',href:'scene/?v=76#hug',tl:'門 開｜風箏 跳｜海 暖｜毛毯 抱｜彩虹 圓｜全開'},{title:'後來',href:'scene/?v=76#houlai',tl:'人海 輕｜花 甜｜星光 暖｜照片 問｜人海 悔｜照片 柔｜人海 放'},{title:'小手拉大手',href:'scene/?v=76#hands',tl:'門票 記｜可可 暖｜鞋 謝｜畫 牽｜氣球 揮｜泡泡 唱'},{title:'惡作劇',href:'scene/?v=76#prank',tl:'便利貼 擋｜貓 偷｜紙飛機 飛｜鬼臉 疑｜花瓣 亮｜窗簾 望｜箭頭 衝｜牽手 投'},{title:'知足',href:'scene/?v=76#zhizu',tl:'彩虹 想｜星罐 收｜風箏 放｜吉他 憶｜家人 足'}];   // 歌曲情境圖（scene/ 頁）
+const SCENES=[{title:'甲乙丙丁',href:'scene/?v=77#jiayi',tl:'外套 輕｜照片 推｜項鍊 收｜門 打｜照片 穩｜門 全開'},{title:'盛夏的果實',href:'scene/?v=77#summer',tl:'果實 鬆｜信 問｜潮 淡｜信 問｜果實 暖｜潮 淡｜枕頭 輕'},{title:'達爾文',href:'scene/?v=77#darwin',tl:'鏡子 看｜信 拉｜舊鞋 起｜筆記 開｜鏡子 笑｜乾燥花 放｜新鞋 走｜全開｜茶 穩'},{title:'大大的擁抱',href:'scene/?v=77#hug',tl:'門 開｜風箏 跳｜海 暖｜毛毯 抱｜彩虹 圓｜全開'},{title:'後來',href:'scene/?v=77#houlai',tl:'人海 輕｜花 甜｜星光 暖｜照片 問｜人海 悔｜照片 柔｜人海 放'},{title:'小手拉大手',href:'scene/?v=77#hands',tl:'門票 記｜可可 暖｜鞋 謝｜畫 牽｜氣球 揮｜泡泡 唱'},{title:'惡作劇',href:'scene/?v=77#prank',tl:'便利貼 擋｜貓 偷｜紙飛機 飛｜鬼臉 疑｜花瓣 亮｜窗簾 望｜箭頭 衝｜牽手 投'},{title:'知足',href:'scene/?v=77#zhizu',tl:'彩虹 想｜星罐 收｜風箏 放｜吉他 憶｜家人 足'}];   // 歌曲情境圖（scene/ 頁）
 // 10/20：歌先照「我想成為誰」分身份，每首歌知道自己是哪一個我在唱，才不會飄
 const WHO=[['Teresa','找回聲音・唱給自己','鄧麗君、葉柄桓、李芷婷：溫柔、回家、玩聲音'],['Shakira','為眾生・火','唱給大家、熱場、有力量'],['Elva','燕尾蝶・愛','G.E.M.、Elva：情歌、做自己、敢愛'],['Faye','富偉・水','Chiara、Faye：空靈、流動、安靜']];
 const LEVELS=['練習中','可上台','拿手'];
@@ -738,10 +738,10 @@ function venueSheet(id){
 // 情境圖的練習進度（和情境頁共用 scene-prog-v1，存在這台裝置）
 const PG=[['tap','句對拍'],['map','背架構'],['lyr','情境歌詞'],['rec','錄音'],['acap','清唱'],['ppl','場域'],['sv','SV']];
 // 自然養成：沒有順序，碰到就點一下（一天算一次，同一天再點＝取消），點越多天越亮
-const PGN=[['n_listen','常聽','背景放著，耳朵先習慣'],['n_know','認得','前奏一出來就知道下一句'],
+const PGN=[['n_listen','常聽','放原曲，耳朵先習慣'],['n_know','認得','聽伴奏就知道唱到哪'],
   ['n_sing','跟唱','放原曲，跟著一起唱'],['n_lead','搶先唱','放伴奏，自己唱出主唱'],['n_free','隨口唱','沒音樂，洗澡走路就唱出來'],
   ['n_hear','腦內聽','放原曲，在腦中跟著唱'],['n_inst','腦內補唱','放伴奏，主唱在腦中唱'],['n_head','腦內歌聲','沒音樂，腦中自己響起來'],
-  ['n_mine','我的版本','換速度、情緒、換氣，有自己的唱法']];
+  ['n_mine','我的版本','放伴奏，換速度、情緒、換氣'],['n_solo','清唱版本','沒音樂，用自己的唱法唱完']];
 const pgToday=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const natDays=(m,id)=>Array.isArray(m[id])?m[id]:m[id]?[m[id]]:[];
 const natLv=n=>n>=5?3:n>=2?2:n?1:0;
