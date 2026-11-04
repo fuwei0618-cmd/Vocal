@@ -90,12 +90,14 @@ body.play{overflow:hidden;height:100vh;touch-action:manipulation;user-select:non
 .sub .ln2{pointer-events:auto;cursor:pointer}
 .opb{margin-left:auto;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--muted);border-radius:99px;height:30px;padding:0 12px;font:inherit;font-size:12px;cursor:pointer}.opb.on{color:var(--glow);border-color:rgba(242,194,123,.5)}.opb+.pgpill{margin-left:0}
 body.op .sub,body.op.lay-top .sub{left:16px;right:16px;width:auto;transform:none;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);overflow-y:auto;pointer-events:auto;-webkit-overflow-scrolling:touch}
-.opg{display:grid;gap:14px 28px;align-items:start;max-width:1240px;margin:0 auto;padding:12px 16px;border-radius:16px;background:rgba(10,8,6,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.opg{display:grid;gap:10px 28px;align-items:start;max-width:1240px;margin:0 auto;padding:12px 16px;border-radius:16px;background:rgba(10,8,6,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.orh{display:flex;flex-direction:column;gap:1px;padding:0 0 6px;border-bottom:1px solid rgba(242,194,123,.3);opacity:.7}.orh.now{opacity:1;border-bottom-color:var(--glow)}
+.orh b{font-family:var(--display);font-size:15px;color:var(--glow)}.orh span{font-size:12px;line-height:1.45;color:var(--ink)}.orh em{font-style:normal;font-size:11px;color:var(--muted)}
 .ob{opacity:.62;transition:opacity .3s;border-left:2px solid transparent;padding-left:8px;margin-left:-10px}.ob.now{opacity:1;border-left-color:var(--glow)}
 .ob .obh{font-size:11px;color:var(--glow);letter-spacing:.04em;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ob .obh b{font-family:var(--display);font-size:14px}.ob .obh span{color:var(--muted)}
-body.op .sub .ob p{font-size:16px;line-height:1.6;white-space:pre-wrap}
+body.op .sub .ob p{font-size:16px;line-height:1.5;white-space:pre-wrap}
 body.op .sub.lines .ob:not(.now) .ln{opacity:.8}
-@media (max-width:760px){.opg{gap:10px 14px;padding:10px}body.op .sub .ob p{font-size:13px;line-height:1.5}.ob .obh span{display:none}}
+@media (max-width:760px){.orh span,.orh em{display:none}.opg{gap:10px 14px;padding:10px}body.op .sub .ob p{font-size:13px;line-height:1.5}.ob .obh span{display:none}}
 .sub .ln{pointer-events:auto;cursor:pointer;display:inline-block;position:relative}
 .ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none}
 .ink path{fill:none;stroke-linecap:round;stroke-linejoin:round}
@@ -388,6 +390,10 @@ const SCENES={
   zhizu:{
     // 照簡譜：A＝怎麼去擁有；B＝如果我愛上（那天你和我同旋律，只有最後收尾不同）；C＝副歌；D＝尾聲
     mel:['A','B','C','B','C','C','B','D'],
+    // 一頁排版每一欄＝一輪：小標＋一句故事＋唱法
+    rounds:[{t:'第一輪・想要',s:'看著彩虹想擁有，愛上你的笑，第一次想到「放手」。',v:'輕、像在問自己；副歌第一次放出去'},
+      {t:'第二輪・回憶',s:'回到那個山丘、那一年的歌；回憶夠多，寂寞也夠多。',v:'主歌暖暖回想；兩次副歌一次比一次大，揚的那次最滿'},
+      {t:'第三輪・知足',s:'轉調升高，你的快樂再不是為我；知足地放下，忍著心痛。',v:'轉調（E→F#）要穩住；字更輕、心更定，最後溫柔收'}],
     title:'知足',artist:'五月天',img:'zhizu.jpg?v=1',ratio:1600/893,layout:'top',dim:.55,
     story:'草地上望著彩虹和風箏，我把你的笑收進紙星星罐。想起那個山丘、那一年的歌，最後放手讓風箏飛遠，知足地溫柔收起來。',
     spots:{rainbow:{x:52,y:18,name:'彩虹'},kite:{x:77,y:24,name:'風箏'},jar:{x:62,y:66,name:'紙星星罐'},cups:{x:46,y:68,name:'兩杯茶'},guitar:{x:71,y:81,name:'吉他'},book:{x:55,y:70,name:'歌本'},
@@ -438,7 +444,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=82;
+const VER=83;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -525,7 +531,8 @@ function show(i,anim=true){
     // 一頁排版：整首歌疊在情境圖上，重複的段落對齊同一列（同 ☰ 一頁），唱到哪段亮哪段
     const pos=tocGrid(),C=Math.max(...pos.map(p=>p.c))+1;let o=0;
     const tb=document.querySelector('.bar');if(tb)sub.style.top=(tb.getBoundingClientRect().bottom+8)+'px';
-    sub.innerHTML=`<div class="opg" style="grid-template-columns:repeat(${C},minmax(0,1fr))">${sc.steps.map((x,i)=>{const ls=blocks[i]||[];const h=`<div class="ob${i===cur?' now':''}" style="grid-column:${pos[i].c+1};grid-row:${pos[i].r+1}"><div class="obh">${esc(x.sec)} <b>${esc(x.word)}</b> <span>${esc(namesOf(sc,x))}</span></div><p>${ls.map((l,k)=>lnHtml(l,o+k)).join('<br>')}</p></div>`;o+=ls.length;return h}).join('')}</div>`;
+    const R=sc.rounds&&sc.rounds.length===C?sc.rounds:null,dr=R?1:0;
+    sub.innerHTML=`<div class="opg" style="grid-template-columns:repeat(${C},minmax(0,1fr))">${R?R.map((x,c)=>`<div class="orh${pos[cur].c===c?' now':''}" style="grid-column:${c+1};grid-row:1"><b>${esc(x.t)}</b><span>${esc(x.s)}</span><em>${esc(x.v)}</em></div>`).join(''):''}${sc.steps.map((x,i)=>{const ls=blocks[i]||[];const h=`<div class="ob${i===cur?' now':''}" style="grid-column:${pos[i].c+1};grid-row:${pos[i].r+1+dr}"><div class="obh">${esc(x.sec)} <b>${esc(x.word)}</b> <span>${esc(namesOf(sc,x))}</span></div><p>${ls.map((l,k)=>lnHtml(l,o+k)).join('<br>')}</p></div>`;o+=ls.length;return h}).join('')}</div>`;
     lightLine();
   }else if(sub&&blocks){sub.style.top='';
     const nx=sc.steps[cur+1];
@@ -1261,6 +1268,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=82"></script>
+<script src="studio.js?v=83"></script>
 </body>
 </html>
