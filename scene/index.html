@@ -47,6 +47,10 @@ body.play{overflow:hidden;height:100vh;touch-action:manipulation;user-select:non
 .chainbar{flex-basis:100%;order:9;display:flex;gap:4px;margin-top:6px}
 .chainbar button{min-width:38px;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:5px 8px;border-radius:9px;border:1px solid rgba(255,255,255,.16);background:rgba(20,16,12,.62);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);color:var(--ink);font:inherit;text-align:left;cursor:pointer;overflow:hidden}
 body.op .chainbar small{display:none}body.op .chainbar button{padding:3px 8px}
+.chainbar.grp{gap:8px}.cg{display:flex;flex-direction:column;gap:3px}.cgr{display:flex;gap:4px}
+.cgl{width:0;min-width:100%;box-sizing:border-box;display:flex;align-items:baseline;gap:8px;white-space:nowrap;overflow:hidden;font-size:11px;color:var(--muted);border-bottom:2px solid rgba(242,194,123,.45);padding:0 2px 2px;text-shadow:0 1px 6px #000}.cgl b{color:var(--glow);font-size:12.5px;font-family:var(--display)}.cgl span{overflow:hidden;text-overflow:ellipsis}
+.cg.cnow .cgl{border-bottom-color:var(--glow)}
+@media (max-width:760px){.cgl span{display:none}.cgl b{font-size:11px}.chainbar.grp{gap:5px}.cgr{gap:3px}}
 .chainbar button.on{background:rgba(242,194,123,.3);border-color:var(--glow)}
 .chainbar .cw{display:flex;align-items:baseline;gap:5px;white-space:nowrap;max-width:100%;overflow:hidden}.chainbar .cw b{flex:none}
 .chainbar .cw em{font-style:normal;font-size:11px;color:var(--muted)}.chainbar button.on .cw em{color:var(--glow)}
@@ -449,7 +453,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=85;
+const VER=86;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -478,8 +482,14 @@ function split(text,steps){
 // 畫面正上方一條：整首歌的段落，照每段長短分格（段落・一個字・小字情境），唱到哪格亮哪格，點格子跳段
 function chainHtml(sc){const t=getTimes(),n=sc.steps.length,d=[];
   for(let i=0;i<n;i++)d.push(t[i]!=null&&t[i+1]!=null?t[i+1]-t[i]:null);
-  const ok=d.filter(x=>x>0),avg=ok.length?ok.reduce((a,b)=>a+b,0)/ok.length:1;
-  return `<div class="chainbar" id="chainbar" aria-label="整首架構">${sc.steps.map((st,i)=>`<button data-act="chain" data-i="${i}" style="flex:${(d[i]>0?d[i]:avg).toFixed(1)} 1 0" title="${esc(st.sec)}・${esc(st.cue||'')}"><span class="cw"><b>${esc(st.word)}</b><em>${esc(st.sec)}</em></span><small class="co">${esc(namesOf(sc,st))}</small><small>${esc(st.cue||'')}</small></button>`).join('')}</div>`}
+  const ok=d.filter(x=>x>0),avg=ok.length?ok.reduce((a,b)=>a+b,0)/ok.length:1,w=i=>d[i]>0?d[i]:avg;
+  const btn=i=>{const st=sc.steps[i];return `<button data-act="chain" data-i="${i}" style="flex:${w(i).toFixed(1)} 1 0" title="${esc(st.sec)}・${esc(st.cue||'')}"><span class="cw"><b>${esc(st.word)}</b><em>${esc(st.sec)}</em></span><small class="co">${esc(namesOf(sc,st))}</small><small>${esc(st.cue||'')}</small></button>`};
+  // 一頁排版的欄＝輪：上面加一條輪次標籤，跨過那一輪的段落
+  let pos=null;try{if(blocks&&blocks.length===n)pos=tocGrid()}catch(e){}
+  const C=pos?Math.max(...pos.map(p=>p.c))+1:1;
+  if(C<2)return `<div class="chainbar" id="chainbar" aria-label="整首架構">${sc.steps.map((_,i)=>btn(i)).join('')}</div>`;
+  const g=[];pos.forEach((p,i)=>{(g[p.c]=g[p.c]||[]).push(i)});
+  return `<div class="chainbar grp" id="chainbar" aria-label="整首架構">${g.map((L,c)=>{const r=sc.rounds&&sc.rounds[c];return `<div class="cg" style="flex:${L.reduce((a,i)=>a+w(i),0).toFixed(1)} 1 0"><div class="cgl"><b>${r?esc(r.t):`第${c+1}輪`}</b>${r?`<span>${esc(r.s)}</span>`:''}</div><div class="cgr">${L.map(btn).join('')}</div></div>`}).join('')}</div>`}
 // 星空後製：固定的假亂數，星星每次位置都一樣
 function starsHtml(sc){
   if(!sc.stars)return '';let seed=7,h='';const r=()=>(seed=(seed*16807)%2147483647)/2147483647;
@@ -524,6 +534,7 @@ function place(){
 function show(i,anim=true){
   const sc=SCENES[key];const n=sc.steps.length;cur=Math.max(0,Math.min(n-1,i));
   const st=sc.steps[cur],ks=spotsOf(st),sp=sc.spots[ks[0]];
+  document.querySelectorAll('#chainbar .cg').forEach(g=>g.classList.toggle('cnow',!!g.querySelector(`[data-i="${cur}"]`)));
   document.querySelectorAll('#chainbar button').forEach(b=>{const on=+b.dataset.i===cur;b.classList.toggle('on',on);if(on){const c=b.parentNode;if(c.scrollWidth>c.clientWidth)c.scrollTo({left:b.offsetLeft-c.clientWidth/2,behavior:'smooth'})}});
   const sh=document.getElementById('shade');
   // dim：明亮的歌暗得少一點，畫面才不會變陰沉
@@ -1279,6 +1290,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=85"></script>
+<script src="studio.js?v=86"></script>
 </body>
 </html>
