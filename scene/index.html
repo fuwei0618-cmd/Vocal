@@ -93,6 +93,23 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 .ln .nt,.toc .l .nt{font-family:var(--body);font-size:12.5px;color:#ffb48a;margin-left:8px;letter-spacing:0;text-shadow:0 1px 6px #000}
 .toc .row{display:flex;align-items:center;gap:4px}.toc .row .l{flex:1}
 .toc .pen{border:0;background:none;color:var(--muted);font-size:15px;padding:6px 8px}
+/* 架構表：一頁看完整首歌的骨架 */
+.map{max-width:680px;margin:0 auto}
+.map .chain{font-family:var(--display);font-size:24px;line-height:1.6;color:var(--glow);margin:2px 0 4px;display:flex;flex-wrap:wrap;column-gap:.7em}.map .chain span{white-space:nowrap}
+.map .tip{color:var(--muted);font-size:13px;margin:0 0 14px}
+.map .mp{display:grid;grid-template-columns:22px 64px minmax(40px,auto) 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.map .mp.newsec{border-top-color:rgba(242,194,123,.45)}
+.map .mn{color:var(--muted);font-size:12px;text-align:right}
+.map .ms{color:var(--glow);font-size:13px;letter-spacing:.06em}
+.map .mw{font-family:var(--display);font-size:28px;text-align:center;white-space:nowrap}
+.map .mc{font-size:14px;line-height:1.45}
+.map .mf{font-family:var(--display);font-size:13px;color:var(--muted);margin-top:2px}
+.map .mp>button{padding:6px 12px;font-size:13px}
+.map .mp.hide .mw,.map .mp.hide .mc,.map .mp.hide .mf{filter:blur(9px);opacity:.5}
+.map .mp.hide{cursor:pointer}
+.map .mp.next .mn::after{content:'？';color:var(--glow)}
+.toc .top button.on{border-color:var(--glow);color:var(--glow)}
+@media (max-width:560px){.map .mp{grid-template-columns:18px 58px minmax(32px,auto) 1fr;gap:8px}.map .ms{font-size:12px;letter-spacing:0}.map .mp>button{display:none}.map .mw{font-size:24px}.map .chain{font-size:20px}}
 .sheet{position:fixed;z-index:30;left:0;right:0;bottom:0;background:#1a1612;border-top:1px solid var(--line);border-radius:16px 16px 0 0;padding:16px 18px calc(env(safe-area-inset-bottom,0px) + 18px);display:grid;gap:10px;max-width:640px;margin:0 auto;box-shadow:0 -10px 40px rgba(0,0,0,.6)}
 .sheet .q{font-family:var(--display);font-size:17px}
 .sheet .row{display:flex;gap:8px;flex-wrap:wrap}
@@ -380,7 +397,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=73;
+const VER=74;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -496,6 +513,9 @@ app.addEventListener('click',e=>{
     else if(act==='part')startPart();
     else if(act==='toc')openToc();
     else if(act==='tocx')closeToc();
+    else if(act==='map'){e.preventDefault();closeMenu();mapShown=0;openMap()}
+    else if(act==='mapr'){mapRecall=!mapRecall;mapShown=0;const y=document.getElementById('toc').scrollTop;openMap();document.getElementById('toc').scrollTop=y}
+    else if(act==='mapx'){mapShown=+a.dataset.i;const y=document.getElementById('toc').scrollTop;openMap();document.getElementById('toc').scrollTop=y}
     else if(act==='undo')undoTimes();
     else if(act==='base'){setBase(a.dataset.to);openMenu();sync()}
     else if(act==='pen')startDraw();
@@ -647,7 +667,7 @@ function openMenu(){
   app.appendChild(d);
 }
 // 練習進度：每首歌一份，存在這台裝置（總表的情境圖清單也讀同一份，兩邊點哪邊都算）
-const PG=[['tap','句對拍'],['lyr','情境歌詞'],['rec','錄音'],['acap','清唱'],['ppl','場域'],['sv','SV']];
+const PG=[['tap','句對拍'],['map','背架構'],['lyr','情境歌詞'],['rec','錄音'],['acap','清唱'],['ppl','場域'],['sv','SV']];
 // 自然養成：沒有順序，碰到就點一下（一天算一次，同一天再點＝取消），點越多天越亮
 const PGN=[['n_listen','常聽','背景放著，耳朵先習慣'],['n_know','認得','前奏一出來就知道下一句'],
   ['n_sing','跟唱','放原曲，跟著一起唱'],['n_lead','搶先唱','放伴奏，自己唱出主唱'],['n_free','隨口唱','沒音樂，洗澡走路就唱出來'],
@@ -671,8 +691,8 @@ function natHtml(m){
   <div class="nrow"><span class="nl">自己的</span>${cell('n_mine')}</div></div>`}
 function openPg(){
   closeMenu();const m=pgAll()[key]||{};const d=document.createElement('div');d.className='sheet menu-sheet';d.id='menu';
-  const tipOf={acap:'不靠伴奏唱完',ppl:'上課、朋友 KTV',sv:'街演'};
-  const grp=(L,name,sub)=>`<div class="pgh">${name}<small>${sub}</small></div><div class="grp pgl">${L.map(([id,t,tip],i)=>`<button data-act="pgs" data-s="${id}" class="${m[id]?'on':''}"><b>${m[id]?'✓':i+1}</b><span class="pgt">${t}</span><small>${m[id]?m[id].slice(5).replace('-','/')+' 完成':tip||tipOf[id]||''}</small></button>`).join('')}</div>`;
+  const tipOf={map:'蓋起來說得出整首順序',acap:'不靠伴奏唱完',ppl:'上課、朋友 KTV',sv:'街演'};
+  const grp=(L,name,sub)=>`<div class="pgh">${name}<a class="lmap" data-act="map" href="#${key}">架構表 ↗</a><small>${sub}</small></div><div class="grp pgl">${L.map(([id,t,tip],i)=>`<button data-act="pgs" data-s="${id}" class="${m[id]?'on':''}"><b>${m[id]?'✓':i+1}</b><span class="pgt">${t}</span><small>${m[id]?m[id].slice(5).replace('-','/')+' 完成':tip||tipOf[id]||''}</small></button>`).join('')}</div>`;
   d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div>${natHtml(m)}${grp(PG,'刻意練習','對拍、錄音、上台')}
     <small class="tip">點一下打勾，再點一下取消。歌單的情境圖清單也會一起更新</small><div class="row" style="justify-content:flex-end"><button data-act="mclose">關閉</button></div>`;
   app.appendChild(d)}
@@ -1031,13 +1051,28 @@ function playFrom(sec,l){
 function openToc(){
   if(!blocks)return;closeToc();const sc=SCENES[key],t=getTimes(),L=getLines();let o=0;
   const d=document.createElement('div');d.className='toc';d.id='toc';
-  d.innerHTML=`<div class="top"><b>${esc(sc.title)}</b><button data-act="from">▶ 從頭播</button>${getUndo()?'<button data-act="undo">↶ 復原對拍</button>':''}<button data-act="tocx">關閉</button></div>`+
+  d.innerHTML=`<div class="top"><b>${esc(sc.title)}</b><button data-act="map">架構表</button><button data-act="from">▶ 從頭播</button>${getUndo()?'<button data-act="undo">↶ 復原對拍</button>':''}<button data-act="tocx">關閉</button></div>`+
     sc.steps.map((st,i)=>{const ls=blocks[i]||[];const h=`<div class="sec"><button data-act="from" data-sec="${i}">${esc(st.sec)}<b>${esc(namesOf(sc,st))} ${esc(st.word)}</b>${t[i]!=null?mmss(t[i]):''} ▶</button>`+
       ls.map((x,k)=>{const j=o+k,m=noteOf(j);return `<div class="row"><button class="l${i===cur?' cur':''}${m.hl?' hl':''}${m.x?' x':''}" data-act="from" data-l="${j}">${esc(x)}${m.t?`<span class="nt">${esc(m.t)}</span>`:''}${L[j]!=null?`<small>${mmss(L[j])}</small>`:''}</button><button class="pen" data-act="note" data-l="${j}" aria-label="這句做筆記">✎</button></div>`}).join('')+'</div>';o+=ls.length;return h}).join('');
   app.appendChild(d);
   const c=d.querySelector('.l.cur');if(c)c.scrollIntoView({block:'center'});
 }
 function closeToc(){const d=document.getElementById('toc');if(d)d.remove()}
+// 架構表：整首歌一頁看完（段落、一個字、情境、第一句開頭）。「回想」＝先蓋起來，自己說出下一段是什麼再點開
+let mapRecall=false,mapShown=0;
+function openMap(){
+  closeToc();const sc=SCENES[key],t=getTimes();
+  const first=i=>{const l=(blocks&&blocks[i]||[])[0]||'';return l.length>12?l.slice(0,12)+'…':l};
+  const d=document.createElement('div');d.className='toc';d.id='toc';
+  d.innerHTML=`<div class="top"><b>${esc(sc.title)}・架構表</b><button data-act="mapr" class="${mapRecall?'on':''}">${mapRecall?'回想中':'回想'}</button>${blocks?'<button data-act="toc">歌詞</button>':''}<button data-act="tocx">關閉</button></div>
+  <div class="map"><div class="chain">${sc.steps.map(st=>`<span>${esc(st.word)}</span>`).join('')}</div>
+  <p class="tip">${mapRecall?'先別看：說出下一段的段落、情境和第一句，再點那一列確認。':'先把上面這串字記起來，就是整首歌的順序；每個字背後是一個畫面。'}</p>
+  ${sc.steps.map((st,i)=>{const hide=mapRecall&&i>mapShown;return `<div class="mp${i&&st.sec!==sc.steps[i-1].sec?' newsec':''}${hide?' hide':''}${mapRecall&&i===mapShown+1?' next':''}"${hide?` data-act="mapx" data-i="${i}"`:''}>
+    <span class="mn">${i+1}</span><span class="ms">${esc(st.sec)}</span><b class="mw">${esc(st.word)}</b>
+    <div><div class="mc">${esc(namesOf(sc,st))}｜${esc(st.cue||'')}</div>${first(i)?`<div class="mf">${esc(first(i))}</div>`:''}</div>
+    <button data-act="from" data-sec="${i}">${t[i]!=null?mmss(t[i])+' ':''}▶</button></div>`}).join('')}</div>`;
+  app.appendChild(d);
+}
 // 在圖上左右滑：換段（正在播就跳到那段）
 // 上下滑：翻歌詞找位置（音樂不跳），找到後點那一句就從那句播；8 秒沒動作就回到正在唱的地方
 let tx0=null,browsing=0,lpT=0,lpFired=false,lp0=null;
@@ -1151,6 +1186,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=73"></script>
+<script src="studio.js?v=74"></script>
 </body>
 </html>
