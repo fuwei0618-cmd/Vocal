@@ -77,16 +77,34 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)
 .ro .nc:not(.gone){cursor:default}.ro .vk{display:none}
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);background:rgba(0,0,0,.8);border:1px solid var(--line);border-radius:99px;padding:8px 16px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none}.toast.on{opacity:1}
 @media (max-width:640px){.nh .ng{display:none}.nh{padding:4px}.nh .nn{font-size:14px}.ngrid{grid-template-columns:2.2em repeat(4,1fr);gap:5px}.nc{padding:8px 8px 24px}.nc .pgt{font-size:14px}.nc small{font-size:10px}.nc.gone{padding-bottom:8px}.nc.gone small{font-size:9.5px}.nc .vk{top:auto;bottom:5px;right:5px}.nh{font-size:12.5px}.nh em{font-size:9px}}
+/* 一頁：表格疊在圖上半部（天空），人都在下半部 */
+.bar{flex-wrap:wrap}.bar .songs{margin:0 0 0 auto;padding:0;max-width:none}
+.songs a{padding:3px 10px;font-size:12px}
+.pic{max-width:min(1200px,calc((100vh - 64px) * 1.79))}
+.pic .nat{position:absolute;left:1.2%;right:1.2%;top:1.6%;margin:0;padding:8px 10px 10px;border-radius:14px;background:rgba(12,10,8,.62);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);max-width:none}
+.pic .pgh{margin:0 2px 6px;font-size:14px}.pic .pgh small{font-size:11px}
+.pic .ngrid{grid-template-columns:2.4em repeat(4,1fr);gap:5px 6px}
+.pic .nh{padding:3px 6px;gap:1px}.pic .nh .nn{font-size:15px}.pic .nh .nn small{display:inline;margin-left:6px;font-size:10.5px}.pic .nh em{font-size:10px;margin-top:0}
+.pic .nl{font-size:11.5px}
+.pic .nc{padding:6px 10px;min-height:40px;justify-content:center;gap:1px}.pic .nc .pgt{font-size:15px}.pic .nc small{font-size:10px}
+.pic .nc .vk{top:50%;transform:translateY(-50%);right:7px;font-size:10px;padding:3px 6px}
+.pic .nc.gone{padding:6px 10px}.pic .nc.gone s{font-size:11px}
+.stg{position:absolute;left:1.2%;bottom:2%;max-width:56%;padding:8px 12px;border-radius:12px;background:rgba(12,10,8,.7);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);font-size:12px;line-height:1.5;display:flex;flex-direction:column;gap:1px}
+.stg b{font-family:var(--display);font-size:16px;color:var(--glow)}.stg i{font-style:normal;color:var(--muted);margin-right:5px}
+.foot{max-width:1200px;margin:6px auto 0;padding:0 16px calc(env(safe-area-inset-bottom,0px) + 16px)}.foot .nnote{margin:0;font-size:11.5px;line-height:1.6}
+@media (max-width:760px){.pic{max-width:none}.pic .nat{position:static;border-radius:0;background:none;padding:10px 12px}.bar .songs{margin:4px 0 0;flex-basis:100%}.stg{position:static;max-width:none;border-radius:0;margin:0}.pic .nc .vk{top:auto;transform:none;bottom:4px;right:4px}.pic .nc{padding-bottom:20px}.pic .nh em{font-size:9px}}
+.imgw{position:relative}
 </style>
 </head>
 <body>
-<div class="bar"><a href="javascript:history.length>1?history.back():location.href='../#songs'">← 返回</a><h1>學歌地圖・自然養成</h1><span class="by" id="by"></span></div>
+<div class="bar"><a href="javascript:history.length>1?history.back():location.href='../#songs'">← 返回</a><h1>學歌地圖・自然養成</h1><span class="by" id="by"></span><div class="songs" id="songs"></div></div>
 <div class="pic">
-  <img src="learn.jpg?v=1" alt="一個小孩學騎腳踏車的四個時刻：坐在長椅上看、爸爸扶著騎、爸爸放手自己騎、騎進花草地">
-  <div id="spots"></div>
+  <div class="imgw"><img src="learn.jpg?v=1" alt="一個小孩學騎腳踏車的四個時刻：坐在長椅上看、爸爸扶著騎、爸爸放手自己騎、騎進花草地">
+  <div id="spots"></div></div>
+  <div class="nat" id="nat"></div>
+  <div class="stg" id="stg" hidden></div>
 </div>
-<div class="songs" id="songs"></div>
-<div class="nat" id="nat"></div>
+<div class="foot" id="foot"></div>
 <div class="toast" id="toast"></div>
 <script>
 const SONGS=[['jiayi','甲乙丙丁'],['summer','盛夏的果實'],['darwin','達爾文'],['hands','小手拉大手'],['prank','惡作劇'],['zhizu','知足'],['hug','大大的擁抱'],['houlai','後來']];
@@ -113,19 +131,19 @@ function draw(){
   const m=song?pgAll()[song]||{}:{},t=pgToday(),title=(SONGS.find(x=>x[0]===song)||[])[1]||'';
   document.getElementById('by').textContent=title?'・'+title:'';
   document.getElementById('songs').innerHTML=SONGS.map(([k,n])=>`<a href="#${k}" class="${k===song?'on':''}">${n}</a>`).join('');
-  const cell=(c,ci)=>{if(c.length===2)return `<div class="nc gone"><s>${c[0]}</s><small>${esc(c[1])}</small></div>`;
+  const cell=(c,ci)=>{if(c.length===2)return `<div class="nc gone" title="${esc(c[1])}"><s>${c[0].split('×')[0]}×${c[0].split('×')[1]}</s></div>`;
     const [id,nm,tip]=c,d=natDays(m,id),last=d[d.length-1],v=natDays(m,'v_'+id),vt=v.includes(t);
-    return `<button data-act="nat" data-s="${id}" class="nc lv${natLv(d.length)}${d.includes(t)?' today':''}${ci===col?' col':''}"><span class="pgt">${nm}</span><small>${d.length?`${d.length} 天・${last.slice(5).replace('-','/')}`:tip}</small><span class="vk${v.length>=3?' grad':v.length?' on':''}${vt?' vt':''}" data-act="natv" data-s="v_${id}">${v.length>=3?'🎓':v.length?'✓'+v.length:'考'}</span></button>`};
-  document.getElementById('nat').innerHTML=`<div class="pgh">自然養成${title?`・${esc(title)}`:''}<small>${song?'沒有順序，碰到就點一下；點越多天越亮（今天再點一次＝取消）':'先在上面選一首歌，才會記到那首歌'}</small></div>
-  <p class="lead2">學會一首歌，就是把<b>「歌由誰撐著」</b>從外面移到你身上：→ 越往右，歌越是你發出來的；↓ 越往下，拿掉越多拐杖（原曲 → 伴奏 → 靜音）。</p>
-  <div class="ngrid${song?'':' ro'}"><span></span>${STAGES.map((s,i)=>`<span class="nh${i===col?' on':''}" data-act="col" data-i="${i}"><span class="nn">${i+1} ${s.n}</span><small>${s.sub}・${esc(s.who)}</small><span class="ng"><i>目標</i>${esc(s.goal)}</span><span class="ng"><i>做到時</i>${esc(s.state)}</span><em>考：${s.test}</em></span>`).join('')}
-  ${GRID.map(r=>`<span class="nl">${r[0]}</span>`+r.slice(1).map((c,ci)=>cell(c,ci)).join('')).join('')}</div>
-  <p class="nnote">浸泡和內化外表一樣安靜，差別在歌是誰發出來的：音樂一停歌就停＝浸泡；還接得下去＝內化。<br>每格右上角「考」：照那一欄上面寫的方法考過，就點一下（一天算一次）。不同天考過 3 次＝這格畢業 🎓。</p>`;
+    return `<button data-act="nat" data-s="${id}" class="nc lv${natLv(d.length)}${d.includes(t)?' today':''}${ci===col?' col':''}"><span class="pgt">${nm}</span>${d.length?`<small>${d.length} 天・${last.slice(5).replace('-','/')}</small>`:''}<span class="vk${v.length>=3?' grad':v.length?' on':''}${vt?' vt':''}" data-act="natv" data-s="v_${id}">${v.length>=3?'🎓':v.length?'✓'+v.length:'考'}</span></button>`};
+  document.getElementById('nat').innerHTML=`<div class="pgh">${title?esc(title):'先在右上選一首歌'}<small>${song?'碰到就點，越多天越亮・→ 歌越是你發出來的　↓ 拐杖越拿越多':'選了歌才會記錄'}</small></div>
+  <div class="ngrid${song?'':' ro'}"><span></span>${STAGES.map((s,i)=>`<span class="nh${i===col?' on':''}" data-act="col" data-i="${i}"><span class="nn">${i+1} ${s.n}<small>${s.sub}</small></span><em>考：${s.test}</em></span>`).join('')}
+  ${GRID.map(r=>`<span class="nl">${r[0]}</span>`+r.slice(1).map((c,ci)=>cell(c,ci)).join('')).join('')}</div>`;
+  document.getElementById('foot').innerHTML=`<p class="nnote">浸泡和內化外表一樣安靜，差別在歌是誰發出來的：音樂一停歌就停＝浸泡；還接得下去＝內化。<br>每格右上角「考」：照那一欄上面寫的方法考過，就點一下（一天算一次）。不同天考過 3 次＝這格畢業 🎓。</p>`;
+  const sg=document.getElementById('stg');if(col>=0){const x=STAGES[col];sg.hidden=false;sg.innerHTML=`<b>${col+1} ${x.n}</b><span>圖上：${esc(x.who)}</span><span><i>目標</i>${esc(x.goal)}</span><span><i>做到時</i>${esc(x.state)}</span>`}else sg.hidden=true;
   document.querySelectorAll('.spot').forEach(b=>b.classList.toggle('on',+b.dataset.i===col));
 }
 document.getElementById('spots').innerHTML=STAGES.map((s,i)=>`<button class="spot" data-act="col" data-i="${i}" style="left:${s.spot.x}%;top:${s.spot.y}%"><i></i><b>${i+1} ${s.n}</b></button>`).join('');
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;
-  if(act==='col'){col=+a.dataset.i===col?-1:+a.dataset.i;draw();if(col>=0&&a.classList.contains('spot'))document.querySelector('.ngrid').scrollIntoView({behavior:'smooth',block:'start'})}
+  if(act==='col'){col=+a.dataset.i===col?-1:+a.dataset.i;draw();}
   else if(!song)toast('先選一首歌');
   else if(act==='natv'){toast(natTap(song,a.dataset.s)?'今天考過了 ✓':'取消今天這次考試');draw()}
   else if(act==='nat'){toast(natTap(song,a.dataset.s)?'點亮了':'取消今天這次');draw()}});
