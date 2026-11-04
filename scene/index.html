@@ -111,6 +111,10 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 .foot{display:none}
 .bar{align-items:center}
 .bar .keyc{margin-left:6px;color:#ffd36b;font-weight:600}.keyc:empty{display:none}.keyseg b{min-width:4.2em;text-align:center;font-weight:600}
+.pgh{margin:10px 2px 6px;color:var(--glow);font-size:13px;font-weight:600}.pgh small{margin-left:8px;color:var(--muted);font-weight:400;font-size:11px}
+@media (min-width:700px){.menu-sheet .pgl{display:grid;grid-template-columns:1fr 1fr;gap:8px}}
+.pgl .pgt{white-space:nowrap}.menu-sheet .pgl small{text-align:right}
+.pgpill i{font-style:normal;opacity:.5}
 .pgpill{margin-left:auto;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--muted);border-radius:99px;height:30px;padding:0 10px;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}.bar .pgpill span{color:#f2c27b;letter-spacing:1px}
 .bar .pgpill+.menu{margin-left:0}
 .menu-sheet .pgl{gap:6px}.menu-sheet .pgl button{display:flex;align-items:center;gap:10px;text-align:left;justify-content:flex-start;padding:10px 12px;font-size:15px}
@@ -368,7 +372,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=69;
+const VER=70;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -629,13 +633,17 @@ function openMenu(){
   app.appendChild(d);
 }
 // 練習進度：每首歌一份，存在這台裝置（總表的情境圖清單也讀同一份，兩邊點哪邊都算）
+// 兩排進度：刻意練習（PG）和自然養成（PGN，像學語言：浸泡→模仿→內化→自己的）
 const PG=[['tap','句對拍'],['lyr','情境歌詞'],['rec','錄音'],['acap','清唱'],['ppl','場域'],['sv','SV']];
+const PGN=[['n_listen','常聽','背景放著，耳朵先習慣'],['n_know','認得','前奏一出來就知道，也知道下一句往哪走'],['n_sing','跟唱','跟著原唱一起哼、一起唱'],['n_lead','搶先唱','原唱還沒唱，你先唱出下一句'],['n_head','腦內歌聲','沒放音樂，腦中自己唱起來'],['n_inst','伴奏腦內唱','只放伴奏，主唱在腦中（或小聲跟）'],['n_free','隨口唱','洗澡、走路，不看歌詞就唱出來'],['n_mine','我的版本','換速度、情緒、換氣，有自己的唱法']];
 function pgAll(){try{return JSON.parse(localStorage.getItem('scene-prog-v1'))||{}}catch(e){return {}}}
 function pgToggle(k,id){const a=pgAll(),m=a[k]||(a[k]={});if(m[id])delete m[id];else{const d=new Date();m[id]=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}}
-function pgDots(k){const m=pgAll()[k]||{},n=PG.filter(([id])=>m[id]).length;return `<span>${PG.map(([id])=>m[id]?'●':'○').join('')}</span> ${n}/${PG.length}`}
+function pgDots(k){const m=pgAll()[k]||{},c=L=>L.filter(([id])=>m[id]).length;return `自然 ${c(PGN)}/${PGN.length}<i>・</i>刻意 ${c(PG)}/${PG.length}`}
 function openPg(){
   closeMenu();const m=pgAll()[key]||{};const d=document.createElement('div');d.className='sheet menu-sheet';d.id='menu';
-  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div><div class="grp pgl">${PG.map(([id,t],i)=>`<button data-act="pgs" data-s="${id}" class="${m[id]?'on':''}"><b>${m[id]?'✓':i+1}</b>${t}<small>${m[id]?m[id].slice(5).replace('-','/')+' 完成':id==='acap'?'不靠伴奏唱完':id==='ppl'?'上課、朋友 KTV':id==='sv'?'街演':''}</small></button>`).join('')}</div>
+  const tipOf={acap:'不靠伴奏唱完',ppl:'上課、朋友 KTV',sv:'街演'};
+  const grp=(L,name,sub)=>`<div class="pgh">${name}<small>${sub}</small></div><div class="grp pgl">${L.map(([id,t,tip],i)=>`<button data-act="pgs" data-s="${id}" class="${m[id]?'on':''}"><b>${m[id]?'✓':i+1}</b><span class="pgt">${t}</span><small>${m[id]?m[id].slice(5).replace('-','/')+' 完成':tip||tipOf[id]||''}</small></button>`).join('')}</div>`;
+  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div>${grp(PGN,'自然養成','浸泡 → 模仿 → 內化 → 自己的')}${grp(PG,'刻意練習','對拍、錄音、上台')}
     <small class="tip">點一下打勾，再點一下取消。歌單的情境圖清單也會一起更新</small><div class="row" style="justify-content:flex-end"><button data-act="mclose">關閉</button></div>`;
   app.appendChild(d)}
 function closeMenu(){const d=document.getElementById('menu');if(d){d.remove();wakePlayer()}}
