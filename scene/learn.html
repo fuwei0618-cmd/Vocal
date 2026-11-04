@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>學歌地圖</title>
+<meta name="theme-color" content="#0d0b09">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png?v=1">
+<link rel="icon" href="../icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* 學歌地圖：一張學騎腳踏車的圖＝學一首歌的四個階段（歌由誰撐著：外面帶你 → 你跟著 → 你自己 → 你帶著歌走） */
+:root{
+  --bg:#0d0b09; --ink:#f6efe4; --muted:#bfb3a3; --line:rgba(255,255,255,.16); --glow:#f2c27b; --glow-soft:rgba(242,194,123,.16);
+  --display:"LXGW WenKai TC","Noto Sans TC","PingFang TC",serif;
+  --body:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);-webkit-tap-highlight-color:transparent}
+.bar{display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px}
+.bar a{color:var(--muted);text-decoration:none;font-size:14px}
+.bar h1{margin:0;font-family:var(--display);font-size:22px}
+.bar .by{color:var(--muted);font-size:13px}
+.pic{position:relative;max-width:1200px;margin:0 auto}
+.pic img{display:block;width:100%;height:auto}
+.spot{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:6px;cursor:pointer;color:#fff;font:inherit}
+.spot i{width:14px;height:14px;border-radius:50%;background:var(--glow);box-shadow:0 0 0 6px var(--glow-soft),0 0 16px var(--glow);font-style:normal}
+.spot b{font-family:var(--display);font-size:18px;font-weight:700;text-shadow:0 1px 8px #000,0 0 3px #000;white-space:nowrap}
+.spot.on i{transform:scale(1.35)}
+.lead{max-width:1200px;margin:14px auto 0;padding:0 16px;color:var(--muted);font-size:14px;line-height:1.6}
+.lead b{color:var(--glow);font-weight:600}
+.cards{max-width:1200px;margin:12px auto 0;padding:0 16px calc(env(safe-area-inset-bottom,0px) + 24px);display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.card{border:1px solid var(--line);border-radius:18px;padding:14px 14px 12px;background:rgba(255,255,255,.03);transition:border-color .3s,background .3s}
+.card.on{border-color:var(--glow);background:rgba(242,194,123,.08)}
+.card h2{margin:0 0 2px;font-family:var(--display);font-size:20px;display:flex;align-items:baseline;gap:8px}
+.card h2 small{font-family:var(--body);font-size:12px;color:var(--glow);font-weight:500}
+.card .who{font-size:12px;color:var(--muted);margin-bottom:10px}
+.card dl{margin:0;font-size:13px;line-height:1.55}
+.card dt{color:var(--glow);font-size:12px;margin-top:8px}
+.card dd{margin:2px 0 0}
+.cells{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.cells span{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:3px 10px;color:var(--muted)}
+.cells span.lv1{background:rgba(242,194,123,.10);border-color:rgba(242,194,123,.35);color:var(--ink)}
+.cells span.lv2{background:rgba(242,194,123,.22);border-color:rgba(242,194,123,.6);color:var(--ink)}
+.cells span.lv3{background:rgba(242,194,123,.38);border-color:var(--glow);color:#fff}
+@media (max-width:900px){.cards{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.cards{grid-template-columns:1fr}.spot b{font-size:14px}.spot i{width:11px;height:11px}.bar h1{font-size:20px}}
+</style>
+</head>
+<body>
+<div class="bar"><a href="javascript:history.length>1?history.back():location.href='../#songs'">← 返回</a><h1>學歌地圖</h1><span class="by" id="by"></span></div>
+<div class="pic">
+  <img src="learn.jpg?v=1" alt="一個小孩學騎腳踏車的四個時刻：坐在長椅上看、爸爸扶著騎、爸爸放手自己騎、騎進花草地">
+  <div id="spots"></div>
+</div>
+<p class="lead">學會一首歌，就是把<b>「歌由誰撐著」</b>從外面一步步移到你身上：外面帶著你 → 你跟著外面 → 你自己撐住 → 你帶著歌走。點圖上的小孩看每個階段。</p>
+<div class="cards" id="cards"></div>
+<script>
+const STAGES=[
+  {id:'soak',n:'浸泡',sub:'建立地圖',spot:{x:12,y:52},who:'坐在長椅上，看別人騎',
+   goal:'不花力氣，讓歌的樣子自己長進腦中。',state:'預期得到：知道下一句往哪走；歌被切掉會覺得「欸，還沒完」。',cells:['n_listen','n_know']},
+  {id:'copy',n:'模仿',sub:'接上嘴巴',spot:{x:40,y:46},who:'爸爸扶著座墊騎',
+   goal:'把耳朵聽到的對應到自己的聲音，照原唱忠實複製音高、節奏、斷句和換氣。',state:'跟得上：有原唱或伴奏帶著時，唱得對、不會掉。',cells:['n_sing','n_hear','n_lead']},
+  {id:'own',n:'內化',sub:'拿掉拐杖',spot:{x:62,y:44},who:'爸爸放手，自己騎',
+   goal:'不靠外面的聲音，歌在你身上也站得住。',state:'獨立：沒有音樂，音準和速度也穩；歌會自己在腦中響起。',cells:['n_inst','n_head','n_free']},
+  {id:'style',n:'風格化',sub:'從複製到詮釋',spot:{x:85,y:44},who:'騎進花草地，走自己的路線',
+   goal:'唱法變成「選擇」，不是「照抄」。',state:'自由：換速度、強弱、換氣、裝飾，還是這首歌，而且說得出為什麼這樣唱。',cells:['n_mine']}];
+const NAME={n_listen:'常聽',n_know:'認得',n_sing:'跟唱',n_lead:'搶先唱',n_free:'隨口唱',n_hear:'腦內聽',n_inst:'腦內補唱',n_head:'腦內歌聲',n_mine:'我的版本'};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// 從某首歌的進度點進來（learn.html#歌的代號）：格子照那首歌點過幾天亮起來
+const song=decodeURIComponent((location.hash||'').slice(1));
+let m={};try{m=(JSON.parse(localStorage.getItem('scene-prog-v1'))||{})[song]||{}}catch(e){}
+const days=id=>Array.isArray(m[id])?m[id].length:m[id]?1:0,lv=n=>n>=5?3:n>=2?2:n?1:0;
+const title=new URLSearchParams(location.search).get('t')||'';
+document.getElementById('by').textContent=title?`・${title}`:'';
+document.getElementById('spots').innerHTML=STAGES.map((s,i)=>`<button class="spot" data-i="${i}" style="left:${s.spot.x}%;top:${s.spot.y}%"><i></i><b>${i+1} ${s.n}</b></button>`).join('');
+document.getElementById('cards').innerHTML=STAGES.map((s,i)=>`<section class="card" id="c${i}"><h2>${i+1} ${s.n}<small>${s.sub}</small></h2><div class="who">圖上：${esc(s.who)}</div>
+  <dl><dt>目標</dt><dd>${esc(s.goal)}</dd><dt>做到時的狀態</dt><dd>${esc(s.state)}</dd></dl>
+  <div class="cells">${s.cells.map(c=>{const d=days(c);return `<span class="lv${lv(d)}">${NAME[c]}${d?` ${d} 天`:''}</span>`}).join('')}</div></section>`).join('');
+document.getElementById('spots').addEventListener('click',e=>{const b=e.target.closest('.spot');if(!b)return;const i=+b.dataset.i;
+  document.querySelectorAll('.spot,.card').forEach(x=>x.classList.remove('on'));b.classList.add('on');const c=document.getElementById('c'+i);c.classList.add('on');c.scrollIntoView({behavior:'smooth',block:'nearest'})});
+</script>
+</body>
+</html>

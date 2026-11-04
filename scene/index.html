@@ -121,6 +121,7 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 #menu .nc.lv1{background:rgba(242,194,123,.10);border-color:rgba(242,194,123,.35)}#menu .nc.lv2{background:rgba(242,194,123,.22);border-color:rgba(242,194,123,.6)}#menu .nc.lv3{background:rgba(242,194,123,.38);border-color:#f2c27b;box-shadow:0 0 14px rgba(242,194,123,.35)}
 #menu .nc.today .pgt::after{content:' ✦';color:#f2c27b}
 @media (max-width:640px){.ngrid{grid-template-columns:3em repeat(3,1fr);gap:6px}#menu .nc{padding:8px}#menu .nc small{font-size:10px}}
+.pgh .lmap{float:right;color:var(--glow);font-size:12px;font-weight:500;text-decoration:none}
 .pgpill i{font-style:normal;opacity:.5}
 .pgpill{margin-left:auto;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--muted);border-radius:99px;height:30px;padding:0 10px;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}.bar .pgpill span{color:#f2c27b;letter-spacing:1px}
 .bar .pgpill+.menu{margin-left:0}
@@ -379,7 +380,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=71;
+const VER=72;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -657,7 +658,7 @@ function pgDots(k){const m=pgAll()[k]||{},c=L=>L.filter(([id])=>m[id]).length;re
 function natHtml(m){
   const t=pgToday(),cell=id=>{const [,nm,tip]=PGN.find(x=>x[0]===id),d=natDays(m,id),last=d[d.length-1];
     return `<button data-act="nat" data-s="${id}" class="nc lv${natLv(d.length)}${d.includes(t)?' today':''}"><span class="pgt">${nm}</span><small>${d.length?`${d.length} 天・${last.slice(5).replace('-','/')}`:tip}</small></button>`};
-  return `<div class="pgh">自然養成<small>沒有順序，碰到就點一下；點越多天越亮（今天再點一次＝取消）</small></div>
+  return `<div class="pgh">自然養成<a class="lmap" href="learn.html?t=${encodeURIComponent(SCENES[key].title)}#${key}">學歌地圖 ↗</a><small>沒有順序，碰到就點一下；點越多天越亮（今天再點一次＝取消）</small></div>
   <div class="nat"><div class="nrow"><span class="nl">浸泡</span>${cell('n_listen')}${cell('n_know')}</div>
   <div class="ngrid"><span></span><span class="nh">原曲</span><span class="nh">伴奏</span><span class="nh">沒音樂</span>
     <span class="nl">出聲唱</span>${cell('n_sing')}${cell('n_lead')}${cell('n_free')}
