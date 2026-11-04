@@ -42,6 +42,11 @@ body.play{overflow:hidden;height:100vh;touch-action:manipulation;user-select:non
 .bar h1{font-family:var(--display);font-weight:700;font-size:18px;margin:0;letter-spacing:.04em;text-shadow:0 1px 6px #000}
 .bar .by{color:var(--muted);font-size:12px}
 .bar .edit{margin-left:auto;background:none;border:0;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;padding:0}
+.chainbar{flex-basis:100%;order:9;display:flex;flex-wrap:wrap;align-items:center;gap:2px;margin-top:2px}
+.chainbar button{background:none;border:0;padding:2px 5px;border-radius:6px;font-family:var(--display);font-size:15px;color:rgba(246,239,228,.5);text-shadow:0 1px 6px #000;cursor:pointer;white-space:nowrap}
+.chainbar button.on{color:var(--glow);background:rgba(0,0,0,.35);box-shadow:0 0 0 1px rgba(242,194,123,.5)}
+@media (max-width:560px){.chainbar{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent)}.chainbar::-webkit-scrollbar{display:none}.chainbar button{font-size:14px;padding:2px 4px}}
+.chainbar i{flex:none;width:1px;height:12px;background:rgba(255,255,255,.25);margin:0 3px}
 .bar .now{flex-basis:100%;order:9;font-size:12.5px;color:var(--glow);letter-spacing:.06em;text-shadow:0 1px 6px #000;min-height:1.4em}
 .bar .now b{font-family:var(--display);font-size:15px;margin:0 4px}.bar .now span{color:var(--muted);letter-spacing:0;margin-left:2px}
 /* 點螢幕換段：整個畫面都是按鈕，左邊三分之一往回 */
@@ -260,7 +265,7 @@ button:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
 @media (orientation:landscape){
   body.lay-top .veil{background:linear-gradient(to bottom,rgba(0,0,0,.6) 0,rgba(0,0,0,.45) 45%,rgba(0,0,0,0) 62%)}
   body.lay-top.bright .veil{background:linear-gradient(to bottom,rgba(0,0,0,.34) 0,rgba(0,0,0,.22) 40%,rgba(0,0,0,0) 58%)}
-  body.lay-top .sub{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 96px)}
+  body.lay-top .sub{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 122px)}
 }
 @media (prefers-reduced-motion:reduce){.stars i,.spot.on i,.sub.swap{animation:none}.shade,.spot{transition:none}}
 </style>
@@ -397,7 +402,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=74;
+const VER=75;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -441,7 +446,7 @@ function render(){
   document.body.classList.toggle('play',!paste);
   const bg=`<div class="blur" style="background-image:url('${esc(sc.img)}')"></div><div class="bg" id="bg"><img src="${esc(sc.img)}" alt="${esc(sc.title)}的情境圖"><div class="shade" id="shade"></div>${starsHtml(sc)}
     ${Object.entries(sc.spots).map(([k,s])=>`<div class="spot" data-spot="${k}" style="left:${s.x}%;top:${s.y}%"><i></i><b>${esc(s.name)}</b></div>`).join('')}</div><div class="veil"></div>`;
-  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${sc.artist?esc(sc.artist)+'・':''}v${VER}<b class="keyc" id="keyc">${getKey()?keyTxt(getKey()):''}</b></span><button class="pgpill" data-act="pg" aria-label="練習進度">${pgDots(key)}</button>${paste?'':'<button class="menu" data-act="menu" aria-label="設定：放音樂、對拍、改歌詞">⋯</button>'}</div>`;
+  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${sc.artist?esc(sc.artist)+'・':''}v${VER}<b class="keyc" id="keyc">${getKey()?keyTxt(getKey()):''}</b></span><button class="pgpill" data-act="pg" aria-label="練習進度">${pgDots(key)}</button>${paste?'':'<button class="menu" data-act="menu" aria-label="設定：放音樂、對拍、改歌詞">⋯</button>'}${paste?'':`<div class="chainbar" id="chainbar" aria-label="整首架構">${sc.steps.map((st,i)=>`${i&&st.sec!==sc.steps[i-1].sec?'<i></i>':''}<button data-act="chain" data-i="${i}" title="${esc(st.sec)}">${esc(st.word)}</button>`).join('')}</div>`}</div>`;
   const body=paste
     ?`<div class="paste"><p>把這首歌的歌詞整首貼進來，一行一句、照順序。<br>每段中間空一行，就會照你空的地方分段；沒空行就照預設分（${esc((SCENES[key].base||SCENES[key].steps).map(x=>x.sec).join('、'))}）。<br>歌詞只存在這台裝置，不會放到網路上。</p>
       <textarea id="lyr-in" placeholder="第一句歌詞…">${esc(text)}</textarea>
@@ -467,6 +472,7 @@ function place(){
 function show(i,anim=true){
   const sc=SCENES[key];const n=sc.steps.length;cur=Math.max(0,Math.min(n-1,i));
   const st=sc.steps[cur],ks=spotsOf(st),sp=sc.spots[ks[0]];
+  document.querySelectorAll('#chainbar button').forEach(b=>{const on=+b.dataset.i===cur;b.classList.toggle('on',on);if(on){const c=b.parentNode;if(c.scrollWidth>c.clientWidth)c.scrollTo({left:b.offsetLeft-c.clientWidth/2,behavior:'smooth'})}});
   const sh=document.getElementById('shade');
   // dim：明亮的歌暗得少一點，畫面才不會變陰沉
   const dm=sc.dim||1;
@@ -513,6 +519,7 @@ app.addEventListener('click',e=>{
     else if(act==='part')startPart();
     else if(act==='toc')openToc();
     else if(act==='tocx')closeToc();
+    else if(act==='chain'){const i=+a.dataset.i,t=getTimes();if(au&&!au.paused)playFrom(i);else{browsing=0;show(i);if(au&&t[i]!=null)au.currentTime=t[i]}}
     else if(act==='map'){e.preventDefault();closeMenu();mapShown=0;openMap()}
     else if(act==='mapr'){mapRecall=!mapRecall;mapShown=0;const y=document.getElementById('toc').scrollTop;openMap();document.getElementById('toc').scrollTop=y}
     else if(act==='mapx'){mapShown=+a.dataset.i;const y=document.getElementById('toc').scrollTop;openMap();document.getElementById('toc').scrollTop=y}
@@ -1186,6 +1193,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=74"></script>
+<script src="studio.js?v=75"></script>
 </body>
 </html>
