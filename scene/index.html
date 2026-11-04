@@ -457,7 +457,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=93;
+const VER=94;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -768,7 +768,7 @@ function pgToggle(k,id){const a=pgAll(),m=a[k]||(a[k]={});if(m[id])delete m[id];
 function pgPills(k){const m=pgAll()[k]||{};return `<button class="pgpill" data-act="natopen">自然 ${PGN.filter(([id])=>natDays(m,id).length).length}/${PGN.length}</button><button class="pgpill" data-act="pg">刻意 ${PG.filter(([id])=>m[id]).length}/${PG.length}</button>`}
 function pgRefresh(){const b=document.querySelector('.bar .pgpills');if(b)b.innerHTML=pgPills(key)}
 // 自然養成＝學歌地圖，用 iframe 疊在情境頁上：頁面沒換，音樂照放
-function openNat(){closeMenu();closeNat();const f=document.createElement('div');f.id='natf';f.innerHTML=`<iframe src="learn.html?v=9&embed=1#${key}" title="學歌地圖"></iframe>`;document.body.appendChild(f)}
+function openNat(){closeMenu();closeNat();const f=document.createElement('div');f.id='natf';f.innerHTML=`<iframe src="learn.html?v=10&embed=1#${key}" title="學歌地圖"></iframe>`;document.body.appendChild(f)}
 function closeNat(){const f=document.getElementById('natf');if(f){f.remove();pgRefresh()}}
 addEventListener('message',e=>{const t=e.data&&e.data.learn;if(t==='close'){closeNat();wakePlayer()}else if(t==='deli'){closeNat();openPg()}});
 function pgDots(k){const m=pgAll()[k]||{},c=L=>L.filter(([id])=>m[id]).length;return `自然 ${PGN.filter(([id])=>natDays(m,id).length).length}/${PGN.length}<i>・</i>刻意 ${c(PG)}/${PG.length}`}
@@ -784,7 +784,7 @@ function natHtml(m){
   <p class="nnote">→ 越往右，歌越是「你」發出來的：外面發出 → 你出聲 → 你腦內 → 用你的方式。<br>↓ 越往下，拿掉越多拐杖：原曲 → 伴奏 → 靜音。<br>浸泡和內化外表一樣安靜，差別在歌是誰發出來的：音樂一停歌就停＝浸泡；還接得下去＝內化。<br>每格右上角「考」：照那一欄上面寫的方法考過，就點一下（一天算一次）。不同天考過 3 次＝這格畢業 🎓。</p>`}
 // 自然養成搬到學歌地圖那一頁（圖＋表格）；這裡只留入口和摘要
 function natLink(m){const lit=PGN.filter(([id])=>natDays(m,id).length).length,gr=PGN.filter(([id])=>natDays(m,'v_'+id).length>=3).length;
-  return `<a class="natlink" href="learn.html?v=9&t=${encodeURIComponent(SCENES[key].title)}#${key}"><span><b>自然養成・學歌地圖</b><small>聽、出聲、腦內唱、我的唱法 × 原曲、伴奏、靜音</small></span><em>${lit}/${PGN.length}${gr?`・🎓${gr}`:''} ↗</em></a>`}
+  return `<a class="natlink" href="learn.html?v=10&t=${encodeURIComponent(SCENES[key].title)}#${key}"><span><b>自然養成・學歌地圖</b><small>聽、出聲、腦內唱、我的唱法 × 原曲、伴奏、靜音</small></span><em>${lit}/${PGN.length}${gr?`・🎓${gr}`:''} ↗</em></a>`}
 function openPg(){
   closeMenu();const m=pgAll()[key]||{};const d=document.createElement('div');d.className='sheet menu-sheet';d.id='menu';
   const tipOf={map:'蓋起來說得出整首順序',acap:'不靠伴奏唱完',ppl:'上課、朋友 KTV',sv:'街演'};
@@ -1307,6 +1307,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=93"></script>
+<script src="studio.js?v=94"></script>
 </body>
 </html>
