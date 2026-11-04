@@ -94,6 +94,11 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)
 .foot{max-width:1200px;margin:6px auto 0;padding:0 16px calc(env(safe-area-inset-bottom,0px) + 16px)}.foot .nnote{margin:0;font-size:11.5px;line-height:1.6}
 @media (max-width:760px){.pic{max-width:none}.pic .nat{position:static;border-radius:0;background:none;padding:10px 12px}.bar .songs{margin:4px 0 0;flex-basis:100%}.stg{position:static;max-width:none;border-radius:0;margin:0}.pic .nc .vk{top:auto;transform:none;bottom:4px;right:4px}.pic .nc{padding-bottom:20px}.pic .nh em{font-size:9px}}
 .imgw{position:relative}
+.nh .bk{font-size:12px;font-weight:400;color:var(--ink)}.nh .bt{font-size:10.5px;font-weight:400;color:var(--muted)}
+.nl small{display:block;font-size:10px;color:var(--muted);opacity:.85}
+.foot .nnote b{color:var(--glow);font-weight:600}
+.pic .nh .bk{font-size:11.5px}.pic .nh .bt{font-size:10px}
+@media (max-width:760px){.nh .bk,.nh .bt{display:none}.nl small{font-size:8.5px}}
 </style>
 </head>
 <body>
@@ -109,10 +114,10 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)
 <script>
 const SONGS=[['jiayi','甲乙丙丁'],['summer','盛夏的果實'],['darwin','達爾文'],['hands','小手拉大手'],['prank','惡作劇'],['zhizu','知足'],['hug','大大的擁抱'],['houlai','後來']];
 const STAGES=[
-  {n:'浸泡',sub:'聽',test:'暫停，接得出下一句',spot:{x:12,y:52},who:'坐在長椅上，看別人騎',goal:'不花力氣，讓歌的樣子自己長進腦中。',state:'知道下一句往哪走；歌被切掉會覺得「欸，還沒完」。'},
-  {n:'模仿',sub:'出聲',test:'每段自己準時進',spot:{x:40,y:46},who:'爸爸扶著座墊騎',goal:'把聽到的對應到自己的聲音，照原唱複製音高、節奏、斷句和換氣。',state:'有原唱或伴奏帶著時，唱得對、不會掉。'},
-  {n:'內化',sub:'腦內唱',test:'消音後，聲音回來還對得上',spot:{x:62,y:44},who:'爸爸放手，自己騎',goal:'不靠外面的聲音，歌在你身上也站得住。',state:'沒有音樂，音準和速度也穩；歌會自己在腦中響起。'},
-  {n:'風格化',sub:'我的唱法',test:'說得出為什麼這樣唱',spot:{x:85,y:44},who:'騎進花草地，走自己的路線',goal:'唱法變成「選擇」，不是「照抄」。',state:'換速度、強弱、換氣、裝飾，還是這首歌，而且說得出為什麼。'}];
+  {n:'浸泡',sub:'聽',bike:'坐在長椅上看別人騎',test:'音樂突然停，你接得出下一句',btest:'閉上眼，說得出他下一步往哪轉',spot:{x:12,y:52},who:'坐在長椅上，看別人騎',goal:'不花力氣，讓歌的樣子自己長進腦中。',state:'知道下一句往哪走；歌被切掉會覺得「欸，還沒完」。'},
+  {n:'模仿',sub:'出聲',bike:'爸爸扶著座墊，你自己踩',test:'原唱拿掉（只放伴奏），每段還是自己準時進',btest:'爸爸偷偷放手一下，你還在騎',spot:{x:40,y:46},who:'爸爸扶著座墊騎',goal:'把聽到的對應到自己的聲音，照原唱複製音高、節奏、斷句和換氣。',state:'有原唱或伴奏帶著時，唱得對、不會掉。'},
+  {n:'內化',sub:'腦內唱',bike:'爸爸放手，你自己騎',test:'聲音突然消失幾秒，你腦中繼續唱；回來時還對得上',btest:'騎過一段沒人看的路，還在路上',spot:{x:62,y:44},who:'爸爸放手，自己騎',goal:'不靠外面的聲音，歌在你身上也站得住。',state:'沒有音樂，音準和速度也穩；歌會自己在腦中響起。'},
+  {n:'風格化',sub:'我的唱法',bike:'騎進花草地，走自己的路線',test:'換個唱法還是這首歌，而且說得出為什麼',btest:'換一條路騎還很穩，說得出為什麼這樣走',spot:{x:85,y:44},who:'騎進花草地，走自己的路線',goal:'唱法變成「選擇」，不是「照抄」。',state:'換速度、強弱、換氣、裝飾，還是這首歌，而且說得出為什麼。'}];
 // 列＝音樂（原曲/伴奏/靜音），欄＝四個階段；陣列＝消失的格子（槓掉＋為什麼）
 const GRID=[
   ['原曲',['n_listen','常聽','放原曲，耳朵先習慣'],['n_sing','跟唱','放原曲，跟著一起唱'],['n_hear','腦內聽','放原曲，在腦中跟著唱'],['風格化×原曲','原唱一直在旁邊，很難唱出自己的版本']],
@@ -133,11 +138,11 @@ function draw(){
   document.getElementById('songs').innerHTML=SONGS.map(([k,n])=>`<a href="#${k}" class="${k===song?'on':''}">${n}</a>`).join('');
   const cell=(c,ci)=>{if(c.length===2)return `<div class="nc gone" title="${esc(c[1])}"><s>${c[0].split('×')[0]}×${c[0].split('×')[1]}</s></div>`;
     const [id,nm,tip]=c,d=natDays(m,id),last=d[d.length-1],v=natDays(m,'v_'+id),vt=v.includes(t);
-    return `<button data-act="nat" data-s="${id}" class="nc lv${natLv(d.length)}${d.includes(t)?' today':''}${ci===col?' col':''}"><span class="pgt">${nm}</span>${d.length?`<small>${d.length} 天・${last.slice(5).replace('-','/')}</small>`:''}<span class="vk${v.length>=3?' grad':v.length?' on':''}${vt?' vt':''}" data-act="natv" data-s="v_${id}">${v.length>=3?'🎓':v.length?'✓'+v.length:'考'}</span></button>`};
-  document.getElementById('nat').innerHTML=`<div class="pgh">${title?esc(title):'先在右上選一首歌'}<small>${song?'碰到就點，越多天越亮・→ 歌越是你發出來的　↓ 拐杖越拿越多':'選了歌才會記錄'}</small></div>
-  <div class="ngrid${song?'':' ro'}"><span></span>${STAGES.map((s,i)=>`<span class="nh${i===col?' on':''}" data-act="col" data-i="${i}"><span class="nn">${i+1} ${s.n}<small>${s.sub}</small></span><em>考：${s.test}</em></span>`).join('')}
-  ${GRID.map(r=>`<span class="nl">${r[0]}</span>`+r.slice(1).map((c,ci)=>cell(c,ci)).join('')).join('')}</div>`;
-  document.getElementById('foot').innerHTML=`<p class="nnote">浸泡和內化外表一樣安靜，差別在歌是誰發出來的：音樂一停歌就停＝浸泡；還接得下去＝內化。<br>每格右上角「考」：照那一欄上面寫的方法考過，就點一下（一天算一次）。不同天考過 3 次＝這格畢業 🎓。</p>`;
+    return `<button data-act="nat" data-s="${id}" class="nc lv${natLv(d.length)}${d.includes(t)?' today':''}${ci===col?' col':''}"><span class="pgt">${nm}</span>${d.length?`<small>${d.length} 天・${last.slice(5).replace('-','/')}</small>`:''}<span class="vk${v.length>=3?' grad':v.length?' on':''}${vt?' vt':''}" data-act="natv" data-s="v_${id}">${v.length>=3?'🎓 學會':v.length?'過關 ✓'+v.length:'過關？'}</span></button>`};
+  document.getElementById('nat').innerHTML=`<div class="pgh">${title?esc(title):'先在右上選一首歌'}<small>學歌＝學騎腳踏車。→ 往右：從看別人騎，到自己騎出路線　↓ 往下：輔助越拿越少（有人扶 → 輔助輪 → 什麼都沒有）</small></div>
+  <div class="ngrid${song?'':' ro'}"><span></span>${STAGES.map((s,i)=>`<span class="nh${i===col?' on':''}" data-act="col" data-i="${i}"><span class="nn">${i+1} ${s.n}<small>${s.sub}</small></span><span class="bk">🚲 ${esc(s.bike)}</span><em>過關：${esc(s.test)}</em><span class="bt">像是${esc(s.btest)}</span></span>`).join('')}
+  ${GRID.map((r,ri)=>`<span class="nl">${r[0]}<small>${['有人扶','輔助輪','全靠自己'][ri]}</small></span>`+r.slice(1).map((c,ci)=>cell(c,ci)).join('')).join('')}</div>`;
+  document.getElementById('foot').innerHTML=`<p class="nnote"><b>怎麼用：</b>點格子＝今天有這樣唱過（越多天越亮）。照那一欄的「過關」方法測過，就按格子右邊的「過關？」。不同天過關 3 次＝🎓 學會，像不用人扶也騎得穩。<br><b>浸泡和內化都很安靜，差在哪？</b>像「坐在椅子上看」跟「自己騎著」：音樂一停你就停＝還在看；音樂停了你還在騎＝內化。</p>`;
   const sg=document.getElementById('stg');if(col>=0){const x=STAGES[col];sg.hidden=false;sg.innerHTML=`<b>${col+1} ${x.n}</b><span>圖上：${esc(x.who)}</span><span><i>目標</i>${esc(x.goal)}</span><span><i>做到時</i>${esc(x.state)}</span>`}else sg.hidden=true;
   document.querySelectorAll('.spot').forEach(b=>b.classList.toggle('on',+b.dataset.i===col));
 }
@@ -145,7 +150,7 @@ document.getElementById('spots').innerHTML=STAGES.map((s,i)=>`<button class="spo
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;
   if(act==='col'){col=+a.dataset.i===col?-1:+a.dataset.i;draw();}
   else if(!song)toast('先選一首歌');
-  else if(act==='natv'){toast(natTap(song,a.dataset.s)?'今天考過了 ✓':'取消今天這次考試');draw()}
+  else if(act==='natv'){toast(natTap(song,a.dataset.s)?'今天過關了 ✓':'取消今天這次過關');draw()}
   else if(act==='nat'){toast(natTap(song,a.dataset.s)?'點亮了':'取消今天這次');draw()}});
 addEventListener('hashchange',()=>{song=decodeURIComponent(location.hash.slice(1));if(!SONGS.some(x=>x[0]===song))song='';draw()});
 draw();
