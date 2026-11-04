@@ -172,9 +172,10 @@ function sLoop(){
   S.raf=requestAnimationFrame(()=>{if(!S||!S.playing)return;const p=sNow();
     if(S.recd){if((S.recd.until&&p>=S.recd.until)||p>=S.dur){sRecStop();return}
       const tp=document.getElementById('s-tip');if(tp){const kb=S.recd.chunks.reduce((a,b)=>a+b.size,0)/1024|0;tp.textContent=S.recd.bad()?'⚠️ 麥克風被關掉了':`● 錄音中 ${mmss(Math.max(0,p-S.recd.p0))}　已收到 ${kb} KB`}}
-    else if(S.sel&&S.loop&&p>=S.sel[1]){sPlay(Math.max(0,S.sel[0]-1));return}
+    // 從範圍裡唱到範圍尾巴才繞回去；播放中剛選的範圍若在後面，就照常唱到那裡（音樂不中斷）
+    else if(S.sel&&S.loop&&p>=S.sel[1]&&S.lastP!=null&&S.lastP<S.sel[1]&&S.lastP>=S.sel[0]-1.5){S.lastP=null;sPlay(Math.max(0,S.sel[0]-1));return}
     else if(p>=S.dur){sStop();S.pos=S.sel?S.sel[0]:0;sHead();return}
-    sHead();sLoop()});
+    S.lastP=p;sHead();sLoop()});
 }
 // 錄音
 async function sRecStart(){
@@ -322,7 +323,7 @@ app.addEventListener('click',e=>{
   else if(act==='ssec'){const i=+a.dataset.i,[x,y]=secRange(i);
     // 點段名選範圍：沒選→選這段；點範圍外的段→範圍延伸到那段；點範圍裡面的段→取消
     if(S.sel&&x>=S.sel[0]-.01&&y<=S.sel[1]+.01){S.sel=null}
-    else{const ext=!!S.sel;S.sel=ext?[Math.min(S.sel[0],x),Math.max(S.sel[1],y)]:[x,y];if(!ext)sView0();S.pos=S.sel[0];if(S.playing)sPlay(S.pos);if(ext)sHint('範圍延伸了，點範圍裡的段名可以取消')}sSyncLoop();sDraw()}
+    else{const ext=!!S.sel;S.sel=ext?[Math.min(S.sel[0],x),Math.max(S.sel[1],y)]:[x,y];if(!ext)sView0();if(!S.playing)S.pos=S.sel[0];if(ext)sHint('範圍延伸了，點範圍裡的段名可以取消')}sSyncLoop();sDraw()}
   else if(act==='szoom'){const whole=S.view[0]>0.5||S.view[1]<S.dur-.5;if(whole)S.view=[0,S.dur];else sView0();sDraw()}
   else if(act==='sloop'){S.loop=!S.loop;if(S.loop&&!S.sel){const [x,y]=secRange(secAt(sNow()+.05));S.sel=[x,y]}sSyncLoop();sDraw()}
   else if(act==='spic'){S.big=!S.big;sBig()}
