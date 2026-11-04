@@ -59,7 +59,7 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)
 .stage{max-width:1200px;margin:12px auto 0;padding:0 16px;font-size:13.5px;line-height:1.6;color:var(--muted);min-height:3.2em}.stage b{color:var(--glow);font-family:var(--display);font-size:17px;margin-right:6px}.stage em{font-style:normal;color:var(--ink)}
 .nat{max-width:1200px;margin:10px auto 0;padding:0 16px calc(env(safe-area-inset-bottom,0px) + 28px)}
 .pgh{margin:4px 2px 10px;color:var(--glow);font-size:15px;font-weight:600}.pgh small{margin-left:8px;color:var(--muted);font-weight:400;font-size:12px}
-.ngrid{display:grid;grid-template-columns:3em repeat(4,1fr);gap:10px;align-items:stretch}
+.ngrid{display:grid;grid-template-columns:3em repeat(5,1fr);gap:10px;align-items:stretch}
 .nh{font-size:14px;color:var(--ink);text-align:left;font-weight:600;padding:8px 10px;border:1px solid transparent;align-self:stretch;display:flex;flex-direction:column;gap:3px;border-radius:12px;cursor:pointer;transition:background .3s}.nh small{display:block;font-size:11px;color:var(--muted);font-weight:400}
 .nh em{display:block;font-style:normal;font-size:11px;color:var(--glow);font-weight:400;margin-top:3px;line-height:1.35}.nh.on{background:var(--glow-soft);border-color:rgba(242,194,123,.45)}
 .nh .nn{font-family:var(--display);font-size:19px}.nh .ng{font-size:11.5px;font-weight:400;line-height:1.45;color:var(--ink);opacity:.85}.nh .ng i{font-style:normal;color:var(--muted);margin-right:4px}
@@ -76,14 +76,14 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)
 .nnote{margin:12px 0 0;font-size:12.5px;line-height:1.7;color:var(--muted)}
 .ro .nc:not(.gone){cursor:default}.ro .vk{display:none}
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);background:rgba(0,0,0,.8);border:1px solid var(--line);border-radius:99px;padding:8px 16px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none}.toast.on{opacity:1}
-@media (max-width:640px){.nh .ng{display:none}.nh{padding:4px}.nh .nn{font-size:14px}.ngrid{grid-template-columns:2.2em repeat(4,1fr);gap:5px}.nc{padding:8px 8px 24px}.nc .pgt{font-size:14px}.nc small{font-size:10px}.nc.gone{padding-bottom:8px}.nc.gone small{font-size:9.5px}.nc .vk{top:auto;bottom:5px;right:5px}.nh{font-size:12.5px}.nh em{font-size:9px}}
+@media (max-width:640px){.nh .ng{display:none}.nh{padding:4px}.nh .nn{font-size:14px}.ngrid{grid-template-columns:2.2em repeat(5,1fr);gap:5px}.nc{padding:8px 8px 24px}.nc .pgt{font-size:14px}.nc small{font-size:10px}.nc.gone{padding-bottom:8px}.nc.gone small{font-size:9.5px}.nc .vk{top:auto;bottom:5px;right:5px}.nh{font-size:12.5px}.nh em{font-size:9px}}
 /* 一頁：表格疊在圖上半部（天空），人都在下半部 */
 .bar{flex-wrap:wrap}.bar .songs{margin:0 0 0 auto;padding:0;max-width:none}
 .songs a{padding:3px 10px;font-size:12px}
 .pic{max-width:min(1200px,calc((100vh - 64px) * 1.79))}
 .pic .nat{position:absolute;left:1.2%;right:1.2%;top:1.6%;margin:0;padding:8px 10px 10px;border-radius:14px;background:rgba(12,10,8,.62);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);max-width:none}
 .pic .pgh{margin:0 2px 6px;font-size:14px}.pic .pgh small{font-size:11px}
-.pic .ngrid{grid-template-columns:2.4em repeat(4,1fr);gap:5px 6px}
+.pic .ngrid{grid-template-columns:2.4em 1fr 1fr .8fr 1fr 1fr;gap:5px 6px}
 .pic .nh{padding:3px 6px;gap:1px}.pic .nh .nn{font-size:15px}.pic .nh .nn small{display:inline;margin-left:6px;font-size:10.5px}.pic .nh em{font-size:10px;margin-top:0}
 .pic .nl{font-size:11.5px}
 .pic .nc{padding:6px 10px;min-height:40px;justify-content:center;gap:1px}.pic .nc .pgt{font-size:15px}.pic .nc small{font-size:10px}
@@ -100,6 +100,7 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)
 .mode{display:flex;margin-left:auto;border:1px solid rgba(242,194,123,.45);border-radius:99px;overflow:hidden}.mode button{background:none;border:0;color:var(--muted);font:inherit;font-size:14px;padding:7px 18px;cursor:pointer}.mode button.on{background:rgba(242,194,123,.18);color:var(--glow);font-weight:600}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:5px;min-width:0}.pair .nc{min-width:0}.pair .nc+.nc{border-color:rgba(160,200,255,.35)}.pair .nc+.nc::before{content:'←';position:absolute;left:-11px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--glow)}
 @media (max-width:640px){.pair{grid-template-columns:1fr}.pair .nc+.nc::before{content:'↑';left:50%;top:-10px;transform:none}}
+.sn{display:none}@media (max-width:640px){.pic .ngrid{grid-template-columns:2.2em repeat(5,1fr)}.ln{display:none}.sn{display:inline}.ngrid{gap:4px}.nc{padding-left:5px;padding-right:5px}.nh .nn{font-size:13px}}
 .pic .nh .bk{font-size:11.5px}.pic .nh .bt{font-size:10px}
 @media (max-width:760px){.nh .bk,.nh .bt{display:none}.nl small{font-size:8.5px}}
 </style>
@@ -119,13 +120,14 @@ const SONGS=[['jiayi','甲乙丙丁'],['summer','盛夏的果實'],['darwin','�
 const STAGES=[
   {n:'浸泡',sub:'聽',bike:'坐在長椅上看別人騎',test:'音樂突然停，你接得出下一句',btest:'閉上眼，說得出他下一步往哪轉',spot:{x:12,y:52},who:'坐在長椅上，看別人騎',goal:'不花力氣，讓歌的樣子自己長進腦中。',state:'知道下一句往哪走；歌被切掉會覺得「欸，還沒完」。'},
   {n:'模仿',sub:'出聲',bike:'爸爸扶著座墊，你自己踩',test:'原唱拿掉（只放伴奏），每段還是自己準時進',btest:'爸爸偷偷放手一下，你還在騎',spot:{x:40,y:46},who:'爸爸扶著座墊騎',goal:'把聽到的對應到自己的聲音，照原唱複製音高、節奏、斷句和換氣。',state:'有原唱或伴奏帶著時，唱得對、不會掉。'},
+  {n:'哼唱',num:'↔',sub:'半出聲',bike:'爸爸只輕輕碰著',test:'只出一點聲，音高拍子還對',btest:'爸爸快放手，你幾乎自己騎',spot:null,who:'在爸爸扶著和放手之間（爸爸的手只輕輕碰著）',goal:'出聲和腦內唱之間的橋：歌大部分在腦中跑，嘴巴只用一點力氣跟。',state:'哼的時候不用想，歌自己往下走；張口唱詞也不吃力。'},
   {n:'內化',sub:'腦內唱',bike:'爸爸放手，你自己騎',test:'聲音突然消失幾秒，你腦中繼續唱；回來時還對得上',btest:'騎過一段沒人看的路，還在路上',spot:{x:62,y:44},who:'爸爸放手，自己騎',goal:'不靠外面的聲音，歌在你身上也站得住。',state:'沒有音樂，音準和速度也穩；歌會自己在腦中響起。'},
   {n:'風格化',sub:'我的唱法',bike:'騎進花草地，走自己的路線',test:'換個唱法還是這首歌，而且說得出為什麼',btest:'換一條路騎還很穩，說得出為什麼這樣走',spot:{x:85,y:44},who:'騎進花草地，走自己的路線',goal:'唱法變成「選擇」，不是「照抄」。',state:'換速度、強弱、換氣、裝飾，還是這首歌，而且說得出為什麼。'}];
 // 列＝音樂（原曲/伴奏/靜音），欄＝四個階段；陣列＝消失的格子（槓掉＋為什麼）
 const GRID=[
-  ['原曲',['n_listen','常聽','放原曲，耳朵先習慣'],['n_sing','跟唱','放原曲，跟著一起唱'],['n_hear','腦內聽','放原曲，在腦中跟著唱'],['風格化×原曲','原唱一直在旁邊，很難唱出自己的版本']],
-  ['伴奏',['浸泡×伴奏','聽伴奏就知道唱到哪，其實已經是腦內補唱（內化）'],['n_lead','搶先唱','放伴奏，自己唱出主唱'],['n_inst','腦內補唱','放伴奏，主唱在腦中唱'],['n_mine','我的版本','放伴奏，換速度、情緒、換氣']],
-  ['靜音',['浸泡×靜音','沒聲音可聽；這時聽到的歌，其實已經是內化'],[['n_free','隨口唱','沒音樂，洗澡走路就唱出來'],['n_hum','哼唱','沒音樂，閉著嘴跟腦內歌聲輕輕哼']],['n_head','腦內歌聲','沒音樂，腦中自己響起來'],['n_solo','清唱版本','沒音樂，用自己的唱法唱完']]];
+  ['原曲',['n_listen','常聽','放原曲，耳朵先習慣'],['n_sing','跟唱','放原曲，跟著一起唱'],['n_hum_o','跟原唱哼','放原曲，閉著嘴輕輕哼','原唱哼'],['n_hear','腦內聽','放原曲，在腦中跟著唱'],['風格化×原曲','原唱一直在旁邊，很難唱出自己的版本']],
+  ['伴奏',['浸泡×伴奏','聽伴奏就知道唱到哪，其實已經是腦內補唱（內化）'],['n_lead','搶先唱','放伴奏，自己唱出主唱'],['n_hum_i','跟伴奏哼','放伴奏，主唱用哼的','伴奏哼'],['n_inst','腦內補唱','放伴奏，主唱在腦中唱'],['n_mine','我的版本','放伴奏，換速度、情緒、換氣']],
+  ['靜音',['浸泡×靜音','沒聲音可聽；這時聽到的歌，其實已經是內化'],['n_free','隨口唱','沒音樂，洗澡走路就唱出來'],['n_hum','哼唱','沒音樂，閉著嘴跟腦內歌聲哼'],['n_head','腦內歌聲','沒音樂，腦中自己響起來'],['n_solo','清唱版本','沒音樂，用自己的唱法唱完']]];
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pgAll=()=>{try{return JSON.parse(localStorage.getItem('scene-prog-v1'))||{}}catch(e){return {}}};
 const pgToday=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
@@ -140,20 +142,20 @@ function draw(){
   document.getElementById('by').textContent=title?'・'+title:'';
   if(!EMB)document.getElementById('songs').innerHTML=SONGS.map(([k,n])=>`<a href="#${k}" class="${k===song?'on':''}">${n}</a>`).join('');
   const cell=(c,ci)=>{if(Array.isArray(c[0]))return `<div class="pair">${c.map(x=>cell(x,ci)).join('')}</div>`;if(c.length===2)return `<div class="nc gone" title="${esc(c[1])}"><s>${c[0].split('×')[0]}×${c[0].split('×')[1]}</s></div>`;
-    const [id,nm,tip]=c,d=natDays(m,id),last=d[d.length-1],v=natDays(m,'v_'+id),vt=v.includes(t);
-    return `<button data-act="nat" data-s="${id}" class="nc lv${natLv(d.length)}${d.includes(t)?' today':''}${ci===col?' col':''}"><span class="pgt">${nm}</span>${d.length?`<small>${d.length} 天・${last.slice(5).replace('-','/')}</small>`:''}<span class="vk${v.length>=3?' grad':v.length?' on':''}${vt?' vt':''}" data-act="natv" data-s="v_${id}">${v.length>=3?'🎓 學會':v.length?'過關 ✓'+v.length:'過關？'}</span></button>`};
+    const [id,nm,tip,sn]=c,d=natDays(m,id),last=d[d.length-1],v=natDays(m,'v_'+id),vt=v.includes(t);
+    return `<button data-act="nat" data-s="${id}" class="nc lv${natLv(d.length)}${d.includes(t)?' today':''}${ci===col?' col':''}"><span class="pgt">${sn?`<span class="ln">${nm}</span><span class="sn">${sn}</span>`:nm}</span>${d.length?`<small>${d.length} 天・${last.slice(5).replace('-','/')}</small>`:''}<span class="vk${v.length>=3?' grad':v.length?' on':''}${vt?' vt':''}" data-act="natv" data-s="v_${id}">${v.length>=3?'🎓 學會':v.length?'過關 ✓'+v.length:'過關？'}</span></button>`};
   document.getElementById('nat').innerHTML=`<div class="pgh">${title?esc(title):'先在右上選一首歌'}<small>學歌＝學騎腳踏車。→ 往右：從看別人騎，到自己騎出路線　↓ 往下：輔助越拿越少（有人扶 → 輔助輪 → 什麼都沒有）</small></div>
-  <div class="ngrid${song?'':' ro'}"><span></span>${STAGES.map((s,i)=>`<span class="nh${i===col?' on':''}" data-act="col" data-i="${i}"><span class="nn">${i+1} ${s.n}<small>${s.sub}</small></span><span class="bk">🚲 ${esc(s.bike)}</span><em>過關：${esc(s.test)}</em><span class="bt">像是${esc(s.btest)}</span></span>`).join('')}
+  <div class="ngrid${song?'':' ro'}"><span></span>${STAGES.map((s,i)=>`<span class="nh${i===col?' on':''}" data-act="col" data-i="${i}"><span class="nn">${s.num||(i>2?i:i+1)} ${s.n}<small>${s.sub}</small></span><span class="bk">🚲 ${esc(s.bike)}</span><em>過關：${esc(s.test)}</em><span class="bt">像是${esc(s.btest)}</span></span>`).join('')}
   ${GRID.map((r,ri)=>`<span class="nl">${r[0]}<small>${['有人扶','輔助輪','全靠自己'][ri]}</small></span>`+r.slice(1).map((c,ci)=>cell(c,ci)).join('')).join('')}</div>`;
-  document.getElementById('foot').innerHTML=`<p class="nnote"><b>怎麼用：</b>點格子＝今天有這樣唱過（越多天越亮）。照那一欄的「過關」方法測過，就按格子右邊的「過關？」。不同天過關 3 次＝🎓 學會，像不用人扶也騎得穩。<br><b>浸泡和內化都很安靜，差在哪？</b>像「坐在椅子上看」跟「自己騎著」：音樂一停你就停＝還在看；音樂停了你還在騎＝內化。<br><b>哼唱是靜音那一列的橋：</b>腦內歌聲 → 哼唱 → 隨口唱。腦中照常響，嘴巴只用一點力氣「嗯」著跟；順了再張口唱詞。像從牽著車走，到跨上去騎。</p>`;
-  const sg=document.getElementById('stg');if(col>=0){const x=STAGES[col];sg.hidden=false;sg.innerHTML=`<b>${col+1} ${x.n}</b><span>圖上：${esc(x.who)}</span><span><i>目標</i>${esc(x.goal)}</span><span><i>做到時</i>${esc(x.state)}</span>`}else sg.hidden=true;
+  document.getElementById('foot').innerHTML=`<p class="nnote"><b>怎麼用：</b>點格子＝今天有這樣唱過（越多天越亮）。照那一欄的「過關」方法測過，就按格子右邊的「過關？」。不同天過關 3 次＝🎓 學會，像不用人扶也騎得穩。<br><b>浸泡和內化都很安靜，差在哪？</b>像「坐在椅子上看」跟「自己騎著」：音樂一停你就停＝還在看；音樂停了你還在騎＝內化。<br><b>哼唱是出聲和腦內唱中間的橋：</b>歌大部分在腦中跑，嘴巴只用一點力氣「嗯」著跟。腦內唱到出聲卡住時（例如腦內歌聲 → 隨口唱），先哼一陣子，順了再張口唱詞。</p>`;
+  const sg=document.getElementById('stg');if(col>=0){const x=STAGES[col];sg.hidden=false;sg.innerHTML=`<b>${x.num||(col>2?col:col+1)} ${x.n}</b><span>圖上：${esc(x.who)}</span><span><i>目標</i>${esc(x.goal)}</span><span><i>做到時</i>${esc(x.state)}</span>`}else sg.hidden=true;
   document.querySelectorAll('.spot').forEach(b=>b.classList.toggle('on',+b.dataset.i===col));
 }
 // 從情境頁打開（embed=1）：留在情境頁裡，歌不會停；右上換成「自然｜刻意」切換
 const EMB=/[?&]embed=1/.test(location.search),toParent=t=>parent.postMessage({learn:t},'*');
 if(EMB){document.getElementById('back').href='javascript:void 0';document.getElementById('back').onclick=e=>{e.preventDefault();toParent('close')};
   const sg=document.getElementById('songs');sg.className='mode';sg.id='modeb';sg.innerHTML='<button class="on">自然</button><button data-act="deli">刻意</button>';}
-document.getElementById('spots').innerHTML=STAGES.map((s,i)=>`<button class="spot" data-act="col" data-i="${i}" style="left:${s.spot.x}%;top:${s.spot.y}%"><i></i><b>${i+1} ${s.n}</b></button>`).join('');
+document.getElementById('spots').innerHTML=STAGES.map((s,i)=>!s.spot?'':`<button class="spot" data-act="col" data-i="${i}" style="left:${s.spot.x}%;top:${s.spot.y}%"><i></i><b>${s.num||(i>2?i:i+1)} ${s.n}</b></button>`).join('');
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;
   if(act==='deli'){toParent('deli');return}
   if(act==='col'){col=+a.dataset.i===col?-1:+a.dataset.i;draw();}
