@@ -182,7 +182,9 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 .pgh .lmap{float:right;color:var(--glow);font-size:12px;font-weight:500;text-decoration:none}
 .pgpill i{font-style:normal;opacity:.5}
 .pgpill{margin-left:auto;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--muted);border-radius:99px;height:30px;padding:0 10px;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}.bar .pgpill span{color:#f2c27b;letter-spacing:1px}
-.bar .pgpill+.menu{margin-left:0}
+.bar .pgpills+.menu{margin-left:0}.pgpills{display:flex;gap:6px;margin-left:auto}.opb+.pgpills{margin-left:0}.pgpills .pgpill{margin-left:0;color:var(--glow);border-color:rgba(242,194,123,.45)}
+#natf{position:fixed;inset:0;z-index:60;background:#0b0b0b}#natf iframe{width:100%;height:100%;border:0;display:block}
+.pgmode{display:flex;border:1px solid rgba(242,194,123,.45);border-radius:99px;overflow:hidden;width:max-content;margin:8px 0 6px}.pgmode button{background:none;border:0;color:var(--muted);font:inherit;font-size:14px;padding:7px 22px;cursor:pointer}.pgmode button.on{background:rgba(242,194,123,.18);color:var(--glow);font-weight:600}
 .menu-sheet .pgl{gap:6px}.menu-sheet .pgl button{display:flex;align-items:center;gap:10px;text-align:left;justify-content:flex-start;padding:10px 12px;font-size:15px}
 .menu-sheet .pgl button b{width:24px;height:24px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:12px;flex:none}
 .menu-sheet .pgl button.on{border-color:#f2c27b;color:#f2c27b}.menu-sheet .pgl button.on b{background:#f2c27b;color:#1a1410;border-color:#f2c27b}
@@ -455,7 +457,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=89;
+const VER=90;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -510,7 +512,7 @@ function render(){
   document.body.classList.toggle('play',!paste);
   const bg=`<div class="blur" style="background-image:url('${esc(sc.img)}')"></div><div class="bg" id="bg"><img src="${esc(sc.img)}" alt="${esc(sc.title)}的情境圖"><div class="shade" id="shade"></div>${starsHtml(sc)}
     ${Object.entries(sc.spots).map(([k,s])=>`<div class="spot" data-spot="${k}" style="left:${s.x}%;top:${s.y}%"><i></i><b>${esc(s.name)}</b></div>`).join('')}</div><div class="veil"></div>`;
-  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${sc.artist?esc(sc.artist)+'・':''}v${VER}<b class="keyc" id="keyc">${getKey()?keyTxt(getKey()):''}</b></span>${sc.story&&!paste?`<span class="story">${esc(sc.story)}</span>`:''}${paste?'':`<button class="opb${onePage()?' on':''}" data-act="op" aria-label="整首一頁">${onePage()?'一頁':'一段'}</button>`}<button class="pgpill" data-act="pg" aria-label="練習進度">${pgDots(key)}</button>${paste?'':'<button class="menu" data-act="menu" aria-label="設定：放音樂、對拍、改歌詞">⋯</button>'}${paste?'':chainHtml(sc)}</div>`;
+  const bar=`<div class="bar"><a href="../#songs">← 歌單</a><h1>${esc(sc.title)}</h1><span class="by">${sc.artist?esc(sc.artist)+'・':''}v${VER}<b class="keyc" id="keyc">${getKey()?keyTxt(getKey()):''}</b></span>${sc.story&&!paste?`<span class="story">${esc(sc.story)}</span>`:''}${paste?'':`<button class="opb${onePage()?' on':''}" data-act="op" aria-label="整首一頁">${onePage()?'一頁':'一段'}</button>`}<span class="pgpills">${pgPills(key)}</span>${paste?'':'<button class="menu" data-act="menu" aria-label="設定：放音樂、對拍、改歌詞">⋯</button>'}${paste?'':chainHtml(sc)}</div>`;
   const body=paste
     ?`<div class="paste"><p>把這首歌的歌詞整首貼進來，一行一句、照順序。<br>每段中間空一行，就會照你空的地方分段；沒空行就照預設分（${esc((SCENES[key].base||SCENES[key].steps).map(x=>x.sec).join('、'))}）。<br>歌詞只存在這台裝置，不會放到網路上。</p>
       <textarea id="lyr-in" placeholder="第一句歌詞…">${esc(text)}</textarea>
@@ -583,9 +585,10 @@ app.addEventListener('click',e=>{
     else if(act==='next'){if(au){au.currentTime=Math.min(au.duration||1e9,au.currentTime+5);updateProg();sync()}else step(cur+1)}
     else if(act==='menu')openMenu();
     else if(act==='pg')openPg();
+    else if(act==='natopen')openNat();
     else if(act==='natv'){e.stopPropagation();const on=natTap(key,a.dataset.s);openPg();hint(on?'今天考過了 ✓':'取消今天這次考試');hintT=setTimeout(()=>hint(''),1200)}
-    else if(act==='nat'){const on=natTap(key,a.dataset.s);openPg();const b=document.querySelector('.bar .pgpill');if(b)b.innerHTML=pgDots(key);hint(on?'點亮了':'取消今天這次');hintT=setTimeout(()=>hint(''),1200)}
-    else if(act==='pgs'){pgToggle(key,a.dataset.s);openPg();const b=document.querySelector('.bar .pgpill');if(b)b.innerHTML=pgDots(key)}
+    else if(act==='nat'){const on=natTap(key,a.dataset.s);openPg();pgRefresh();hint(on?'點亮了':'取消今天這次');hintT=setTimeout(()=>hint(''),1200)}
+    else if(act==='pgs'){pgToggle(key,a.dataset.s);openPg();pgRefresh()}
     else if(act==='mclose')closeMenu();
     else if(act==='rback')tapLine(true);
     else if(act==='play'){if(!au)return;au.paused?au.play():au.pause()}
@@ -762,6 +765,12 @@ const natLv=n=>n>=5?3:n>=2?2:n?1:0;
 function natTap(k,id){const a=pgAll(),m=a[k]||(a[k]={}),t=pgToday();let d=natDays(m,id).slice();d=d.includes(t)?d.filter(x=>x!==t):d.concat(t);if(d.length)m[id]=d;else delete m[id];try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}return d.includes(t)}
 function pgAll(){try{return JSON.parse(localStorage.getItem('scene-prog-v1'))||{}}catch(e){return {}}}
 function pgToggle(k,id){const a=pgAll(),m=a[k]||(a[k]={});if(m[id])delete m[id];else{const d=new Date();m[id]=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}}
+function pgPills(k){const m=pgAll()[k]||{};return `<button class="pgpill" data-act="natopen">自然 ${PGN.filter(([id])=>natDays(m,id).length).length}/${PGN.length}</button><button class="pgpill" data-act="pg">刻意 ${PG.filter(([id])=>m[id]).length}/${PG.length}</button>`}
+function pgRefresh(){const b=document.querySelector('.bar .pgpills');if(b)b.innerHTML=pgPills(key)}
+// 自然養成＝學歌地圖，用 iframe 疊在情境頁上：頁面沒換，音樂照放
+function openNat(){closeMenu();closeNat();const f=document.createElement('div');f.id='natf';f.innerHTML=`<iframe src="learn.html?v=7&embed=1#${key}" title="學歌地圖"></iframe>`;document.body.appendChild(f)}
+function closeNat(){const f=document.getElementById('natf');if(f){f.remove();pgRefresh()}}
+addEventListener('message',e=>{const t=e.data&&e.data.learn;if(t==='close'){closeNat();wakePlayer()}else if(t==='deli'){closeNat();openPg()}});
 function pgDots(k){const m=pgAll()[k]||{},c=L=>L.filter(([id])=>m[id]).length;return `自然 ${PGN.filter(([id])=>natDays(m,id).length).length}/${PGN.length}<i>・</i>刻意 ${c(PG)}/${PG.length}`}
 function natHtml(m){
   const t=pgToday(),cell=id=>{const [,nm,tip]=PGN.find(x=>x[0]===id),d=natDays(m,id),last=d[d.length-1],v=natDays(m,'v_'+id),vt=v.includes(t);
@@ -780,7 +789,7 @@ function openPg(){
   closeMenu();const m=pgAll()[key]||{};const d=document.createElement('div');d.className='sheet menu-sheet';d.id='menu';
   const tipOf={map:'蓋起來說得出整首順序',acap:'不靠伴奏唱完',ppl:'上課、朋友 KTV',sv:'街演'};
   const grp=(L,name,sub)=>`<div class="pgh">${name}<a class="lmap" data-act="map" href="#${key}">架構表 ↗</a><small>${sub}</small></div><div class="grp pgl">${L.map(([id,t,tip],i)=>`<button data-act="pgs" data-s="${id}" class="${m[id]?'on':''}"><b>${m[id]?'✓':i+1}</b><span class="pgt">${t}</span><small>${m[id]?m[id].slice(5).replace('-','/')+' 完成':tip||tipOf[id]||''}</small></button>`).join('')}</div>`;
-  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div>${natLink(m)}${grp(PG,'刻意練習','對拍、錄音、上台')}
+  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div><div class="pgmode"><button data-act="natopen">自然</button><button class="on">刻意</button></div>${grp(PG,'刻意練習','對拍、錄音、上台')}
     <small class="tip">點一下打勾，再點一下取消。歌單的情境圖清單也會一起更新</small><div class="row" style="justify-content:flex-end"><button data-act="mclose">關閉</button></div>`;
   app.appendChild(d)}
 function closeMenu(){const d=document.getElementById('menu');if(d){d.remove();wakePlayer()}}
@@ -1298,6 +1307,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=89"></script>
+<script src="studio.js?v=90"></script>
 </body>
 </html>
