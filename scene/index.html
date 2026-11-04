@@ -102,6 +102,11 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 .ln.x,.toc .l.x{text-decoration:line-through;text-decoration-color:rgba(255,120,110,.9);text-decoration-thickness:2px}
 .ln .nt,.toc .l .nt{font-family:var(--body);font-size:12.5px;color:#ffb48a;margin-left:8px;letter-spacing:0;text-shadow:0 1px 6px #000}
 .toc .row{display:flex;align-items:center;gap:4px}.toc .row .l{flex:1}
+.toc.tg .tgrid{display:grid;gap:26px 40px;align-items:start;padding:8px 8px 20px;max-width:1400px;margin:0 auto}
+.toc.tg .sec{max-width:none;margin:0}
+.toc.tg .sec.now{box-shadow:-10px 0 0 -8px var(--glow)}
+.toc.tg .sec>button{font-size:11.5px;padding:0 0 4px}.toc.tg .sec>button b{font-size:13px}
+.toc.tg .l{font-size:16.5px;line-height:1.7;padding:2px 8px;white-space:pre-wrap}
 .toc .pen{border:0;background:none;color:var(--muted);font-size:15px;padding:6px 8px}
 /* 架構表：一頁看完整首歌的骨架 */
 .map{max-width:680px;margin:0 auto}
@@ -416,7 +421,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=77;
+const VER=78;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -538,6 +543,7 @@ app.addEventListener('click',e=>{
     else if(act==='part')startPart();
     else if(act==='toc')openToc();
     else if(act==='tocx')closeToc();
+    else if(act==='tocmode'){tocMode=tocMode==='grid'?'list':'grid';try{localStorage.setItem('scene-tocmode-v1',tocMode)}catch(e){}openToc()}
     else if(act==='chain'){const i=+a.dataset.i,t=getTimes();if(au&&!au.paused)playFrom(i);else{browsing=0;show(i);if(au&&t[i]!=null)au.currentTime=t[i]}}
     else if(act==='map'){e.preventDefault();closeMenu();mapShown=0;openMap()}
     else if(act==='mapr'){mapRecall=!mapRecall;mapShown=0;const y=document.getElementById('toc').scrollTop;openMap();document.getElementById('toc').scrollTop=y}
@@ -1075,14 +1081,25 @@ function playFrom(sec,l){
   browsing=0;show(s);if(!au){hint('先放原曲或伴奏才能播');hintT=setTimeout(()=>hint(''),2500);return}
   au.currentTime=at;au.play();
 }
+// 整首歌詞：一頁排版（像她的 GoodNotes）—— 一段接一段往下排；回到唱過的段落（第一句一樣）就換到下一欄、對齊原本那一列，
+// 所以同樣的旋律永遠在同一列；同一段連續重複就往下接
+function tocGrid(){const nm=x=>String(x||'').replace(/[\s，。、！？,.!?~～…「」]/g,''),pos=[],orig=[];let c=0,last=-1;
+  blocks.forEach((ls,i)=>{const f=nm(ls[0]);let m=-1;if(f)for(let j=0;j<i;j++)if(nm(blocks[j][0])===f){m=j;break}
+    let r;if(m<0){r=last+1;orig[i]=i}else{orig[i]=orig[m];const tgt=pos[orig[m]].r;
+      if(i&&orig[i-1]===orig[i])r=last+1;else if(tgt<=last){c++;r=tgt}else r=tgt}
+    pos[i]={c,r};last=r});return pos}
+let tocMode=null;
 function openToc(){
   if(!blocks)return;closeToc();const sc=SCENES[key],t=getTimes(),L=getLines();let o=0;
-  const d=document.createElement('div');d.className='toc';d.id='toc';
-  d.innerHTML=`<div class="top"><b>${esc(sc.title)}</b><button data-act="map">架構表</button><button data-act="from">▶ 從頭播</button>${getUndo()?'<button data-act="undo">↶ 復原對拍</button>':''}<button data-act="tocx">關閉</button></div>`+
-    sc.steps.map((st,i)=>{const ls=blocks[i]||[];const h=`<div class="sec"><button data-act="from" data-sec="${i}">${esc(st.sec)}<b>${esc(namesOf(sc,st))} ${esc(st.word)}</b>${t[i]!=null?mmss(t[i]):''} ▶</button>`+
-      ls.map((x,k)=>{const j=o+k,m=noteOf(j);return `<div class="row"><button class="l${i===cur?' cur':''}${m.hl?' hl':''}${m.x?' x':''}" data-act="from" data-l="${j}">${esc(x)}${m.t?`<span class="nt">${esc(m.t)}</span>`:''}${L[j]!=null?`<small>${mmss(L[j])}</small>`:''}</button><button class="pen" data-act="note" data-l="${j}" aria-label="這句做筆記">✎</button></div>`}).join('')+'</div>';o+=ls.length;return h}).join('');
+  if(!tocMode){try{tocMode=localStorage.getItem('scene-tocmode-v1')}catch(e){}if(!tocMode)tocMode=innerWidth>=700?'grid':'list'}
+  const grid=tocMode==='grid',pos=grid?tocGrid():null,C=grid?Math.max(...pos.map(p=>p.c))+1:1;
+  const d=document.createElement('div');d.className='toc'+(grid?' tg':'');d.id='toc';
+  d.innerHTML=`<div class="top"><b>${esc(sc.title)}</b><button data-act="tocmode">${grid?'清單':'一頁'}</button><button data-act="map">架構表</button><button data-act="from">▶ 從頭播</button>${getUndo()?'<button data-act="undo">↶ 復原對拍</button>':''}<button data-act="tocx">關閉</button></div>`+
+    (grid?`<div class="tgrid" style="grid-template-columns:repeat(${C},minmax(230px,1fr))">`:'')+
+    sc.steps.map((st,i)=>{const ls=blocks[i]||[];const h=`<div class="sec${i===cur?' now':''}"${grid?` style="grid-column:${pos[i].c+1};grid-row:${pos[i].r+1}"`:''}><button data-act="from" data-sec="${i}">${esc(st.sec)}<b>${esc(namesOf(sc,st))} ${esc(st.word)}</b>${t[i]!=null?mmss(t[i]):''} ▶</button>`+
+      ls.map((x,k)=>{const j=o+k,m=noteOf(j);return `<div class="row"><button class="l${i===cur?' cur':''}${m.hl?' hl':''}${m.x?' x':''}" data-act="from" data-l="${j}">${esc(x)}${m.t?`<span class="nt">${esc(m.t)}</span>`:''}${L[j]!=null?`<small>${mmss(L[j])}</small>`:''}</button>${grid?'':`<button class="pen" data-act="note" data-l="${j}" aria-label="這句做筆記">✎</button>`}</div>`}).join('')+'</div>';o+=ls.length;return h}).join('')+(grid?'</div>':'');
   app.appendChild(d);
-  const c=d.querySelector('.l.cur');if(c)c.scrollIntoView({block:'center'});
+  if(!grid){const c=d.querySelector('.l.cur');if(c)c.scrollIntoView({block:'center'})}
 }
 function closeToc(){const d=document.getElementById('toc');if(d)d.remove()}
 // 架構表：整首歌一頁看完（段落、一個字、情境、第一句開頭）。「回想」＝先蓋起來，自己說出下一段是什麼再點開
@@ -1213,6 +1230,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=77"></script>
+<script src="studio.js?v=78"></script>
 </body>
 </html>
