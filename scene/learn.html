@@ -54,42 +54,82 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)
 .cells span.lv3{background:rgba(242,194,123,.38);border-color:var(--glow);color:#fff}
 @media (max-width:900px){.cards{grid-template-columns:1fr 1fr}}
 @media (max-width:560px){.cards{grid-template-columns:1fr}.spot b{font-size:14px}.spot i{width:11px;height:11px}.bar h1{font-size:20px}}
+.songs{display:flex;gap:6px;flex-wrap:wrap;max-width:1200px;margin:12px auto 0;padding:0 16px}
+.songs a{font-size:13px;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:99px;padding:5px 12px}.songs a.on{color:var(--glow);border-color:var(--glow)}
+.stage{max-width:1200px;margin:12px auto 0;padding:0 16px;font-size:13.5px;line-height:1.6;color:var(--muted);min-height:3.2em}.stage b{color:var(--glow);font-family:var(--display);font-size:17px;margin-right:6px}.stage em{font-style:normal;color:var(--ink)}
+.nat{max-width:1200px;margin:10px auto 0;padding:0 16px calc(env(safe-area-inset-bottom,0px) + 28px)}
+.pgh{margin:4px 2px 10px;color:var(--glow);font-size:15px;font-weight:600}.pgh small{margin-left:8px;color:var(--muted);font-weight:400;font-size:12px}
+.ngrid{display:grid;grid-template-columns:3em repeat(4,1fr);gap:10px;align-items:stretch}
+.nh{font-size:14px;color:var(--ink);text-align:center;font-weight:600;padding:4px;border-radius:12px;cursor:pointer;transition:background .3s}.nh small{display:block;font-size:11px;color:var(--muted);font-weight:400}
+.nh em{display:block;font-style:normal;font-size:11px;color:var(--glow);font-weight:400;margin-top:3px;line-height:1.35}.nh.on{background:var(--glow-soft)}
+.nl{font-size:13px;color:var(--muted);align-self:center}
+.nc{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--ink);font:inherit;min-width:0;cursor:pointer;transition:box-shadow .3s}
+.nc .pgt{font-family:var(--display);font-size:19px}.nc small{font-size:11.5px;color:var(--muted);line-height:1.35}
+.nc.lv1{background:rgba(242,194,123,.10);border-color:rgba(242,194,123,.35)}.nc.lv2{background:rgba(242,194,123,.22);border-color:rgba(242,194,123,.6)}.nc.lv3{background:rgba(242,194,123,.38);border-color:var(--glow);box-shadow:0 0 14px rgba(242,194,123,.35)}
+.nc.today .pgt::after{content:' ✦';color:var(--glow)}
+.nc.col{box-shadow:0 0 0 2px rgba(242,194,123,.55)}
+.nc.gone{opacity:.55;border-style:dashed;background:none;cursor:default}.nc.gone s{font-size:13px;color:var(--muted);text-decoration-color:rgba(255,120,110,.8)}
+.nc .vk{position:absolute;top:8px;right:8px;font-size:11px;line-height:1;padding:4px 7px;border-radius:99px;border:1px dashed rgba(242,194,123,.5);color:var(--glow)}
+.nc .vk.on{border-style:solid;background:rgba(242,194,123,.18)}.nc .vk.grad{border:0;background:none;font-size:17px;padding:0}.nc .vk.vt{box-shadow:0 0 0 2px rgba(242,194,123,.45)}
+.nnote{margin:12px 0 0;font-size:12.5px;line-height:1.7;color:var(--muted)}
+.ro .nc:not(.gone){cursor:default}.ro .vk{display:none}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);background:rgba(0,0,0,.8);border:1px solid var(--line);border-radius:99px;padding:8px 16px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none}.toast.on{opacity:1}
+@media (max-width:640px){.ngrid{grid-template-columns:2.2em repeat(4,1fr);gap:5px}.nc{padding:8px 8px 24px}.nc .pgt{font-size:14px}.nc small{font-size:10px}.nc.gone{padding-bottom:8px}.nc.gone small{font-size:9.5px}.nc .vk{top:auto;bottom:5px;right:5px}.nh{font-size:12.5px}.nh em{font-size:9px}}
 </style>
 </head>
 <body>
-<div class="bar"><a href="javascript:history.length>1?history.back():location.href='../#songs'">← 返回</a><h1>學歌地圖</h1><span class="by" id="by"></span></div>
+<div class="bar"><a href="javascript:history.length>1?history.back():location.href='../#songs'">← 返回</a><h1>學歌地圖・自然養成</h1><span class="by" id="by"></span></div>
 <div class="pic">
   <img src="learn.jpg?v=1" alt="一個小孩學騎腳踏車的四個時刻：坐在長椅上看、爸爸扶著騎、爸爸放手自己騎、騎進花草地">
   <div id="spots"></div>
 </div>
-<p class="lead">學會一首歌，就是把<b>「歌由誰撐著」</b>從外面一步步移到你身上：外面帶著你 → 你跟著外面 → 你自己撐住 → 你帶著歌走。點圖上的小孩看每個階段。</p>
-<div class="cards" id="cards"></div>
+<div class="songs" id="songs"></div>
+<div class="stage" id="stage">學會一首歌，就是把<em>「歌由誰撐著」</em>從外面一步步移到你身上。點圖上的小孩，看那個階段的目標和狀態。</div>
+<div class="nat" id="nat"></div>
+<div class="toast" id="toast"></div>
 <script>
+const SONGS=[['jiayi','甲乙丙丁'],['summer','盛夏的果實'],['darwin','達爾文'],['hands','小手拉大手'],['prank','惡作劇'],['zhizu','知足'],['hug','大大的擁抱'],['houlai','後來']];
 const STAGES=[
-  {id:'soak',n:'浸泡',sub:'建立地圖',spot:{x:12,y:52},who:'坐在長椅上，看別人騎',
-   goal:'不花力氣，讓歌的樣子自己長進腦中。',state:'預期得到：知道下一句往哪走；歌被切掉會覺得「欸，還沒完」。',test:'暫停，接得出下一句',cells:['n_listen',['伴奏','聽伴奏知道唱到哪＝其實已是內化'],['靜音','沒聲音可聽＝其實已是內化']]},
-  {id:'copy',n:'模仿',sub:'接上嘴巴',spot:{x:40,y:46},who:'爸爸扶著座墊騎',
-   goal:'把耳朵聽到的對應到自己的聲音，照原唱忠實複製音高、節奏、斷句和換氣。',state:'跟得上：有原唱或伴奏帶著時，唱得對、不會掉。',test:'只放伴奏，每段自己準時進',cells:['n_sing','n_lead','n_free']},
-  {id:'own',n:'內化',sub:'拿掉拐杖',spot:{x:62,y:44},who:'爸爸放手，自己騎',
-   goal:'不靠外面的聲音，歌在你身上也站得住。',state:'獨立：沒有音樂，音準和速度也穩；歌會自己在腦中響起。',test:'歌突然消音，聲音回來還對得上',cells:['n_hear','n_inst','n_head']},
-  {id:'style',n:'風格化',sub:'從複製到詮釋',spot:{x:85,y:44},who:'騎進花草地，走自己的路線',
-   goal:'唱法變成「選擇」，不是「照抄」。',state:'自由：換速度、強弱、換氣、裝飾，還是這首歌，而且說得出為什麼這樣唱。',test:'說得出為什麼這樣唱',cells:[['原曲','原唱一直在旁邊，很難唱自己的'],'n_mine','n_solo']}];
-const NAME={n_listen:'常聽',n_sing:'跟唱',n_lead:'搶先唱',n_free:'隨口唱',n_hear:'腦內聽',n_inst:'腦內補唱',n_head:'腦內歌聲',n_mine:'我的版本',n_solo:'清唱版本'};
+  {n:'浸泡',sub:'聽',test:'暫停，接得出下一句',spot:{x:12,y:52},who:'坐在長椅上，看別人騎',goal:'不花力氣，讓歌的樣子自己長進腦中。',state:'知道下一句往哪走；歌被切掉會覺得「欸，還沒完」。'},
+  {n:'模仿',sub:'出聲',test:'每段自己準時進',spot:{x:40,y:46},who:'爸爸扶著座墊騎',goal:'把聽到的對應到自己的聲音，照原唱複製音高、節奏、斷句和換氣。',state:'有原唱或伴奏帶著時，唱得對、不會掉。'},
+  {n:'內化',sub:'腦內唱',test:'消音後，聲音回來還對得上',spot:{x:62,y:44},who:'爸爸放手，自己騎',goal:'不靠外面的聲音，歌在你身上也站得住。',state:'沒有音樂，音準和速度也穩；歌會自己在腦中響起。'},
+  {n:'風格化',sub:'我的唱法',test:'說得出為什麼這樣唱',spot:{x:85,y:44},who:'騎進花草地，走自己的路線',goal:'唱法變成「選擇」，不是「照抄」。',state:'換速度、強弱、換氣、裝飾，還是這首歌，而且說得出為什麼。'}];
+// 列＝音樂（原曲/伴奏/靜音），欄＝四個階段；陣列＝消失的格子（槓掉＋為什麼）
+const GRID=[
+  ['原曲',['n_listen','常聽','放原曲，耳朵先習慣'],['n_sing','跟唱','放原曲，跟著一起唱'],['n_hear','腦內聽','放原曲，在腦中跟著唱'],['風格化×原曲','原唱一直在旁邊，很難唱出自己的版本']],
+  ['伴奏',['浸泡×伴奏','聽伴奏就知道唱到哪，其實已經是腦內補唱（內化）'],['n_lead','搶先唱','放伴奏，自己唱出主唱'],['n_inst','腦內補唱','放伴奏，主唱在腦中唱'],['n_mine','我的版本','放伴奏，換速度、情緒、換氣']],
+  ['靜音',['浸泡×靜音','沒聲音可聽；這時聽到的歌，其實已經是內化'],['n_free','隨口唱','沒音樂，洗澡走路就唱出來'],['n_head','腦內歌聲','沒音樂，腦中自己響起來'],['n_solo','清唱版本','沒音樂，用自己的唱法唱完']]];
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-// 從某首歌的進度點進來（learn.html#歌的代號）：格子照那首歌點過幾天亮起來
-const song=decodeURIComponent((location.hash||'').slice(1));
-let m={};try{m=(JSON.parse(localStorage.getItem('scene-prog-v1'))||{})[song]||{}}catch(e){}
-const days=id=>Array.isArray(m[id])?m[id].length:m[id]?1:0,lv=n=>n>=5?3:n>=2?2:n?1:0;
-const title=new URLSearchParams(location.search).get('t')||'';
-document.getElementById('by').textContent=title?`・${title}`:'';
-document.getElementById('spots').innerHTML=STAGES.map((s,i)=>`<button class="spot" data-i="${i}" style="left:${s.spot.x}%;top:${s.spot.y}%"><i></i><b>${i+1} ${s.n}</b></button>`).join('');
-document.getElementById('cards').innerHTML=STAGES.map((s,i)=>`<section class="card" id="c${i}"><h2>${i+1} ${s.n}<small>${s.sub}</small></h2><div class="who">圖上：${esc(s.who)}</div>
-  <dl><dt>目標</dt><dd>${esc(s.goal)}</dd><dt>做到時的狀態</dt><dd>${esc(s.state)}</dd></dl>
-  <div class="rows">${s.cells.map((c,r)=>{const row=['原曲','伴奏','靜音'][r];if(Array.isArray(c))return `<div class="cr gone"><em>${row}</em><s>${s.n}×${c[0]}</s><small>${esc(c[1])}</small></div>`;
-    const d=days(c),v=days('v_'+c);return `<div class="cr lv${lv(d)}"><em>${row}</em><b>${NAME[c]}</b><small>${d?`${d} 天`:''}${v?` ・考過 ${v>=3?'🎓':v}`:''}</small></div>`}).join('')}</div>
-  <div class="test">怎麼考：${esc(s.test)}</div></section>`).join('');
-document.getElementById('spots').addEventListener('click',e=>{const b=e.target.closest('.spot');if(!b)return;const i=+b.dataset.i;
-  document.querySelectorAll('.spot,.card').forEach(x=>x.classList.remove('on'));b.classList.add('on');const c=document.getElementById('c'+i);c.classList.add('on');c.scrollIntoView({behavior:'smooth',block:'nearest'})});
+const pgAll=()=>{try{return JSON.parse(localStorage.getItem('scene-prog-v1'))||{}}catch(e){return {}}};
+const pgToday=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const natDays=(m,id)=>Array.isArray(m[id])?m[id]:m[id]?[m[id]]:[];
+const natLv=n=>n>=5?3:n>=2?2:n?1:0;
+function natTap(k,id){const a=pgAll(),m=a[k]||(a[k]={}),t=pgToday();let d=natDays(m,id).slice();d=d.includes(t)?d.filter(x=>x!==t):d.concat(t);if(d.length)m[id]=d;else delete m[id];try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}return d.includes(t)}
+let song=decodeURIComponent((location.hash||'').slice(1)),col=-1,tT=0;
+if(!SONGS.some(x=>x[0]===song))song='';
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>e.classList.remove('on'),1300)}
+function draw(){
+  const m=song?pgAll()[song]||{}:{},t=pgToday(),title=(SONGS.find(x=>x[0]===song)||[])[1]||'';
+  document.getElementById('by').textContent=title?'・'+title:'';
+  document.getElementById('songs').innerHTML=SONGS.map(([k,n])=>`<a href="#${k}" class="${k===song?'on':''}">${n}</a>`).join('');
+  const cell=(c,ci)=>{if(c.length===2)return `<div class="nc gone"><s>${c[0]}</s><small>${esc(c[1])}</small></div>`;
+    const [id,nm,tip]=c,d=natDays(m,id),last=d[d.length-1],v=natDays(m,'v_'+id),vt=v.includes(t);
+    return `<button data-act="nat" data-s="${id}" class="nc lv${natLv(d.length)}${d.includes(t)?' today':''}${ci===col?' col':''}"><span class="pgt">${nm}</span><small>${d.length?`${d.length} 天・${last.slice(5).replace('-','/')}`:tip}</small><span class="vk${v.length>=3?' grad':v.length?' on':''}${vt?' vt':''}" data-act="natv" data-s="v_${id}">${v.length>=3?'🎓':v.length?'✓'+v.length:'考'}</span></button>`};
+  document.getElementById('nat').innerHTML=`<div class="pgh">自然養成${title?`・${esc(title)}`:''}<small>${song?'沒有順序，碰到就點一下；點越多天越亮（今天再點一次＝取消）':'先在上面選一首歌，才會記到那首歌'}</small></div>
+  <div class="ngrid${song?'':' ro'}"><span></span>${STAGES.map((s,i)=>`<span class="nh${i===col?' on':''}" data-act="col" data-i="${i}">${s.n}<small>${s.sub}</small><em>考：${s.test}</em></span>`).join('')}
+  ${GRID.map(r=>`<span class="nl">${r[0]}</span>`+r.slice(1).map((c,ci)=>cell(c,ci)).join('')).join('')}</div>
+  <p class="nnote">→ 越往右，歌越是「你」發出來的：外面發出 → 你出聲 → 你腦內 → 用你的方式。<br>↓ 越往下，拿掉越多拐杖：原曲 → 伴奏 → 靜音。<br>浸泡和內化外表一樣安靜，差別在歌是誰發出來的：音樂一停歌就停＝浸泡；還接得下去＝內化。<br>每格右上角「考」：照那一欄上面寫的方法考過，就點一下（一天算一次）。不同天考過 3 次＝這格畢業 🎓。</p>`;
+  document.querySelectorAll('.spot').forEach(b=>b.classList.toggle('on',+b.dataset.i===col));
+  const st=document.getElementById('stage');if(col>=0){const s=STAGES[col];st.innerHTML=`<b>${col+1} ${s.n}</b>圖上：${esc(s.who)}<br>目標：<em>${esc(s.goal)}</em>　做到時：<em>${esc(s.state)}</em>`}
+}
+document.getElementById('spots').innerHTML=STAGES.map((s,i)=>`<button class="spot" data-act="col" data-i="${i}" style="left:${s.spot.x}%;top:${s.spot.y}%"><i></i><b>${i+1} ${s.n}</b></button>`).join('');
+document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;
+  if(act==='col'){col=+a.dataset.i===col?-1:+a.dataset.i;draw();if(col>=0)document.getElementById('stage').scrollIntoView({behavior:'smooth',block:'nearest'})}
+  else if(!song)toast('先選一首歌');
+  else if(act==='natv'){toast(natTap(song,a.dataset.s)?'今天考過了 ✓':'取消今天這次考試');draw()}
+  else if(act==='nat'){toast(natTap(song,a.dataset.s)?'點亮了':'取消今天這次');draw()}});
+addEventListener('hashchange',()=>{song=decodeURIComponent(location.hash.slice(1));if(!SONGS.some(x=>x[0]===song))song='';draw()});
+draw();
 </script>
 </body>
 </html>

@@ -167,6 +167,8 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 #menu .nc.lv1{background:rgba(242,194,123,.10);border-color:rgba(242,194,123,.35)}#menu .nc.lv2{background:rgba(242,194,123,.22);border-color:rgba(242,194,123,.6)}#menu .nc.lv3{background:rgba(242,194,123,.38);border-color:#f2c27b;box-shadow:0 0 14px rgba(242,194,123,.35)}
 #menu .nc.today .pgt::after{content:' ✦';color:#f2c27b}
 @media (max-width:640px){.ngrid{grid-template-columns:2.2em repeat(4,1fr);gap:5px}#menu .nc .pgt{font-size:13px}#menu .nc.gone small{font-size:9.5px}#menu .nc{padding-bottom:22px}#menu .nc.gone{padding-bottom:8px}#menu .nc .vk{top:auto;bottom:5px;right:5px}.nh em{font-size:9px}#menu .nc{padding:8px}#menu .nc small{font-size:10px}}
+.natlink{display:flex;align-items:center;gap:12px;margin:8px 0 4px;padding:14px 16px;border-radius:16px;border:1px solid rgba(242,194,123,.45);background:rgba(242,194,123,.08);color:var(--ink);text-decoration:none}
+.natlink span{flex:1;display:flex;flex-direction:column;gap:2px}.natlink b{color:var(--glow);font-size:15px}.natlink small{font-size:11.5px;color:var(--muted)}.natlink em{font-style:normal;color:var(--glow);font-size:14px;white-space:nowrap}
 .pgh .lmap{float:right;color:var(--glow);font-size:12px;font-weight:500;text-decoration:none}
 .pgpill i{font-style:normal;opacity:.5}
 .pgpill{margin-left:auto;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--muted);border-radius:99px;height:30px;padding:0 10px;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}.bar .pgpill span{color:#f2c27b;letter-spacing:1px}
@@ -434,7 +436,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=80;
+const VER=81;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -743,11 +745,14 @@ function natHtml(m){
     <span class="nl">伴奏</span>${gone('浸泡×伴奏','聽伴奏就知道唱到哪，其實已經是腦內補唱（內化）')}${cell('n_lead')}${cell('n_inst')}${cell('n_mine')}
     <span class="nl">靜音</span>${gone('浸泡×靜音','沒聲音可聽；這時聽到的歌，其實已經是內化')}${cell('n_free')}${cell('n_head')}${cell('n_solo')}</div>
   <p class="nnote">→ 越往右，歌越是「你」發出來的：外面發出 → 你出聲 → 你腦內 → 用你的方式。<br>↓ 越往下，拿掉越多拐杖：原曲 → 伴奏 → 靜音。<br>浸泡和內化外表一樣安靜，差別在歌是誰發出來的：音樂一停歌就停＝浸泡；還接得下去＝內化。<br>每格右上角「考」：照那一欄上面寫的方法考過，就點一下（一天算一次）。不同天考過 3 次＝這格畢業 🎓。</p>`}
+// 自然養成搬到學歌地圖那一頁（圖＋表格）；這裡只留入口和摘要
+function natLink(m){const lit=PGN.filter(([id])=>natDays(m,id).length).length,gr=PGN.filter(([id])=>natDays(m,'v_'+id).length>=3).length;
+  return `<a class="natlink" href="learn.html?v=3&t=${encodeURIComponent(SCENES[key].title)}#${key}"><span><b>自然養成・學歌地圖</b><small>聽、出聲、腦內唱、我的唱法 × 原曲、伴奏、靜音</small></span><em>${lit}/${PGN.length}${gr?`・🎓${gr}`:''} ↗</em></a>`}
 function openPg(){
   closeMenu();const m=pgAll()[key]||{};const d=document.createElement('div');d.className='sheet menu-sheet';d.id='menu';
   const tipOf={map:'蓋起來說得出整首順序',acap:'不靠伴奏唱完',ppl:'上課、朋友 KTV',sv:'街演'};
   const grp=(L,name,sub)=>`<div class="pgh">${name}<a class="lmap" data-act="map" href="#${key}">架構表 ↗</a><small>${sub}</small></div><div class="grp pgl">${L.map(([id,t,tip],i)=>`<button data-act="pgs" data-s="${id}" class="${m[id]?'on':''}"><b>${m[id]?'✓':i+1}</b><span class="pgt">${t}</span><small>${m[id]?m[id].slice(5).replace('-','/')+' 完成':tip||tipOf[id]||''}</small></button>`).join('')}</div>`;
-  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div>${natHtml(m)}${grp(PG,'刻意練習','對拍、錄音、上台')}
+  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div>${natLink(m)}${grp(PG,'刻意練習','對拍、錄音、上台')}
     <small class="tip">點一下打勾，再點一下取消。歌單的情境圖清單也會一起更新</small><div class="row" style="justify-content:flex-end"><button data-act="mclose">關閉</button></div>`;
   app.appendChild(d)}
 function closeMenu(){const d=document.getElementById('menu');if(d){d.remove();wakePlayer()}}
@@ -1252,6 +1257,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=80"></script>
+<script src="studio.js?v=81"></script>
 </body>
 </html>
