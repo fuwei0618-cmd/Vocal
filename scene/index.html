@@ -95,10 +95,12 @@ body.op .chainbar small{display:none}body.op .chainbar.grp{padding:0 16px;gap:1.
 .sub .ln2{pointer-events:auto;cursor:pointer}
 .opb{margin-left:auto;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--muted);border-radius:99px;height:30px;padding:0 12px;font:inherit;font-size:12px;cursor:pointer}.opb.on{color:var(--glow);border-color:rgba(242,194,123,.5)}.opb+.pgpill{margin-left:0}
 body.op .sub,body.op.lay-top .sub{left:16px;right:16px;width:auto;transform:none;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);overflow-y:auto;pointer-events:auto;-webkit-overflow-scrolling:touch}
-.opg{display:grid;gap:.55em 1.6em;align-items:start;max-width:1240px;margin:0 auto;padding:12px 16px;border-radius:16px;background:rgba(10,8,6,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.opg{display:grid;gap:.55em 1.6em;align-items:start;max-width:1240px;margin:0 auto;padding:12px 16px}
+#opspots{position:fixed;left:0;top:0;z-index:5;pointer-events:none;transform-origin:0 0}
+#opspots .spot b{font-size:18px;background:rgba(0,0,0,.45);padding:1px 8px;border-radius:8px}
 .orh{display:flex;flex-direction:column;gap:1px;padding:0 0 6px;border-bottom:1px solid rgba(242,194,123,.3);opacity:.7}.orh.now{opacity:1;border-bottom-color:var(--glow)}
 .orh b{font-family:var(--display);font-size:.92em;color:var(--glow)}.orh span{font-size:.72em;line-height:1.45;color:var(--ink)}.orh em{font-style:normal;font-size:11px;color:var(--muted)}
-.ob{opacity:.62;transition:opacity .3s;border-left:2px solid transparent;padding-left:8px;margin-left:-10px}.ob.now{opacity:1;border-left-color:var(--glow)}
+.ob{opacity:.72;transition:opacity .3s;border-left:2px solid transparent;padding:.3em .6em;margin-left:-10px;border-radius:10px;background:rgba(10,8,6,.5);justify-self:start;max-width:100%}.ob.now{opacity:1;border-left-color:var(--glow)}
 .ob .obh{font-size:.68em;color:var(--glow);letter-spacing:.04em;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ob .obh b{font-family:var(--display);font-size:1.25em}.ob .obh span{color:var(--muted)}
 body.op .sub .ob p{font-size:1em;line-height:1.45;white-space:pre-wrap}body.op .sub .ln .pn{font-size:.7em}
 body.op .sub.lines .ob:not(.now) .ln{opacity:.8}
@@ -453,7 +455,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=87;
+const VER=88;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -529,6 +531,7 @@ function place(){
   else{W=Math.max(vw,vh*sc.ratio);H=W/sc.ratio;tx=(vw-W)/2;ty=(vh-H)/2}
   bg.style.width=W+'px';bg.style.height=H+'px';bg.style.transform=`translate(${tx}px,${ty}px)`;
   document.documentElement.style.setProperty('--img-bottom',(ty+H)+'px');
+  const os=document.getElementById('opspots');if(os)os.style.cssText=`width:${bg.style.width};height:${bg.style.height};transform:${bg.style.transform}`;
 }
 // 換到第 i 段：亮這段提到的東西，顯示這段歌詞和下一段的開頭
 function show(i,anim=true){
@@ -549,8 +552,8 @@ function show(i,anim=true){
     const tb=document.querySelector('.bar');if(tb)sub.style.top=(tb.getBoundingClientRect().bottom+8)+'px';
     const R=null,dr=0;  // 輪次標籤只放在上面的段落條（一頁時三段等寬，對齊下面三欄）
     sub.innerHTML=`<div class="opg" style="grid-template-columns:repeat(${C},minmax(0,1fr))">${R?R.map((x,c)=>`<div class="orh${pos[cur].c===c?' now':''}" style="grid-column:${c+1};grid-row:1"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></div>`).join(''):''}${sc.steps.map((x,i)=>{const ls=blocks[i]||[];const h=`<div class="ob${i===cur?' now':''}" style="grid-column:${pos[i].c+1};grid-row:${pos[i].r+1+dr}"><div class="obh">${esc(x.sec)} <b>${esc(x.word)}</b> <span>${esc(namesOf(sc,x))}</span></div><p>${ls.map((l,k)=>lnHtml(l,o+k)).join('<br>')}</p></div>`;o+=ls.length;return h}).join('')}</div>`;
-    lightLine();opFit();
-  }else if(sub&&blocks){sub.style.top='';
+    lightLine();opFit();opSpots(sc,ks);
+  }else if(sub&&blocks){sub.style.top='';opSpots(null);
     const nx=sc.steps[cur+1];
     const off=blocks.slice(0,cur).reduce((a,b)=>a+b.length,0);
     sub.innerHTML=`<div class="cue">${esc(st.sec)}<b>${esc(namesOf(sc,st))} ${esc(st.word)}</b><span>${esc(st.cue)}</span></div><p class="cur">${(blocks[cur]||[]).map((l,k)=>lnHtml(l,off+k)).join('<br>')}</p>`+(nx?`<div class="next"><small>下一段・${esc(namesOf(sc,nx))} ${esc(nx.word)}</small><p>${(blocks[cur+1]||[]).slice(0,2).map((l,k)=>`<span class="ln2" data-l="${off+(blocks[cur]||[]).length+k}">${esc(l)}</span>`).join('<br>')}</p></div>`:'<div class="next"><small>最後一段</small></div>');
@@ -1142,6 +1145,11 @@ function tocGrid(){const nm=x=>String(x||'').replace(/[\s，。、！？,.!?~～
       if(i&&orig[i-1]===orig[i])r=last+1;else if(tgt<=last){c++;r=tgt}else r=tgt}
     pos[i]={c,r};last=r});return pos}
 let tocMode=null;
+// 一頁排版：現在這段的代表物複製一份浮在歌詞上面（圖層在歌詞下面，會被擋住）
+function opSpots(sc,ks){let o=document.getElementById('opspots');if(!sc){if(o)o.remove();return}
+  const bg=document.getElementById('bg');if(!bg)return;if(!o){o=document.createElement('div');o.id='opspots';app.appendChild(o)}
+  o.style.cssText=`width:${bg.style.width};height:${bg.style.height};transform:${bg.style.transform}`;
+  o.innerHTML=ks.map(k=>{const p=sc.spots[k];return p?`<div class="spot on" style="left:${p.x}%;top:${p.y}%"><i></i><b>${esc(p.name)}</b></div>`:''}).join('')}
 // 一頁排版自動縮字：整首放得進畫面為止（不用滑）
 function opFit(){const sub=document.getElementById('sub'),g=sub&&sub.querySelector('.opg');if(!g)return;let f=17;g.style.fontSize=f+'px';
   while(f>10&&sub.scrollHeight>sub.clientHeight+1){f-=.5;g.style.fontSize=f+'px'}}
@@ -1290,6 +1298,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=87"></script>
+<script src="studio.js?v=88"></script>
 </body>
 </html>
