@@ -153,6 +153,7 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 #studio{position:fixed;inset:0;z-index:40;background:#14110d;display:grid;grid-template-rows:auto minmax(150px,1.3fr) auto minmax(0,2fr) auto auto;transition:grid-template-rows .3s ease;color:var(--ink);padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);user-select:none;-webkit-user-select:none}
 body.studio{overflow:hidden}
 #studio button{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--ink);border-radius:99px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer}
+#studio .s-bot button{white-space:nowrap}.s-r .s-tip{min-width:0}
 #studio button.on{background:rgba(242,194,123,.22);border-color:var(--glow);color:var(--glow)}
 .s-top{display:flex;align-items:center;gap:12px;padding:10px 16px}.s-top b{font-size:17px}.s-tr{color:var(--muted);font-size:12px}.s-time{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted)}
 .s-pic{position:relative;margin:0 16px;border-radius:14px;overflow:hidden;background:#000 center/cover no-repeat;min-height:0}
@@ -367,7 +368,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=67;
+const VER=68;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1100,6 +1101,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=67"></script>
+<script src="studio.js?v=68"></script>
 </body>
 </html>
