@@ -184,6 +184,8 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 .pgpill{margin-left:auto;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--muted);border-radius:99px;height:30px;padding:0 10px;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}.bar .pgpill span{color:#f2c27b;letter-spacing:1px}
 .bar .pgpills+.menu{margin-left:0}.pgpills{display:flex;gap:6px;margin-left:auto}.opb+.pgpills{margin-left:0}.pgpills .pgpill{margin-left:0;color:var(--glow);border-color:rgba(242,194,123,.45)}
 #natf{position:fixed;inset:0;z-index:60;background:#0b0b0b}#natf iframe{width:100%;height:100%;border:0;display:block}
+.flow{display:grid;gap:4px}.flow small{color:var(--muted);font-size:12px}.flow div{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.flow span{padding:5px 10px;border-radius:99px;border:1px solid var(--line);font-size:13px;color:var(--muted)}.flow span.ok{color:var(--glow);border-color:rgba(242,194,123,.5);background:rgba(242,194,123,.1)}.flow i{font-style:normal;color:var(--muted)}
+.arcnat{font-style:normal;font-size:12.5px;color:var(--glow);margin-top:4px;padding:5px 10px;border:1px solid rgba(242,194,123,.45);border-radius:99px;width:max-content;max-width:100%}
 .arcl{display:grid;gap:8px}.arcl button{display:flex;gap:12px;align-items:flex-start;text-align:left;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--ink);font:inherit;cursor:pointer}
 .arcl button>b{flex:none;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:12px;color:var(--muted)}.arcl button.on>b{background:var(--glow);color:#1a1612;border-color:var(--glow)}
 .arcl button>span{display:flex;flex-direction:column;gap:3px;min-width:0}.arcl .pgt{font-size:15px;color:var(--glow)}.arcl small{font-size:12px;color:var(--ink);opacity:.8;line-height:1.45}.arcl em{font-style:normal;font-size:12px;color:#9fd3ff;margin-top:2px}
@@ -461,7 +463,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=103;
+const VER=104;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -590,7 +592,7 @@ app.addEventListener('click',e=>{
     else if(act==='next'){if(au){au.currentTime=Math.min(au.duration||1e9,au.currentTime+5);updateProg();sync()}else step(cur+1)}
     else if(act==='menu')openMenu();
     else if(act==='pg')openPg();
-    else if(act==='natopen')openNat();
+    else if(act==='natopen')openNat(a.dataset.u!=null?+a.dataset.u:null);
     else if(act==='natv'){e.stopPropagation();const on=natTap(key,a.dataset.s);openPg();hint(on?'今天考過了 ✓':'取消今天這次考試');hintT=setTimeout(()=>hint(''),1200)}
     else if(act==='nat'){const on=natTap(key,a.dataset.s);openPg();pgRefresh();hint(on?'點亮了':'取消今天這次');hintT=setTimeout(()=>hint(''),1200)}
     else if(act==='pgs'){pgToggle(key,a.dataset.s);openPg();pgRefresh()}
@@ -746,7 +748,9 @@ function openMenu(){
   closeMenu();const has=getTimes().length>1,n=SCENES[key].steps.length;
   const row=(w,label,tip)=>`<div class="mrow"><span>${label}${tip?`<small>${tip}</small>`:''}</span><em>${(w==='vocal'?hasVocal:have[w])?'✓ 已放':''}</em><button data-act="audio" data-for="${w}">${(w==='vocal'?hasVocal:have[w])?'換檔案':'放檔案'}</button></div>`;
   const d=document.createElement('div');d.className='sheet menu-sheet';d.id='menu';
+  const sc0=SCENES[key],ok=[1,!!(sc0.img&&sc0.steps&&sc0.steps.length),!!blocks,!!(have.orig||have.inst),has],fl=['新增歌曲','情境','歌詞','音檔','對拍'];
   d.innerHTML=`<div class="q">${esc(SCENES[key].title)}</div>
+    <div class="flow"><small>這首歌進來的步驟</small><div>${fl.map((t,i)=>`<span class="${ok[i]?'ok':''}">${ok[i]?'✓':i+1} ${t}</span>`).join('<i>→</i>')}</div></div>
     <div class="grp"><small>音樂（只存在這台裝置）</small>${row('orig','原曲')}${row('inst','伴奏')}${row('vocal','人聲','只用來自動對拍，不會播')}<div class="mrow"><span>升降 Key<small>伴奏、原曲一起變，速度不變</small></span><div class="seg keyseg"><button data-act="key" data-d="-1" aria-label="降半音">−</button><b id="keyv">${keyTxt(getKey())}</b><button data-act="key" data-d="1" aria-label="升半音">＋</button></div></div></div>
     <div class="grp"><small>對拍</small><div class="row">
       <button data-act="rec" ${au?'':'disabled'}>${has?'整首重對':'開始對拍'}</button>
@@ -761,8 +765,8 @@ function openMenu(){
   app.appendChild(d);
 }
 // 練習進度：每首歌一份，存在這台裝置（總表的情境圖清單也讀同一份，兩邊點哪邊都算）
-// 刻意練習（11-05 整理）：準備 → 檢查 → 上台。背架構、情境歌詞搬到「架構」序列
-const PG=[['tap','句對拍','準備：每一句對到拍子，情境圖才會跟著歌走'],['rec','錄音回聽','檢查：錄下來聽，哪裡不準、哪裡不順'],['acap','清唱整首','上台前：不靠伴奏，從頭唱到尾'],['ppl','場域','上台：上課、朋友 KTV'],['sv','SV','上台：街演']];
+// 練習分三塊：自然（音準，學歌地圖）× 架構（每一輪＋整首，兩者並行）＋ 場合
+const PG=[['rec','錄音','錄下來回聽：哪裡不準、哪裡不順'],['ppl','場域','上課、朋友 KTV'],['sv','SV','街演']];  // 場合：地點、場合的練習和確認（11-05）
 // 架構序列：先把第一輪（主歌＋副歌）練熟，再記後面每一輪跟第一輪差在哪
 function arcMig(k){const a=pgAll(),m=a[k];if(!m)return;let ch=0;[['map','a_chain'],['lyr','a_all']].forEach(([o,n])=>{if(m[o]&&!m[n]){m[n]=m[o];ch=1}});if(ch)try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}}
 function arcSteps(){const sc=SCENES[key],st=sc.steps,R=sc.rounds||[];
@@ -771,22 +775,27 @@ function arcSteps(){const sc=SCENES[key],st=sc.steps,R=sc.rounds||[];
   const rt=k=>R[k]&&R[k].t?R[k].t:`第${'一二三四五六'[k]||k+1}輪`;
   const ML=sc.mel&&sc.mel.length===st.length?sc.mel:null,mid=i=>ML?ML[i]:pos[i].r;  // 旋律：有簡譜標記就用標記
   const c0=col(0),out=[];
-  out.push({id:'a_r1',t:`先練熟${rt(0)}：${ws(c0)}`,d:[`只練這一輪的主歌＋副歌，旋律和情境都要熟。`,R[0]&&R[0].s].filter(Boolean),x:'過關：看著圖、不看歌詞，唱完這一輪'});
+  out.push({id:'a_r1',u:0,t:`先練熟${rt(0)}：${ws(c0)}`,d:[`只練這一輪的主歌＋副歌，旋律和情境都要熟。`,R[0]&&R[0].s].filter(Boolean),x:'過關：看著圖、不看歌詞，唱完這一輪'});
   if(C>1){const fam={};st.forEach((x,i)=>{(fam[mid(i)]=fam[mid(i)]||[]).push(i)});
     const F=Object.values(fam).filter(L=>L.length>1).map(L=>L.map(w).join('＝'));
     out.push({id:'a_mel',t:'認出同一個旋律',d:[F.length?'同一個旋律：'+F.join('｜'):'每段旋律都不一樣','後面每一輪只是把這幾個旋律重新排、換詞。'],x:'過關：聽到每段開頭，說得出是哪個旋律'});
     for(let k=1;k<C;k++){const L=col(k),diff=L.map(i=>{const j=c0.find(j=>mid(j)===mid(i));
         const same=blocks&&blocks[i]&&blocks[j]&&blocks[i].join('').replace(/\s/g,'')===blocks[j].join('').replace(/\s/g,'');
         return j==null?`${w(i)}：新的段落（${st[i].sec}）`:same?(w(j)===w(i)?`${w(i)}：跟第一輪一樣（同旋律、同歌詞）`:`${w(i)}：跟「${w(j)}」同旋律、同歌詞，只有唱法不同`):w(j)===w(i)?`${w(i)}：跟第一輪的「${w(j)}」同旋律，詞有小改（對照看哪幾個字不同）`:`${w(i)}：用「${w(j)}」的旋律，換新的詞`});
-      out.push({id:'a_r'+(k+1),t:`記${rt(k)}的差別：${ws(L)}`,d:[R[k]&&R[k].s,...diff,R[k]&&R[k].v?'唱法：'+R[k].v:''].filter(Boolean),x:'過關：說得出這一輪跟第一輪哪裡不一樣'});}}
+      out.push({id:'a_r'+(k+1),u:k,t:`記${rt(k)}的差別：${ws(L)}`,d:[R[k]&&R[k].s,...diff,R[k]&&R[k].v?'唱法：'+R[k].v:''].filter(Boolean),x:'過關：說得出這一輪跟第一輪哪裡不一樣'});}}
   out.push({id:'a_chain',t:'串成一條鏈',d:[Array.from({length:C},(_,k)=>ws(col(k))).join('｜'),'用架構表的「回想」：蓋起來，一段一段說出來。'],x:'過關：蓋起來說得出整首順序',map:1,old:'map'});
-  out.push({id:'a_all',t:'看圖唱完整首',d:['一頁模式，只看情境圖和物件，不看歌詞。'],x:'過關：不看歌詞，從頭唱到尾',old:'lyr'});
+  out.push({id:'a_all',t:'看圖唱完整首',d:['一頁模式，只看情境圖和物件，不看歌詞。'],x:'過關：不看歌詞，從頭唱到尾',old:'lyr',u:-1});
   return out}
-const modeSeg=on=>`<div class="pgmode"><button data-act="natopen">自然</button><button data-act="arcopen" class="${on==='arc'?'on':''}">架構</button><button data-act="pg" class="${on==='pg'?'on':''}">刻意</button></div>`;
+// 架構的單位：每一輪＋整首；學歌地圖每個單位各記一份（id 後面加 @r1…，整首不加）
+function arcUnits(){const sc=SCENES[key],st=sc.steps,R=sc.rounds||[];const pos=blocks&&blocks.length===st.length?tocGrid():st.map(()=>({c:0})),C=Math.max(...pos.map(p=>p.c))+1;
+  const U=C>1?Array.from({length:C},(_,k)=>({n:R[k]&&R[k].t?R[k].t:`第${'一二三四五六'[k]||k+1}輪`,sx:'@r'+(k+1)})):[];return U.concat({n:'整首',sx:''})}
+function natCount(m,sx){return PGN.filter(([id])=>natDays(m,id+sx).length).length}
+function curUnit(){const st=SCENES[key].steps;if(!(blocks&&blocks.length===st.length))return 0;const p=tocGrid();return p[cur]?p[cur].c:0}
+const modeSeg=on=>`<div class="pgmode"><button data-act="natopen">自然</button><button data-act="arcopen" class="${on==='arc'?'on':''}">架構</button><button data-act="pg" class="${on==='pg'?'on':''}">場合</button></div>`;
 function openArc(){
   closeMenu();closeNat();const m=pgAll()[key]||{},S=arcSteps();const d=document.createElement('div');d.className='sheet menu-sheet';d.id='menu';
-  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div>${modeSeg('arc')}<div class="pgh">架構：情境故事 × 歌詞<a class="lmap" data-act="map" href="#${key}">架構表 ↗</a><small>先練熟第一輪，再一輪一輪記差別。由上往下</small></div>
-    <div class="arcl">${S.map((x,i)=>`<button data-act="arcs" data-s="${x.id}" class="${m[x.id]?'on':''}"><b>${m[x.id]?'✓':i+1}</b><span><span class="pgt">${esc(x.t)}</span>${x.d.map(t=>`<small>${esc(t)}</small>`).join('')}<em>${esc(x.x)}${m[x.id]?`　✓ ${m[x.id].slice(5).replace('-','/')}`:''}</em></span></button>`).join('')}</div>
+  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div>${modeSeg('arc')}<div class="pgh">架構：情境故事 × 歌詞<a class="lmap" data-act="map" href="#${key}">架構表 ↗</a><small>先練熟第一輪，再一輪一輪記差別。每一輪都用學歌地圖走一次自然</small></div>
+    <div class="arcl">${S.map((x,i)=>`<button data-act="arcs" data-s="${x.id}" class="${m[x.id]?'on':''}"><b>${m[x.id]?'✓':i+1}</b><span><span class="pgt">${esc(x.t)}</span>${x.d.map(t=>`<small>${esc(t)}</small>`).join('')}<em>${esc(x.x)}${m[x.id]?`　✓ ${m[x.id].slice(5).replace('-','/')}`:''}</em>${x.u!=null?(()=>{const U=arcUnits(),ui=x.u<0?U.length-1:Math.min(x.u,U.length-1);return `<i class="arcnat" data-act="natopen" data-u="${ui}">自然 ${natCount(m,U[ui].sx)}/${PGN.length}　用學歌地圖練這${ui===U.length-1?'首':'一輪'} ↗</i>`})():''}</span></button>`).join('')}</div>
     <small class="tip">做到「過關」那一句就點一下打勾，再點一下取消</small><div class="row" style="justify-content:flex-end"><button data-act="mclose">關閉</button></div>`;
   app.appendChild(d)}
 // 自然養成：沒有順序，碰到就點一下（一天算一次，同一天再點＝取消），點越多天越亮
@@ -800,10 +809,10 @@ const natLv=n=>n>=5?3:n>=2?2:n?1:0;
 function natTap(k,id){const a=pgAll(),m=a[k]||(a[k]={}),t=pgToday();let d=natDays(m,id).slice();d=d.includes(t)?d.filter(x=>x!==t):d.concat(t);if(d.length)m[id]=d;else delete m[id];try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}return d.includes(t)}
 function pgAll(){try{return JSON.parse(localStorage.getItem('scene-prog-v1'))||{}}catch(e){return {}}}
 function pgToggle(k,id){const a=pgAll(),m=a[k]||(a[k]={});if(m[id])delete m[id];else{const d=new Date();m[id]=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}}
-function pgPills(k){arcMig(k);const m=pgAll()[k]||{};return `<button class="pgpill" data-act="natopen">自然 ${PGN.filter(([id])=>natDays(m,id).length).length}/${PGN.length}</button><button class="pgpill" data-act="arcopen">架構 ${arcSteps().filter(x=>m[x.id]).length}/${arcSteps().length}</button><button class="pgpill" data-act="pg">刻意 ${PG.filter(([id])=>m[id]).length}/${PG.length}</button>`}
+function pgPills(k){arcMig(k);const m=pgAll()[k]||{};return `<button class="pgpill" data-act="natopen">自然 ${PGN.filter(([id])=>Object.keys(m).some(x=>(x===id||x.startsWith(id+'@'))&&natDays(m,x).length)).length}/${PGN.length}</button><button class="pgpill" data-act="arcopen">架構 ${arcSteps().filter(x=>m[x.id]).length}/${arcSteps().length}</button><button class="pgpill" data-act="pg">場合 ${PG.filter(([id])=>m[id]).length}/${PG.length}</button>`}
 function pgRefresh(){const b=document.querySelector('.bar .pgpills');if(b)b.innerHTML=pgPills(key)}
 // 自然養成＝學歌地圖，用 iframe 疊在情境頁上：頁面沒換，音樂照放
-function openNat(){closeMenu();closeNat();const f=document.createElement('div');f.id='natf';f.innerHTML=`<iframe src="learn.html?v=15&embed=1#${key}" title="學歌地圖"></iframe>`;document.body.appendChild(f)}
+function openNat(u){closeMenu();closeNat();const U=arcUnits();if(u==null)u=Math.min(curUnit(),U.length-1);const f=document.createElement('div');f.id='natf';f.innerHTML=`<iframe src="learn.html?v=16&embed=1&u=${u}&units=${encodeURIComponent(U.map(x=>x.n).join('|'))}#${key}" title="學歌地圖"></iframe>`;document.body.appendChild(f)}
 function closeNat(){const f=document.getElementById('natf');if(f){f.remove();pgRefresh()}}
 addEventListener('message',e=>{const t=e.data&&e.data.learn;if(t==='close'){closeNat();wakePlayer()}else if(t==='deli'){closeNat();openPg()}else if(t==='arc'){closeNat();openArc()}});
 function pgDots(k){const m=pgAll()[k]||{},c=L=>L.filter(([id])=>m[id]).length;return `自然 ${PGN.filter(([id])=>natDays(m,id).length).length}/${PGN.length}<i>・</i>刻意 ${c(PG)}/${PG.length}`}
@@ -819,12 +828,12 @@ function natHtml(m){
   <p class="nnote">→ 越往右，歌越是「你」發出來的：外面發出 → 你出聲 → 你腦內 → 用你的方式。<br>↓ 越往下，拿掉越多拐杖：原曲 → 伴奏 → 靜音。<br>浸泡和內化外表一樣安靜，差別在歌是誰發出來的：音樂一停歌就停＝浸泡；還接得下去＝內化。<br>每格右上角「考」：照那一欄上面寫的方法考過，就點一下（一天算一次）。不同天考過 3 次＝這格畢業 🎓。</p>`}
 // 自然養成搬到學歌地圖那一頁（圖＋表格）；這裡只留入口和摘要
 function natLink(m){const lit=PGN.filter(([id])=>natDays(m,id).length).length,gr=PGN.filter(([id])=>natDays(m,'v_'+id).length>=3).length;
-  return `<a class="natlink" href="learn.html?v=15&t=${encodeURIComponent(SCENES[key].title)}#${key}"><span><b>自然養成・學歌地圖</b><small>聽、出聲、腦內唱、我的唱法 × 原曲、伴奏、靜音</small></span><em>${lit}/${PGN.length}${gr?`・🎓${gr}`:''} ↗</em></a>`}
+  return `<a class="natlink" href="learn.html?v=16&t=${encodeURIComponent(SCENES[key].title)}#${key}"><span><b>自然養成・學歌地圖</b><small>聽、出聲、腦內唱、我的唱法 × 原曲、伴奏、靜音</small></span><em>${lit}/${PGN.length}${gr?`・🎓${gr}`:''} ↗</em></a>`}
 function openPg(){
   closeMenu();closeNat();const m=pgAll()[key]||{};const d=document.createElement('div');d.className='sheet menu-sheet';d.id='menu';
   const tipOf={};
   const grp=(L,name,sub)=>`<div class="pgh">${name}<small>${sub}</small></div><div class="grp pgl">${L.map(([id,t,tip],i)=>`<button data-act="pgs" data-s="${id}" class="${m[id]?'on':''}"><b>${m[id]?'✓':i+1}</b><span class="pgt">${t}</span><small>${m[id]?m[id].slice(5).replace('-','/')+' 完成':tip||tipOf[id]||''}</small></button>`).join('')}</div>`;
-  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div>${modeSeg('pg')}${grp(PG,'刻意練習','準備 → 檢查 → 上台')}
+  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div>${modeSeg('pg')}${grp(PG,'場合','地點、場合的練習和確認：錄音 → 場域 → SV')}
     <small class="tip">點一下打勾，再點一下取消。歌單的情境圖清單也會一起更新</small><div class="row" style="justify-content:flex-end"><button data-act="mclose">關閉</button></div>`;
   app.appendChild(d)}
 function closeMenu(){const d=document.getElementById('menu');if(d){d.remove();wakePlayer()}}
@@ -1344,6 +1353,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=103"></script>
+<script src="studio.js?v=104"></script>
 </body>
 </html>

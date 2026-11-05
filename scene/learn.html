@@ -102,6 +102,7 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)
 @media (max-width:640px){.pair{grid-template-columns:1fr}.pair .nc+.nc::before{content:'↑';left:50%;top:-10px;transform:none}}
 .sn{display:none}@media (max-width:640px){.pic .ngrid{grid-template-columns:2.2em repeat(5,1fr)}.ln{display:none}.sn{display:inline}.ngrid{gap:4px}.nc{padding-left:5px;padding-right:5px}.nh .nn{font-size:13px}}
 .nc .rt{position:absolute;left:-7px;top:-7px;width:18px;height:18px;border-radius:50%;background:#c0392b;color:#fff;font:700 11px/18px system-ui;text-align:center;font-style:normal;box-shadow:0 1px 4px rgba(0,0,0,.5);z-index:1}.nc .rt.fix{background:#7a5a2a}
+.units{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:6px}.units b{font-size:12px;color:var(--muted);margin-right:2px}.units button{background:rgba(0,0,0,.3);border:1px solid var(--line);color:var(--ink);border-radius:99px;padding:4px 12px;font:inherit;font-size:13px;cursor:pointer}.units button small{margin-left:6px;color:var(--muted);font-size:11px}.units button.on{border-color:var(--glow);color:var(--glow);background:rgba(242,194,123,.15)}
 .nh .fx{color:#9fd3ff;font-size:10.5px;line-height:1.35}
 .fix{display:block;margin-bottom:3px;color:#9fd3ff}.fix b{color:#fff;background:#7a5a2a;border-radius:50%;display:inline-block;width:15px;height:15px;font:700 10px/15px system-ui;text-align:center}.fix b.k{all:unset;color:#9fd3ff;font-weight:700}
 .route{display:block;margin-bottom:3px;color:#ff9c8f}.route b.k{all:unset;color:#ff9c8f;font-weight:700}.route b{color:#fff;background:#c0392b;border-radius:50%;display:inline-block;width:15px;height:15px;font:700 10px/15px system-ui;text-align:center;margin:0 2px}
@@ -141,16 +142,19 @@ const natDays=(m,id)=>Array.isArray(m[id])?m[id]:m[id]?[m[id]]:[];
 const natLv=n=>n>=5?3:n>=2?2:n?1:0;
 function natTap(k,id){const a=pgAll(),m=a[k]||(a[k]={}),t=pgToday();let d=natDays(m,id).slice();d=d.includes(t)?d.filter(x=>x!==t):d.concat(t);if(d.length)m[id]=d;else delete m[id];try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}return d.includes(t)}
 let song=decodeURIComponent((location.hash||'').slice(1)),col=-1,tT=0;
+// 練哪一段：情境頁傳來每一輪的名字（第一輪…＋整首）；每段各記一份進度（@r1…，整首不加）
+const QS=new URLSearchParams(location.search),UN=(QS.get('units')||'').split('|').filter(Boolean),UNITS=UN.length?UN.map((n,i)=>({n,sx:i===UN.length-1?'':'@r'+(i+1)})):[{n:'整首',sx:''}];
+let ui=Math.min(+QS.get('u')||0,UNITS.length-1);const SX=()=>UNITS[ui].sx;
 if(!SONGS.some(x=>x[0]===song))song='';
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>e.classList.remove('on'),1300)}
 function draw(){
   const m=song?pgAll()[song]||{}:{},t=pgToday(),title=(SONGS.find(x=>x[0]===song)||[])[1]||'';
-  document.getElementById('by').textContent=(title?'・'+title:'')+'・v15';
+  document.getElementById('by').textContent=(title?'・'+title:'')+'・v16';
   if(!EMB)document.getElementById('songs').innerHTML=SONGS.map(([k,n])=>`<a href="#${k}" class="${k===song?'on':''}">${n}</a>`).join('');
   const cell=(c,ci)=>{if(Array.isArray(c[0]))return `<div class="pair">${c.map(x=>cell(x,ci)).join('')}</div>`;if(c.length===2)return `<div class="nc gone" title="${esc(c[1])}"><s>${c[0].split('×')[0]}×${c[0].split('×')[1]}</s></div>`;
-    const [id,nm,tip,sn]=c,d=natDays(m,id),last=d[d.length-1],v=natDays(m,'v_'+id),vt=v.includes(t);
-    return `<button data-act="nat" data-s="${id}" class="nc lv${natLv(d.length)}${d.includes(t)?' today':''}${ci===col?' col':''}">${ROUTE[id]?`<b class="rt${ROUTE[id]==='↺'?' fix':''}">${ROUTE[id]}</b>`:''}<span class="pgt">${sn?`<span class="ln">${nm}</span><span class="sn">${sn}</span>`:nm}</span>${d.length?`<small>${d.length} 天・${last.slice(5).replace('-','/')}</small>`:''}<span class="vk${v.length>=3?' grad':v.length?' on':''}${vt?' vt':''}" data-act="natv" data-s="v_${id}">${v.length>=3?'🎓 學會':v.length?'過關 ✓'+v.length:'過關？'}</span></button>`};
-  document.getElementById('nat').innerHTML=`<div class="pgh">${title?esc(title):'先在右上選一首歌'}<small>學歌＝學騎腳踏車。→ 往右：從看別人騎，到自己騎出路線　↓ 往下：輔助越拿越少（有人扶 → 輔助輪 → 什麼都沒有）</small></div>
+    const [id,nm,tip,sn]=c,d=natDays(m,id+SX()),last=d[d.length-1],v=natDays(m,'v_'+id+SX()),vt=v.includes(t);
+    return `<button data-act="nat" data-s="${id}${SX()}" class="nc lv${natLv(d.length)}${d.includes(t)?' today':''}${ci===col?' col':''}">${ROUTE[id]?`<b class="rt${ROUTE[id]==='↺'?' fix':''}">${ROUTE[id]}</b>`:''}<span class="pgt">${sn?`<span class="ln">${nm}</span><span class="sn">${sn}</span>`:nm}</span>${d.length?`<small>${d.length} 天・${last.slice(5).replace('-','/')}</small>`:''}<span class="vk${v.length>=3?' grad':v.length?' on':''}${vt?' vt':''}" data-act="natv" data-s="v_${id}${SX()}">${v.length>=3?'🎓 學會':v.length?'過關 ✓'+v.length:'過關？'}</span></button>`};
+  document.getElementById('nat').innerHTML=`${UNITS.length>1?`<div class="units"><b>練哪一段</b>${UNITS.map((u,i)=>{const n=GRID.flatMap(r=>r.slice(1)).filter(c=>c.length>2&&natDays(m,c[0]+u.sx).length).length;return `<button data-act="unit" data-i="${i}" class="${i===ui?'on':''}">${esc(u.n)}<small>${n}</small></button>`}).join('')}</div>`:''}<div class="pgh">${title?esc(title)+(UNITS.length>1?'・'+esc(UNITS[ui].n):''):'先在右上選一首歌'}<small>學歌＝學騎腳踏車。→ 往右：從看別人騎，到自己騎出路線　↓ 往下：輔助越拿越少（有人扶 → 輔助輪 → 什麼都沒有）</small></div>
   <div class="ngrid${song?'':' ro'}"><span></span>${STAGES.map((s,i)=>`<span class="nh${i===col?' on':''}" data-act="col" data-i="${i}"><span class="nn">${s.num||(i>2?i:i+1)} ${s.n}<small>${s.sub}</small></span><span class="bk">🚲 ${esc(s.bike)}</span><em>過關：${esc(s.test)}</em>${s.fx?`<span class="bt fx">${s.fx}</span>`:`<span class="bt">像是${esc(s.btest)}</span>`}</span>`).join('')}
   ${GRID.map((r,ri)=>`<span class="nl">${r[0]}<small>${['有人扶','輔助輪','全靠自己'][ri]}</small></span>`+r.slice(1).map((c,ci)=>cell(c,ci)).join('')).join('')}</div>`;
   document.getElementById('foot').innerHTML=`<p class="nnote"><span class="route"><b class="k">我的路線：</b><b>1</b>跟唱 → <b>2</b>腦內聽 → <b>3</b>搶先唱 → <b>4</b>腦內補唱 → <b>5</b>腦內歌聲 → <b>6</b>哼唱 → <b>7</b>隨口唱</span><span class="fix"><b class="k">卡住了 → 回 ↔ 哼唱這一欄修：</b>音不準 → <b>↺</b> 跟原唱哼對答案｜唱不順、字卡卡 → 用哼的感受氣流，整句一口氣送出去，再把字放回去（例：知足「總是不能懂…」）｜想不起詞 → 刻意的背架構表</span><b>怎麼用：</b>點格子＝今天有這樣唱過（越多天越亮）。照那一欄的「過關」方法測過，就按格子右邊的「過關？」。不同天過關 3 次＝🎓 學會，像不用人扶也騎得穩。<br><b>浸泡和內化都很安靜，差在哪？</b>像「坐在椅子上看」跟「自己騎著」：音樂一停你就停＝還在看；音樂停了你還在騎＝內化。</p>`;
@@ -160,11 +164,12 @@ function draw(){
 // 從情境頁打開（embed=1）：留在情境頁裡，歌不會停；右上換成「自然｜刻意」切換
 const EMB=/[?&]embed=1/.test(location.search),toParent=t=>parent.postMessage({learn:t},'*');
 if(EMB){document.getElementById('back').href='javascript:void 0';document.getElementById('back').onclick=e=>{e.preventDefault();toParent('close')};
-  const sg=document.getElementById('songs');sg.className='mode';sg.id='modeb';sg.innerHTML='<button class="on">自然</button><button data-act="arc">架構</button><button data-act="deli">刻意</button>';}
+  const sg=document.getElementById('songs');sg.className='mode';sg.id='modeb';sg.innerHTML='<button class="on">自然</button><button data-act="arc">架構</button><button data-act="deli">場合</button>';}
 document.getElementById('spots').innerHTML=STAGES.map((s,i)=>!s.spot?'':`<button class="spot" data-act="col" data-i="${i}" style="left:${s.spot.x}%;top:${s.spot.y}%"><i></i><b>${s.num||(i>2?i:i+1)} ${s.n}</b></button>`).join('');
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;
   if(act==='deli'){toParent('deli');return}
   if(act==='arc'){toParent('arc');return}
+  if(act==='unit'){ui=+a.dataset.i;draw();return}
   if(act==='col'){col=+a.dataset.i===col?-1:+a.dataset.i;draw();}
   else if(!song)toast('先選一首歌');
   else if(act==='natv'){toast(natTap(song,a.dataset.s)?'今天過關了 ✓':'取消今天這次過關');draw()}
