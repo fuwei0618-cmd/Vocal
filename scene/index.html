@@ -461,7 +461,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=102;
+const VER=103;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -764,6 +764,7 @@ function openMenu(){
 // 刻意練習（11-05 整理）：準備 → 檢查 → 上台。背架構、情境歌詞搬到「架構」序列
 const PG=[['tap','句對拍','準備：每一句對到拍子，情境圖才會跟著歌走'],['rec','錄音回聽','檢查：錄下來聽，哪裡不準、哪裡不順'],['acap','清唱整首','上台前：不靠伴奏，從頭唱到尾'],['ppl','場域','上台：上課、朋友 KTV'],['sv','SV','上台：街演']];
 // 架構序列：先把第一輪（主歌＋副歌）練熟，再記後面每一輪跟第一輪差在哪
+function arcMig(k){const a=pgAll(),m=a[k];if(!m)return;let ch=0;[['map','a_chain'],['lyr','a_all']].forEach(([o,n])=>{if(m[o]&&!m[n]){m[n]=m[o];ch=1}});if(ch)try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}}
 function arcSteps(){const sc=SCENES[key],st=sc.steps,R=sc.rounds||[];
   const pos=blocks&&blocks.length===st.length?tocGrid():st.map((x,i)=>({c:0,r:i})),C=Math.max(...pos.map(p=>p.c))+1;
   const col=k=>st.map((x,i)=>i).filter(i=>pos[i].c===k),w=i=>st[i].word,ws=L=>L.map(w).join('・');
@@ -778,8 +779,8 @@ function arcSteps(){const sc=SCENES[key],st=sc.steps,R=sc.rounds||[];
         const same=blocks&&blocks[i]&&blocks[j]&&blocks[i].join('').replace(/\s/g,'')===blocks[j].join('').replace(/\s/g,'');
         return j==null?`${w(i)}：新的段落（${st[i].sec}）`:same?(w(j)===w(i)?`${w(i)}：跟第一輪一樣（同旋律、同歌詞）`:`${w(i)}：跟「${w(j)}」同旋律、同歌詞，只有唱法不同`):w(j)===w(i)?`${w(i)}：跟第一輪的「${w(j)}」同旋律，詞有小改（對照看哪幾個字不同）`:`${w(i)}：用「${w(j)}」的旋律，換新的詞`});
       out.push({id:'a_r'+(k+1),t:`記${rt(k)}的差別：${ws(L)}`,d:[R[k]&&R[k].s,...diff,R[k]&&R[k].v?'唱法：'+R[k].v:''].filter(Boolean),x:'過關：說得出這一輪跟第一輪哪裡不一樣'});}}
-  out.push({id:'a_chain',t:'串成一條鏈',d:[Array.from({length:C},(_,k)=>ws(col(k))).join('｜'),'用架構表的「回想」：蓋起來，一段一段說出來。'],x:'過關：蓋起來說得出整首順序',map:1});
-  out.push({id:'a_all',t:'看圖唱完整首',d:['一頁模式，只看情境圖和物件，不看歌詞。'],x:'過關：不看歌詞，從頭唱到尾'});
+  out.push({id:'a_chain',t:'串成一條鏈',d:[Array.from({length:C},(_,k)=>ws(col(k))).join('｜'),'用架構表的「回想」：蓋起來，一段一段說出來。'],x:'過關：蓋起來說得出整首順序',map:1,old:'map'});
+  out.push({id:'a_all',t:'看圖唱完整首',d:['一頁模式，只看情境圖和物件，不看歌詞。'],x:'過關：不看歌詞，從頭唱到尾',old:'lyr'});
   return out}
 const modeSeg=on=>`<div class="pgmode"><button data-act="natopen">自然</button><button data-act="arcopen" class="${on==='arc'?'on':''}">架構</button><button data-act="pg" class="${on==='pg'?'on':''}">刻意</button></div>`;
 function openArc(){
@@ -799,7 +800,7 @@ const natLv=n=>n>=5?3:n>=2?2:n?1:0;
 function natTap(k,id){const a=pgAll(),m=a[k]||(a[k]={}),t=pgToday();let d=natDays(m,id).slice();d=d.includes(t)?d.filter(x=>x!==t):d.concat(t);if(d.length)m[id]=d;else delete m[id];try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}return d.includes(t)}
 function pgAll(){try{return JSON.parse(localStorage.getItem('scene-prog-v1'))||{}}catch(e){return {}}}
 function pgToggle(k,id){const a=pgAll(),m=a[k]||(a[k]={});if(m[id])delete m[id];else{const d=new Date();m[id]=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}}
-function pgPills(k){const m=pgAll()[k]||{};return `<button class="pgpill" data-act="natopen">自然 ${PGN.filter(([id])=>natDays(m,id).length).length}/${PGN.length}</button><button class="pgpill" data-act="arcopen">架構 ${arcSteps().filter(x=>m[x.id]).length}/${arcSteps().length}</button><button class="pgpill" data-act="pg">刻意 ${PG.filter(([id])=>m[id]).length}/${PG.length}</button>`}
+function pgPills(k){arcMig(k);const m=pgAll()[k]||{};return `<button class="pgpill" data-act="natopen">自然 ${PGN.filter(([id])=>natDays(m,id).length).length}/${PGN.length}</button><button class="pgpill" data-act="arcopen">架構 ${arcSteps().filter(x=>m[x.id]).length}/${arcSteps().length}</button><button class="pgpill" data-act="pg">刻意 ${PG.filter(([id])=>m[id]).length}/${PG.length}</button>`}
 function pgRefresh(){const b=document.querySelector('.bar .pgpills');if(b)b.innerHTML=pgPills(key)}
 // 自然養成＝學歌地圖，用 iframe 疊在情境頁上：頁面沒換，音樂照放
 function openNat(){closeMenu();closeNat();const f=document.createElement('div');f.id='natf';f.innerHTML=`<iframe src="learn.html?v=15&embed=1#${key}" title="學歌地圖"></iframe>`;document.body.appendChild(f)}
@@ -1343,6 +1344,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=102"></script>
+<script src="studio.js?v=103"></script>
 </body>
 </html>
