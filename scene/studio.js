@@ -60,7 +60,7 @@ async function sReloadKey(){
   if(!S)return;sMsg('');sHint(`現在是 ${keyTxt(getKey())}`);if(was)sPlay(p);
 }
 // 重複範圍跟外面同步：錄音室🔁開著＋有選範圍＝外面也重複同樣幾段
-function sSyncLoop(){if(S.sel&&S.loop){loopSec=secAt(S.sel[0]+.05);loopEnd=Math.max(loopSec,secAt(S.sel[1]-.3))}else loopSec=loopEnd=-1}
+function sSyncLoop(){loopA=loopB=null;if(S.sel&&S.loop){loopSec=secAt(S.sel[0]+.05);loopEnd=Math.max(loopSec,secAt(S.sel[1]-.3))}else loopSec=loopEnd=-1}
 function sHqBtn(){const b=document.getElementById('s-hq');if(b)b.classList.toggle('on',lsGet('scene-hq-v1')==='1')}
 function toMono(b){const o=S.ctx.createBuffer(1,b.length,b.sampleRate),d=o.getChannelData(0),c0=b.getChannelData(0),c1=b.getChannelData(1);for(let i=0;i<b.length;i++)d[i]=(c0[i]+c1[i])/2;return o}
 function closeStudio(){

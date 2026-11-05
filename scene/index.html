@@ -216,6 +216,8 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 .prog .knob{position:absolute;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#fff;box-shadow:0 0 8px rgba(0,0,0,.6)}
 .prog .tick{position:absolute;top:-4px;width:2px;height:11px;margin-left:-1px;background:rgba(242,194,123,.5);border-radius:1px}
 .prog .tick.on{background:var(--glow);box-shadow:0 0 6px var(--glow)}
+.prog .lr{position:absolute;top:-3px;height:9px;background:rgba(120,190,255,.28);border-radius:3px;pointer-events:none}
+.prog .lh{position:absolute;top:50%;width:26px;height:30px;margin:-15px 0 0 -13px;cursor:ew-resize;touch-action:none;z-index:2}.prog .lh::after{content:'';position:absolute;left:11px;top:3px;width:4px;height:24px;border-radius:2px;background:#8fc9ff;box-shadow:0 0 6px rgba(0,0,0,.6)}
 .prog .tm{position:absolute;right:0;top:-6px;font-size:11px;font-variant-numeric:tabular-nums;color:var(--muted)}
 .ctl{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;max-width:920px;margin:0 auto}
 .ctl .l,.ctl .r{display:flex;gap:8px;align-items:center;min-width:0}.ctl .r{justify-content:flex-end}
@@ -475,7 +477,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=106;
+const VER=107;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -628,7 +630,7 @@ app.addEventListener('click',e=>{
     else if(act==='base'){setBase(a.dataset.to);openMenu();sync()}
     else if(act==='pen')startDraw();
     else if(act==='mic'||act==='take')openStudio();
-    else if(act==='loop'){loopSec=loopEnd=loopSec>=0?-1:cur;drawPlayer();hint(loopSec>=0?`重複播：${loopName()}`:'不重複了');hintT=setTimeout(()=>hint(''),1800);if(loopSec>=0&&au){const [x,y]=loopRange();if(au.currentTime<x||au.currentTime>y)au.currentTime=x;if(!raf&&!au.paused)raf=requestAnimationFrame(tick)}}
+    else if(act==='loop'){loopA=loopB=null;loopSec=loopEnd=loopSec>=0?-1:cur;drawPlayer();hint(loopSec>=0?`重複播：${loopName()}`:'不重複了');hintT=setTimeout(()=>hint(''),1800);if(loopSec>=0&&au){const [x,y]=loopRange();if(au.currentTime<x||au.currentTime>y)au.currentTime=x;if(!raf&&!au.paused)raf=requestAnimationFrame(tick)}}
     else if(act==='pdone')stopDraw();
     else if(act==='pcol'){pen=+a.dataset.i;drawTools()}
     else if(act==='pundo')undoInk();
@@ -721,7 +723,7 @@ function drawPlayer(){
   const ctl=document.getElementById('ctl'),rail=document.getElementById('rail');if(!ctl||!rail)return;
   const sc=SCENES[key],n=sc.steps.length,t=getTimes(),dur=au&&isFinite(au.duration)?au.duration:0;
   document.getElementById('prog').classList.toggle('off',!au);
-  rail.innerHTML=(dur?t.map((x,i)=>x!=null&&i>0?`<i class="tick${i===cur?' on':''}" style="left:${(x/dur*100).toFixed(2)}%"></i>`:'').join(''):'')+'<b class="fill" id="pfill"></b><b class="knob" id="pknob"></b>';
+  rail.innerHTML=(dur?t.map((x,i)=>x!=null&&i>0?`<i class="tick${i===cur?' on':''}" style="left:${(x/dur*100).toFixed(2)}%"></i>`:'').join(''):'')+'<b class="fill" id="pfill"></b><b class="knob" id="pknob"></b>'+(dur&&loopSec>=0?'<b class="lr" id="lr"></b><b class="lh" data-h="a" id="lha"></b><b class="lh" data-h="b" id="lhb"></b>':'');loopUI();
   if(rec){ctl.innerHTML=`<div class="recbar"><b>● 對拍中</b><span>唱到每句開頭點一下螢幕</span><button data-act="rback">↶ 退一句</button><button data-act="rec" class="done">完成</button></div>`;updateProg();return}
   const mb=`<button data-act="mute" class="${muted?'on':''}">靜音</button>`;
   const sw=au?(have.inst&&have.orig?`<div class="seg" role="group" aria-label="原曲、伴奏或靜音"><button data-act="track" data-to="orig" class="${track==='orig'&&!muted?'on':''}">原曲</button><button data-act="track" data-to="inst" class="${track==='inst'&&!muted?'on':''}">伴奏</button>${mb}</div>`:`<div class="seg"><button data-act="track" data-to="${track}" class="${muted?'':'on'}">${TRACK[track]}</button>${mb}</div>`):'';
@@ -730,6 +732,8 @@ function drawPlayer(){
   ctl.innerHTML=`<div class="l">${sw}${chips}<span class="cnt">${cur+1} / ${n}</span></div><div class="c">${mid}</div><div class="r">${au?'<button data-act="plhide" aria-label="收起播放列" class="plh">⌄</button><button data-act="mic" aria-label="錄音" class="micb">🎙</button>':''}<button data-act="pen" aria-label="畫筆">✏️</button><button data-act="toc" aria-label="整首歌詞">☰</button></div>`;
   updateProg();
 }
+function loopUI(){const r=document.getElementById('lr');if(!r||!au)return;const d=au.duration,[a,b]=loopRange(),A=a/d*100,B=Math.min(100,b/d*100);
+  r.style.left=A+'%';r.style.width=(B-A)+'%';document.getElementById('lha').style.left=A+'%';document.getElementById('lhb').style.left=B+'%'}
 function updateProg(){
   const tm=document.getElementById('ptime');if(!au){if(tm)tm.textContent='';return}
   const d=isFinite(au.duration)?au.duration:0,f=d?Math.min(100,au.currentTime/d*100):0;
@@ -744,7 +748,13 @@ app.addEventListener('pointerdown',e=>{if(e.target.closest('#player'))wakePlayer
 // 拖進度條
 let dragging=false;
 function seekAt(e){const pr=document.getElementById('prog');if(!pr||!au||!isFinite(au.duration))return;const r=pr.getBoundingClientRect();const f=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));au.currentTime=f*au.duration;browsing=0;updateProg();sync()}
-app.addEventListener('pointerdown',e=>{const pr=e.target.closest('#prog');if(!pr||!au||rec)return;dragging=true;try{pr.setPointerCapture(e.pointerId)}catch(_){}seekAt(e)});
+// 重複範圍：拉進度條上的兩個把手調頭尾（段落選的也可以再微調）
+let lhDrag=null;
+app.addEventListener('pointerdown',e=>{const h=e.target.closest('.lh');if(!h||!au)return;e.stopPropagation();const [a,b]=loopRange();loopA=a;loopB=b;lhDrag=h.dataset.h;try{h.setPointerCapture(e.pointerId)}catch(_){}},true);
+app.addEventListener('pointermove',e=>{if(!lhDrag)return;const pr=document.getElementById('prog'),r=pr.getBoundingClientRect(),t=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*au.duration;
+  if(lhDrag==='a')loopA=Math.min(t,loopB-1);else loopB=Math.max(t,loopA+1);loopUI();hint(`重複：${loopName()}`)});
+['pointerup','pointercancel'].forEach(t=>app.addEventListener(t,()=>{if(!lhDrag)return;lhDrag=null;if(au&&(au.currentTime<loopA||au.currentTime>loopB))au.currentTime=loopA;clearTimeout(hintT);hintT=setTimeout(()=>hint(''),1500)}));
+app.addEventListener('pointerdown',e=>{const pr=e.target.closest('#prog');if(!pr||!au||rec||lhDrag||e.target.closest('.lh'))return;dragging=true;try{pr.setPointerCapture(e.pointerId)}catch(_){}seekAt(e)});
 app.addEventListener('pointermove',e=>{if(dragging)seekAt(e)});
 ['pointerup','pointercancel'].forEach(t=>app.addEventListener(t,()=>{dragging=false}));
 // 「⋯」設定：音樂、對拍、歌詞，平常用不到的都放這裡
@@ -995,10 +1005,11 @@ app.addEventListener('change',async e=>{
 });
 /* ---------- 錄音：存在這台裝置，錄音室畫面在 studio.js ---------- */
 // 每次錄音都留著（<song>|takes），同一個時間點用最新錄的那次
-var muted=false;let takes=[],loopSec=-1,loopEnd=-1,raf=0;
+var muted=false,loopA=null,loopB=null;let takes=[],loopSec=-1,loopEnd=-1,raf=0;
 // 重複範圍（外面和錄音室共用）：第 loopSec 段到第 loopEnd 段，-1＝沒有重複
-function loopRange(){const a=secRange(loopSec)[0],b=secRange(Math.max(loopSec,loopEnd))[1];return [a,b]}
-function loopName(){const st=SCENES[key].steps,e=Math.max(loopSec,loopEnd);return e>loopSec?`第 ${loopSec+1}～${e+1} 段`:st[loopSec].sec}
+// loopA/loopB：手拉進度條上的頭尾（秒），有拉過就用拉的，沒拉就用段落
+function loopRange(){if(loopA!=null&&loopB!=null)return [loopA,loopB];const a=secRange(loopSec)[0],b=secRange(Math.max(loopSec,loopEnd))[1];return [a,b]}
+function loopName(){if(loopA!=null)return `${mmss(loopA)}～${mmss(loopB)}`;const st=SCENES[key].steps,e=Math.max(loopSec,loopEnd);return e>loopSec?`第 ${loopSec+1}～${e+1} 段`:st[loopSec].sec}
 const MIXKEY='scene-mix-v1';
 function mix(){let m={};try{m=JSON.parse(localStorage.getItem(MIXKEY)||'{}')||{}}catch(e){}return Object.assign({me:1,song:1,hp:false},m)}
 function setMix(o){const m=Object.assign(mix(),o);try{localStorage.setItem(MIXKEY,JSON.stringify(m))}catch(e){}return m}
@@ -1009,13 +1020,19 @@ async function loadTakes(){
 }
 async function saveTakes(){try{await putFile(key+'|takes',takes)}catch(e){alert('這台裝置空間不夠，錄音沒存到')}}
 let actx=null;
-function audioCtx(){if(!actx){const C=window.AudioContext||window.webkitAudioContext;actx=new C()}if(actx.state==='suspended')actx.resume();return actx}
+function audioCtx(){if(!actx){try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}const C=window.AudioContext||window.webkitAudioContext;actx=new C();bgSetup()}if(actx.state==='suspended')actx.resume();return actx}
 function secRange(i){const t=getTimes(),d=au&&isFinite(au.duration)?au.duration:1e9;return [t[i]!=null?t[i]:0,t[i+1]!=null?t[i+1]:d]}
 function secAt(x){const t=getTimes();let k=0;t.forEach((v,j)=>{if(v!=null&&x>=v-.05)k=j});return k}
+// 背景播放：iPad 切到別的 App 或鎖螢幕時盡量繼續播（audioSession＝播放），回來時把聲音叫醒；鎖定畫面可以播放／暫停
+function bgSetup(){
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&actx&&actx.state!=='running'&&au&&!au.paused)actx.resume()});
+  setInterval(()=>{if(document.hidden){cancelAnimationFrame(raf);tick()}},250);   // 背景時畫面不更新，重複範圍改用計時器檢查
+  if('mediaSession' in navigator){try{navigator.mediaSession.metadata=new MediaMetadata({title:SCENES[key].title,artist:SCENES[key].artist||''});
+    navigator.mediaSession.setActionHandler('play',()=>{if(au){au.play();drawPlayer()}});navigator.mediaSession.setActionHandler('pause',()=>{if(au){au.pause();drawPlayer()}})}catch(e){}}}
 // 🔁 重複目前這段：播放中每一格畫面檢查有沒有唱到段尾
 function tick(){
   raf=0;if(!au||au.paused||loopSec<0)return;const t=au.currentTime,[a,b]=loopRange();
-  if(t<a-1.5||t>b+1.5)loopSec=loopEnd=secAt(t);else if(t>=b-.04)au.currentTime=a;
+  if(t<a-1.5||t>b+1.5){loopA=loopB=null;loopSec=loopEnd=secAt(t);drawPlayer()}else if(t>=b-.04)au.currentTime=a;
   raf=requestAnimationFrame(tick);
 }
 function hookAu(){au.addEventListener('play',()=>{if(!raf)raf=requestAnimationFrame(tick)})}
@@ -1374,6 +1391,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=106"></script>
+<script src="studio.js?v=107"></script>
 </body>
 </html>
