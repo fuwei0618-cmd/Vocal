@@ -289,7 +289,7 @@ body.pl-hide .prog{transform:translateY(calc(66px + env(safe-area-inset-bottom,0
 .mrow{display:flex;align-items:center;gap:10px}.mrow span{flex:1;font-size:15px}.mrow span small{display:block;color:var(--muted);font-size:11.5px}
 .mrow em{font-style:normal;color:var(--glow);font-size:12px}
 .sheet button:disabled{opacity:.4}
-@media (max-width:640px){.hint{bottom:calc(env(safe-area-inset-bottom,0px) + 118px)}.player{right:0;bottom:0}.player .ctl .c{gap:4px}.player .ctl .c .pp{width:50px;height:50px}.player .ctl .r button{width:36px;height:36px}.ctl .cnt{display:none}.kbar button{width:24px}.kbar b{min-width:2.2em;font-size:11px}.kbar i{display:none}.ctl .l{gap:5px}.player .ctl .r .plh{position:absolute;left:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 58px)}.ctl{grid-template-columns:1fr auto}.ctl .seg{flex-shrink:0}}
+@media (max-width:640px){.player .seg button{padding:6px 7px;font-size:12px}.hint{bottom:calc(env(safe-area-inset-bottom,0px) + 118px)}.player{right:0;bottom:0}.player .ctl .c{gap:4px}.player .ctl .c .pp{width:50px;height:50px}.player .ctl .r button{width:33px;height:33px}.ctl .r{gap:4px}.ctl .cnt{display:none}.kbar button{width:20px}.kbar b{min-width:2.2em;font-size:11px}.kbar i{display:none}.ctl .l{gap:5px}.player .ctl .r .plh{position:absolute;left:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 58px)}.ctl{grid-template-columns:1fr auto}.ctl .seg{flex-shrink:0}}
 button:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
 /* 直的手機：圖在上面一整張，歌詞在圖下面 */
 @media (orientation:portrait){
@@ -457,7 +457,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=94;
+const VER=95;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -581,7 +581,8 @@ app.addEventListener('click',e=>{
     else if(act==='cancel'){editing=false;render()}
     else if(act==='prev'){if(au){au.currentTime=Math.max(0,au.currentTime-5);updateProg();sync()}else step(cur-1)}
     else if(act==='audio'){const f=document.getElementById('afile');f.dataset.for=a.dataset.for;f.value='';f.click()}
-    else if(act==='track'){if(a.dataset.to!==track)switchTrack()}
+    else if(act==='track'){const um=muted;if(muted){muted=false;if(au)au.setMute()}if(a.dataset.to!==track)switchTrack();else if(um)drawPlayer()}
+    else if(act==='mute'){muted=!muted;if(au)au.setMute();drawPlayer();hint(muted?'靜音：歌照樣跑，你在腦中唱':'聲音回來了');clearTimeout(hintT);hintT=setTimeout(()=>hint(''),1800)}
     else if(act==='next'){if(au){au.currentTime=Math.min(au.duration||1e9,au.currentTime+5);updateProg();sync()}else step(cur+1)}
     else if(act==='menu')openMenu();
     else if(act==='pg')openPg();
@@ -701,7 +702,8 @@ function drawPlayer(){
   document.getElementById('prog').classList.toggle('off',!au);
   rail.innerHTML=(dur?t.map((x,i)=>x!=null&&i>0?`<i class="tick${i===cur?' on':''}" style="left:${(x/dur*100).toFixed(2)}%"></i>`:'').join(''):'')+'<b class="fill" id="pfill"></b><b class="knob" id="pknob"></b>';
   if(rec){ctl.innerHTML=`<div class="recbar"><b>● 對拍中</b><span>唱到每句開頭點一下螢幕</span><button data-act="rback">↶ 退一句</button><button data-act="rec" class="done">完成</button></div>`;updateProg();return}
-  const sw=au?(have.inst&&have.orig?`<div class="seg" role="group" aria-label="原曲或伴奏"><button data-act="track" data-to="orig" class="${track==='orig'?'on':''}">原曲</button><button data-act="track" data-to="inst" class="${track==='inst'?'on':''}">伴奏</button></div>`:`<span class="lab">${TRACK[track]}</span>`):'';
+  const mb=`<button data-act="mute" class="${muted?'on':''}">靜音</button>`;
+  const sw=au?(have.inst&&have.orig?`<div class="seg" role="group" aria-label="原曲、伴奏或靜音"><button data-act="track" data-to="orig" class="${track==='orig'&&!muted?'on':''}">原曲</button><button data-act="track" data-to="inst" class="${track==='inst'&&!muted?'on':''}">伴奏</button>${mb}</div>`:`<div class="seg"><button data-act="track" data-to="${track}" class="${muted?'':'on'}">${TRACK[track]}</button>${mb}</div>`):'';
   const mid=`<button data-act="prev" aria-label="倒退 5 秒" class="sk">${au?'↺5':'⏮'}</button>`+(au?`<button data-act="play" class="pp" aria-label="${au.paused?'播放':'暫停'}">${au.paused?'▶':'❚❚'}</button>`:`<button data-act="menu" class="add">＋ 放音樂</button>`)+`<button data-act="next" aria-label="快轉 5 秒" class="sk">${au?'5↻':'⏭'}</button>`;
   const chips=au?`<button data-act="loop" class="chip${loopSec>=0?' on':''}" aria-label="重複這段">🔁</button><span class="kbar" role="group" aria-label="升降 Key"><button data-act="key" data-d="-1" aria-label="降半音">−</button><b id="keyb">${keyHtml(getKey())}</b><button data-act="key" data-d="1" aria-label="升半音">＋</button></span>`:'';
   ctl.innerHTML=`<div class="l">${sw}${chips}<span class="cnt">${cur+1} / ${n}</span></div><div class="c">${mid}</div><div class="r">${au?'<button data-act="plhide" aria-label="收起播放列" class="plh">⌄</button><button data-act="mic" aria-label="錄音" class="micb">🎙</button>':''}<button data-act="pen" aria-label="畫筆">✏️</button><button data-act="toc" aria-label="整首歌詞">☰</button></div>`;
@@ -811,7 +813,7 @@ class Player extends EventTarget{
   _start(at,t1){
     this._stop();const ctx=audioCtx(),t0=t1||ctx.currentTime+.03,me=shiftFor(this.tr);
     for(const [tr,b] of Object.entries(this.bufs)){
-      const off=at-me+shiftFor(tr),g=ctx.createGain();g.gain.value=tr===this.tr?1:0;g.connect(ctx.destination);this.g[tr]=g;
+      const off=at-me+shiftFor(tr),g=ctx.createGain();g.gain.value=tr===this.tr&&!muted?1:0;g.connect(ctx.destination);this.g[tr]=g;
       const s=ctx.createBufferSource();s.buffer=b;s.connect(g);
       if(off>=0){if(off<b.duration)s.start(t0,off)}else s.start(t0-off,0);
       if(tr===this.tr)s.onended=()=>{if(this.srcs.includes(s)&&!this.paused&&this.currentTime>=this.duration-.1){this._stop();this.paused=true;this.pos=this.duration;this.dispatchEvent(new Event('pause'));this.dispatchEvent(new Event('ended'))}};
@@ -826,10 +828,12 @@ class Player extends EventTarget{
   handoff(T){if(this.paused)return;this.pos=this.currentTime;const g=this.g;this.srcs.forEach(s=>{s.onended=null;try{s.stop(T)}catch(e){}});
     setTimeout(()=>Object.values(g).forEach(x=>{try{x.disconnect()}catch(e){}}),500);this.srcs=[];this.g={};clearInterval(this.tu);this.paused=true;this.dispatchEvent(new Event('pause'))}
   pause(){if(this.paused)return;this.pos=this.currentTime;this._stop();this.paused=true;this.dispatchEvent(new Event('pause'))}
+  // 靜音：歌照樣在跑（時間、歌詞都跟著走），只是聽不到
+  setMute(){const t=actx?actx.currentTime:0;for(const [tr,g] of Object.entries(this.g)){g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(g.gain.value,t);g.gain.linearRampToValueAtTime(tr===this.tr&&!muted?1:0,t+.06)}}
   use(to,shFrom,shTo){
     if(this.paused){this.pos=Math.max(0,this.pos-shFrom+shTo);this.tr=to;return}
     const now=this.currentTime,ctx=actx,t=ctx.currentTime;
-    for(const [tr,g] of Object.entries(this.g)){g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(g.gain.value,t);g.gain.linearRampToValueAtTime(tr===to?1:0,t+.04)}
+    for(const [tr,g] of Object.entries(this.g)){g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(g.gain.value,t);g.gain.linearRampToValueAtTime(tr===to&&!muted?1:0,t+.04)}
     // 時鐘換成新那軌的時間
     this.from=now-shFrom+shTo;this.T=t;this.tr=to;
     const s=this.srcs[Object.keys(this.bufs).indexOf(to)];
@@ -929,7 +933,7 @@ app.addEventListener('change',async e=>{
 });
 /* ---------- 錄音：存在這台裝置，錄音室畫面在 studio.js ---------- */
 // 每次錄音都留著（<song>|takes），同一個時間點用最新錄的那次
-let takes=[],loopSec=-1,loopEnd=-1,raf=0;
+var muted=false;let takes=[],loopSec=-1,loopEnd=-1,raf=0;
 // 重複範圍（外面和錄音室共用）：第 loopSec 段到第 loopEnd 段，-1＝沒有重複
 function loopRange(){const a=secRange(loopSec)[0],b=secRange(Math.max(loopSec,loopEnd))[1];return [a,b]}
 function loopName(){const st=SCENES[key].steps,e=Math.max(loopSec,loopEnd);return e>loopSec?`第 ${loopSec+1}～${e+1} 段`:st[loopSec].sec}
@@ -1307,6 +1311,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=94"></script>
+<script src="studio.js?v=95"></script>
 </body>
 </html>
