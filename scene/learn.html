@@ -145,7 +145,7 @@ if(!SONGS.some(x=>x[0]===song))song='';
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>e.classList.remove('on'),1300)}
 function draw(){
   const m=song?pgAll()[song]||{}:{},t=pgToday(),title=(SONGS.find(x=>x[0]===song)||[])[1]||'';
-  document.getElementById('by').textContent=(title?'・'+title:'')+'・v14';
+  document.getElementById('by').textContent=(title?'・'+title:'')+'・v15';
   if(!EMB)document.getElementById('songs').innerHTML=SONGS.map(([k,n])=>`<a href="#${k}" class="${k===song?'on':''}">${n}</a>`).join('');
   const cell=(c,ci)=>{if(Array.isArray(c[0]))return `<div class="pair">${c.map(x=>cell(x,ci)).join('')}</div>`;if(c.length===2)return `<div class="nc gone" title="${esc(c[1])}"><s>${c[0].split('×')[0]}×${c[0].split('×')[1]}</s></div>`;
     const [id,nm,tip,sn]=c,d=natDays(m,id),last=d[d.length-1],v=natDays(m,'v_'+id),vt=v.includes(t);
@@ -160,10 +160,11 @@ function draw(){
 // 從情境頁打開（embed=1）：留在情境頁裡，歌不會停；右上換成「自然｜刻意」切換
 const EMB=/[?&]embed=1/.test(location.search),toParent=t=>parent.postMessage({learn:t},'*');
 if(EMB){document.getElementById('back').href='javascript:void 0';document.getElementById('back').onclick=e=>{e.preventDefault();toParent('close')};
-  const sg=document.getElementById('songs');sg.className='mode';sg.id='modeb';sg.innerHTML='<button class="on">自然</button><button data-act="deli">刻意</button>';}
+  const sg=document.getElementById('songs');sg.className='mode';sg.id='modeb';sg.innerHTML='<button class="on">自然</button><button data-act="arc">架構</button><button data-act="deli">刻意</button>';}
 document.getElementById('spots').innerHTML=STAGES.map((s,i)=>!s.spot?'':`<button class="spot" data-act="col" data-i="${i}" style="left:${s.spot.x}%;top:${s.spot.y}%"><i></i><b>${s.num||(i>2?i:i+1)} ${s.n}</b></button>`).join('');
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;
   if(act==='deli'){toParent('deli');return}
+  if(act==='arc'){toParent('arc');return}
   if(act==='col'){col=+a.dataset.i===col?-1:+a.dataset.i;draw();}
   else if(!song)toast('先選一首歌');
   else if(act==='natv'){toast(natTap(song,a.dataset.s)?'今天過關了 ✓':'取消今天這次過關');draw()}
