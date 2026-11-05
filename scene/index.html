@@ -162,7 +162,7 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 .bar{align-items:center}
 .bar .keyc{margin-left:6px;color:#ffd36b;font-weight:600}.keyc:empty{display:none}.keyseg b{min-width:4.2em;text-align:center;font-weight:600}
 .pgh{margin:10px 2px 6px;color:var(--glow);font-size:13px;font-weight:600}.pgh small{margin-left:8px;color:var(--muted);font-weight:400;font-size:11px}
-@media (min-width:700px){.menu-sheet .pgl{display:grid;grid-template-columns:1fr 1fr;gap:8px}}
+@media (min-width:700px){.menu-sheet .pgl{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.menu-sheet .pgl button{flex-direction:column;align-items:flex-start;border-radius:14px}.menu-sheet .pgl small{text-align:center}.menu-sheet .pgl button{align-items:center}}
 .pgl .pgt{white-space:nowrap}.menu-sheet .pgl small{text-align:right}
 .ngrid{display:grid;grid-template-columns:2.8em repeat(4,1fr);gap:8px;align-items:stretch}.nh{font-size:12px;color:var(--ink);text-align:center;font-weight:600}.nh small{display:block;font-size:10.5px;color:var(--muted);font-weight:400}.nl{font-size:12px;color:var(--muted);align-self:center}
 #menu .nc.gone{opacity:.55;border-style:dashed;background:none}#menu .nc.gone s{font-size:12px;color:var(--muted);text-decoration-color:rgba(255,120,110,.8)}
@@ -186,7 +186,17 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 #natf{position:fixed;inset:0;z-index:60;background:#0b0b0b}#natf iframe{width:100%;height:100%;border:0;display:block}
 .flow{display:grid;gap:4px}.flow small{color:var(--muted);font-size:12px}.flow div{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.flow span{padding:5px 10px;border-radius:99px;border:1px solid var(--line);font-size:13px;color:var(--muted)}.flow span.ok{color:var(--glow);border-color:rgba(242,194,123,.5);background:rgba(242,194,123,.1)}.flow i{font-style:normal;color:var(--muted)}
 .arcnat{font-style:normal;font-size:12.5px;color:var(--glow);margin-top:4px;padding:5px 10px;border:1px solid rgba(242,194,123,.45);border-radius:99px;width:max-content;max-width:100%}
-.sheet.wide{max-width:min(1040px,100%)}.arcr{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:8px}.arcr button{flex-direction:column}.arcr button>b{margin-bottom:2px}
+.sheet.wide{max-width:min(1040px,100%)}
+#arcf{position:fixed;inset:0;z-index:60;background:#0b0b0b;display:flex;flex-direction:column;color:var(--ink)}
+#arcf .abg{position:absolute;inset:0;background-size:cover;background-position:center;filter:brightness(.55)}
+#arcf .abar{position:relative;display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;background:rgba(10,8,6,.75)}
+#arcf .abar button[data-act=arcx]{background:none;border:0;color:var(--muted);font:inherit;font-size:14px;cursor:pointer}#arcf .abar h2{margin:0;font-family:var(--display);font-size:20px}#arcf .abar span{color:var(--muted);font-size:13px}
+#arcf .abar .lmap{margin-left:auto;float:none}#arcf .abar .pgmode{margin:0}
+#arcf .awrap{position:relative;flex:1;min-height:0;overflow-y:auto;padding:12px 16px calc(env(safe-area-inset-bottom,0px) + 14px);display:flex;flex-direction:column;gap:8px}
+#arcf .ahint{font-size:12px;color:var(--muted);text-shadow:0 1px 4px #000}
+#arcf .arcl{gap:.6em}#arcf .arcl button{background:rgba(14,11,8,.72);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);padding:.7em .9em;font-size:inherit}#arcf .arcl button.on{background:rgba(60,45,22,.8)}
+#arcf .arcl .pgt{font-size:1.1em}#arcf .arcl small,#arcf .arcl em{font-size:.88em}#arcf .arcnat{font-size:.9em}
+@media (max-width:700px){#arcf .abar{flex-wrap:wrap}#arcf .abar .pgmode{flex-basis:auto}}.arcr{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:8px}.arcr button{flex-direction:column}.arcr button>b{margin-bottom:2px}
 @media (max-width:700px){.arcr{grid-template-columns:1fr}.arcr button{flex-direction:row}}
 .arcl{display:grid;gap:8px}.arcl button{display:flex;gap:12px;align-items:flex-start;text-align:left;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--ink);font:inherit;cursor:pointer}
 .arcl button>b{flex:none;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:12px;color:var(--muted)}.arcl button.on>b{background:var(--glow);color:#1a1612;border-color:var(--glow)}
@@ -465,7 +475,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=105;
+const VER=106;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -598,7 +608,8 @@ app.addEventListener('click',e=>{
     else if(act==='natv'){e.stopPropagation();const on=natTap(key,a.dataset.s);openPg();hint(on?'今天考過了 ✓':'取消今天這次考試');hintT=setTimeout(()=>hint(''),1200)}
     else if(act==='nat'){const on=natTap(key,a.dataset.s);openPg();pgRefresh();hint(on?'點亮了':'取消今天這次');hintT=setTimeout(()=>hint(''),1200)}
     else if(act==='pgs'){pgToggle(key,a.dataset.s);openPg();pgRefresh()}
-    else if(act==='arcs'){pgToggle(key,a.dataset.s);openArc();pgRefresh()}
+    else if(act==='arcs'){pgToggle(key,a.dataset.s);openArc()}
+    else if(act==='arcx'){closeArc();wakePlayer()}
     else if(act==='arcopen')openArc();
     else if(act==='mclose')closeMenu();
     else if(act==='rback')tapLine(true);
@@ -610,7 +621,7 @@ app.addEventListener('click',e=>{
     else if(act==='op'){try{localStorage.setItem('scene-op-v1',onePage()?'0':'1')}catch(e){}render()}
     else if(act==='tocmode'){tocMode=tocMode==='grid'?'list':'grid';try{localStorage.setItem('scene-tocmode-v1',tocMode)}catch(e){}openToc()}
     else if(act==='chain'){const i=+a.dataset.i,t=getTimes();if(au&&!au.paused)playFrom(i);else{browsing=0;show(i);if(au&&t[i]!=null)au.currentTime=t[i]}}
-    else if(act==='map'){e.preventDefault();closeMenu();mapShown=0;openMap()}
+    else if(act==='map'){e.preventDefault();closeMenu();closeArc();mapShown=0;openMap()}
     else if(act==='mapr'){mapRecall=!mapRecall;mapShown=0;const y=document.getElementById('toc').scrollTop;openMap();document.getElementById('toc').scrollTop=y}
     else if(act==='mapx'){mapShown=+a.dataset.i;const y=document.getElementById('toc').scrollTop;openMap();document.getElementById('toc').scrollTop=y}
     else if(act==='undo')undoTimes();
@@ -794,14 +805,19 @@ function arcUnits(){const sc=SCENES[key],st=sc.steps,R=sc.rounds||[];const pos=b
 function natCount(m,sx){return PGN.filter(([id])=>natDays(m,id+sx).length).length}
 function curUnit(){const st=SCENES[key].steps;if(!(blocks&&blocks.length===st.length))return 0;const p=tocGrid();return p[cur]?p[cur].c:0}
 const modeSeg=on=>`<div class="pgmode"><button data-act="natopen">自然</button><button data-act="arcopen" class="${on==='arc'?'on':''}">架構</button><button data-act="pg" class="${on==='pg'?'on':''}">場合</button></div>`;
+// 架構：跟學歌地圖一樣是整頁，這首歌的情境圖當底，一頁放完
+function closeArc(){const f=document.getElementById('arcf');if(f){f.remove();pgRefresh()}}
 function openArc(){
-  closeMenu();closeNat();const m=pgAll()[key]||{},S=arcSteps();const d=document.createElement('div');d.className='sheet menu-sheet wide';d.id='menu';
-  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div>${modeSeg('arc')}<div class="pgh">架構：情境故事 × 歌詞<a class="lmap" data-act="map" href="#${key}">架構表 ↗</a><small>認旋律 → 一輪一輪練（先第一輪，再記差別）→ 串起來 → 看圖唱整首</small></div>
+  closeMenu();closeNat();const m=pgAll()[key]||{},S=arcSteps(),sc=SCENES[key];let f=document.getElementById('arcf');
+  if(!f){f=document.createElement('div');f.id='arcf';app.appendChild(f)}
+  f.innerHTML=`<div class="abg" style="background-image:url('${esc(sc.img)}')"></div><div class="abar"><button data-act="arcx">← 返回</button><h2>架構・情境故事 × 歌詞</h2><span>・${esc(sc.title)}</span><a class="lmap" data-act="map" href="#${key}">架構表 ↗</a>${modeSeg('arc')}</div>
+    <div class="awrap"><div class="ahint">認旋律 → 一輪一輪練（先第一輪，再記差別）→ 串起來 → 看圖唱整首。做到「過關」那句就點一下打勾</div>
     <div class="arcl">${(()=>{const card=x=>`<button data-act="arcs" data-s="${x.id}" class="${m[x.id]?'on':''}"><b>${m[x.id]?'✓':x.bd}</b><span><span class="pgt">${esc(x.t)}</span>${x.d.map(t=>`<small>${esc(t)}</small>`).join('')}<em>${esc(x.x)}${m[x.id]?`　✓ ${m[x.id].slice(5).replace('-','/')}`:''}</em>${x.u!=null?(()=>{const U=arcUnits(),ui=x.u<0?U.length-1:Math.min(x.u,U.length-1);return `<i class="arcnat" data-act="natopen" data-u="${ui}">自然 ${natCount(m,U[ui].sx)}/${PGN.length}　用學歌地圖練這${ui===U.length-1?'首':'一輪'} ↗</i>`})():''}</span></button>`;
       const R=S.filter(x=>/^a_r\d/.test(x.id)),by=id=>S.find(x=>x.id===id);
-      return (by('a_mel')?card(by('a_mel')):'')+`<div class="arcr" style="--n:${R.length}">${R.map(card).join('')}</div>`+card(by('a_chain'))+card(by('a_all'))})()}</div>
-    <small class="tip">做到「過關」那一句就點一下打勾，再點一下取消</small><div class="row" style="justify-content:flex-end"><button data-act="mclose">關閉</button></div>`;
-  app.appendChild(d)}
+      return (by('a_mel')?card(by('a_mel')):'')+`<div class="arcr" style="--n:${R.length}">${R.map(card).join('')}</div>`+card(by('a_chain'))+card(by('a_all'))})()}</div></div>`;
+  arcFit()}
+function arcFit(){const w=document.querySelector('#arcf .awrap'),l=w&&w.querySelector('.arcl');if(!l||innerWidth<700)return;let fz=14;l.style.fontSize=fz+'px';
+  while(fz>9&&w.scrollHeight>w.clientHeight+1){fz-=.5;l.style.fontSize=fz+'px'}}
 // 自然養成：沒有順序，碰到就點一下（一天算一次，同一天再點＝取消），點越多天越亮
 const PGN=[['n_listen','常聽','放原曲，耳朵先習慣'],
   ['n_sing','跟唱','放原曲，跟著一起唱'],['n_hum_o','跟原唱哼／氣流','放原曲，閉著嘴輕輕哼'],['n_hum_i','跟伴奏哼／氣流','放伴奏，主唱用哼的'],['n_lead','搶先唱','放伴奏，自己唱出主唱'],['n_free','隨口唱','沒音樂，洗澡走路就唱出來'],
@@ -816,7 +832,7 @@ function pgToggle(k,id){const a=pgAll(),m=a[k]||(a[k]={});if(m[id])delete m[id];
 function pgPills(k){arcMig(k);const m=pgAll()[k]||{};return `<button class="pgpill" data-act="natopen">自然 ${PGN.filter(([id])=>Object.keys(m).some(x=>(x===id||x.startsWith(id+'@'))&&natDays(m,x).length)).length}/${PGN.length}</button><button class="pgpill" data-act="arcopen">架構 ${arcSteps().filter(x=>m[x.id]).length}/${arcSteps().length}</button><button class="pgpill" data-act="pg">場合 ${PG.filter(([id])=>m[id]).length}/${PG.length}</button>`}
 function pgRefresh(){const b=document.querySelector('.bar .pgpills');if(b)b.innerHTML=pgPills(key)}
 // 自然養成＝學歌地圖，用 iframe 疊在情境頁上：頁面沒換，音樂照放
-function openNat(u){closeMenu();closeNat();const U=arcUnits();if(u==null)u=Math.min(curUnit(),U.length-1);const f=document.createElement('div');f.id='natf';f.innerHTML=`<iframe src="learn.html?v=16&embed=1&u=${u}&units=${encodeURIComponent(U.map(x=>x.n).join('|'))}#${key}" title="學歌地圖"></iframe>`;document.body.appendChild(f)}
+function openNat(u){closeMenu();closeNat();closeArc();const U=arcUnits();if(u==null)u=Math.min(curUnit(),U.length-1);const f=document.createElement('div');f.id='natf';f.innerHTML=`<iframe src="learn.html?v=16&embed=1&u=${u}&units=${encodeURIComponent(U.map(x=>x.n).join('|'))}#${key}" title="學歌地圖"></iframe>`;document.body.appendChild(f)}
 function closeNat(){const f=document.getElementById('natf');if(f){f.remove();pgRefresh()}}
 addEventListener('message',e=>{const t=e.data&&e.data.learn;if(t==='close'){closeNat();wakePlayer()}else if(t==='deli'){closeNat();openPg()}else if(t==='arc'){closeNat();openArc()}});
 function pgDots(k){const m=pgAll()[k]||{},c=L=>L.filter(([id])=>m[id]).length;return `自然 ${PGN.filter(([id])=>natDays(m,id).length).length}/${PGN.length}<i>・</i>刻意 ${c(PG)}/${PG.length}`}
@@ -834,10 +850,10 @@ function natHtml(m){
 function natLink(m){const lit=PGN.filter(([id])=>natDays(m,id).length).length,gr=PGN.filter(([id])=>natDays(m,'v_'+id).length>=3).length;
   return `<a class="natlink" href="learn.html?v=16&t=${encodeURIComponent(SCENES[key].title)}#${key}"><span><b>自然養成・學歌地圖</b><small>聽、出聲、腦內唱、我的唱法 × 原曲、伴奏、靜音</small></span><em>${lit}/${PGN.length}${gr?`・🎓${gr}`:''} ↗</em></a>`}
 function openPg(){
-  closeMenu();closeNat();const m=pgAll()[key]||{};const d=document.createElement('div');d.className='sheet menu-sheet';d.id='menu';
+  closeMenu();closeNat();closeArc();const m=pgAll()[key]||{};const d=document.createElement('div');d.className='sheet menu-sheet';d.id='menu';
   const tipOf={};
   const grp=(L,name,sub)=>`<div class="pgh">${name}<small>${sub}</small></div><div class="grp pgl">${L.map(([id,t,tip],i)=>`<button data-act="pgs" data-s="${id}" class="${m[id]?'on':''}"><b>${m[id]?'✓':i+1}</b><span class="pgt">${t}</span><small>${m[id]?m[id].slice(5).replace('-','/')+' 完成':tip||tipOf[id]||''}</small></button>`).join('')}</div>`;
-  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div>${modeSeg('pg')}${grp(PG,'場合','地點、場合的練習和確認：錄音 → 場域 → SV')}
+  d.innerHTML=`<div class="q">${esc(SCENES[key].title)}・練習進度</div>${modeSeg('pg')}${grp(PG,'場合','地點、場合的練習和確認：練習 → 錄音 → 場域 → SV')}
     <small class="tip">點一下打勾，再點一下取消。歌單的情境圖清單也會一起更新</small><div class="row" style="justify-content:flex-end"><button data-act="mclose">關閉</button></div>`;
   app.appendChild(d)}
 function closeMenu(){const d=document.getElementById('menu');if(d){d.remove();wakePlayer()}}
@@ -1213,6 +1229,7 @@ function opSpots(sc,ks){let o=document.getElementById('opspots');if(!sc){if(o)o.
 function opFit(){const sub=document.getElementById('sub'),g=sub&&sub.querySelector('.opg');if(!g)return;let f=17;g.style.fontSize=f+'px';
   while(f>10&&sub.scrollHeight>sub.clientHeight+1){f-=.5;g.style.fontSize=f+'px'}}
 addEventListener('resize',()=>{if(document.body.classList.contains('op'))setTimeout(()=>show(cur,false),100)});
+addEventListener('resize',()=>{if(document.getElementById('arcf'))arcFit()});
 const onePage=()=>{let v=null;try{v=localStorage.getItem('scene-op-v1')}catch(e){}return v?v==='1':innerWidth>=700};
 function openToc(){
   if(!blocks)return;closeToc();const sc=SCENES[key],t=getTimes(),L=getLines();let o=0;
@@ -1357,6 +1374,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=105"></script>
+<script src="studio.js?v=106"></script>
 </body>
 </html>
