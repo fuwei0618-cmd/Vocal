@@ -190,7 +190,7 @@ async function sRecStart(){
   catch(e){alert('沒辦法用麥克風：到「設定 → Safari → 麥克風」允許，或重新打開再按一次');return}
   const c=S.ctx;if(c.state==='suspended')await c.resume();
   // 從播放頭開始錄（前面多播 2 秒預備）；播放頭在選的段落裡，唱到段尾自動停
-  const p0=S.pos,keep=Math.max(0,p0-.3),from=Math.max(0,p0-2),until=S.sel&&p0<S.sel[1]-.5?Math.min(S.dur,S.sel[1]+.5):0;
+  const p0=S.pos,keep=Math.max(0,p0-.3),from=Math.max(0,p0-2),until=S.sel&&S.loop&&p0<S.sel[1]-.5?Math.min(S.dur,S.sel[1]+.5):0;
   // 用 iPad 自己的錄音器（MediaRecorder）錄，Web Audio 直接收麥克風在 iPad 上會收到一片靜音
   const type=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||'';
   const mr=new MediaRecorder(st,Object.assign({audioBitsPerSecond:256000},type?{mimeType:type}:{}));
