@@ -477,7 +477,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=107;
+const VER=108;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -894,7 +894,7 @@ class Player extends EventTarget{
     clearInterval(this.tu);this.tu=setInterval(()=>this.dispatchEvent(new Event('timeupdate')),250);
   }
   _stop(){this.srcs.forEach(s=>{s.onended=null;try{s.stop()}catch(e){}try{s.disconnect()}catch(e){}});this.srcs=[];Object.values(this.g).forEach(g=>{try{g.disconnect()}catch(e){}});this.g={};clearInterval(this.tu)}
-  play(){if(!this.paused)return Promise.resolve();audioCtx();this.paused=false;if(this.pos>=this.duration-.05)this.pos=0;this._start(this.pos);this.dispatchEvent(new Event('play'));return Promise.resolve()}
+  play(){if(!this.paused)return Promise.resolve();audioCtx();if(typeof bgUnlock==='function'){bgUnlock();clearTimeout(bgT);bgT=setTimeout(bgPrep,800)}this.paused=false;if(this.pos>=this.duration-.05)this.pos=0;this._start(this.pos);this.dispatchEvent(new Event('play'));return Promise.resolve()}
   // 跟錄音室交棒：在 T 那一刻開始播／停，兩邊接得剛好
   playAt(pos,T){this._stop();this.paused=false;this.pos=pos;this._start(pos,T);this.dispatchEvent(new Event('play'))}
   handoff(T){if(this.paused)return;this.pos=this.currentTime;const g=this.g;this.srcs.forEach(s=>{s.onended=null;try{s.stop(T)}catch(e){}});
@@ -1024,11 +1024,24 @@ function audioCtx(){if(!actx){try{if(navigator.audioSession)navigator.audioSessi
 function secRange(i){const t=getTimes(),d=au&&isFinite(au.duration)?au.duration:1e9;return [t[i]!=null?t[i]:0,t[i+1]!=null?t[i+1]:d]}
 function secAt(x){const t=getTimes();let k=0;t.forEach((v,j)=>{if(v!=null&&x>=v-.05)k=j});return k}
 // 背景播放：iPad 切到別的 App 或鎖螢幕時盡量繼續播（audioSession＝播放），回來時把聲音叫醒；鎖定畫面可以播放／暫停
+// iPad 只保證 <audio>（真的媒體檔）在背景一直播；Web Audio 在背景會被系統停掉（例如滑掉其他 App 時）
+// 所以：切到背景時，改由一個 <audio> 接手播同一軌（同一個 Key、同一個位置）；回到前景再交回來
+let bgEl=null,bgUrl='',bgSig='',bgOn=false,bgT=0;
+function bgUnlock(){try{if(!bgEl){bgEl=new Audio();bgEl.setAttribute('playsinline','');bgEl.preload='auto';bgEl.addEventListener('timeupdate',bgLoop)}
+  if(bgEl.dataset.ok)return;const c=audioCtx(),sb=c.createBuffer(1,4410,44100);bgEl.src=URL.createObjectURL(new Blob([toWav(sb)],{type:'audio/wav'}));bgSig='';bgEl.muted=true;
+  const p=bgEl.play();if(p&&p.then)p.then(()=>{bgEl.pause();bgEl.muted=false;bgEl.dataset.ok='1'}).catch(()=>{})}catch(e){}}
+function bgPrep(){if(!au||!bgEl)return;const b=au.bufs[track];if(!b)return;const sig=track+'|'+getKey()+'|'+b.length;if(sig===bgSig)return;
+  bgSig=sig;if(bgUrl)URL.revokeObjectURL(bgUrl);bgUrl=URL.createObjectURL(new Blob([toWav(b)],{type:'audio/wav'}));bgEl.src=bgUrl;bgEl.load()}
+function bgGo(){if(!au||au.paused||!bgEl||!bgEl.dataset.ok)return;bgPrep();if(!bgUrl)return;const t=au.currentTime;
+  try{bgEl.currentTime=t}catch(e){}bgEl.muted=muted;const p=bgEl.play();bgOn=true;au.pause();if(p&&p.catch)p.catch(()=>{bgOn=false})}
+function bgBack(){if(!bgOn)return;bgOn=false;const t=bgEl.currentTime,was=!bgEl.paused;bgEl.pause();if(!au)return;au.currentTime=t;if(was)au.play();drawPlayer();sync()}
+function bgLoop(){if(!bgOn||loopSec<0)return;const [a,b]=loopRange();if(bgEl.currentTime>=b-.05||bgEl.currentTime<a-1.5)bgEl.currentTime=a}
 function bgSetup(){
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&actx&&actx.state!=='running'&&au&&!au.paused)actx.resume()});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)bgGo();else{bgBack();if(actx&&actx.state!=='running'&&au&&!au.paused)actx.resume()}});
+  addEventListener('pagehide',bgGo);
   setInterval(()=>{if(document.hidden){cancelAnimationFrame(raf);tick()}},250);   // 背景時畫面不更新，重複範圍改用計時器檢查
   if('mediaSession' in navigator){try{navigator.mediaSession.metadata=new MediaMetadata({title:SCENES[key].title,artist:SCENES[key].artist||''});
-    navigator.mediaSession.setActionHandler('play',()=>{if(au){au.play();drawPlayer()}});navigator.mediaSession.setActionHandler('pause',()=>{if(au){au.pause();drawPlayer()}})}catch(e){}}}
+    navigator.mediaSession.setActionHandler('play',()=>{if(bgOn){bgEl.play();return}if(au){au.play();drawPlayer()}});navigator.mediaSession.setActionHandler('pause',()=>{if(bgOn){bgEl.pause();return}if(au){au.pause();drawPlayer()}})}catch(e){}}}
 // 🔁 重複目前這段：播放中每一格畫面檢查有沒有唱到段尾
 function tick(){
   raf=0;if(!au||au.paused||loopSec<0)return;const t=au.currentTime,[a,b]=loopRange();
@@ -1391,6 +1404,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=107"></script>
+<script src="studio.js?v=108"></script>
 </body>
 </html>
