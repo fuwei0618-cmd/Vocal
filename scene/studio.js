@@ -186,6 +186,8 @@ async function sRecStart(){
   // 🎧 高音質：戴耳機時不需要消除回音，關掉 iPad 的通話處理（消回音、降噪、自動音量），聲音比較原汁原味
   // 如果這台 iPad 這樣會錄成靜音，錄完會自動切回一般模式
   const hq=lsGet('scene-hq-v1')==='1',ec=!hq;
+  // 背景播放把 iPad 的聲音模式設成「只播放」，那個模式不能用麥克風；錄音前要換成「播放＋錄音」
+  try{if(navigator.audioSession)navigator.audioSession.type='play-and-record'}catch(e){}
   try{st=await navigator.mediaDevices.getUserMedia({audio:hq?{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}:true})}
   catch(e){alert('沒辦法用麥克風：到「設定 → Safari → 麥克風」允許，或重新打開再按一次');return}
   const c=S.ctx;if(c.state==='suspended')await c.resume();
@@ -208,6 +210,7 @@ async function sRecStop(cancel){
   document.getElementById('s-rec').classList.remove('on');document.getElementById('studio').classList.remove('recording');sBig();
   const T=S.T,c0=S.ctx;
   // 麥克風關掉後 iPad 又換回一般音訊設定，再換一個新的引擎
+  try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}
   try{const old=actx;actx=null;S.ctx=audioCtx();old&&old.close&&old.close()}catch(e){}
   const tp=document.getElementById('s-tip');if(tp)tp.textContent='點波形或歌詞選從哪裡開始錄';
   if(cancel){sDraw();return}

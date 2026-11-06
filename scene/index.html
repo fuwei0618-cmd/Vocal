@@ -477,7 +477,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=108;
+const VER=109;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1020,7 +1020,7 @@ async function loadTakes(){
 }
 async function saveTakes(){try{await putFile(key+'|takes',takes)}catch(e){alert('這台裝置空間不夠，錄音沒存到')}}
 let actx=null;
-function audioCtx(){if(!actx){try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}const C=window.AudioContext||window.webkitAudioContext;actx=new C();bgSetup()}if(actx.state==='suspended')actx.resume();return actx}
+function audioCtx(){if(!actx){try{if(navigator.audioSession&&!document.getElementById('studio'))navigator.audioSession.type='playback'}catch(e){}const C=window.AudioContext||window.webkitAudioContext;actx=new C();bgSetup()}if(actx.state==='suspended')actx.resume();return actx}
 function secRange(i){const t=getTimes(),d=au&&isFinite(au.duration)?au.duration:1e9;return [t[i]!=null?t[i]:0,t[i+1]!=null?t[i+1]:d]}
 function secAt(x){const t=getTimes();let k=0;t.forEach((v,j)=>{if(v!=null&&x>=v-.05)k=j});return k}
 // 背景播放：iPad 切到別的 App 或鎖螢幕時盡量繼續播（audioSession＝播放），回來時把聲音叫醒；鎖定畫面可以播放／暫停
@@ -1404,6 +1404,6 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=108"></script>
+<script src="studio.js?v=109"></script>
 </body>
 </html>
