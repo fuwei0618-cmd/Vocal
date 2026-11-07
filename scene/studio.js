@@ -185,10 +185,11 @@ async function sRecStart(){
   // 之前關掉「自動音量」會讓大聲唱的地方爆掉（破音），所以全部用預設
   // 🎧 高音質：戴耳機時不需要消除回音，關掉 iPad 的通話處理（消回音、降噪、自動音量），聲音比較原汁原味
   // 如果這台 iPad 這樣會錄成靜音，錄完會自動切回一般模式
+  // v111：她說一般模式聲音忽大忽小、音質差＝iPad 的「自動音量」跟「降噪」在搞鬼；一般模式只留消回音，其餘關掉
   const hq=lsGet('scene-hq-v1')==='1',ec=!hq;
   // 背景播放把 iPad 的聲音模式設成「只播放」，那個模式不能用麥克風；錄音前要換成「播放＋錄音」
   try{if(navigator.audioSession)navigator.audioSession.type='play-and-record'}catch(e){}
-  try{st=await navigator.mediaDevices.getUserMedia({audio:hq?{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}:true})}
+  try{st=await navigator.mediaDevices.getUserMedia({audio:hq?{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}:lsGet('scene-recplain-v1')==='1'?true:{echoCancellation:true,noiseSuppression:false,autoGainControl:false,channelCount:1}})}
   catch(e){alert('沒辦法用麥克風：到「設定 → Safari → 麥克風」允許，或重新打開再按一次');return}
   const c=S.ctx;if(c.state==='suspended')await c.resume();
   // 從播放頭開始錄（前面多播 2 秒預備）；播放頭在選的段落裡，唱到段尾自動停
@@ -222,9 +223,10 @@ async function sRecStop(cancel){
   const sr=all.sampleRate,lat=Math.min(.5,(c0.outputLatency||0)+(c0.baseLatency||0)),start0=r.from+(r.t0-T)-lat,d0=all.getChannelData(0);
   let pk=0;for(let i=0;i<d0.length;i+=64){const v=Math.abs(d0[i]);if(v>pk)pk=v}
   if(pk<.002){if(!r.ec){lsSet('scene-hq-v1','0');sHqBtn();alert('高音質模式在這台 iPad 錄不到聲音，已經切回一般模式，再錄一次就好');sDraw();return}
+    if(lsGet('scene-recplain-v1')!=='1'){lsSet('scene-recplain-v1','1');alert('這台 iPad 用新的錄音設定錄不到聲音，已經換回原本的設定，再錄一次就好');sDraw();return}
     alert('錄到的是靜音：請到 iPad「設定 → Safari → 麥克風」確認是「允許」，再錄一次');sDraw();return}
   // 高音質沒有自動音量：太大聲會爆，提醒她
-  if(!r.ec){let clip=0;for(let i=0;i<d0.length;i+=4)if(Math.abs(d0[i])>.98)clip++;if(clip>50)setTimeout(()=>sHint('有幾個地方太大聲爆掉了，麥克風離遠一點再錄'),300)}
+  {let clip=0;for(let i=0;i<d0.length;i+=4)if(Math.abs(d0[i])>.98)clip++;if(clip>50)setTimeout(()=>sHint('有幾個地方太大聲爆掉了，麥克風離遠一點再錄'),300)}
   const cut=Math.max(0,Math.round((r.keep-start0)*sr)),data=new Float32Array(d0.subarray(cut));if(data.length<sr*.5){sDraw();return}
   const buf=S.ctx.createBuffer(1,data.length,sr);buf.copyToChannel(data,0);
   const take={id:Date.now(),blob:toWav(buf),start:r2(start0+cut/sr),lead:0,track,end:r2(start0+(cut+data.length)/sr),at:Date.now(),heard:r.heard,adj:0};
@@ -317,7 +319,7 @@ app.addEventListener('click',e=>{
   if(!S)return;const a=e.target.closest('#studio [data-act]');if(!a)return;const act=a.dataset.act;
   const lane=id=>S.lanes.find(x=>x.id===id);
   if(act==='sx')closeStudio();
-  else if(act==='shq'){if(S.recd)return;const on=lsGet('scene-hq-v1')!=='1';lsSet('scene-hq-v1',on?'1':'0');sHqBtn();sHint(on?'高音質開了：一定要戴有線耳機，不然會錄到伴奏':'回到一般錄音（iPad 會自動消回音、調音量）')}
+  else if(act==='shq'){if(S.recd)return;const on=lsGet('scene-hq-v1')!=='1';lsSet('scene-hq-v1',on?'1':'0');sHqBtn();sHint(on?'原音開了：iPad 不做任何處理。沒戴耳機會錄進一點喇叭的伴奏':'回到一般錄音（iPad 會自動消回音、調音量）')}
   else if(act==='skey'){if(S.recd)return;keyStep(+a.dataset.d)}
   else if(act==='splay'){if(S.recd)sRecStop();else if(S.playing)sStop();else sPlay(S.pos)}
   else if(act==='srec')sRecStart();
