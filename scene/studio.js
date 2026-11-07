@@ -339,7 +339,7 @@ app.addEventListener('click',e=>{
   else if(act==='splay'){if(S.recd)sRecStop();else if(S.playing)sStop();else sPlay(S.pos)}
   else if(act==='srec')sRecStart();
   else if(act==='simp')sImport();
-  else if(act==='smic'){if(!S.recd)location.href='mictest.html'}
+  else if(act==='smic'){if(!S.recd)location.href='mictest.html?t='+Date.now()}
   else if(act==='srec0'){if(S.recd)return sRecStop();S.sel=null;S.loop=false;S.pos=0;sRecStart()}
   else if(act==='shome'){const was=S.playing;S.pos=S.sel?Math.max(0,S.sel[0]-1):0;if(was)sPlay(S.pos);else sHead()}
   else if(act==='ssec'){const i=+a.dataset.i,[x,y]=secRange(i);
