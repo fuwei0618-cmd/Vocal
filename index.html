@@ -347,6 +347,8 @@ const TEMPOS=['快','中','慢'];
 const REASONS=['雨天','夥伴取消','設備壞','其他'];
 const TITLES={today:'下一場',log:'表演紀錄',songs:'歌單',gear:'設備與清單',host:'我',vision:'我的 Vocal 願景'};
 const LS='busk-app-v1';
+// 11-08：接線圖圖片剛加進同步，但同步只在「有改過」時才上傳。這台裝置有圖就標成待上傳一次（要在同步程式先下載之前標，不然會被雲端的空資料蓋掉）
+try{if((localStorage.getItem(LS+'-wimg')||'{}').length>2&&!localStorage.getItem(LS+'-wimgpush')){const k='origina-sync-meta:vocal',m=JSON.parse(localStorage.getItem(k)||'{}')||{};m.dirty=true;m.localAt=Date.now()+60000;localStorage.setItem(k,JSON.stringify(m));localStorage.setItem(LS+'-wimgpush','1')}}catch(e){}
 let S={}; COLS.forEach(c=>S[c]={});
 let db=null, mode='loading', downloads=null;
 let gearEdit=false, packEdit=false, packSel='cart', siteSel='speaker';
