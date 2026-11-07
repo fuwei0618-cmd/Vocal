@@ -615,7 +615,7 @@ function vSite(){
 }
 /* ---------- 接線圖 ---------- */
 const WG=[
- {k:'stand',n:'架子組',ic:'🦿',items:['腳架','托盤','iPad 夾','麥克風夾'],plug:['腳架立好 → 裝托盤 → 夾上 iPad 夾、麥克風夾'],jk:[]},
+ {k:'stand',n:'架子組',ic:'🦿',items:['腳架 ×2','托盤（放 AG06）','iPad 夾 ×2','麥克風夾 ×2','手機夾','水杯托盤'],plug:['兩支腳架立好 → 裝托盤 → 夾上 iPad 夾、麥克風夾、手機夾、水杯托盤'],jk:[]},
  {k:'mix',n:'混音組',ic:'🎛',items:['Yamaha AG06','行動電源','白色 USB-C 線'],plug:['AG06 放上托盤','行動電源 → 白色 USB-C → AG06 背面 5V DC（④ 供電）'],jk:['usb']},
  {k:'mic',n:'麥克風組',ic:'🎤',items:['有線麥克風','紅色防風罩','藍色 XLR 線','無線麥克風','無線接收器','充電電池（已充飽）','電池充電器'],plug:['有線麥克風 → 藍色 XLR 線 → ① CH1','無線接收器直接插 ② CH2'],jk:['ch1','ch2']},
  {k:'bk',n:'伴奏組',ic:'🎵',items:['iPad','3.5mm 轉接頭','黑色 3.5mm 線'],plug:['iPad → 轉接頭 → 黑色細線 → ③ AUX（手機圖示）'],jk:['aux']},
@@ -630,7 +630,7 @@ function wSet(f){const s=wSt();f(s);try{localStorage.setItem(LS+'-wire',JSON.str
 const JN={ch1:'①',ch2:'②',aux:'③',usb:'④',mon:'⑤',st:'⑥'};
 // 設備圖片：她從 iPad 選官網產品圖，只存在這台裝置（不進公開 GitHub）
 const WDEV={mic:{n:'有線麥克風',g:'mic'},wl:{n:'無線麥克風＋接收器',g:'mic'},ipad:{n:'iPad',g:'bk'},ag06:{n:'AG06 正面',g:'mix'},ag06b:{n:'AG06 背面',g:'mix'},bat:{n:'行動電源',g:'mix'},bose:{n:'Bose S1 Pro+',g:'spk'},iem:{n:'監聽發射器',g:'iem'},rx:{n:'接收器＋耳機',g:'iem'},
-  stand:{n:'腳架',g:'stand'},tray:{n:'托盤',g:'stand'},xlr:{n:'藍色 XLR 線',g:'mic'},aux:{n:'3.5mm 音源線',g:'bk'},adp:{n:'iPad 轉接頭',g:'bk'},usbc:{n:'USB-C 線',g:'mix'},trs:{n:'6.3mm 轉 XLR 線',g:'spk'},batt:{n:'充電電池＋充電器',g:'mic'}};
+  stand:{n:'腳架',g:'stand'},tray:{n:'托盤',g:'stand'},clip:{n:'iPad 夾',g:'stand'},mclip:{n:'麥克風夾',g:'stand'},pclip:{n:'手機夾',g:'stand'},cup:{n:'水杯托盤',g:'stand'},xlr:{n:'藍色 XLR 線',g:'mic'},aux:{n:'3.5mm 音源線',g:'bk'},adp:{n:'iPad 轉接頭',g:'bk'},usbc:{n:'USB-C 線',g:'mix'},trs:{n:'6.3mm 轉 XLR 線',g:'spk'},batt:{n:'充電電池＋充電器',g:'mic'}};
 let WIMG=null;function wImg(){if(!WIMG){try{WIMG=JSON.parse(localStorage.getItem(LS+'-wimg')||'{}')}catch(e){WIMG={}}}return WIMG}
 function wDevs(){const o={...WDEV};(wSt().custom||[]).forEach(c=>o[c.id]={n:c.n,g:c.g,c:1});return o}
 function wItems(g){return g.items.concat((wSt().custom||[]).filter(c=>c.g===g.k).map(c=>c.n))}
