@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>錄音測試</title>
+<style>
+:root{--bg:#16130f;--card:#231e18;--line:#3a3128;--tx:#f3ece2;--mut:#a89c8c;--glow:#f2c27b;--ok:#7fd18b;--bad:#ef7d6d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 -apple-system,"PingFang TC",sans-serif;padding:16px 16px 60px}
+h1{font-size:22px;margin:4px 0 4px}p.s{color:var(--mut);margin:0 0 14px;font-size:14px}
+.t{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center}
+.t b{font-size:16px}.t .d{color:var(--mut);font-size:13px;grid-column:1}
+.t .r{grid-column:1/-1;font-size:14px;min-height:20px}
+button{font:inherit;background:#33291f;color:var(--tx);border:1px solid var(--line);border-radius:999px;padding:8px 16px;white-space:nowrap}
+button.go{background:var(--glow);color:#1b150e;border:0;font-weight:600}button:disabled{opacity:.4}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.big{font-size:18px;font-weight:700}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}a{color:var(--glow)}
+pre{white-space:pre-wrap;font-size:12px;color:var(--mut);background:#0f0d0a;border-radius:10px;padding:10px}
+</style></head><body>
+<a href="./">← 回 Vocal</a>
+<h1>錄音測試</h1>
+<p class="s">一個一個按「錄 4 秒」，聽到音樂就跟著唱（不用戴耳機）。每個錄完按 ▶ 聽，覺得哪個聲音最自然、最不會忽大忽小，就告訴我是第幾個。全部做完按最下面「複製結果」貼給我。</p>
+<div id="list"></div>
+<div class="bar"><button id="copy">複製結果</button><button id="clr">清掉重來</button></div>
+<pre id="log"></pre>
+<script>
+const RAW={echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1};
+const TESTS=[
+ {n:'1',t:'現在 Vocal 的錄法',d:'iPad 通話處理開著，Web Audio 放音樂',c:true,play:'wa',cap:'mr',ses:'play-and-record'},
+ {n:'2',t:'原音，不放音樂',d:'通話處理全關，只錄你的聲音（看原音模式本身能不能錄）',c:RAW,play:'none',cap:'mr',ses:'play-and-record'},
+ {n:'3',t:'原音，先開麥克風再放音樂',d:'通話處理全關，麥克風準備好以後才開音樂引擎',c:RAW,play:'wa',cap:'mr',ses:'play-and-record',micFirst:1},
+ {n:'4',t:'原音，音樂用另一種播放器',d:'通話處理全關，音樂改用 <audio> 播，不用 Web Audio',c:RAW,play:'el',cap:'mr',ses:'play-and-record',micFirst:1},
+ {n:'5',t:'原音，Web Audio 直接收聲音',d:'通話處理全關，不用 iPad 錄音器，直接從音樂引擎拿麥克風的聲音',c:RAW,play:'wa',cap:'wa',ses:'play-and-record',micFirst:1},
+ {n:'6',t:'原音，不告訴 iPad 要邊播邊錄',d:'通話處理全關，聲音模式交給 iPad 自己決定',c:RAW,play:'wa',cap:'mr',ses:'auto',micFirst:1},
+];
+const R={};let busy=false,music=null;
+const $=s=>document.querySelector(s);
+const AC=()=>new (window.AudioContext||window.webkitAudioContext)();
+// 一段 4.5 秒的和弦琶音當伴奏
+async function makeMusic(){if(music)return music;const sr=44100,O=new (window.OfflineAudioContext||window.webkitOfflineAudioContext)(1,sr*4.5,sr);
+ const ch=[[261.6,329.6,392],[220,261.6,329.6],[174.6,220,261.6],[196,246.9,293.7]];
+ ch.forEach((c,i)=>c.concat(c.map(f=>f*2)).forEach((f,j)=>{const o=O.createOscillator(),g=O.createGain(),t=i*1.1+j*.18;o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.12,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+.9);o.connect(g).connect(O.destination);o.start(t);o.stop(t+1)}));
+ const b=await new Promise((ok,no)=>{const p=O.startRendering();if(p&&p.then)p.then(ok,no);else O.oncomplete=e=>ok(e.renderedBuffer)});
+ music={buf:b,wav:toWav(b.getChannelData(0),sr)};return music}
+function toWav(d,sr){const ab=new ArrayBuffer(44+d.length*2),v=new DataView(ab),w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+ w(0,'RIFF');v.setUint32(4,36+d.length*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,d.length*2,true);
+ for(let i=0;i<d.length;i++)v.setInt16(44+i*2,Math.max(-1,Math.min(1,d[i]))*32767,true);return new Blob([ab],{type:'audio/wav'})}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function decode(blob){const c=AC();try{const ab=await blob.arrayBuffer();return await new Promise((ok,no)=>{const p=c.decodeAudioData(ab,ok,no);if(p&&p.then)p.then(ok,no)})}finally{c.close&&c.close()}}
+function stats(d){let pk=0,s=0;const hop=Math.round(d.length/40)||1,lv=[];for(let i=0;i<d.length;i++){const a=Math.abs(d[i]);if(a>pk)pk=a;s+=d[i]*d[i]}
+ for(let i=0;i+hop<=d.length;i+=hop){let q=0;for(let j=i;j<i+hop;j++)q+=d[j]*d[j];lv.push(Math.sqrt(q/hop))}
+ return{pk,rms:Math.sqrt(s/Math.max(1,d.length)),lv}}
+const db=x=>x>0?(20*Math.log10(x)).toFixed(0)+' dB':'-∞';
+async function run(T){if(busy)return;busy=true;document.querySelectorAll('[data-go]').forEach(b=>b.disabled=true);
+ const out=$(`#r${T.n}`);out.textContent='準備中…';const info={n:T.n};let st,ctx,el,src,mr,chunks=[],pcm=[],sp;
+ try{
+  const m=await makeMusic();
+  try{if(navigator.audioSession)navigator.audioSession.type=T.ses;info.ses=navigator.audioSession?navigator.audioSession.type:'不支援'}catch(e){info.ses='錯誤 '+e.message}
+  if(!T.micFirst&&T.play==='wa'){ctx=AC();await ctx.resume()}
+  st=await navigator.mediaDevices.getUserMedia({audio:T.c});
+  const tr=st.getAudioTracks()[0];try{const s=tr.getSettings();info.set={ec:s.echoCancellation,ns:s.noiseSuppression,agc:s.autoGainControl,sr:s.sampleRate}}catch(e){}
+  if(T.play==='wa'||T.cap==='wa'){if(!ctx){ctx=AC()}await ctx.resume()}
+  out.textContent='開始錄，跟著音樂唱…';
+  if(T.cap==='mr'){const type=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported(t))||'';
+   mr=new MediaRecorder(st,Object.assign({audioBitsPerSecond:256000},type?{mimeType:type}:{}));mr.ondataavailable=e=>e.data&&e.data.size&&chunks.push(e.data);mr.start(500)}
+  else{const ms=ctx.createMediaStreamSource(st);sp=ctx.createScriptProcessor(4096,1,1);sp.onaudioprocess=e=>pcm.push(new Float32Array(e.inputBuffer.getChannelData(0)));const z=ctx.createGain();z.gain.value=0;ms.connect(sp);sp.connect(z).connect(ctx.destination)}
+  if(T.play==='wa'){src=ctx.createBufferSource();src.buffer=m.buf;const g=ctx.createGain();g.gain.value=1.5;src.connect(g).connect(ctx.destination);src.start()}
+  else if(T.play==='el'){el=new Audio(URL.createObjectURL(m.wav));el.volume=1;try{await el.play()}catch(e){info.elErr=e.message}}
+  await sleep(4300);info.muted=tr.muted;info.state=tr.readyState;
+  let blob,d,sr;
+  if(mr){await new Promise(ok=>{mr.onstop=ok;mr.stop();setTimeout(ok,2500)});blob=new Blob(chunks,{type:mr.mimeType||'audio/mp4'});const b=await decode(blob);d=b.getChannelData(0);sr=b.sampleRate}
+  else{sp.disconnect();let n=0;pcm.forEach(a=>n+=a.length);d=new Float32Array(n);let o=0;pcm.forEach(a=>{d.set(a,o);o+=a.length});sr=ctx.sampleRate;blob=toWav(d,sr)}
+  const s=stats(d);info.peak=db(s.pk);info.rms=db(s.rms);info.len=(d.length/sr).toFixed(1)+'s';
+  const loud=s.lv.filter(x=>x>.01);info.swing=loud.length>4?db(Math.max(...loud)/Math.min(...loud)):'—';
+  info.ok=s.pk>.002;R[T.n]={info,url:URL.createObjectURL(blob)};
+  out.innerHTML=`${info.ok?'<span class="ok big">有錄到聲音</span>':'<span class="bad big">靜音</span>'}　最大 ${info.peak}・平均 ${info.rms} <button data-pl="${T.n}">▶ 聽</button>`;
+ }catch(e){info.err=e.name+' '+e.message;R[T.n]={info};out.innerHTML=`<span class="bad">失敗：${e.message||e.name}</span>`}
+ finally{try{st&&st.getTracks().forEach(t=>t.stop())}catch(e){}try{src&&src.stop()}catch(e){}try{el&&el.pause()}catch(e){}try{ctx&&ctx.close()}catch(e){}
+  try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}
+  busy=false;document.querySelectorAll('[data-go]').forEach(b=>b.disabled=false);showLog()}
+}
+function showLog(){$('#log').textContent=resultText()}
+function resultText(){return 'Vocal 錄音測試 '+new Date().toLocaleString()+'\n'+navigator.userAgent+'\n'+TESTS.map(T=>{const r=R[T.n];return `${T.n}. ${T.t}: `+(r?JSON.stringify(r.info):'沒測')}).join('\n')}
+$('#list').innerHTML=TESTS.map(T=>`<div class="t"><b>${T.n}. ${T.t}</b><button class="go" data-go="${T.n}">⏺ 錄 4 秒</button><span class="d">${T.d.replace(/</g,'&lt;')}</span><div class="r" id="r${T.n}"></div></div>`).join('');
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g)return run(TESTS.find(t=>t.n===g.dataset.go));
+ const p=e.target.closest('[data-pl]');if(p){const a=new Audio(R[p.dataset.pl].url);a.play();return}});
+$('#copy').onclick=async()=>{const t=resultText();try{await navigator.clipboard.writeText(t);$('#copy').textContent='已複製 ✓'}catch(e){$('#log').textContent=t;alert('沒辦法自動複製，請長按下面的文字複製')}};
+$('#clr').onclick=()=>location.reload();
+</script></body></html>
