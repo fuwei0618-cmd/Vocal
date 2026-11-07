@@ -137,6 +137,10 @@ details.fold>.cgrid{padding:8px 8px 0}
 .tlayer{border-top:3px dashed var(--line);padding-top:8px;display:grid;gap:6px}
 .lname{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:.06em}
 .ptiles{display:flex;flex-wrap:wrap;gap:6px}
+.ckimg{width:40px;height:32px;object-fit:contain;background:#fff;border-radius:6px;border:1px solid var(--line);flex:none}
+.tlimg{width:30px;height:26px;object-fit:contain;background:#fff;border-radius:5px;flex:none}
+.vsimg{width:52px;height:44px;object-fit:contain;background:#fff;border-radius:8px}
+@media (max-width:620px){.vsimg{width:36px;height:30px}}
 .tile2{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:2px solid var(--line);border-radius:10px;background:var(--bg);font-size:13px;line-height:1.3;text-align:left;max-width:100%}
 .tile2 i{width:15px;height:15px;border-radius:50%;border:2px solid var(--muted);flex:none;display:grid;place-items:center;font-style:normal;font-size:10px;color:#fff}
 .tile2.on{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
@@ -170,6 +174,12 @@ details.fold>.cgrid{padding:8px 8px 0}
 .wchip b{font-size:14px;white-space:nowrap}.wchip span{display:flex;gap:3px}.wchip img,.wtn img{width:34px;height:28px;object-fit:contain;background:#fff;border-radius:6px;border:1px solid var(--line)}
 .wchip.on{border-color:var(--accent);background:var(--accent-soft)}
 .wtn{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px 0}.wtn img{width:56px;height:46px}
+.wmain{background:#fff;margin-bottom:10px}.wmain .wt{fill:#222}
+.wd .hit{fill:transparent;stroke:transparent}.wd{cursor:pointer}.wd.sel .hit{stroke:#1F6E77;stroke-width:4;fill:rgba(31,110,119,.06)}
+.wd .wi{stroke:#444}.wcab{cursor:pointer}.wcab path{fill:none;stroke-linecap:round}
+.wcab .xlr{stroke-width:9}.wcab .blk{stroke:#222;stroke-width:6}.wcab .brd{stroke:#222;stroke-width:10;stroke-dasharray:4 2}.wcab .gry{stroke:#8A8F94;stroke-width:10}.wcab .usbo{stroke:#bbb;stroke-width:9}.wcab .air{stroke:#1F6E77}
+.cpic rect{fill:#fff;stroke:#ccc;stroke-width:1.5}.cpic text{font-size:12px;font-weight:700;fill:#333}
+.wmain .dim{opacity:.18}
 .wtop{display:grid;gap:10px}@media (min-width:900px){.wtop{grid-template-columns:1.25fr 1fr;align-items:start}}
 .wbox{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:8px}
 svg.wire,svg.wpanel{width:100%;height:auto;display:block}svg.wpanel{max-width:560px;margin:0 auto}
@@ -561,7 +571,10 @@ function migrate(){
   const m=S.meta.migr||{};
   if(!m.contacts){if(!Object.values(S.checks).some(c=>(c.text||'').includes('隱形眼鏡')))put('checks','c36',{group:'隨身',text:'隱形眼鏡',rain:false,order:5,bag:'pack'});put('meta','migr',{...m,contacts:true})}
 }
-const tileBtn=(c,checked,rain)=>packEdit?`<button class="tile2 edit" data-edit-check="${esc(c.id)}"><span>${esc(c.text)}</span><i class="pen" aria-hidden="true">✎</i></button>`:`<button class="tile2 ${checked[c.id]?'on':''} ${c.rain&&rain?'rainon':''}" data-tick="${esc(c.id)}" aria-pressed="${!!checked[c.id]}"><i></i><span>${esc(c.text)}</span></button>`;
+const CKMAP=[['Bose','bose'],['音響','bose'],['監聽','iem'],['麥克風','mic'],['支架','clip'],['麥架','mclip'],['iPad','ipad'],['行動電源','bat'],['拉車','cart'],['腳架','stand'],['支架','clip'],['AG06','ag06'],['椅子','chair'],['水杯','tray'],['托盤','tray'],['電池','batt'],['麥架','mclip'],['直播','pclip'],['麥克風','mic'],['防風','wind'],['XLR','xlr'],['收納盒','mcase']];
+function ckDev(c){if(c.dev!==undefined)return c.dev;const t=c.text||'';const m=CKMAP.find(([k])=>t.includes(k));return m?m[1]:''}
+function ckImg(c,cls){const d=ckDev(c),u=d&&wImg()[d];return u?`<img class="${cls||'ckimg'}" src="${u}" alt="">`:''}
+const tileBtn=(c,checked,rain)=>packEdit?`<button class="tile2 edit" data-edit-check="${esc(c.id)}">${ckImg(c,'tlimg')}<span>${esc(c.text)}</span><i class="pen" aria-hidden="true">✎</i></button>`:`<button class="tile2 ${checked[c.id]?'on':''} ${c.rain&&rain?'rainon':''}" data-tick="${esc(c.id)}" aria-pressed="${!!checked[c.id]}"><i></i>${ckImg(c,'tlimg')}<span>${esc(c.text)}</span></button>`;
 const tiles=(l,checked,rain,bag)=>`<div class="ptiles">${l.length?l.map(c=>tileBtn(c,checked,rain)).join(''):(packEdit?'':'<span class="small muted">（空）</span>')}${packEdit&&bag!==undefined?`<button class="tile2 add" data-add-bag="${bag}">＋ 新增</button>`:''}</div>`;
 function vPack(){
   const n=next(),checked=n.checked||{},rain=!!n.rain;
@@ -593,6 +606,7 @@ const VI={
  chair:'<path d="M14 6v34M14 22h20v18M14 22l2-16h16l2 16"/>',
  cup:'<path d="M15 12h18l-3 26H18z"/><path d="M10 40h28"/>',
  source:'<rect x="9" y="8" width="20" height="15" rx="2"/><rect x="25" y="26" width="15" height="10" rx="2"/><path d="M19 23v19M11 42h16M29 31h6"/>'};
+const VDEV={chair:'chair',speaker:'bose',source:'ag06',ipadL:'ipad',ipadR:'ipad',monitor:'rx',mic:'mic',cup:'tray',notes:'clip2',live:'pclip'};
 const VSPOTS=[
  {k:'chair',n:'椅子',ic:'chair',x:50,y:14,kw:['椅子']},
  {k:'speaker',n:'音響',ic:'speaker',x:16,y:20,kw:['音響音量']},
@@ -613,7 +627,7 @@ function vSite(){
   const sel=VSPOTS.find(s=>s.k===siteSel)||VSPOTS[1];
   const pos=S.meta.site||{};
   let h=`<div class="packbar"><p class="small muted" style="margin:0">從上面往下看的擺位，觀眾在下面。按住拖曳可以移動位置，點一下看到場要檢查什麼。</p>${Object.keys(pos).length?'<button class="btn sm" data-act="site-reset" data-confirm="再按一次回到預設">回到預設位置</button>':''}</div>`;
-  h+=`<div class="site"><div class="site-wall">背後（牆／店面）</div><div class="site-aud">觀眾</div>${VSPOTS.map(s=>{const l=of(s),d=l.filter(c=>checked[c.id]).length;return `<button class="vs ${s.k===sel.k?'on':''} ${l.length&&d===l.length?'ok':''} ${s.k==='me'?'me':''}" style="left:${(pos[s.k]||s).x}%;top:${(pos[s.k]||s).y}%" data-vspot="${s.k}"><svg viewBox="0 0 48 48" aria-hidden="true">${VI[s.ic]}</svg><b>${s.n}</b>${l.length?`<small class="num">${d}/${l.length}</small>`:''}</button>`}).join('')}</div>`;
+  h+=`<div class="site"><div class="site-wall">背後（牆／店面）</div><div class="site-aud">觀眾</div>${VSPOTS.map(s=>{const l=of(s),d=l.filter(c=>checked[c.id]).length;return `<button class="vs ${s.k===sel.k?'on':''} ${l.length&&d===l.length?'ok':''} ${s.k==='me'?'me':''}" style="left:${(pos[s.k]||s).x}%;top:${(pos[s.k]||s).y}%" data-vspot="${s.k}">${VDEV[s.k]&&wImg()[VDEV[s.k]]?`<img class="vsimg" src="${wImg()[VDEV[s.k]]}" alt="">`:`<svg viewBox="0 0 48 48" aria-hidden="true">${VI[s.ic]}</svg>`}<b>${s.n}</b>${l.length?`<small class="num">${d}/${l.length}</small>`:''}</button>`}).join('')}</div>`;
   const l=of(sel);
   h+=`<div class="bag packpanel" style="margin-top:10px"><div class="baghead"><b>${esc(sel.n)}</b>${l.length?`<span class="pcnt num">${l.filter(c=>checked[c.id]).length}/${l.length}</span>`:''}</div>${l.length?`<div class="cols">${l.map(c=>checkRow(c,checked,rain)).join('')}</div>`:'<div class="small muted" style="padding:10px 12px">這裡沒有要檢查的項目。</div>'}</div>`;
   return h;
@@ -660,24 +674,30 @@ function wPick(dev){const inp=document.createElement('input');inp.type='file';in
 function wBlob(dev,f){{const u=URL.createObjectURL(f),im=new Image();
   im.onload=()=>{const k=Math.min(1,800/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
     {const I=wImg();if(I[dev]){I['_alt_'+dev]=[I[dev]].concat(wAlt(dev)).slice(0,6)}I[dev]=c.toDataURL('image/jpeg',.82)}URL.revokeObjectURL(u);wImgSave();render()};im.onerror=()=>toast('這張圖讀不出來');im.src=u}}
+// AG06 圖的長寬比（孔位用百分比，要照真的比例換算）
+let _agR={u:'',r:1};
+function wAgRatio(u){if(!u)return 1;if(_agR.u===u)return _agR.r;_agR={u,r:1};const i=new Image();i.onload=()=>{if(_agR.u!==u)return;const r=i.naturalWidth/i.naturalHeight||1;if(Math.abs(r-_agR.r)>.01){_agR.r=r;if(document.querySelector('svg.wire'))render()}};i.src=u;return 1}
 function wDiagram(){
-  const IM=wImg(),on=g=>!wireSel||wireSel===g?'':' dim',sel=g=>wireSel===g?' sel':'';
-  const I={mic:'<circle cx="24" cy="12" r="8"/><path d="M24 20v14M18 42h12M24 34v8"/>',wl:'<circle cx="24" cy="12" r="8"/><path d="M24 20v22"/><path d="M36 6a14 14 0 0 1 0 14M40 2a20 20 0 0 1 0 22"/>',
-    ipad:'<rect x="10" y="4" width="28" height="40" rx="4"/><circle cx="24" cy="39" r="1.5"/>',bat:'<rect x="8" y="12" width="30" height="24" rx="4"/><path d="M38 20h3v8h-3M17 24h12M23 18v12"/>',
-    bose:VI.speaker,iem:'<rect x="14" y="4" width="20" height="38" rx="4"/><path d="M24 4V0"/><circle cx="24" cy="30" r="5"/>',rx:'<rect x="6" y="10" width="16" height="22" rx="3"/><rect x="26" y="10" width="16" height="22" rx="3"/><path d="M10 38c0 4 5 6 8 3M30 38c0 4 5 6 8 3"/>',
-    ag06:'<rect x="6" y="6" width="36" height="36" rx="4"/><circle cx="15" cy="15" r="4"/><circle cx="27" cy="15" r="4"/><circle cx="15" cy="32" r="3"/><circle cx="27" cy="32" r="3"/><circle cx="36" cy="32" r="3"/>'};
-  const DV=wDevs(),card=(d,x,y,w,h)=>{const g=WDEV[d].g,ih=h-30;return `<g class="wn${on(g)}${sel(g)}" data-wire="${g}" data-wdrop="${d}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14"/>${IM[d]?`<image href="${IM[d]}" x="${x+6}" y="${y+6}" width="${w-12}" height="${ih-6}" preserveAspectRatio="xMidYMid meet"/>`:`<g class="wi" transform="translate(${x+w/2-24*1.1} ${y+ih/2-24*1.1}) scale(1.1)">${I[d]}</g>`}<text x="${x+w/2}" y="${y+h-10}" class="wt" text-anchor="middle">${esc(DV[d].n)}</text></g>`};
-  const badge=(x,y,n)=>`<g class="wb"><circle cx="${x}" cy="${y}" r="12"/><text x="${x}" y="${y+5}">${n}</text></g>`;
-  return `<svg class="wire" viewBox="0 0 760 470" role="img" aria-label="接線總圖">
-  <g class="wc${on('mic')}"><path class="xlr" d="M180 80 C230 80 230 150 270 150"/><path class="air" d="M180 230 C230 230 230 188 270 188"/></g>
-  <g class="wc${on('bk')}"><path class="blk" d="M180 385 C235 385 230 226 270 226"/></g>
-  <g class="wc${on('mix')}"><path class="usbo" d="M380 360 V330"/><path class="usbi" d="M380 360 V330"/></g>
-  <g class="wc${on('spk')}"><path class="brd" d="M490 160 C540 160 535 95 580 95"/></g>
-  <g class="wc${on('iem')}"><path class="gry" d="M490 216 C540 216 535 255 580 255"/><path class="air" d="M660 310 V340"/></g>
-  ${card('mic',20,20,160,120)}${card('wl',20,170,160,120)}${card('ipad',20,320,160,130)}
-  ${card('ag06',270,110,220,220)}${card('bat',300,360,160,100)}
-  ${card('bose',580,20,160,150)}${card('iem',580,200,160,110)}${card('rx',580,340,160,110)}
-  ${badge(270,150,'①')}${badge(270,188,'②')}${badge(270,226,'③')}${badge(380,345,'④')}${badge(490,160,'⑤')}${badge(490,216,'⑥')}
+  // 實物版：AG06 正面大圖在中間，線直接接到圖上真正的孔；器材是去背後的實物圖；每條線中間放那條線的照片
+  const IM=wImg(),DV=wDevs(),on=g=>!wireSel||wireSel===g?'':' dim',sel=g=>wireSel===g?' sel':'';
+  const AS=340,r=wAgRatio(IM.ag06),AW=r>=1?AS:AS*r,AH=r>=1?AS/r:AS,AX=500-AW/2,AY=170+(AS-AH)/2,jp=k=>[AX+AW*AGPOS[k][0]/100,AY+AH*AGPOS[k][1]/100];
+  const I={mic:'<circle cx="24" cy="12" r="8"/><path d="M24 20v14M18 42h12M24 34v8"/>',wl:'<circle cx="24" cy="12" r="8"/><path d="M24 20v22"/><path d="M36 6a14 14 0 0 1 0 14"/>',ipad:'<rect x="10" y="4" width="28" height="40" rx="4"/>',bat:'<rect x="8" y="12" width="30" height="24" rx="4"/>',bose:VI.speaker,iem:'<rect x="14" y="4" width="20" height="38" rx="4"/>',rx:'<rect x="6" y="10" width="16" height="22" rx="3"/><rect x="26" y="10" width="16" height="22" rx="3"/>'};
+  const dev=(d,x,y,w,h)=>{const g=WDEV[d].g;return `<g class="wd${on(g)}${sel(g)}" data-wire="${g}" data-wdrop="${d}"><rect class="hit" x="${x}" y="${y}" width="${w}" height="${h}" rx="14"/>${IM[d]?`<image href="${IM[d]}" x="${x}" y="${y}" width="${w}" height="${h-26}" preserveAspectRatio="xMidYMid meet"/>`:`<g class="wi" transform="translate(${x+w/2-26} ${y+(h-26)/2-26}) scale(1.08)">${I[d]||''}</g>`}<text x="${x+w/2}" y="${y+h-6}" class="wt" text-anchor="middle">${esc(DV[d].n)}</text></g>`};
+  const cab=(g,cls,d,path,cx,cy,lab)=>`<g class="wcab${on(g)}" data-wire="${g}"${d?` data-wdrop="${d}"`:''}><path class="${cls}" d="${path}"/>${d&&IM[d]?`<g class="cpic"><rect x="${cx-46}" y="${cy-30}" width="92" height="60" rx="10"/><image href="${IM[d]}" x="${cx-42}" y="${cy-27}" width="84" height="44" preserveAspectRatio="xMidYMid meet"/><text x="${cx}" y="${cy+26}" text-anchor="middle">${esc(lab)}</text></g>`:`<g class="cpic"><rect x="${cx-Math.max(46,lab.length*7+14)}" y="${cy-13}" width="${Math.max(92,lab.length*14+28)}" height="26" rx="13"/><text x="${cx}" y="${cy+5}" text-anchor="middle">${esc(lab)}</text></g>`}</g>`;
+  const badge=(k,n)=>{const [x,y]=jp(k);return `<g class="wb"><circle cx="${x}" cy="${y}" r="13"/><text x="${x}" y="${y+5}">${n}</text></g>`};
+  const [c1x,c1y]=jp('ch1'),[c2x,c2y]=jp('ch2'),[ax,ay]=jp('aux'),[mx,my]=jp('mon'),[sx,sy]=jp('st');
+  return `<svg class="wire" viewBox="0 0 1000 720" role="img" aria-label="接線總圖">
+  <g class="wd${sel('mix')}" data-wire="mix" data-wdrop="ag06">${IM.ag06?`<image href="${IM.ag06}" x="${AX}" y="${AY}" width="${AW}" height="${AH}" preserveAspectRatio="xMidYMid meet"/>`:`<rect class="hit" x="${AX}" y="${AY}" width="${AS}" height="${AS}" rx="18"/><text x="500" y="345" class="wt" text-anchor="middle">放 AG06 正面圖</text>`}</g>
+  ${cab('mic','xlr','xlr',`M190 110 C300 110 ${c1x} 60 ${c1x} ${c1y}`,300,96,DV.xlr.n)}
+  ${cab('mic','air','',`M190 330 C290 330 ${c2x} 90 ${c2x} ${c2y}`,280,300,'接收器直插')}
+  ${cab('bk','blk','aux',`M190 560 C300 560 ${ax} 470 ${ax} ${ay}`,290,560,DV.aux.n)}
+  ${cab('spk','brd','trs',`M${mx} ${my} C${mx} 70 700 110 820 110`,720,86,DV.trs.n)}
+  ${cab('iem','gry','',`M${sx} ${sy} C${sx} 120 680 330 820 330`,720,300,'發射器直插')}
+  ${cab('iem','air','',`M890 410 V470`,830,440,'無線')}
+  ${cab('mix','usbo','usbc',`M500 650 V${AY+AH}`,660,630,DV.usbc.n+'→背面 5V DC')}
+  ${dev('mic',30,30,160,170)}${dev('wl',30,250,160,170)}${dev('ipad',30,480,160,170)}
+  ${dev('bose',820,20,170,190)}${dev('iem',820,240,170,170)}${dev('rx',820,470,170,170)}${dev('bat',440,600,120,110)}
+  <g class="wb"><circle cx="500" cy="${AY+AH+24}" r="13"/><text x="500" y="${AY+AH+29}">④</text></g>${badge('ch1','①')}${badge('ch2','②')}${badge('aux','③')}${badge('mon','⑤')}${badge('st','⑥')}
   </svg>`;
 }
 // AG06 官網正上方圖上的孔位置（％）
@@ -705,7 +725,7 @@ function vWire(){
   let h=`<div class="packbar"><p class="small muted" style="margin:0">點圖上的東西，下面會出現那一組要帶什麼、插哪裡。</p><button class="btn sm" data-act="wpack">📦 匯入圖片包</button></div>`;
   const thumbs=k=>Object.entries(wDevs()).filter(([d,v])=>v.g===k&&wImg()[d]).map(([d,v])=>`<img src="${wImg()[d]}" alt="${esc(v.n)}" title="${esc(v.n)}">`).join('');
   h+=`<div class="wchips">${WG.map(x=>`<button class="wchip ${wireSel===x.k?'on':''}" data-wire="${x.k}"><b>${x.ic} ${x.n}</b><span>${thumbs(x.k)}</span></button>`).join('')}</div>`;
-  h+=`<div class="wtop"><div class="wbox">${wDiagram()}</div>`;
+  h+=`<div class="wbox wmain">${wDiagram()}</div><div class="wtop">`;
   const g=WG.find(x=>x.k===wireSel);
   if(g){h+=`<div class="bag packpanel wcard"><div class="baghead"><b>${g.ic} ${g.n}</b><span class="pcnt num">${wItems(g).filter(i=>inv[g.k+'|'+i]).length}/${wItems(g).length}</span><button class="btn sm" data-wire="">✕</button></div>
     <div class="wplug">${g.plug.map(p=>`<div>${esc(p)}</div>`).join('')}</div>
@@ -715,7 +735,7 @@ function vWire(){
       <div class="wbtn"><button class="btn sm" data-wren="${d}">✏️ 改名</button><button class="btn sm" data-wpaste="${d}">📋 貼上</button><button class="btn sm" data-wimg="${d}">🖼 相簿</button>${im?`<button class="btn sm" data-wcut="${d}">✂️ 去背</button><button class="btn sm" data-wimgdel="${d}">移除</button>`:''}${v.c?`<button class="btn sm" data-wcdel="${d}">刪掉這個項目</button>`:''}</div></div></div>`}).join('')}
       <div class="wadd"><input id="wadd" placeholder="新增項目，例如：備用電池" maxlength="30"><button class="btn sm" data-act="wadd">＋ 新增</button></div></div>
     ${g.jk.length?`<div class="wbox" style="margin-top:8px">${wPanel()}</div>`:''}</div>`}
-  else h+=`<div class="wbox">${wPanel()}</div>`;
+
   h+='</div>';
   h+=`<div class="seg" style="margin:16px 0 10px">${[['asm','組裝'],['off','拆卸'],['inv','清點']].map(([k,t])=>`<button data-wmode="${k}" aria-pressed="${wireMode===k}">${t}</button>`).join('')}</div>`;
   if(wireMode==='inv'){
@@ -735,7 +755,7 @@ pack:'<svg viewBox="0 0 48 48" class="bagicon"><path d="M19 9V7a5 5 0 0 1 10 0v2
 function bagItems(list,checked,rain){return list.length?list.map(c=>`<label class="check pk ${checked[c.id]?'done':''} ${c.rain&&rain?'rainon':''}"><input type="checkbox" data-check="${esc(c.id)}" ${checked[c.id]?'checked':''}><span>${esc(c.text)}</span></label>`).join(''):'<div class="muted small" style="padding:6px 12px">（空）</div>'}
 const LINKS=[{t:'中央氣象署',sub:'看天氣、降雨',u:'https://www.cwa.gov.tw/V8/C/'},{t:'國道路況',sub:'去台北場地前先看高速公路',u:'https://tw.live/national-highway/1/'}];
 function checkLinks(){return `<div class="links">${LINKS.map(l=>`<a class="btn linkbtn" href="${l.u}" target="_blank" rel="noopener"><b>${l.t} ↗</b><span>${l.sub}</span></a>`).join('')}</div>`}
-const checkRow=(c,checked,rain)=>`<label class="check ${checked[c.id]?'done':''} ${c.rain?'rain':''} ${c.rain&&rain?'rainon':''}"><input type="checkbox" data-check="${esc(c.id)}" ${checked[c.id]?'checked':''}><span>${esc(c.text)}</span></label>`;
+const checkRow=(c,checked,rain)=>`<label class="check ${checked[c.id]?'done':''} ${c.rain?'rain':''} ${c.rain&&rain?'rainon':''}"><input type="checkbox" data-check="${esc(c.id)}" ${checked[c.id]?'checked':''}>${ckImg(c)}<span>${esc(c.text)}</span></label>`;
 
 function venueOptions(sel){
   const vs=sorted('venues','name');
@@ -949,7 +969,7 @@ function songSheet(id){
 
 /* ---------- 設備與清單 ---------- */
 function vGear(){
-  let h=`<div class="seg" style="margin-bottom:16px">${[['list','準備清單'],['pack','打包圖'],['site','現場圖'],['wire','接線圖'],['stock','設備庫存']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
+  let h=`<div class="seg" style="margin-bottom:16px">${[['list','清單'],['pack','打包'],['site','現場'],['wire','接線']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
   h+=`<p class="small muted" style="margin:-8px 0 12px;text-align:right">版本 11/8 接線圖</p>`;
   if(gearSeg==='pack')return h+vPack();
   if(gearSeg==='site')return h+vSite();
@@ -972,6 +992,7 @@ function vGear(){
     h+=`<section class="sec"><div class="sec-head"><h2>出門前</h2><span class="num muted">${done} / ${pre.length}</span></div><div class="progress"><i style="width:${pre.length?Math.round(done/pre.length*100):0}%"></i></div>${checkGroups(pre,GROUPS,checked,rain)}</section>`;
     if(on.length)h+=`<section class="sec"><h2>現場</h2>${checkGroups(on,ONSITE,checked,rain,true)}</section>`;
     h+=`<section class="sec"><button class="btn block" data-act="reset-checks" data-confirm="再按一次清空勾選">重置清單</button><p class="small muted" style="margin:0">這裡跟「下一場」分頁是同一份勾選。演出後寫紀錄會自動重置。</p></section>`;
+    h+=`<p class="small" style="text-align:center"><button class="ghost" data-gearseg="stock">租借／設備庫存 ›</button></p>`;
     return h;
   }
   h+=`<section class="sec"><button class="btn sm primary" data-act="gear-edit">完成編輯</button><p class="small muted" style="margin:0">點項目可以改字、換分類或刪除。標「雨天」的項目在雨天模式會特別標出來。</p></section>`;
@@ -997,11 +1018,12 @@ function checkSheet(id,group,bag){
     <label class="f"><span>項目</span><input id="c-text" value="${esc(c.text||'')}"></label>
     <div class="f"><span>放在哪裡（打包圖）</span><div class="pick">${[['','不用打包'],...Object.entries(BAG_NAME)].map(([k,v])=>`<label><input type="radio" name="c-bag" value="${k}" ${(bagOf(c)||'')===k?'checked':''}><span>${v}</span></label>`).join('')}</div></div>
     <div class="f"><span>分類（準備清單）</span><div class="pick">${[...GROUPS,...ONSITE].map(g=>`<label><input type="radio" name="c-group" value="${esc(g)}" ${g===c.group?'checked':''}><span>${esc(g)}</span></label>`).join('')}</div></div>
+    <label class="f"><span>對應的器材（顯示照片）</span><select id="c-dev"><option value="">自動（照名字猜）</option><option value="-" ${c.dev===''?'selected':''}>不要照片</option>${Object.entries(wDevs()).map(([k,v])=>`<option value="${k}" ${c.dev===k?'selected':''}>${esc(v.n)}</option>`).join('')}</select></label>
     <label class="check" style="padding:0"><input type="checkbox" id="c-rain" ${c.rain?'checked':''}><span style="text-decoration:none;color:var(--ink)">只在雨天模式出現</span></label>`,
   ()=>{const text=$('#c-text').value.trim();if(!text){toast('請填項目');return false}
     const grp=(document.querySelector('input[name=c-group]:checked')||{}).value||c.group||'出門準備';
     const order=id&&c.group===grp?c.order:Math.max(0,...Object.values(S.checks).filter(x=>x.group===grp).map(x=>x.order||0))+1;
-    put('checks',id||uid('c'),{...c,text,group:grp,rain:$('#c-rain').checked,order,bag:(document.querySelector('input[name=c-bag]:checked')||{}).value||''});return true},
+    const dv=$('#c-dev').value,nc={...c,text,group:grp,rain:$('#c-rain').checked,order,bag:(document.querySelector('input[name=c-bag]:checked')||{}).value||''};if(dv==='')delete nc.dev;else nc.dev=dv==='-'?'':dv;put('checks',id||uid('c'),nc);return true},
   id?{onDelete:()=>del('checks',id)}:{});
 }
 
