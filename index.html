@@ -180,6 +180,7 @@ details.fold>.cgrid{padding:8px 8px 0}
 .wcab .xlr{stroke-width:9}.wcab .blk{stroke:#222;stroke-width:6}.wcab .brd{stroke:#222;stroke-width:10;stroke-dasharray:4 2}.wcab .gry{stroke:#8A8F94;stroke-width:10}.wcab .usbo{stroke:#bbb;stroke-width:9}.wcab .air{stroke:#1F6E77}
 .cpic rect{fill:#fff;stroke:#ccc;stroke-width:1.5}.cpic text{font-size:12px;font-weight:700;fill:#333}
 .wmain .dim{opacity:.18}
+.wmain{position:relative}.wmain svg.wire{max-height:58vh}.wmain.big{overflow-x:auto}.wmain.big svg.wire{max-height:none;min-width:900px}.wzoom{position:absolute;top:8px;right:8px;z-index:2;padding:4px 10px;font-size:13px}
 .wtop{display:grid;gap:10px}@media (min-width:900px){.wtop{grid-template-columns:1.25fr 1fr;align-items:start}}
 .wbox{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:8px}
 svg.wire,svg.wpanel{width:100%;height:auto;display:block}svg.wpanel{max-width:560px;margin:0 auto}
@@ -674,6 +675,7 @@ function wPick(dev){const inp=document.createElement('input');inp.type='file';in
 function wBlob(dev,f){{const u=URL.createObjectURL(f),im=new Image();
   im.onload=()=>{const k=Math.min(1,800/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
     {const I=wImg();if(I[dev]){I['_alt_'+dev]=[I[dev]].concat(wAlt(dev)).slice(0,6)}I[dev]=c.toDataURL('image/jpeg',.82)}URL.revokeObjectURL(u);wImgSave();render()};im.onerror=()=>toast('這張圖讀不出來');im.src=u}}
+document.addEventListener('click',e=>{const z=e.target.closest('[data-wzoom]');if(!z)return;window.wBig=!window.wBig;z.parentNode.classList.toggle('big',window.wBig);z.textContent=window.wBig?'🔍 縮小':'🔍 放大'});
 // AG06 圖的長寬比（孔位用百分比，要照真的比例換算）
 let _agR={u:'',r:1};
 function wAgRatio(u){if(!u)return 1;if(_agR.u===u)return _agR.r;_agR={u,r:1};const i=new Image();i.onload=()=>{if(_agR.u!==u)return;const r=i.naturalWidth/i.naturalHeight||1;if(Math.abs(r-_agR.r)>.01){_agR.r=r;if(document.querySelector('svg.wire'))render()}};i.src=u;return 1}
@@ -725,7 +727,7 @@ function vWire(){
   let h=`<div class="packbar"><p class="small muted" style="margin:0">點圖上的東西，下面會出現那一組要帶什麼、插哪裡。</p><button class="btn sm" data-act="wpack">📦 匯入圖片包</button></div>`;
   const thumbs=k=>Object.entries(wDevs()).filter(([d,v])=>v.g===k&&wImg()[d]).map(([d,v])=>`<img src="${wImg()[d]}" alt="${esc(v.n)}" title="${esc(v.n)}">`).join('');
   h+=`<div class="wchips">${WG.map(x=>`<button class="wchip ${wireSel===x.k?'on':''}" data-wire="${x.k}"><b>${x.ic} ${x.n}</b><span>${thumbs(x.k)}</span></button>`).join('')}</div>`;
-  h+=`<div class="wbox wmain">${wDiagram()}</div><div class="wtop">`;
+  h+=`<div class="wbox wmain${window.wBig?' big':''}"><button class="ghost wzoom" data-wzoom="1">${window.wBig?'🔍 縮小':'🔍 放大'}</button>${wDiagram()}</div><div class="wtop">`;
   const g=WG.find(x=>x.k===wireSel);
   if(g){h+=`<div class="bag packpanel wcard"><div class="baghead"><b>${g.ic} ${g.n}</b><span class="pcnt num">${wItems(g).filter(i=>inv[g.k+'|'+i]).length}/${wItems(g).length}</span><button class="btn sm" data-wire="">✕</button></div>
     <div class="wplug">${g.plug.map(p=>`<div>${esc(p)}</div>`).join('')}</div>
