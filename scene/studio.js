@@ -32,7 +32,7 @@ async function openStudio(){
     <div class="s-bot">
       <div class="s-l"><button data-act="spic" id="s-picb">🖼 大畫面</button><button data-act="szoom" id="s-zoom">整首</button><button data-act="sloop" id="s-loop" class="on">🔁 重複</button><span class="s-key"><button data-act="skey" data-d="-1" aria-label="降半音">−</button><b id="s-keyv">${keyTxt(getKey())}</b><button data-act="skey" data-d="1" aria-label="升半音">＋</button></span></div>
       <div class="s-c"><button data-act="shome" aria-label="回到開頭">⏮</button><button data-act="srec0" class="s-rec0" aria-label="從頭錄">⏺ 從頭錄</button><button data-act="splay" class="s-pp" id="s-pp">▶</button><button data-act="srec" class="s-rec" id="s-rec" aria-label="錄音"><i></i></button></div>
-      <div class="s-r"><button data-act="shq" id="s-hq" aria-label="錄音模式">🎙 原音</button><button data-act="simp" aria-label="匯入別的 App 錄的音檔">📥 匯入錄音</button><button data-act="smic">🔬 錄音測試</button><span class="s-tip" id="s-tip">點波形或歌詞選從哪裡開始錄</span></div>
+      <div class="s-r"><button data-act="shq" id="s-hq" aria-label="錄音模式">🎙 原音</button><button data-act="simp" aria-label="匯入別的 App 錄的音檔">📥 匯入錄音</button><span class="s-tip" id="s-tip">點波形或歌詞選從哪裡開始錄</span></div>
     </div>
     <div class="s-msg" id="s-msg">載入中…</div>`;
   app.appendChild(d);document.body.classList.add('studio');
@@ -351,7 +351,6 @@ app.addEventListener('click',e=>{
   else if(act==='splay'){if(S.recd)sRecStop();else if(S.playing)sStop();else sPlay(S.pos)}
   else if(act==='srec')sRecStart();
   else if(act==='simp')sImport();
-  else if(act==='smic'){if(!S.recd)location.href='mictest.html?t='+Date.now()}
   else if(act==='srec0'){if(S.recd)return sRecStop();S.sel=null;S.loop=false;S.pos=0;sRecStart()}
   else if(act==='shome'){const was=S.playing;S.pos=S.sel?Math.max(0,S.sel[0]-1):0;if(was)sPlay(S.pos);else sHead()}
   else if(act==='ssec'){const i=+a.dataset.i,[x,y]=secRange(i);
