@@ -150,7 +150,8 @@ details.fold>.cgrid{padding:8px 8px 0}
 .tile2.ghost{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-60%) rotate(-3deg);box-shadow:0 8px 20px rgba(0,0,0,.25);background:var(--surface)}
 .dropover{outline:3px solid var(--coin);outline-offset:3px;background:var(--coin-bg)!important}
 .wthumbs{display:flex;flex-wrap:wrap;gap:10px;padding:4px 12px 10px}.wthumbs figure{margin:0;width:120px;text-align:center}.wthumbs img{width:120px;height:90px;object-fit:contain;background:#fff;border-radius:10px;border:1px solid var(--line)}.wthumbs figcaption{font-size:12px;color:var(--muted)}
-.wpics{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 12px}
+.wpics{display:grid;gap:6px;padding:0 12px 12px}.wdrag rect,.wpic.wdrag{outline:3px dashed var(--accent);stroke:var(--accent)!important;stroke-width:4!important;fill:var(--accent-soft)!important}.wpic.wdrag{border-radius:10px;background:var(--accent-soft)}
+.wpic{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.wpic b{min-width:8em;font-size:14px}
 .agimg{position:relative;max-width:520px;margin:0 auto}.agimg img{width:100%;display:block;border-radius:10px}
 .agp{position:absolute;transform:translate(-50%,-50%);display:grid;justify-items:center;pointer-events:none}
 .agp b{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.85);color:var(--muted);border:2px solid #999;font-size:15px}
@@ -623,16 +624,18 @@ const WDEV={mic:{n:'有線麥克風',g:'mic'},wl:{n:'無線麥克風＋接收器
   stand:{n:'腳架',g:'stand'},tray:{n:'托盤',g:'stand'},xlr:{n:'藍色 XLR 線',g:'mic'},aux:{n:'3.5mm 音源線',g:'bk'},adp:{n:'iPad 轉接頭',g:'bk'},usbc:{n:'USB-C 線',g:'mix'},trs:{n:'6.3mm 導線',g:'spk'}};
 let WIMG=null;function wImg(){if(!WIMG){try{WIMG=JSON.parse(localStorage.getItem(LS+'-wimg')||'{}')}catch(e){WIMG={}}}return WIMG}
 function wImgSave(){try{localStorage.setItem(LS+'-wimg',JSON.stringify(WIMG))}catch(e){toast('這台裝置空間不夠，圖片沒存到')}}
-function wPick(dev){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=()=>{const f=inp.files&&inp.files[0];if(!f)return;const u=URL.createObjectURL(f),im=new Image();
+async function wPaste(dev){try{if(!navigator.clipboard||!navigator.clipboard.read)throw 0;const items=await navigator.clipboard.read();for(const it of items){const t=it.types.find(x=>x.startsWith('image/'));if(t)return wBlob(dev,await it.getType(t))}toast('剪貼簿裡沒有圖片：先在網頁上長按圖片 →「拷貝」')}catch(e){toast('沒辦法貼上：先在網頁上長按圖片 →「拷貝」，再按貼上')}}
+function wPick(dev){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=()=>{const f=inp.files&&inp.files[0];if(f)wBlob(dev,f)};inp.click()}
+function wBlob(dev,f){{const u=URL.createObjectURL(f),im=new Image();
   im.onload=()=>{const k=Math.min(1,1000/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
-    wImg()[dev]=c.toDataURL('image/jpeg',.86);URL.revokeObjectURL(u);wImgSave();render()};im.src=u};inp.click()}
+    wImg()[dev]=c.toDataURL('image/jpeg',.86);URL.revokeObjectURL(u);wImgSave();render()};im.onerror=()=>toast('這張圖讀不出來');im.src=u}}
 function wDiagram(){
   const IM=wImg(),on=g=>!wireSel||wireSel===g?'':' dim',sel=g=>wireSel===g?' sel':'';
   const I={mic:'<circle cx="24" cy="12" r="8"/><path d="M24 20v14M18 42h12M24 34v8"/>',wl:'<circle cx="24" cy="12" r="8"/><path d="M24 20v22"/><path d="M36 6a14 14 0 0 1 0 14M40 2a20 20 0 0 1 0 22"/>',
     ipad:'<rect x="10" y="4" width="28" height="40" rx="4"/><circle cx="24" cy="39" r="1.5"/>',bat:'<rect x="8" y="12" width="30" height="24" rx="4"/><path d="M38 20h3v8h-3M17 24h12M23 18v12"/>',
     bose:VI.speaker,iem:'<rect x="14" y="4" width="20" height="38" rx="4"/><path d="M24 4V0"/><circle cx="24" cy="30" r="5"/>',rx:'<rect x="6" y="10" width="16" height="22" rx="3"/><rect x="26" y="10" width="16" height="22" rx="3"/><path d="M10 38c0 4 5 6 8 3M30 38c0 4 5 6 8 3"/>',
     ag06:'<rect x="6" y="6" width="36" height="36" rx="4"/><circle cx="15" cy="15" r="4"/><circle cx="27" cy="15" r="4"/><circle cx="15" cy="32" r="3"/><circle cx="27" cy="32" r="3"/><circle cx="36" cy="32" r="3"/>'};
-  const card=(d,x,y,w,h)=>{const g=WDEV[d].g,ih=h-30;return `<g class="wn${on(g)}${sel(g)}" data-wire="${g}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14"/>${IM[d]?`<image href="${IM[d]}" x="${x+6}" y="${y+6}" width="${w-12}" height="${ih-6}" preserveAspectRatio="xMidYMid meet"/>`:`<g class="wi" transform="translate(${x+w/2-24*1.1} ${y+ih/2-24*1.1}) scale(1.1)">${I[d]}</g>`}<text x="${x+w/2}" y="${y+h-10}" class="wt" text-anchor="middle">${WDEV[d].n}</text></g>`};
+  const card=(d,x,y,w,h)=>{const g=WDEV[d].g,ih=h-30;return `<g class="wn${on(g)}${sel(g)}" data-wire="${g}" data-wdrop="${d}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14"/>${IM[d]?`<image href="${IM[d]}" x="${x+6}" y="${y+6}" width="${w-12}" height="${ih-6}" preserveAspectRatio="xMidYMid meet"/>`:`<g class="wi" transform="translate(${x+w/2-24*1.1} ${y+ih/2-24*1.1}) scale(1.1)">${I[d]}</g>`}<text x="${x+w/2}" y="${y+h-10}" class="wt" text-anchor="middle">${WDEV[d].n}</text></g>`};
   const badge=(x,y,n)=>`<g class="wb"><circle cx="${x}" cy="${y}" r="12"/><text x="${x}" y="${y+5}">${n}</text></g>`;
   return `<svg class="wire" viewBox="0 0 760 470" role="img" aria-label="接線總圖">
   <g class="wc${on('mic')}"><path class="xlr" d="M180 80 C230 80 230 150 270 150"/><path class="air" d="M180 230 C230 230 230 188 270 188"/></g>
@@ -673,7 +676,7 @@ function vWire(){
     <div class="wplug">${g.plug.map(p=>`<div>${esc(p)}</div>`).join('')}</div>
     <div class="witems">${g.items.map(i=>`<button class="wit ${inv[g.k+'|'+i]?'done':''}" data-winv="${esc(g.k+'|'+i)}">${inv[g.k+'|'+i]?'✓ ':''}${esc(i)}</button>`).join('')}</div>
     ${Object.entries(WDEV).some(([d,v])=>v.g===g.k&&wImg()[d])?`<div class="wthumbs">${Object.entries(WDEV).filter(([d,v])=>v.g===g.k&&wImg()[d]).map(([d,v])=>`<figure><img src="${wImg()[d]}" alt=""><figcaption>${esc(v.n)}</figcaption></figure>`).join('')}</div>`:''}
-    <div class="wpics">${Object.entries(WDEV).filter(([d,v])=>v.g===g.k).map(([d,v])=>`<button class="btn sm" data-wimg="${d}">🖼 ${wImg()[d]?'換':'放'} ${esc(v.n)} 的圖</button>${wImg()[d]?`<button class="btn sm" data-wimgdel="${d}">移除</button>`:''}`).join('')}</div>
+    <div class="wpics">${Object.entries(WDEV).filter(([d,v])=>v.g===g.k).map(([d,v])=>`<span class="wpic" data-wdrop="${d}"><b>${esc(v.n)}</b><button class="btn sm" data-wpaste="${d}">📋 貼上</button><button class="btn sm" data-wimg="${d}">🖼 相簿</button>${wImg()[d]?`<button class="btn sm" data-wimgdel="${d}">移除</button>`:''}</span>`).join('')}</div>
     ${g.jk.length?`<div class="wbox" style="margin-top:8px">${wPanel()}</div>`:''}</div>`}
   else h+=`<div class="wbox">${wPanel()}</div>`;
   h+='</div>';
@@ -1084,6 +1087,13 @@ document.addEventListener('pointerdown',e=>{
 document.addEventListener('click',e=>{if(Date.now()-dragSup<350&&e.target.closest('.tile2,.vs')){e.stopPropagation();e.preventDefault()}},true);
 
 /* ---------- events ---------- */
+// 拖曳圖片：拖到接線圖上的設備，或卡片裡那一行
+document.addEventListener('dragover',e=>{const t=e.target.closest&&e.target.closest('[data-wdrop]');if(!t)return;e.preventDefault();document.querySelectorAll('.wdrag').forEach(x=>x.classList.remove('wdrag'));t.classList.add('wdrag')});
+document.addEventListener('dragleave',e=>{const t=e.target.closest&&e.target.closest('[data-wdrop]');if(t)t.classList.remove('wdrag')});
+document.addEventListener('drop',async e=>{const t=e.target.closest&&e.target.closest('[data-wdrop]');if(!t)return;e.preventDefault();t.classList.remove('wdrag');const dt=e.dataTransfer;let f=[...(dt.files||[])].find(x=>x.type.startsWith('image/'));
+  if(!f){const u=dt.getData('text/uri-list')||dt.getData('text/plain');if(u&&/^https?:/.test(u)){try{const r=await fetch(u);const b=await r.blob();if(b.type.startsWith('image/'))f=b}catch(_){}}}
+  if(f)wBlob(t.dataset.wdrop,f);else toast('這張圖拖不進來：改用長按「拷貝」再按 📋 貼上')});
+document.addEventListener('paste',e=>{if(tab!=='gear'||gearSeg!=='wire'||!wireSel)return;const f=[...(e.clipboardData&&e.clipboardData.files||[])].find(x=>x.type.startsWith('image/'));if(!f)return;const d=Object.entries(WDEV).find(([k,v])=>v.g===wireSel&&!wImg()[k]);if(d){e.preventDefault();wBlob(d[0],f)}});
 document.addEventListener('click',e=>{const w=e.target.closest('[data-wire]');if(!w||!document.querySelector('.wbox'))return;const k=w.dataset.wire;wireSel=k&&wireSel!==k?k:'';render();e.stopPropagation()},true);
 document.addEventListener('click',e=>{
   const t=e.target.closest('button,[data-act]'); if(!t)return;
@@ -1094,6 +1104,7 @@ document.addEventListener('click',e=>{
   if(d.logseg){logSeg=d.logseg;render();return}
   if(d.vspot){siteSel=d.vspot;render();return}
   if(d.wimg){wPick(d.wimg);return}
+  if(d.wpaste){wPaste(d.wpaste);return}
   if(d.wimgdel){delete wImg()[d.wimgdel];wImgSave();render();return}
   if(d.wmode){wireMode=d.wmode;render();return}
   if(d.winv){const id=d.winv;return wSet(s=>{s.inv=s.inv||{};if(s.inv[id])delete s.inv[id];else s.inv[id]=1})}
