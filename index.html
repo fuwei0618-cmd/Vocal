@@ -16,7 +16,7 @@
 .chip.q{font-size:12.5px;padding:3px 9px}
 .vg .vrow{display:flex;gap:8px;flex-wrap:nowrap}.vg .vrow .bl.box{flex:1;width:auto}
 .wins2{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.wins2 .w{display:inline-flex;align-items:center;gap:5px;background:var(--accent-soft);border-radius:99px;padding:2px 4px 2px 10px;font-size:13px}.wins2 small{color:var(--muted)}.wins2 .x{font-size:15px;padding:0 4px}
-</style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1"><link rel="icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vocal"><meta name="theme-color" content="#EDEFEA"><script src="https://fuwei0618-cmd.github.io/Entry/sync/origina-sync.js" data-app="vocal" data-keys="busk-app-v1" data-pos="br"></script>
+</style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1"><link rel="icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vocal"><meta name="theme-color" content="#EDEFEA"><script src="https://fuwei0618-cmd.github.io/Entry/sync/origina-sync.js" data-app="vocal" data-keys="busk-app-v1,busk-app-v1-wimg,busk-app-v1-wire" data-pos="br"></script>
 </head><body>
 <title>街演 App</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -627,8 +627,8 @@ function wImgSave(){try{localStorage.setItem(LS+'-wimg',JSON.stringify(WIMG))}ca
 async function wPaste(dev){try{if(!navigator.clipboard||!navigator.clipboard.read)throw 0;const items=await navigator.clipboard.read();for(const it of items){const t=it.types.find(x=>x.startsWith('image/'));if(t)return wBlob(dev,await it.getType(t))}toast('剪貼簿裡沒有圖片：先在網頁上長按圖片 →「拷貝」')}catch(e){toast('沒辦法貼上：先在網頁上長按圖片 →「拷貝」，再按貼上')}}
 function wPick(dev){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=()=>{const f=inp.files&&inp.files[0];if(f)wBlob(dev,f)};inp.click()}
 function wBlob(dev,f){{const u=URL.createObjectURL(f),im=new Image();
-  im.onload=()=>{const k=Math.min(1,1000/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
-    wImg()[dev]=c.toDataURL('image/jpeg',.86);URL.revokeObjectURL(u);wImgSave();render()};im.onerror=()=>toast('這張圖讀不出來');im.src=u}}
+  im.onload=()=>{const k=Math.min(1,800/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
+    wImg()[dev]=c.toDataURL('image/jpeg',.82);URL.revokeObjectURL(u);wImgSave();render()};im.onerror=()=>toast('這張圖讀不出來');im.src=u}}
 function wDiagram(){
   const IM=wImg(),on=g=>!wireSel||wireSel===g?'':' dim',sel=g=>wireSel===g?' sel':'';
   const I={mic:'<circle cx="24" cy="12" r="8"/><path d="M24 20v14M18 42h12M24 34v8"/>',wl:'<circle cx="24" cy="12" r="8"/><path d="M24 20v22"/><path d="M36 6a14 14 0 0 1 0 14M40 2a20 20 0 0 1 0 22"/>',
