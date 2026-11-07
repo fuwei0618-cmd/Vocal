@@ -32,7 +32,7 @@ async function openStudio(){
     <div class="s-bot">
       <div class="s-l"><button data-act="spic" id="s-picb">🖼 大畫面</button><button data-act="szoom" id="s-zoom">整首</button><button data-act="sloop" id="s-loop" class="on">🔁 重複</button><span class="s-key"><button data-act="skey" data-d="-1" aria-label="降半音">−</button><b id="s-keyv">${keyTxt(getKey())}</b><button data-act="skey" data-d="1" aria-label="升半音">＋</button></span></div>
       <div class="s-c"><button data-act="shome" aria-label="回到開頭">⏮</button><button data-act="srec0" class="s-rec0" aria-label="從頭錄">⏺ 從頭錄</button><button data-act="splay" class="s-pp" id="s-pp">▶</button><button data-act="srec" class="s-rec" id="s-rec" aria-label="錄音"><i></i></button></div>
-      <div class="s-r"><button data-act="shq" id="s-hq" aria-label="耳機高音質">🎧 高音質</button><span class="s-tip" id="s-tip">點波形或歌詞選從哪裡開始錄</span></div>
+      <div class="s-r"><button data-act="shq" id="s-hq" aria-label="耳機高音質">🎧 高音質</button><button data-act="simp" aria-label="匯入別的 App 錄的音檔">📥 匯入錄音</button><span class="s-tip" id="s-tip">點波形或歌詞選從哪裡開始錄</span></div>
     </div>
     <div class="s-msg" id="s-msg">載入中…</div>`;
   app.appendChild(d);document.body.classList.add('studio');
@@ -178,6 +178,21 @@ function sLoop(){
     S.lastP=p;sHead();sLoop()});
 }
 // 錄音
+// v112：iPad 網頁錄音一定會經過通話處理（音質差、忽大忽小），改用別的 App（GarageBand、Cubasis、語音備忘錄）錄好再匯入。
+// 匯入的音檔從播放頭的位置開始放（播放頭在 0:00＝跟歌的開頭對齊），之後一樣可以拖、早一點／晚一點
+function sImport(){
+  if(S.recd)return;const inp=document.createElement('input');inp.type='file';inp.accept='audio/*,.m4a,.wav,.mp3,.aif,.aiff,.caf';
+  inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;sStop();sMsg('讀取錄音…');
+    let all;try{all=await decodeHead(f)}catch(e){sMsg('');alert('這個檔案讀不出來。GarageBand 請用「分享 → 歌曲 → 高品質」存成 m4a 或 wav 再匯入');return}
+    sMsg('');const b=all.numberOfChannels>1?toMono(all):all,sr=b.sampleRate,d=b.getChannelData(0);
+    const buf=S.ctx.createBuffer(1,d.length,sr);buf.copyToChannel(new Float32Array(d),0);
+    const st=r2(S.pos<.5?0:S.pos);
+    const take={id:Date.now(),blob:f.size<60e6?f:toWav(buf),start:st,lead:0,track,end:r2(st+buf.duration),at:Date.now(),heard:[track],adj:0,imp:1};
+    takes.push(take);S.bufs.set(take.id,{buf,peaks:peaksOf(buf)});await saveTakes();
+    S.selTake=take.id;sDraw();sTake();
+    sHint(st?`匯入好了，從 ${mmss(st)} 開始放。對不準就按住波形左右拖`:'匯入好了，從歌的開頭對齊。對不準就按住波形左右拖，或按「早一點／晚一點」')};
+  inp.click();
+}
 async function sRecStart(){
   if(S.recd)return sRecStop();sStop();
   const m=mix();let st;
@@ -323,6 +338,7 @@ app.addEventListener('click',e=>{
   else if(act==='skey'){if(S.recd)return;keyStep(+a.dataset.d)}
   else if(act==='splay'){if(S.recd)sRecStop();else if(S.playing)sStop();else sPlay(S.pos)}
   else if(act==='srec')sRecStart();
+  else if(act==='simp')sImport();
   else if(act==='srec0'){if(S.recd)return sRecStop();S.sel=null;S.loop=false;S.pos=0;sRecStart()}
   else if(act==='shome'){const was=S.playing;S.pos=S.sel?Math.max(0,S.sel[0]-1):0;if(was)sPlay(S.pos);else sHead()}
   else if(act==='ssec'){const i=+a.dataset.i,[x,y]=secRange(i);
