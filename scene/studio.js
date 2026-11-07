@@ -25,14 +25,14 @@ async function openStudio(){
     <div class="s-pic" style="background-image:url('${SCENES[key].img}')"><div class="s-lyr" id="s-lyr"></div></div>
     <div class="s-ruler" id="s-ruler"></div>
     <div class="s-lanes" id="s-lanes">${lanes.map(l=>`
-      <div class="s-lane${l.id==='me'?' me':''}" data-l="${l.id}"><div class="s-h"><b>${l.name}</b><div class="s-ms"><button data-act="smute" data-l="${l.id}" aria-label="靜音">M</button><button data-act="ssolo" data-l="${l.id}" aria-label="只聽這條">S</button></div><input type="range" min="0" max="${l.id==='me'?2:1.5}" step=".05" value="${l.vol}" data-act="svol" data-l="${l.id}"></div><canvas data-l="${l.id}"></canvas></div>`).join('')}
+      <div class="s-lane${l.id==='me'?' me':''}" data-l="${l.id}"><div class="s-h"><b>${l.name}</b><div class="s-ms"><button data-act="smute" data-l="${l.id}" aria-label="靜音">M</button><button data-act="ssolo" data-l="${l.id}" aria-label="只聽這條">S</button></div><input type="range" min="0" max="${l.id==='me'?3:1.5}" step=".05" value="${l.vol}" data-act="svol" data-l="${l.id}"></div><canvas data-l="${l.id}"></canvas></div>`).join('')}
       <div class="s-ph" id="s-ph"></div><div class="s-rb" id="s-rb" hidden></div>
     </div>
     <div class="s-take" id="s-take" hidden></div>
     <div class="s-bot">
       <div class="s-l"><button data-act="spic" id="s-picb">🖼 大畫面</button><button data-act="szoom" id="s-zoom">整首</button><button data-act="sloop" id="s-loop" class="on">🔁 重複</button><span class="s-key"><button data-act="skey" data-d="-1" aria-label="降半音">−</button><b id="s-keyv">${keyTxt(getKey())}</b><button data-act="skey" data-d="1" aria-label="升半音">＋</button></span></div>
       <div class="s-c"><button data-act="shome" aria-label="回到開頭">⏮</button><button data-act="srec0" class="s-rec0" aria-label="從頭錄">⏺ 從頭錄</button><button data-act="splay" class="s-pp" id="s-pp">▶</button><button data-act="srec" class="s-rec" id="s-rec" aria-label="錄音"><i></i></button></div>
-      <div class="s-r"><button data-act="shq" id="s-hq" aria-label="耳機高音質">🎧 高音質</button><button data-act="simp" aria-label="匯入別的 App 錄的音檔">📥 匯入錄音</button><button data-act="smic">🔬 錄音測試</button><span class="s-tip" id="s-tip">點波形或歌詞選從哪裡開始錄</span></div>
+      <div class="s-r"><button data-act="shq" id="s-hq" aria-label="錄音模式">🎙 原音</button><button data-act="simp" aria-label="匯入別的 App 錄的音檔">📥 匯入錄音</button><button data-act="smic">🔬 錄音測試</button><span class="s-tip" id="s-tip">點波形或歌詞選從哪裡開始錄</span></div>
     </div>
     <div class="s-msg" id="s-msg">載入中…</div>`;
   app.appendChild(d);document.body.classList.add('studio');
@@ -61,7 +61,7 @@ async function sReloadKey(){
 }
 // 重複範圍跟外面同步：錄音室🔁開著＋有選範圍＝外面也重複同樣幾段
 function sSyncLoop(){loopA=loopB=null;if(S.sel&&S.loop){loopSec=secAt(S.sel[0]+.05);loopEnd=Math.max(loopSec,secAt(S.sel[1]-.3))}else loopSec=loopEnd=-1}
-function sHqBtn(){const b=document.getElementById('s-hq');if(b)b.classList.toggle('on',lsGet('scene-hq-v1')==='1')}
+function sHqBtn(){const b=document.getElementById('s-hq');if(!b)return;const raw=lsGet('scene-recmode-v1')!=='ec';b.classList.toggle('on',raw);b.textContent=raw?'🎙 原音':'📞 通話模式'}
 function toMono(b){const o=S.ctx.createBuffer(1,b.length,b.sampleRate),d=o.getChannelData(0),c0=b.getChannelData(0),c1=b.getChannelData(1);for(let i=0;i<b.length;i++)d[i]=(c0[i]+c1[i])/2;return o}
 function closeStudio(){
   if(!S)return;if(S.recd)sRecStop(true);
@@ -158,7 +158,7 @@ function sPlay(from){
   sStop();const c=S.ctx;if(c.state==='suspended')c.resume();
   const T=c.currentTime+.08;S.T=T;S.from=from;S.playing=true;S.srcs=[];S.gains={};
   // 錄音時 iPad 會把喇叭壓小聲：錄音時整體放大 3 倍，再用壓縮器防爆音
-  let out=c.destination;if(S.recd){const cp=c.createDynamicsCompressor();cp.threshold.value=-10;cp.knee.value=6;cp.ratio.value=12;cp.attack.value=.003;cp.release.value=.2;
+  let out=c.destination;if(S.recd&&!S.recd.raw){const cp=c.createDynamicsCompressor();cp.threshold.value=-10;cp.knee.value=6;cp.ratio.value=12;cp.attack.value=.003;cp.release.value=.2;
     const mg=c.createGain();mg.gain.value=3;mg.connect(cp);cp.connect(c.destination);out=mg;S.gains._m=mg;S.gains._c=cp}
   S.lanes.forEach(l=>{const g=c.createGain();g.connect(out);S.gains[l.id]=g;
     if(l.id!=='me'){if(l.buf&&from<l.buf.duration){const s=c.createBufferSource();s.buffer=l.buf;s.connect(g);s.start(T,from);S.srcs.push(s)}return}
@@ -193,6 +193,7 @@ function sImport(){
     sHint(st?`匯入好了，從 ${mmss(st)} 開始放。對不準就按住波形左右拖`:'匯入好了，從歌的開頭對齊。對不準就按住波形左右拖，或按「早一點／晚一點」')};
   inp.click();
 }
+function adjKey(){return lsGet('scene-recmode-v1')==='ec'?'scene-recadj-v1':'scene-recadj-raw-v1'}
 async function sRecStart(){
   if(S.recd)return sRecStop();sStop();
   const m=mix();let st;
@@ -201,28 +202,34 @@ async function sRecStart(){
   // 🎧 高音質：戴耳機時不需要消除回音，關掉 iPad 的通話處理（消回音、降噪、自動音量），聲音比較原汁原味
   // 如果這台 iPad 這樣會錄成靜音，錄完會自動切回一般模式
   // v111：她說一般模式聲音忽大忽小、音質差＝iPad 的「自動音量」跟「降噪」在搞鬼；一般模式只留消回音，其餘關掉
-  const hq=lsGet('scene-hq-v1')==='1',ec=!hq;
+  // v115：她 iPad 測出來：原音模式（通話處理全關）其實有錄到，只是小 50 dB；用 Web Audio 直接收 PCM，再自己放大＝她說「起雞皮疙瘩」的音質。預設用原音，按鈕可切回通話模式
+  const raw=lsGet('scene-recmode-v1')!=='ec',hq=raw,ec=!raw;
   // 背景播放把 iPad 的聲音模式設成「只播放」，那個模式不能用麥克風；錄音前要換成「播放＋錄音」
   try{if(navigator.audioSession)navigator.audioSession.type='play-and-record'}catch(e){}
-  try{st=await navigator.mediaDevices.getUserMedia({audio:hq?{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}:lsGet('scene-recplain-v1')==='1'?true:{echoCancellation:true,noiseSuppression:false,autoGainControl:false,channelCount:1}})}
+  try{st=await navigator.mediaDevices.getUserMedia({audio:raw?{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}:lsGet('scene-recplain-v1')==='1'?true:{echoCancellation:true,noiseSuppression:false,autoGainControl:false,channelCount:1}})}
   catch(e){alert('沒辦法用麥克風：到「設定 → Safari → 麥克風」允許，或重新打開再按一次');return}
   const c=S.ctx;if(c.state==='suspended')await c.resume();
   // 從播放頭開始錄（前面多播 2 秒預備）；播放頭在選的段落裡，唱到段尾自動停
   const p0=S.pos,keep=Math.max(0,p0-.3),from=Math.max(0,p0-2),until=S.sel&&S.loop&&p0<S.sel[1]-.5?Math.min(S.dur,S.sel[1]+.5):0;
   // 用 iPad 自己的錄音器（MediaRecorder）錄，Web Audio 直接收麥克風在 iPad 上會收到一片靜音
   const type=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||'';
-  const mr=new MediaRecorder(st,Object.assign({audioBitsPerSecond:256000},type?{mimeType:type}:{}));
-  const r={ec,st,mr,type,chunks:[],t0:null,until,keep,from,p0,heard:S.lanes.filter(l=>l.id!=='me'&&l.buf&&audible(l)).map(l=>l.id)};S.recd=r;
-  mr.ondataavailable=e=>{if(e.data&&e.data.size)r.chunks.push(e.data)};
+  const mr=raw?null:new MediaRecorder(st,Object.assign({audioBitsPerSecond:256000},type?{mimeType:type}:{}));
+  const r={raw,pcm:[],ec,st,mr,type,chunks:[],t0:null,until,keep,from,p0,heard:S.lanes.filter(l=>l.id!=='me'&&l.buf&&audible(l)).map(l=>l.id)};S.recd=r;
+  if(mr)mr.ondataavailable=e=>{if(e.data&&e.data.size)r.chunks.push(e.data)};
   const tr0=st.getAudioTracks()[0];r.bad=()=>!tr0||tr0.readyState==='ended'||tr0.muted;
-  await new Promise(ok=>{mr.onstart=()=>{r.t0=c.currentTime;ok()};mr.start(1000);setTimeout(ok,1500)});
+  if(raw){const ms=c.createMediaStreamSource(st),sp=c.createScriptProcessor(4096,1,1),z=c.createGain();z.gain.value=0;
+    sp.onaudioprocess=e=>{if(r.t0==null)r.t0=c.currentTime-4096/c.sampleRate;r.pcm.push(new Float32Array(e.inputBuffer.getChannelData(0)))};
+    ms.connect(sp);sp.connect(z);z.connect(c.destination);r.sp=sp;r.ms=ms;r.z=z;r.sr=c.sampleRate;
+    await new Promise(ok=>{const t=setInterval(()=>{if(r.t0!=null){clearInterval(t);ok()}},20);setTimeout(()=>{clearInterval(t);ok()},1500)})}
+  else await new Promise(ok=>{mr.onstart=()=>{r.t0=c.currentTime;ok()};mr.start(1000);setTimeout(ok,1500)});
   if(r.t0==null)r.t0=c.currentTime;
   document.getElementById('s-rec').classList.add('on');document.getElementById('studio').classList.add('recording');sBig();
   sPlay(from);
 }
 async function sRecStop(cancel){
   const r=S&&S.recd;if(!r)return;S.recd=null;sStop();
-  const done=new Promise(ok=>{r.mr.onstop=ok;setTimeout(ok,3000)});try{r.mr.stop()}catch(e){}await done;r.st.getTracks().forEach(t=>t.stop());
+  if(r.raw){try{r.ms.disconnect();r.sp.disconnect();r.z.disconnect()}catch(e){}}
+  else{const done=new Promise(ok=>{r.mr.onstop=ok;setTimeout(ok,3000)});try{r.mr.stop()}catch(e){}await done}r.st.getTracks().forEach(t=>t.stop());
   document.getElementById('s-rec').classList.remove('on');document.getElementById('studio').classList.remove('recording');sBig();
   const T=S.T,c0=S.ctx;
   // 麥克風關掉後 iPad 又換回一般音訊設定，再換一個新的引擎
@@ -230,25 +237,30 @@ async function sRecStop(cancel){
   try{const old=actx;actx=null;S.ctx=audioCtx();old&&old.close&&old.close()}catch(e){}
   const tp=document.getElementById('s-tip');if(tp)tp.textContent='點波形或歌詞選從哪裡開始錄';
   if(cancel){sDraw();return}
-  if(!r.chunks.length){alert('iPad 的錄音器沒有給任何資料：請關掉 Vocal 重新打開再錄一次；如果還是一樣，告訴我');sDraw();return}
+  if(!r.raw&&!r.chunks.length){alert('iPad 的錄音器沒有給任何資料：請關掉 Vocal 重新打開再錄一次；如果還是一樣，告訴我');sDraw();return}
   sMsg('整理錄音…');
-  let all;try{all=await decodeHead(new Blob(r.chunks,{type:r.mr.mimeType||r.type||'audio/mp4'}))}catch(e){sMsg('');alert('這次錄音讀不出來，再錄一次試試');sDraw();return}
+  let all;if(r.raw){let n=0;r.pcm.forEach(a=>n+=a.length);if(!n){sMsg('');alert('這次沒收到聲音，再錄一次試試');sDraw();return}
+    const d=new Float32Array(n);let o=0;r.pcm.forEach(a=>{d.set(a,o);o+=a.length});r.pcm=null;
+    // 原音很小聲：自己放大到最大聲的地方剛好不爆（最多放大 60 dB）
+    let pk=0;for(let i=0;i<n;i++){const v=Math.abs(d[i]);if(v>pk)pk=v}const g=pk>0?Math.min(1000,.89/pk):1;for(let i=0;i<n;i++)d[i]*=g;
+    all=S.ctx.createBuffer(1,n,r.sr);all.copyToChannel(d,0)}
+  else try{all=await decodeHead(new Blob(r.chunks,{type:r.mr.mimeType||r.type||'audio/mp4'}))}catch(e){sMsg('');alert('這次錄音讀不出來，再錄一次試試');sDraw();return}
   sMsg('');
   // 錄音器開始的那一刻＝歌的第幾秒（之後再用錄進去的喇叭聲精準對齊）
   const sr=all.sampleRate,lat=Math.min(.5,(c0.outputLatency||0)+(c0.baseLatency||0)),start0=r.from+(r.t0-T)-lat,d0=all.getChannelData(0);
   let pk=0;for(let i=0;i<d0.length;i+=64){const v=Math.abs(d0[i]);if(v>pk)pk=v}
-  if(pk<.002){if(!r.ec){lsSet('scene-hq-v1','0');sHqBtn();alert('高音質模式在這台 iPad 錄不到聲音，已經切回一般模式，再錄一次就好');sDraw();return}
+  if(pk<.002&&!r.raw){if(!r.ec){lsSet('scene-hq-v1','0');sHqBtn();alert('高音質模式在這台 iPad 錄不到聲音，已經切回一般模式，再錄一次就好');sDraw();return}
     if(lsGet('scene-recplain-v1')!=='1'){lsSet('scene-recplain-v1','1');alert('這台 iPad 用新的錄音設定錄不到聲音，已經換回原本的設定，再錄一次就好');sDraw();return}
     alert('錄到的是靜音：請到 iPad「設定 → Safari → 麥克風」確認是「允許」，再錄一次');sDraw();return}
   // 高音質沒有自動音量：太大聲會爆，提醒她
-  {let clip=0;for(let i=0;i<d0.length;i+=4)if(Math.abs(d0[i])>.98)clip++;if(clip>50)setTimeout(()=>sHint('有幾個地方太大聲爆掉了，麥克風離遠一點再錄'),300)}
+  if(!r.raw){let clip=0;for(let i=0;i<d0.length;i+=4)if(Math.abs(d0[i])>.98)clip++;if(clip>50)setTimeout(()=>sHint('有幾個地方太大聲爆掉了，麥克風離遠一點再錄'),300)}
   const cut=Math.max(0,Math.round((r.keep-start0)*sr)),data=new Float32Array(d0.subarray(cut));if(data.length<sr*.5){sDraw();return}
   const buf=S.ctx.createBuffer(1,data.length,sr);buf.copyToChannel(data,0);
   const take={id:Date.now(),blob:toWav(buf),start:r2(start0+cut/sr),lead:0,track,end:r2(start0+(cut+data.length)/sr),at:Date.now(),heard:r.heard,adj:0};
   takes.push(take);S.bufs.set(take.id,{buf,peaks:peaksOf(buf)});
   // 自動對不出來，就用她上次手動挪好的量
   // 她說自動對齊不準、先手動：新錄音不自動挪，直接套她上次手動拖好的量
-  let lag=null;if(lsGet('scene-recadj-v1')){take.adj=+lsGet('scene-recadj-v1')||0;if(take.adj)lag=take.adj}await saveTakes();
+  let lag=null;if(lsGet(adjKey())){take.adj=+lsGet(adjKey())||0;if(take.adj)lag=take.adj}await saveTakes();
   S.pos=Math.max(0,r.p0-1);S.selTake=take.id;sDraw();sTake();
   sHint(lag!=null?`錄好了，已經照你上次拖的量挪好。按 ▶ 聽聽看`:'錄好了。按住你的波形左右拖就能對齊，之後的錄音會照這個量');
 }
@@ -322,7 +334,7 @@ app.addEventListener('pointermove',e=>{if(!S||!pts.has(e.pointerId)||!g0)return;
   if(g0&&g0.mode==='tap'&&t==='pointerup'&&!S.recd){const c=g0.target,r=c.getBoundingClientRect(),x=Math.max(0,Math.min(S.dur,sT(e.clientX-r.left,r.width)));
     if(c.dataset.l==='me'){const hit=sCover().find(({a,b})=>x>=a&&x<=b);S.selTake=hit?hit.k.id:null;if(hit)sHint('選好這次錄音了：按住它左右拖可以對齊')}
     const was=S.playing;S.pos=x;if(was)sPlay(x);else sHead();sDraw()}
-  if(g0&&g0.mode==='move'){saveTakes();lsSet('scene-recadj-v1',String(g0.take.k.adj||0));if(S.playing)sPlay(sNow())}
+  if(g0&&g0.mode==='move'){saveTakes();lsSet(adjKey(),String(g0.take.k.adj||0));if(S.playing)sPlay(sNow())}
   // 順勢滑一下
   if(g0&&g0.mode==='pan'&&t==='pointerup'&&performance.now()-g0.lt<80&&Math.abs(g0.v)>.25){let v=g0.v,last=performance.now();const w=g0.w;
     const step=now=>{if(!S)return;const dt=now-last;last=now;const [v0,v1]=S.view,sp=v1-v0;sClampView(v0-v*dt/w*sp,sp);sDraw();v*=Math.pow(.94,dt/16);if(Math.abs(v)>.02)fling=requestAnimationFrame(step)};
@@ -334,7 +346,7 @@ app.addEventListener('click',e=>{
   if(!S)return;const a=e.target.closest('#studio [data-act]');if(!a)return;const act=a.dataset.act;
   const lane=id=>S.lanes.find(x=>x.id===id);
   if(act==='sx')closeStudio();
-  else if(act==='shq'){if(S.recd)return;const on=lsGet('scene-hq-v1')!=='1';lsSet('scene-hq-v1',on?'1':'0');sHqBtn();sHint(on?'原音開了：iPad 不做任何處理。沒戴耳機會錄進一點喇叭的伴奏':'回到一般錄音（iPad 會自動消回音、調音量）')}
+  else if(act==='shq'){if(S.recd)return;const raw=lsGet('scene-recmode-v1')==='ec';lsSet('scene-recmode-v1',raw?'raw':'ec');sHqBtn();sHint(raw?'原音模式：iPad 不做通話處理，錄完自動放大。音樂太大聲就把「伴奏」拉小一點':'通話模式：iPad 會消回音、自動調音量（音質比較差）')}
   else if(act==='skey'){if(S.recd)return;keyStep(+a.dataset.d)}
   else if(act==='splay'){if(S.recd)sRecStop();else if(S.playing)sStop();else sPlay(S.pos)}
   else if(act==='srec')sRecStart();
@@ -351,7 +363,7 @@ app.addEventListener('click',e=>{
   else if(act==='spic'){S.big=!S.big;sBig()}
   else if(act==='smute'){const l=lane(a.dataset.l);l.mute=!l.mute;if(l.mute)l.solo=false;sGains();sDraw();stSave()}
   else if(act==='ssolo'){const l=lane(a.dataset.l);l.solo=!l.solo;if(l.solo)l.mute=false;sGains();sDraw()}
-  else if(act==='sadj'){const k=takes.find(x=>x.id===S.selTake);if(!k)return;k.adj=r2((k.adj||0)+(+a.dataset.d)*.02);saveTakes();lsSet('scene-recadj-v1',String(k.adj));if(S.playing)sPlay(sNow());sDraw()}
+  else if(act==='sadj'){const k=takes.find(x=>x.id===S.selTake);if(!k)return;k.adj=r2((k.adj||0)+(+a.dataset.d)*.02);saveTakes();lsSet(adjKey(),String(k.adj));if(S.playing)sPlay(sNow());sDraw()}
   else if(act==='sauto'){const k=takes.find(x=>x.id===S.selTake);if(!k)return;const old=k.adj;k.adj=0;const lag=sAutoAdj(k);if(lag==null){k.adj=old;sHint(S.lanes.some(l=>(l.id==='orig'||l.id==='vocal')&&l.buf)?'這次聽不出來，用早一點／晚一點手動調':'要先放原曲（或人聲檔）才能自動對齊')}else{sHint(`對齊了（挪了 ${Math.abs(lag).toFixed(2)} 秒）`);saveTakes()}if(S.playing)sPlay(sNow());sDraw()}
   else if(act==='sdel'){if(!confirm('刪掉這次錄音？'))return;takes=takes.filter(k=>k.id!==S.selTake);S.selTake=null;saveTakes();if(S.playing)sPlay(sNow());sDraw()}
   else if(act==='sdesel'){S.selTake=null;sDraw()}
