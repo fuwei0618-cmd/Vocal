@@ -149,6 +149,7 @@ details.fold>.cgrid{padding:8px 8px 0}
 .tile2.dragsrc{opacity:.35}
 .tile2.ghost{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-60%) rotate(-3deg);box-shadow:0 8px 20px rgba(0,0,0,.25);background:var(--surface)}
 .dropover{outline:3px solid var(--coin);outline-offset:3px;background:var(--coin-bg)!important}
+.wthumbs{display:flex;flex-wrap:wrap;gap:10px;padding:4px 12px 10px}.wthumbs figure{margin:0;width:120px;text-align:center}.wthumbs img{width:120px;height:90px;object-fit:contain;background:#fff;border-radius:10px;border:1px solid var(--line)}.wthumbs figcaption{font-size:12px;color:var(--muted)}
 .wpics{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 12px}
 .agimg{position:relative;max-width:520px;margin:0 auto}.agimg img{width:100%;display:block;border-radius:10px}
 .agp{position:absolute;transform:translate(-50%,-50%);display:grid;justify-items:center;pointer-events:none}
@@ -618,7 +619,8 @@ function wSt(){try{return JSON.parse(localStorage.getItem(LS+'-wire')||'{}')}cat
 function wSet(f){const s=wSt();f(s);try{localStorage.setItem(LS+'-wire',JSON.stringify(s))}catch(e){}render()}
 const JN={ch1:'①',ch2:'②',aux:'③',usb:'④',mon:'⑤',st:'⑥'};
 // 設備圖片：她從 iPad 選官網產品圖，只存在這台裝置（不進公開 GitHub）
-const WDEV={mic:{n:'有線麥克風',g:'mic'},wl:{n:'無線麥克風＋接收器',g:'mic'},ipad:{n:'iPad',g:'bk'},ag06:{n:'Yamaha AG06',g:'mix'},bat:{n:'行動電源',g:'mix'},bose:{n:'Bose S1 Pro+',g:'spk'},iem:{n:'監聽發射器',g:'iem'},rx:{n:'接收器＋耳機',g:'iem'}};
+const WDEV={mic:{n:'有線麥克風',g:'mic'},wl:{n:'無線麥克風＋接收器',g:'mic'},ipad:{n:'iPad',g:'bk'},ag06:{n:'Yamaha AG06',g:'mix'},bat:{n:'行動電源',g:'mix'},bose:{n:'Bose S1 Pro+',g:'spk'},iem:{n:'監聽發射器',g:'iem'},rx:{n:'接收器＋耳機',g:'iem'},
+  stand:{n:'腳架',g:'stand'},tray:{n:'托盤',g:'stand'},xlr:{n:'藍色 XLR 線',g:'mic'},aux:{n:'3.5mm 音源線',g:'bk'},adp:{n:'iPad 轉接頭',g:'bk'},usbc:{n:'USB-C 線',g:'mix'},trs:{n:'6.3mm 導線',g:'spk'}};
 let WIMG=null;function wImg(){if(!WIMG){try{WIMG=JSON.parse(localStorage.getItem(LS+'-wimg')||'{}')}catch(e){WIMG={}}}return WIMG}
 function wImgSave(){try{localStorage.setItem(LS+'-wimg',JSON.stringify(WIMG))}catch(e){toast('這台裝置空間不夠，圖片沒存到')}}
 function wPick(dev){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=()=>{const f=inp.files&&inp.files[0];if(!f)return;const u=URL.createObjectURL(f),im=new Image();
@@ -670,6 +672,7 @@ function vWire(){
   if(g){h+=`<div class="bag packpanel wcard"><div class="baghead"><b>${g.ic} ${g.n}</b><span class="pcnt num">${g.items.filter(i=>inv[g.k+'|'+i]).length}/${g.items.length}</span><button class="btn sm" data-wire="">✕</button></div>
     <div class="wplug">${g.plug.map(p=>`<div>${esc(p)}</div>`).join('')}</div>
     <div class="witems">${g.items.map(i=>`<button class="wit ${inv[g.k+'|'+i]?'done':''}" data-winv="${esc(g.k+'|'+i)}">${inv[g.k+'|'+i]?'✓ ':''}${esc(i)}</button>`).join('')}</div>
+    ${Object.entries(WDEV).some(([d,v])=>v.g===g.k&&wImg()[d])?`<div class="wthumbs">${Object.entries(WDEV).filter(([d,v])=>v.g===g.k&&wImg()[d]).map(([d,v])=>`<figure><img src="${wImg()[d]}" alt=""><figcaption>${esc(v.n)}</figcaption></figure>`).join('')}</div>`:''}
     <div class="wpics">${Object.entries(WDEV).filter(([d,v])=>v.g===g.k).map(([d,v])=>`<button class="btn sm" data-wimg="${d}">🖼 ${wImg()[d]?'換':'放'} ${esc(v.n)} 的圖</button>${wImg()[d]?`<button class="btn sm" data-wimgdel="${d}">移除</button>`:''}`).join('')}</div>
     ${g.jk.length?`<div class="wbox" style="margin-top:8px">${wPanel()}</div>`:''}</div>`}
   else h+=`<div class="wbox">${wPanel()}</div>`;
