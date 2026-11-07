@@ -165,6 +165,11 @@ details.fold>.cgrid{padding:8px 8px 0}
 .agp i{font-style:normal;font-size:11px;font-weight:700;background:rgba(255,255,255,.9);color:#333;border-radius:6px;padding:0 5px;margin-top:2px;white-space:nowrap;display:none}
 .agp.on b{background:#1F6E77;color:#fff;border-color:#fff;box-shadow:0 0 0 4px rgba(31,110,119,.35)}.agp.on i{display:block}
 .wn image{pointer-events:none}
+.wchips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.wchip{flex:none;display:grid;gap:4px;justify-items:start;text-align:left;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:14px;padding:8px 10px;font:inherit;min-width:110px}
+.wchip b{font-size:14px;white-space:nowrap}.wchip span{display:flex;gap:3px}.wchip img,.wtn img{width:34px;height:28px;object-fit:contain;background:#fff;border-radius:6px;border:1px solid var(--line)}
+.wchip.on{border-color:var(--accent);background:var(--accent-soft)}
+.wtn{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px 0}.wtn img{width:56px;height:46px}
 .wtop{display:grid;gap:10px}@media (min-width:900px){.wtop{grid-template-columns:1.25fr 1fr;align-items:start}}
 .wbox{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:8px}
 svg.wire,svg.wpanel{width:100%;height:auto;display:block}svg.wpanel{max-width:560px;margin:0 auto}
@@ -698,6 +703,8 @@ function wPanel(){
 function vWire(){
   const st=wSt(),steps=wireMode==='off'?[...WG].reverse():WG,done=st[wireMode]||{},inv=st.inv||{};
   let h=`<div class="packbar"><p class="small muted" style="margin:0">點圖上的東西，下面會出現那一組要帶什麼、插哪裡。</p><button class="btn sm" data-act="wpack">📦 匯入圖片包</button></div>`;
+  const thumbs=k=>Object.entries(wDevs()).filter(([d,v])=>v.g===k&&wImg()[d]).map(([d,v])=>`<img src="${wImg()[d]}" alt="${esc(v.n)}" title="${esc(v.n)}">`).join('');
+  h+=`<div class="wchips">${WG.map(x=>`<button class="wchip ${wireSel===x.k?'on':''}" data-wire="${x.k}"><b>${x.ic} ${x.n}</b><span>${thumbs(x.k)}</span></button>`).join('')}</div>`;
   h+=`<div class="wtop"><div class="wbox">${wDiagram()}</div>`;
   const g=WG.find(x=>x.k===wireSel);
   if(g){h+=`<div class="bag packpanel wcard"><div class="baghead"><b>${g.ic} ${g.n}</b><span class="pcnt num">${wItems(g).filter(i=>inv[g.k+'|'+i]).length}/${wItems(g).length}</span><button class="btn sm" data-wire="">✕</button></div>
@@ -712,7 +719,7 @@ function vWire(){
   h+='</div>';
   h+=`<div class="seg" style="margin:16px 0 10px">${[['asm','組裝'],['off','拆卸'],['inv','清點']].map(([k,t])=>`<button data-wmode="${k}" aria-pressed="${wireMode===k}">${t}</button>`).join('')}</div>`;
   if(wireMode==='inv'){
-    h+=`<div class="wsteps">${WG.map(x=>{const L=wItems(x),n=L.filter(i=>inv[x.k+'|'+i]).length;return `<div class="bag wstep ${n===L.length?'ok':''}"><div class="baghead"><b>${x.ic} ${x.n}</b><span class="pcnt num">${n}/${L.length}</span></div><div class="witems">${L.map(i=>`<button class="wit ${inv[x.k+'|'+i]?'done':''}" data-winv="${esc(x.k+'|'+i)}">${inv[x.k+'|'+i]?'✓ ':''}${esc(i)}</button>`).join('')}</div></div>`}).join('')}</div>
+    h+=`<div class="wsteps">${WG.map(x=>{const L=wItems(x),n=L.filter(i=>inv[x.k+'|'+i]).length;return `<div class="bag wstep ${n===L.length?'ok':''}"><div class="baghead"><b>${x.ic} ${x.n}</b><span class="pcnt num">${n}/${L.length}</span></div>${thumbs(x.k)?`<div class="wtn">${thumbs(x.k)}</div>`:''}<div class="witems">${L.map(i=>`<button class="wit ${inv[x.k+'|'+i]?'done':''}" data-winv="${esc(x.k+'|'+i)}">${inv[x.k+'|'+i]?'✓ ':''}${esc(i)}</button>`).join('')}</div></div>`}).join('')}</div>
     <button class="btn sm" data-act="wreset" data-wm="inv" style="margin-top:10px">全部清掉重點</button>`;
     return h}
   const pw=wireMode==='off'?WOFF:WON,pk='p';
