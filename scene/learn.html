@@ -123,7 +123,7 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)
 <script>
 const SONGS=[['jiayi','甲乙丙丁'],['summer','盛夏的果實'],['darwin','達爾文'],['hands','小手拉大手'],['prank','惡作劇'],['zhizu','知足'],['hug','大大的擁抱'],['houlai','後來']];
 const STAGES=[
-  {n:'浸泡',sub:'聽',bike:'坐在長椅上看別人騎',test:'音樂突然停，你接得出下一句',btest:'閉上眼，說得出他下一步往哪轉',spot:{x:12,y:52},who:'坐在長椅上，看別人騎',goal:'不花力氣，讓歌的樣子自己長進腦中。',state:'知道下一句往哪走；歌被切掉會覺得「欸，還沒完」。'},
+  {n:'浸泡',sub:'聽',bike:'坐在長椅上看別人騎',test:'音樂突然停，你接得出下一句',btest:'閉上眼，說得出他下一步往哪轉',spot:{x:12,y:52},who:'坐在長椅上，看別人騎',goal:'不花力氣，讓歌的樣子自己長進腦中。像在 KTV 聽朋友唱：不用顧自己唱得對不對，身體會被帶著走，手會跟著樂句揮。',state:'知道下一句往哪走；歌被切掉會覺得「欸，還沒完」。手揮得出每句從哪起、往哪推、在哪收。'},
   {n:'模仿',sub:'出聲',bike:'爸爸扶著座墊，你自己踩',test:'原唱拿掉（只放伴奏），每段還是自己準時進',btest:'爸爸偷偷放手一下，你還在騎',spot:{x:40,y:46},who:'爸爸扶著座墊騎',goal:'把聽到的對應到自己的聲音，照原唱複製音高、節奏、斷句和換氣。',state:'有原唱或伴奏帶著時，唱得對、不會掉。'},
   {n:'哼唱／氣流',num:'↔',sub:'卡住來這修',bike:'爸爸只輕輕碰著',test:'只出一點聲，音高拍子還對',btest:'爸爸快放手，你幾乎自己騎',spot:null,who:'在爸爸扶著和放手之間（爸爸的手只輕輕碰著）',goal:'出聲和腦內唱之間的橋，也是卡住時的修理站：拿掉字，只剩音高和氣流。音不準→跟原唱哼對答案；唱不順→哼著感受氣流，一口氣送完再放字。',state:'哼的時候不用想，音在對的地方、氣一路順到句尾；張口唱詞也不吃力。'},
   {n:'內化',sub:'腦內唱',bike:'爸爸放手，你自己騎',test:'聲音突然消失幾秒，你腦中繼續唱；回來時還對得上',btest:'騎過一段沒人看的路，還在路上',spot:{x:62,y:44},who:'爸爸放手，自己騎',goal:'不靠外面的聲音，歌在你身上也站得住。',state:'沒有音樂，音準和速度也穩；歌會自己在腦中響起。'},
@@ -132,7 +132,7 @@ const STAGES=[
 // 她畫的路線（11-04）：蛇行往下；清唱音不準就回「跟原唱哼」對答案
 const ROUTE={n_sing:1,n_hear:2,n_lead:3,n_inst:4,n_head:5,n_hum:6,n_free:7,n_hum_o:'↺'};
 const GRID=[
-  ['原曲',['n_listen','常聽','放原曲，耳朵先習慣'],['n_sing','跟唱','放原曲，跟著一起唱'],['n_hum_o','跟原唱哼／氣流','放原曲，閉著嘴哼，感受氣流','原唱哼／氣流'],['n_hear','腦內聽','放原曲，在腦中跟著唱'],['風格化×原曲','原唱一直在旁邊，很難唱出自己的版本']],
+  ['原曲',['n_listen','常聽／律動','放原曲，只聽不唱，手跟著樂句揮','聽／律動'],['n_sing','跟唱','放原曲，跟著一起唱'],['n_hum_o','跟原唱哼／氣流','放原曲，閉著嘴哼，感受氣流','原唱哼／氣流'],['n_hear','腦內聽','放原曲，在腦中跟著唱'],['風格化×原曲','原唱一直在旁邊，很難唱出自己的版本']],
   ['伴奏',['浸泡×伴奏','聽伴奏就知道唱到哪，其實已經是腦內補唱（內化）'],['n_lead','搶先唱','放伴奏，自己唱出主唱'],['n_hum_i','跟伴奏哼／氣流','放伴奏，主唱用哼的，感受氣流','伴奏哼／氣流'],['n_inst','腦內補唱','放伴奏，主唱在腦中唱'],['n_mine','我的版本','放伴奏，換速度、情緒、換氣']],
   ['靜音',['浸泡×靜音','沒聲音可聽；這時聽到的歌，其實已經是內化'],['n_free','隨口唱','沒音樂，洗澡走路就唱出來'],['n_hum','哼唱／氣流','沒音樂，跟腦內歌聲哼，感受氣流','哼／氣流'],['n_head','腦內歌聲','沒音樂，腦中自己響起來'],['n_solo','清唱版本','沒音樂，用自己的唱法唱完']]];
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -149,7 +149,7 @@ if(!SONGS.some(x=>x[0]===song))song='';
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>e.classList.remove('on'),1300)}
 function draw(){
   const m=song?pgAll()[song]||{}:{},t=pgToday(),title=(SONGS.find(x=>x[0]===song)||[])[1]||'';
-  document.getElementById('by').textContent=(title?'・'+title:'')+'・v16';
+  document.getElementById('by').textContent=(title?'・'+title:'')+'・v17';
   if(!EMB)document.getElementById('songs').innerHTML=SONGS.map(([k,n])=>`<a href="#${k}" class="${k===song?'on':''}">${n}</a>`).join('');
   const cell=(c,ci)=>{if(Array.isArray(c[0]))return `<div class="pair">${c.map(x=>cell(x,ci)).join('')}</div>`;if(c.length===2)return `<div class="nc gone" title="${esc(c[1])}"><s>${c[0].split('×')[0]}×${c[0].split('×')[1]}</s></div>`;
     const [id,nm,tip,sn]=c,d=natDays(m,id+SX()),last=d[d.length-1],v=natDays(m,'v_'+id+SX()),vt=v.includes(t);
