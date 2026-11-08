@@ -47,13 +47,18 @@
 :root[data-style="mist"]{--bg:#EEF1F5;--surface:#FFFFFF;--sunk:#F1F4F8;--ink:#18202C;--muted:#677284;--line:#DCE2EA;--accent:#3557C7;--accent-ink:#fff;--accent-soft:#E3E9FA;--display:"Noto Sans TC",system-ui,sans-serif}
 }
 .stylepick{display:flex;gap:8px;flex-wrap:wrap}.stylepick button{flex:1 1 120px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);padding:10px;font:inherit;color:inherit;text-align:left}.stylepick button[aria-pressed=true]{border-color:var(--accent)}.stylepick i{display:flex;gap:3px;margin-bottom:6px}.stylepick i b{width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,.1)}
+
+.icats.use{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:20px 12px!important}
+.icats.use .icat.etc{grid-column:1/-1}.icats.use .icat.etc .icol{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.icats.use .icat.etc .ichead{grid-column:1/-1}.icats.use .icat.etc .irow{border-bottom:1px solid var(--line)}
+.icats.use .icg{grid-template-columns:1fr!important;gap:10px!important}
+@media (max-width:1000px){.icats.use{grid-template-columns:1fr!important}}
 </style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1"><link rel="icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vocal"><meta name="theme-color" content="#EDEFEA"><script src="https://fuwei0618-cmd.github.io/Entry/sync/origina-sync.js" data-app="vocal" data-keys="busk-app-v1,busk-app-v1-wimg,busk-app-v1-wire" data-pos="br"></script>
 </head><body>
 <title>街演 App</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@500;700&display=swap">
-<script>try{const v=localStorage.getItem('busk-style');if(v)document.documentElement.dataset.style=v}catch(e){}</script>
+<script>try{localStorage.removeItem('busk-style')}catch(e){}</script>
 <style>
 /* Layout: one-hand phone app. Sticky title bar, scrolling content, fixed bottom tab bar; edits open in bottom sheets. */
 :root{
@@ -210,7 +215,7 @@ details.fold>.cgrid{padding:8px 8px 0}
 .ichg{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));margin-bottom:14px}.ichg .irow{border-bottom:0;border-right:1px solid var(--line)}
 .irow.chg{background:#FFF4CC}.irow.chg .inm::after{content:' ⚡';font-size:11px}.irow.chg.on{background:var(--ok-bg)}.chgkey{background:#FFF4CC;border-radius:4px;padding:0 4px;color:#7a5a00}
 .isec{font-size:11px;font-weight:700;color:var(--accent);padding:6px 10px 2px;border-bottom:1px solid var(--line);background:var(--surface)}.pkseg{margin:4px 0 10px;max-width:320px}
-.icats.use{grid-template-columns:2fr 2fr 3fr 1fr}@media (max-width:1000px){.icats.use{grid-template-columns:1fr}}
+.icats.use{grid-template-columns:2fr 2fr 3fr 1fr}@media (max-width:1000px){.icats.use{grid-template-columns:1fr!important}}
 .iempty{padding:14px 8px;font-size:12px;color:var(--muted);text-align:center}.icol.dropover{outline:2px dashed var(--accent);outline-offset:-2px}.irow.rainon .inm{color:#2f6db5}
 #wpop{position:fixed;z-index:1000;min-width:200px;max-width:260px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:6px 0;font-size:14px}
 #wpop button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;font:inherit;color:inherit;text-align:left;padding:8px 16px}#wpop button:active,#wpop button:hover{background:var(--accent-soft,#eef5f5)}#wpop button[disabled]{opacity:.35}
@@ -640,8 +645,7 @@ function vToday(){
   const checks=sorted('checks','order'), checked=n.checked||{}, rain=!!n.rain;
   const pre=checks.filter(c=>GROUPS.includes(c.group));
   const done=pre.filter(c=>checked[c.id]).length;
-  const ST=[['','原本',['#EDEFEA','#1F6E77','#FAFBF8']],['clean','簡約黑白',['#F4F4F1','#1C1C1E','#FFFFFF']],['warm','暖紙',['#F3EDE4','#A9512E','#FCF9F4']],['mist','霧藍',['#EEF1F5','#3557C7','#FFFFFF']]],cur=document.documentElement.dataset.style||'';
-  let h=`<section class="sec"><h3 style="margin:0 0 8px">外觀風格（試用）</h3><div class="stylepick">${ST.map(([k,n,c])=>`<button data-style-set="${k}" aria-pressed="${cur===k}"><i>${c.map(x=>`<b style="background:${x}"></b>`).join('')}</i>${n}</button>`).join('')}</div></section>`;
+  let h='';
   h+=`<button class="panel visionEntry" data-tab="vision"><span class="eyebrow">MY VOCAL VISION</span><b>我的 Vocal 願景</b><span class="muted small">出發前先來這裡看一下 →</span></button>`;
   licenseWarnings().forEach(w=>h+=`<div class="banner warn">${esc(w)}</div>`);
   h+='<section class="sec">';
@@ -663,20 +667,10 @@ function vToday(){
     info.hints.forEach(t=>h+=`<div class="banner warn small">${esc(t)}</div>`);
   }else h+=`<div class="empty">還沒選歌。按「排歌單」從歌單勾選。</div>`;
   h+='</section>';
-  // checklist
-  h+=`<section class="sec"><div class="sec-head"><h2>出門清單</h2><span class="num muted">${done} / ${pre.length}</span></div><div class="btns"><button class="btn sm" data-goto="pack">看打包圖</button><button class="btn sm" data-goto="site">看現場圖</button></div><div class="progress"><i style="width:${pre.length?Math.round(done/pre.length*100):0}%"></i></div>`;
-  if(!checks.length)h+=emptyChecks();
-  h+=checkGroups(pre,GROUPS,checked,rain);
-  if(pre.length&&done===pre.length)h+=`<div class="banner info">都勾完了，可以出門！</div>`;
-  h+='</section>';
-  const on=checks.filter(c=>ONSITE.includes(c.group));
-  if(on.length){
-    h+=`<section class="sec"><details class="fold" open><summary>現場（${on.filter(c=>checked[c.id]).length}/${on.length}）</summary>${checkGroups(on,ONSITE,checked,rain,true)}</details></section>`;
-  }
   h+=`<section class="sec"><button class="btn primary block" data-act="finish">演出結束，寫紀錄</button><button class="btn block" data-act="reset-checks" data-confirm="再按一次清空勾選">重置清單</button></section>`;
   return h;
 }
-const DEFAULT_CHECKS={'前一晚充電':['音響','麥克風＋充電電池','監聽＋2 耳機','iPad mini＋接線 ×2','行動電源 ×3'],'出門準備':['拉車（大號＋行李袋）','腳架 ×2','支架（2 iPad、2 麥、1 手機、1 平台）','雨傘 ×2／地墊','行動電源 ×2','AG06＋2 線'],'其他':['打賞箱','QR Code 名牌','椅子'],'隨身':['錢包、耳機、鑰匙','行動電源','水','衛生紙','悠遊卡','隱形眼鏡'],'當日':['宣傳','開嗓','廁所','水'],'現場・表演':['人聲靜音 Moises','Party 結束快切','升降調','左口白、右歌詞'],'現場・設備':['監聽音量（音樂／麥）','音響音量（音樂／麥）','直播（音樂／麥）'],'現場・腳架':['直播','筆記','音源','麥架','水杯托盤']};
+const DEFAULT_CHECKS={'前一晚充電':['音響','麥克風＋充電電池','監聽＋2 耳機','iPad mini＋接線 ×2','行動電源 ×3'],'出門準備':['拉車（大號＋行李袋）','腳架 ×2','支架（2 iPad、2 麥、1 手機、1 平台）','雨傘 ×2／地墊','行動電源 ×2','AG06＋2 線'],'其他':['打賞箱','QR Code 名牌','椅子'],'隨身':['錢包、耳機、鑰匙','行動電源','水','衛生紙','悠遊卡','隱形眼鏡'],'當日':['宣傳','開嗓','廁所','水'],'現場・表演':['人聲靜音','結束慢切','升降調','當日主題']};
 function loadDefaultChecks(){let j=0;Object.entries(DEFAULT_CHECKS).forEach(([g,items])=>items.forEach((t,i)=>{j++;const id='c'+String(j).padStart(2,'0');if(!S.checks[id])put('checks',id,{group:g,text:t,rain:t.startsWith('雨傘'),order:i,bag:g==='當日'||g.startsWith('現場')?'':(DEFAULT_BAG[t]||'')})}));toast('已放入原本的清單')}
 const emptyChecks=()=>`<div class="empty"><p>這台裝置上還沒有清單。</p><button class="btn primary" data-act="load-checks">放入原本的準備清單</button></div>`;
 function checkGroups(items,groups,checked,rain,strip){return `<div class="cgrid">${groups.map(g=>{const l=items.filter(c=>c.group===g);if(!l.length)return '';const d=l.filter(c=>checked[c.id]).length;return `<div class="cgroup"><div class="glabel"><span>${esc(strip?g.replace('現場・',''):g)}</span><span class="num">${d}/${l.length}</span></div>`+l.map(c=>checkRow(c,checked,rain)).join('')+'</div>'}).join('')}</div>`}
@@ -732,6 +726,11 @@ function pkV4(){const st=wSt();if(st.pkv4||!st.pkv2)return;
   const sec={d_clip:'螢幕架',d_clip2:'螢幕架',d_mclip:'麥架',d_pclip:'麥架'};Object.entries(sec).forEach(([id,v])=>{const c=S.checks[id];if(c&&!c.sec)put('checks',id,{...c,sec:v})});
   const a=S.checks.d_iem,b=S.checks.d_rx;if((a||b)&&!S.checks.d_iembox){const c=a||b;put('checks','d_iembox',{group:'出門準備',text:'監聽盒',bag:bagOf(c)||'tote2',po:c.po??0,order:c.order??0,wd:'iembox',dev:'iem,rx',sub:'監聽發射器、接收器＋耳機 ×2'});if(a)del('checks','d_iem');if(b)del('checks','d_rx')}
   st.pkv4=1;try{localStorage.setItem(LS+'-wire',JSON.stringify(st))}catch(e){}}
+function siteV5(){const st=wSt();if(st.sitev5||!Object.keys(S.checks).length)return;
+  try{localStorage.setItem(LS+'-checks-bak-site5',JSON.stringify(S.checks))}catch(e){}
+  const rn={'人聲靜音 Moises':'人聲靜音','Party 結束快切':'結束慢切','左口白、右歌詞':'當日主題'};
+  Object.entries(S.checks).forEach(([id,c])=>{if(c.group==='現場・設備'||c.group==='現場・腳架')del('checks',id);else if(c.group==='現場・表演'&&rn[c.text])put('checks',id,{...c,text:rn[c.text]})});
+  st.sitev5=1;try{localStorage.setItem(LS+'-wire',JSON.stringify(st))}catch(e){}}
 const ckName=c=>c.wd&&wDevs()[c.wd]?wDevs()[c.wd].n:c.text;
 function vPack(){
   pkMigrate();pkV3();pkV4();
@@ -779,7 +778,7 @@ function vPack(){
     const cats=WCAT.map(([cn,ks])=>[cn,ks.map(k=>{const g=WG.find(x=>x.k===k),l=devs(k);return ucol(esc(g.n),l.map(urow).join(''),l.filter(keyOn).length,l.length)})]);
     const etc=src.filter(c=>!(c.wd&&DV[c.wd])&&!/^拉車/.test(c.text));
     cats.push(['其他',[ucol('個人＆其他',po(etc).map(row).join('').replace(/ data-pk="/g,' data-pku="'),etc.filter(c=>checked[c.id]).length,etc.length)]]);
-    h+=`<div class="icats use">${cats.map(([cn,cols])=>`<div class="icat" style="--n:${cols.length}"><div class="icath">${cn}</div><div class="icg">${cols.join('')}</div></div>`).join('')}</div><p class="small muted">按用途只看、打勾；要換包或排順序請切回「按包包」。</p>`;
+    h+=`<div class="icats use">${cats.map(([cn,cols])=>`<div class="icat${cn==='其他'?' etc':''}" style="--n:${cols.length}"><div class="icath">${cn}</div><div class="icg">${cols.join('')}</div></div>`).join('')}</div><p class="small muted">按用途只看、打勾；要換包或排順序請切回「按包包」。</p>`;
     return h}
   h+=`<div class="icats pk${none.length?' pk4':''}">${cat('拉車','cart',[['cart','拉車',cart]])}${cat('手提袋','',[['tote1','大層',t1],['tote2','小層',t2]])}${cat('後背包','',[['pack',bagLab('pack','個人物品'),pk,1],['pack2',bagLab('pack2','音樂設備'),pk2,1]])}${none.length?`<div class="icat" style="--n:1"><div class="icath pkh"><span>還沒放進包包</span><button class="btn sm" data-act="fill-bags">照預設放</button></div><div class="icg"><div class="icol" data-drop="">${none.map(row).join('')}</div></div></div>`:''}</div>`;
   return h;
@@ -817,8 +816,7 @@ function vSite(){
   const pos=S.meta.site||{};
   let h=`<div class="packbar"><p class="small muted" style="margin:0">從上面往下看的擺位，觀眾在下面。按住拖曳可以移動位置，點一下看到場要檢查什麼。</p>${Object.keys(pos).length?'<button class="btn sm" data-act="site-reset" data-confirm="再按一次回到預設">回到預設位置</button>':''}</div>`;
   h+=`<div class="site"><div class="site-wall">背後（牆／店面）</div><div class="site-aud">觀眾</div>${VSPOTS.map(s=>{const l=of(s),d=l.filter(c=>checked[c.id]).length;return `<button class="vs ${s.k===sel.k?'on':''} ${l.length&&d===l.length?'ok':''} ${s.k==='me'?'me':''}" style="left:${(pos[s.k]||s).x}%;top:${(pos[s.k]||s).y}%" data-vspot="${s.k}">${VDEV[s.k]&&wImg()[VDEV[s.k]]?`<img class="vsimg" src="${wImg()[VDEV[s.k]]}" alt="">`:`<svg viewBox="0 0 48 48" aria-hidden="true">${VI[s.ic]}</svg>`}<b>${s.n}</b>${l.length?`<small class="num">${d}/${l.length}</small>`:''}</button>`}).join('')}</div>`;
-  const l=of(sel);
-  h+=`<div class="bag packpanel" style="margin-top:10px"><div class="baghead"><b>${esc(sel.n)}</b>${l.length?`<span class="pcnt num">${l.filter(c=>checked[c.id]).length}/${l.length}</span>`:''}</div>${l.length?`<div class="cols">${l.map(c=>checkRow(c,checked,rain)).join('')}</div>`:'<div class="small muted" style="padding:10px 12px">這裡沒有要檢查的項目。</div>'}</div>`;
+
   return h;
 }
 /* ---------- 接線圖 ---------- */
@@ -1310,7 +1308,7 @@ function vGear(){
   }
   const checks=sorted('checks','order');
   if(!gearEdit){
-    pkMigrate();pkV3();
+    pkMigrate();pkV3();siteV5();
     const n=next(),checked=n.checked||{},rain=!!n.rain;
     if(gearSeg!=='site')gearSeg='site';
     const TG=['當日'],pre=checks.filter(c=>TG.includes(c.group)),on=checks.filter(c=>ONSITE.includes(c.group));
@@ -1318,8 +1316,8 @@ function vGear(){
     h+=`<section class="sec"><div class="btns"><button class="btn sm ${rain?'primary':''}" data-act="rain" aria-pressed="${rain}">${rain?'☂ 雨天模式開':'☂ 雨天模式'}</button><button class="btn sm" data-act="gear-edit">編輯清單</button></div>${checkLinks()}</section>`;
     if(rain)h+=`<div class="banner warn" style="margin-bottom:14px">雨天：記得帶雨傘、地墊。</div>`;
     if(!checks.length)return h+emptyChecks();
-    h+=`<section class="sec"><div class="sec-head"><h2>當日</h2><span class="num muted">${done} / ${pre.length}</span></div><div class="progress"><i style="width:${pre.length?Math.round(done/pre.length*100):0}%"></i></div>${checkGroups(pre,TG,checked,rain)}</section>`;
-    if(on.length)h+=`<section class="sec"><h2>現場</h2>${checkGroups(on,ONSITE,checked,rain,true)}</section>`;
+    const both=[...pre,...on],bd=both.filter(c=>checked[c.id]).length;
+    h+=`<section class="sec"><div class="sec-head"><h2>當日・現場</h2><span class="num muted">${bd} / ${both.length}</span></div><div class="progress"><i style="width:${both.length?Math.round(bd/both.length*100):0}%"></i></div>${checkGroups(both,[...TG,...ONSITE],checked,rain,true)}</section>`;
     h+=`<section class="sec"><h2>現場擺位</h2>${vSite()}</section>`;
     h+=`<section class="sec"><button class="btn block" data-act="reset-checks" data-confirm="再按一次清空勾選">重置清單</button><p class="small muted" style="margin:0">這裡跟「下一場」分頁是同一份勾選。演出後寫紀錄會自動重置。</p></section>`;
     h+=`<p class="small" style="text-align:center"><button class="ghost" data-gearseg="stock">租借／設備庫存 ›</button></p>`;
