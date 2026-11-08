@@ -724,9 +724,8 @@ const WG=[
  {k:'bk',n:'伴奏組',ic:'🎵',items:['iPad','iPhone','iPad 轉接頭','Lightning 轉接頭','黑色 3.5mm 線'],plug:['從 AG06 旁的「伴奏小袋」拿 3.5mm 線和轉接頭','iPad（或 iPhone）→ 自己的轉接頭 → 黑色細線 → ③ AUX（手機圖示）'],jk:['aux']},
  {k:'iem',n:'監聽組',ic:'🎧',items:['灰色發射器','接收器 ×2','入耳耳機 ×2'],plug:['灰色發射器直接插 ⑥ MONITOR OUT R','兩個接收器各接一副耳機，頻道跟發射器一樣'],jk:['st']},
  {k:'spk',n:'喇叭組',ic:'🔊',items:['Bose S1 Pro+','黑色編織線（6.3mm 轉 XLR）'],plug:['黑色編織線捲好收在 Bose 上','⑤ MONITOR OUT L → 黑色編織線（6.3mm 那頭插 AG06，XLR 那頭插 Bose）→ Bose INPUT 1'],jk:['mon']},
- {k:'spare',n:'備用組',ic:'🧰',items:['管夾＋手機／iPad 夾'],plug:['備用：主要的夾子壞了或不夠用時再拿出來'],jk:[]},
 ];
-const WCAT=[['架設',['pack','stand','spare']],['進聲音',['mic','bk']],['混音＋出聲音',['mix','iem','spk']]];
+const WCAT=[['架設',['pack','stand']],['進聲音',['mic','bk']],['混音＋出聲音',['mix','iem','spk']]];
 const WON=['開 AG06（電源開關在右上）','開監聽發射器、兩個接收器','Bose 音量轉到最小再開機','到「🎚 試音量」照 1 → 5 調音量'];
 const WOFF=['Bose 音量轉小 → 關 Bose','關監聽發射器、接收器','關 AG06'];
 let wireSel='', wireMode='asm';
@@ -735,7 +734,7 @@ function wSet(f){const s=wSt();f(s);try{localStorage.setItem(LS+'-wire',JSON.str
 const JN={ch1:'①',ch2:'②',aux:'③',usb:'④',mon:'⑤',st:'⑥'};
 // 設備圖片：她從 iPad 選官網產品圖，只存在這台裝置（不進公開 GitHub）
 const WDEV={mic:{n:'有線麥克風',g:'mic'},wl:{n:'無線麥克風＋接收器',g:'mic'},ipad:{n:'iPad',g:'bk'},ag06:{n:'AG06',g:'mix'},ag06b:{n:'AG06（背面照片）',g:'mix',sub:'ag06'},bat:{n:'行動電源',g:'mix'},bose:{n:'Bose S1 Pro+',g:'spk'},iem:{n:'監聽發射器',g:'iem'},rx:{n:'接收器＋耳機 ×2',g:'iem'},
-  cart:{n:'拉車',g:'pack'},chair:{n:'伸縮椅',g:'pack'},mcase:{n:'麥克風收納盒',g:'pack'},stand:{n:'腳架 ×2',g:'stand'},tray:{n:'水杯托盤',g:'stand'},clip:{n:'iPad 夾（長臂）',g:'stand'},clip2:{n:'管夾＋手機／iPad 夾（備用）',g:'spare',with:'phclip'},phclip:{n:'手機夾',g:'spare',sub:'clip2'},mclip:{n:'麥克風延伸臂夾＋O 型夾',g:'stand',with:'mo'},mspr:{n:'麥克風彈簧夾',g:'stand',sub:'pclip'},mo:{n:'麥克風 O 型夾',g:'stand',sub:'mclip'},pclip:{n:'管夾＋彈簧麥夾',g:'stand',with:'mspr'},wind:{n:'紅色防風罩',g:'mic'},xlr:{n:'藍色 XLR 線',g:'mic'},aux:{n:'3.5mm 音源線',g:'bk'},adpI:{n:'iPad 轉接頭',g:'bk'},iphone:{n:'iPhone',g:'bk'},adpP:{n:'Lightning 轉接頭',g:'bk'},usbc:{n:'USB-C 線',g:'mix'},trs:{n:'6.3mm 轉 XLR 線',g:'spk'},batt:{n:'充電電池＋充電器',g:'mic'}};
+  cart:{n:'拉車',g:'pack'},chair:{n:'伸縮椅',g:'pack'},mcase:{n:'麥克風收納盒',g:'pack'},stand:{n:'腳架 ×2',g:'stand'},tray:{n:'水杯托盤',g:'stand'},clip:{n:'iPad 夾（長臂）',g:'stand'},mclip:{n:'麥克風延伸臂夾＋O 型夾',g:'stand'},pclip:{n:'管夾＋彈簧麥夾',g:'stand'},clip2:{n:'管夾＋手機／iPad 夾（備用）',g:'stand'},wind:{n:'紅色防風罩',g:'mic'},xlr:{n:'藍色 XLR 線',g:'mic'},aux:{n:'3.5mm 音源線',g:'bk'},adpI:{n:'iPad 轉接頭',g:'bk'},iphone:{n:'iPhone',g:'bk'},adpP:{n:'Lightning 轉接頭',g:'bk'},usbc:{n:'USB-C 線',g:'mix'},trs:{n:'6.3mm 轉 XLR 線',g:'spk'},batt:{n:'充電電池＋充電器',g:'mic'}};
 let WIMG=null;function wImg(){if(!WIMG){try{WIMG=JSON.parse(localStorage.getItem(LS+'-wimg')||'{}')}catch(e){WIMG={}}if(WIMG.adp&&!WIMG.adpI){WIMG.adpI=WIMG.adp;delete WIMG.adp;if(WIMG._alt_adp){WIMG._alt_adpI=WIMG._alt_adp;delete WIMG._alt_adp}}}return WIMG}
 function wDevs(){const st=wSt(),nm=st.names||{},o={};Object.entries(WDEV).forEach(([k,v])=>o[k]={...v,n:nm[k]||v.n});(st.custom||[]).forEach(c=>o[c.id]={n:nm[c.id]||c.n,g:c.g,c:1});return o}
 function wItems(g){return wList(g.k).map(([d,v])=>v.n)}
