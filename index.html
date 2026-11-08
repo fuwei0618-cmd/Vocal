@@ -52,6 +52,14 @@
 .icats.use .icat.etc{grid-column:1/-1}.icats.use .icat.etc .icol{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.icats.use .icat.etc .ichead{grid-column:1/-1}.icats.use .icat.etc .irow{border-bottom:1px solid var(--line)}
 .icats.use .icg{grid-template-columns:1fr!important;gap:10px!important}
 @media (max-width:1000px){.icats.use{grid-template-columns:1fr!important}}
+
+.wrigrow{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1fr);margin-bottom:12px;gap:10px;align-items:start}.wrigrow>.wmain{margin-bottom:0}
+@media (max-width:700px){.wrigrow{grid-template-columns:1fr}}.wrigrow.one{grid-template-columns:1fr}
+.wsteps .wlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;align-items:start}.wsteps .wlhead,.wsteps .wph{grid-column:1/-1}.wsteps .wli{margin:0!important}
+.wrigbox{background:#fff;padding:6px}.wrig{position:relative;width:100%;aspect-ratio:660/790;max-height:62vh;margin:0 auto}
+.wrig .rg{position:absolute;display:flex;flex-direction:column;align-items:center;gap:2px;border:1.5px solid transparent;border-radius:10px;background:none;padding:3px;font:inherit;color:#222;transition:opacity .2s}
+.wrig .rg .ri{flex:1;min-height:0;width:100%;position:relative}.wrig .rg img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.wrig .rg b{flex:none;font-size:11px;font-weight:600;line-height:1.2;text-align:center}.wrig .rg.dim{opacity:.18}.wrig .rg.sel{border-color:var(--accent);background:rgba(31,110,119,.06)}
 </style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1"><link rel="icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vocal"><meta name="theme-color" content="#EDEFEA"><script src="https://fuwei0618-cmd.github.io/Entry/sync/origina-sync.js" data-app="vocal" data-keys="busk-app-v1,busk-app-v1-wimg,busk-app-v1-wire" data-pos="br"></script>
 </head><body>
 <title>街演 App</title>
@@ -981,7 +989,7 @@ function wRatio(u){if(!u)return 0;if(_wR[u])return _wR[u];_wR[u]=1;const i=new I
 // Bose 照片上 INPUT 1 的位置（照她標的紅圈，器材框 170×164 內的比例）
 const BOSEJ=[.262,.736];// 舊框 170×164 裡的位置；下面換算成照片本身的比例
 function imRect(x,y,w,h,r){const W=r>=w/h?w:h*r,H=W/r;return [x+(w-W)/2,y+(h-H)/2,W,H]}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-wvolgo]');if(!b)return;e.preventDefault();e.stopPropagation();gearSeg='wire';wireMode='vol';window.wView='vol';window.wVol=b.dataset.wvolgo?b.dataset.wvolgo+'|music':'';render();scrollTo(0,0)},true);
+document.addEventListener('click',e=>{const b=e.target.closest('[data-wvolgo]');if(!b)return;e.preventDefault();e.stopPropagation();gearSeg='site';wireMode='vol';window.wView='vol';window.wVol=b.dataset.wvolgo?b.dataset.wvolgo+'|music':'';render();scrollTo(0,0)},true);
 function wDiagram(){
   // 實物版：AG06 正面大圖在中間、背面圖在上面（已鏡射，跟正面同方向）；線直接接到圖上真正的孔
   const IM=wImg(),DV=wDevs(),F=wireSel||window.wFocus||'',on=g=>!F||F===g?'':' dim',sel=g=>F===g?' sel':'';
@@ -993,27 +1001,27 @@ function wDiagram(){
   const cab=(g,cls,d,path,cx,cy,t)=>`<g class="wcab${on(g)}" data-wire="${g}"${d?` data-wdrop="${d}"`:''}><path class="${cls}" d="${path}"/>${t?lab(cx,cy,t,d):''}</g>`;
   const bdg=(x,y,n)=>`<g class="wb"><circle cx="${x}" cy="${y}" r="13"/><text x="${x}" y="${y+5}">${n}</text></g>`,badge=(k,n)=>bdg(...jp(k),n);
   const [c1x,c1y]=jp('ch1'),[c2x,c2y]=jp('ch2'),[ax,ay]=jp('aux'),[mx,my]=jp('mon'),[sx,sy]=jp('st');
-  const br=wRatio(IM.bose)||1,[ox,oy,ow,oh]=imRect(0,0,170,164,br),bj=wSt().bosej,bu=bj?bj[0]:(170*BOSEJ[0]-ox)/ow-.045,bv=bj?bj[1]:(164*BOSEJ[1]-oy)/oh-.055,[nx,ny,nw,nh]=imRect(760,100,235,204,br),bjx=nx+nw*bu,bjy=ny+nh*bv;
+  const br=wRatio(IM.bose)||1,[ox,oy,ow,oh]=imRect(0,0,170,164,br),bj=wSt().bosej,bu=bj?bj[0]:(170*BOSEJ[0]-ox)/ow-.045,bv=bj?bj[1]:(164*BOSEJ[1]-oy)/oh-.055,[nx,ny,nw,nh]=imRect(760,560,235,204,br),bjx=nx+nw*bu,bjy=ny+nh*bv;
   return `<svg class="wire" viewBox="0 0 ${window.wView==='vol'?1230:1000} 890" role="img" aria-label="接線總圖" style="${wZoomCss()}">
   <g class="wd${sel('mix')}" data-wire="mix" data-wdrop="ag06">${IM.ag06?`<image href="${IM.ag06}" x="${AX}" y="${AY}" width="${AW}" height="${AH}" preserveAspectRatio="xMidYMid meet"/>`:`<rect class="hit" x="${AX}" y="${AY}" width="${AS}" height="${AS}" rx="18"/><text x="500" y="${AY+AS/2}" class="wt" text-anchor="middle">放 AG06 正面圖</text>`}</g>
   <g class="wd${sel('mix')}" data-wire="mix" data-wdrop="ag06b">${IM.ag06b?`<image href="${IM.ag06b}" x="${BX}" y="${BY}" width="${BW}" height="${BH}" preserveAspectRatio="xMidYMid meet"/>`:`<rect class="hit" x="${BX}" y="${BY}" width="${BW}" height="${BH}" rx="14"/><text x="500" y="${BY+BH/2+5}" class="wt" text-anchor="middle">放 AG06 背面圖（鏡射）</text>`}</g>
   ${dev('bat',170,30,130,130)}
-  ${dev('mic',30,165,160,170)}${dev('wl',30,375,160,170)}
-  ${dev('ipad',30,590,120,130)}${dev('adpI',160,605,90,100)}
-  ${dev('iphone',30,740,120,130)}${dev('adpP',160,755,90,100)}
-  ${dev('bose',760,100,235,230)}${dev('iem',820,390,170,170)}${dev('rx',820,650,170,180)}
+  ${dev('ipad',30,170,120,130)}${dev('adpI',160,185,90,100)}
+  ${dev('iphone',30,320,120,130)}${dev('adpP',160,335,90,100)}
+  ${dev('mic',30,490,160,170)}${dev('wl',30,690,160,170)}
+  ${dev('iem',820,90,170,170)}${dev('rx',820,320,170,180)}${dev('bose',760,560,235,230)}
   ${cab('mix','usbo','usbc',`M300 85 H${jx-40} Q${jx} 85 ${jx} 125 V${jy}`,400,85,DV.usbc.n)}
-  ${cab('mic','xlr','xlr',`M190 245 C330 245 ${c1x} 270 ${c1x} ${c1y}`,290,240,DV.xlr.n)}
-  ${cab('mic','air','',`M190 455 C340 455 ${c2x} 470 ${c2x} ${c2y}`,300,455,'接收器直插')}
-  <g class="wcab${on('bk')}" data-wire="bk"><path class="blk" d="M150 655 H160"/><path class="blk" d="M150 805 H160"/></g>
-  ${cab('bk','blk','aux',`M250 655 C400 655 ${ax} 600 ${ax} ${ay}`,380,650,DV.aux.n)}
-  ${cab('bk','blk alt','',`M250 805 C330 805 300 655 334 655`,300,760,'或 iPhone')}
-  ${cab('spk','brd','trs',`M${mx} ${my} C${mx+60} 250 ${bjx-140} ${bjy} ${bjx} ${bjy}`,700,262,DV.trs.n)}
-  ${cab('iem','gry','',`M830 475 C700 475 ${sx+90} ${sy} ${sx} ${sy}`,720,470,'發射器直插')}
-  ${cab('iem','air','',`M905 560 V650`,840,605,'無線')}
+  ${cab('mic','xlr','xlr',`M190 570 C330 570 ${c1x-60} 520 ${c1x} ${c1y}`,280,560,DV.xlr.n)}
+  ${cab('mic','air','',`M190 770 C380 770 ${c2x} 640 ${c2x} ${c2y}`,300,770,'接收器直插')}
+  <g class="wcab${on('bk')}" data-wire="bk"><path class="blk" d="M150 235 H160"/><path class="blk" d="M150 385 H160"/></g>
+  ${cab('bk','blk','aux',`M250 235 C420 235 ${ax-80} ${ay+40} ${ax} ${ay}`,370,240,DV.aux.n)}
+  ${cab('bk','blk alt','',`M250 385 C330 385 300 235 334 235`,300,345,'或 iPhone')}
+  ${cab('spk','brd','trs',`M${mx} ${my} C${mx+40} ${my+260} ${bjx-160} ${bjy} ${bjx} ${bjy}`,690,640,DV.trs.n)}
+  ${cab('iem','gry','',`M830 175 C720 175 ${sx+90} ${sy} ${sx} ${sy}`,720,190,'發射器直插')}
+  ${cab('iem','air','',`M905 260 V320`,840,290,'無線')}
   <g class="wb sm" data-bosej="${nx},${ny},${nw},${nh}" style="cursor:move;touch-action:none"><circle cx="${bjx}" cy="${bjy}" r="9"/><text x="${bjx}" y="${bjy+4}" style="font-size:11px">⑤</text></g>${bdg(jx,jy,'④')}${badge('ch1','①')}${badge('ch2','②')}${badge('aux','③')}${badge('mon','⑤')}${badge('st','⑥')}
-  ${window.wView==='vol'?`<g class="vols">${AGKNOB.map(([px,py,t])=>volRing(AX+AW*px/100,AY+AH*py/100,t,AW*.045)).join('')}${volRing(nx+nw*((170*.282-ox)/ow),ny+nh*((164*.308-oy)/oh),'spk',14)}${volRing(820+170*.6,650+154*.247,'mon',20)}<rect class="vring${volOn('music')?'':' off'}" x="22" y="582" width="236" height="296" rx="18" stroke="${VOLC.music}"/></g>`:''}
-  ${window.wView==='vol'?(()=>{const v=window.wVol||'',P=(r,c,x,y)=>{const k=r+'|'+c,on=v===k;return `<g class="vpill${on?' on':''}" data-wvolk="${k}" style="cursor:pointer"><rect x="${x}" y="${y}" width="200" height="46" rx="23" fill="${on?'#fff':'#fff'}" stroke="${on?VOLC[r]:'#ccc'}" stroke-width="${on?4:2}"/><text x="${x+100}" y="${y+30}" text-anchor="middle" style="font-size:19px;font-weight:700"><tspan fill="${VOLC[r]}">${VOLN[r]}</tspan><tspan fill="${VOLC[c]}" dx="8">${VOLN[c]}</tspan></text></g>`};return P('spk','music',1015,140)+P('spk','mic',1015,200)+P('mon','music',1015,680)+P('mon','mic',1015,740)})():''}
+  ${window.wView==='vol'?`<g class="vols">${AGKNOB.map(([px,py,t])=>volRing(AX+AW*px/100,AY+AH*py/100,t,AW*.045)).join('')}${volRing(nx+nw*((170*.282-ox)/ow),ny+nh*((164*.308-oy)/oh),'spk',14)}${volRing(820+170*.6,320+154*.247,'mon',20)}<rect class="vring${volOn('music')?'':' off'}" x="22" y="162" width="236" height="296" rx="18" stroke="${VOLC.music}"/></g>`:''}
+  ${window.wView==='vol'?(()=>{const v=window.wVol||'',P=(r,c,x,y)=>{const k=r+'|'+c,on=v===k;return `<g class="vpill${on?' on':''}" data-wvolk="${k}" style="cursor:pointer"><rect x="${x}" y="${y}" width="200" height="46" rx="23" fill="${on?'#fff':'#fff'}" stroke="${on?VOLC[r]:'#ccc'}" stroke-width="${on?4:2}"/><text x="${x+100}" y="${y+30}" text-anchor="middle" style="font-size:19px;font-weight:700"><tspan fill="${VOLC[r]}">${VOLN[r]}</tspan><tspan fill="${VOLC[c]}" dx="8">${VOLN[c]}</tspan></text></g>`};return P('mon','music',1015,360)+P('mon','mic',1015,420)+P('spk','music',1015,620)+P('spk','mic',1015,680)})():''}
   </svg>`;
 }
 // AG06 官網正上方圖上的孔位置（％）
@@ -1036,6 +1044,10 @@ function wPanel(){
   <g class="pj${hi.has('usb')?' on':''}"><rect x="496" y="200" width="16" height="30" rx="4"/><text x="490" y="190" class="pn">④</text><text x="470" y="250" class="pl">背面 5V DC</text></g>
   </svg><p class="small muted" style="margin:4px 8px 2px;text-align:center">點「混音組」→「放 AG06 的圖」，用官網正上方那張圖，孔會直接標在圖上</p>`;
 }
+// 腳架圖：照她 11-08 排的樣子，用她自己的器材照片；組裝到哪一步，那一組就亮
+const WRIG=[['clip',70,1,28,18],['tray',70,26,28,18],['mclip',70,50,28,18],['bose',70,77,28,21],['pclip',1,22,29,18],['clip2',1,46,29,18],['chair',18,72,24,24],['cart',32,24,17,26],['stand',46,20,22,56]];
+function wRig(){const I=wImg(),DV=wDevs(),F=wireSel||window.wFocus||'';
+  return `<div class="wrig">${WRIG.filter(([d])=>DV[d]).map(([d,x,y,w,h])=>{const g=DV[d].g,dim=F&&F!==g&&!(F==='mix'&&d==='bose');return `<button class="rg${dim?' dim':''}${F===g?' sel':''}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%" data-wmenu="${d}"><span class="ri">${I[d]?`<img src="${wTh(I[d],400)}" alt="">`:''}</span><b>${esc(DV[d].n)}</b></button>`}).join('')}</div>`}
 function vWire(){
   wMigrate();
   const st=wSt(),inv=st.inv||{},I=wImg(),DV=wDevs();
@@ -1057,7 +1069,7 @@ function vWire(){
     h+=`<div class="packbar"><p class="small muted" style="margin:0">點一下＝有帶到；按住拖曳＝排順序；⋯＝改名、換照片。已清點 <b>${got}/${tot}</b></p><span style="display:flex;gap:6px"><button class="btn sm" data-act="wpack">📦 匯入圖片包</button><button class="btn sm" data-act="wreset" data-wm="inv">全部清掉</button></span></div>
     <div class="icats">${WCAT.map(([cn,ks])=>{const GG=G.filter(o=>ks.includes(o.x.k));return `<div class="icat" style="--n:${GG.length}"><div class="icath">${cn}</div><div class="icg">${GG.map(({x,L})=>{const n=L.filter(([d,v])=>inv[x.k+'|'+v.n]).length;return `<div class="icol ${n===L.length&&L.length?'ok':''}" data-igrp="${x.k}"><div class="ichead"><b>${x.ic} ${x.n}</b><span class="num">${n}/${L.length}</span><button class="idot" data-wgadd="${x.k}" aria-label="新增項目">＋</button></div>${L.map(([d,v])=>{const k=x.k+'|'+v.n,on=!!inv[k];return `<div class="irow ${on?'on':''}" data-irow="${d}"><button class="imain" data-winv="${esc(k)}"><span class="iwrap">${img(I[d],v.with&&I[v.with])}<span class="ick">${on?'✓':''}</span></span><span class="inm">${esc(v.n)}</span></button><button class="idot" data-wmenu="${d}" aria-label="更多">⋯</button></div>`}).join('')}</div>`}).join('')}</div></div>`}).join('')}</div>`;
   } else {
-    h+=`${side?`<div class="wsplit">${side}<div class="wdia">`:''}<div class="wbox wmain${M==='vol'?' volmode':''}"><div class="wzoom"><button class="ghost" data-wz="-1" aria-label="縮小">－</button><span class="wzl">${wZoomLab()}</span><button class="ghost" data-wz="1" aria-label="放大">＋</button></div><div class="wscroll${window.wZf?' zm':''}">${wDiagram()}</div></div>${side?'</div></div>':''}`;
+    const top=M!=='vol';h+=`${side&&!top?`<div class="wsplit">${side}<div class="wdia">`:''}<div class="wrigrow${top?'':' one'}">${M==='vol'?'':`<div class="wbox wrigbox">${wRig()}</div>`}<div class="wbox wmain${M==='vol'?' volmode':''}"><div class="wzoom"><button class="ghost" data-wz="-1" aria-label="縮小">－</button><span class="wzl">${wZoomLab()}</span><button class="ghost" data-wz="1" aria-label="放大">＋</button></div><div class="wscroll${window.wZf?' zm':''}">${wDiagram()}</div></div></div>${side&&!top?'</div></div>':''}${top?`<div class="wsteps">${side}</div>`:''}`;
   }
   return h;
 }
@@ -1071,7 +1083,7 @@ const WASM={pack:['打開拉車，拿出椅子和麥克風收納盒'],stand:['�
 function wSteps(m){const W=k=>WG.find(x=>x.k===k),st=(id,ph,g,n,ic,lines,photo)=>({id,ph,g,n,ic,lines,ph2:photo});
   const P=(m==='off'?WOFF:WON).map((t,i)=>st('p'+i,m==='off'?0:2,'mix',t,'⚡',[]));
   const G=(k,ph,n,lines)=>{const x=W(k);return {id:k,ph,g:k,n:n||x.n,ic:x.ic,lines,ph2:1}};
-  if(m==='off')return [...P,G('iem',1,'⑥ 監聽組',WOFFTX.iem),G('spk',1,'⑤ 喇叭組',WOFFTX.spk),G('mix',1,'④ 電源',WOFFTX.mix),G('bk',1,'③ 伴奏組',WOFFTX.bk),G('mic',1,'①② 麥克風組',WOFFTX.mic),G('stand',2,0,WOFFTX.stand),G('pack',2,'裝車',WOFFTX.pack),{id:'chk',ph:2,g:'',n:'清點',ic:'✅',lines:['到「✅ 清點」對一次，全部打勾才走']}];
+  if(m==='off')return [...P,G('iem',1,'⑥ 監聽組',WOFFTX.iem),G('spk',1,'⑤ 喇叭組',WOFFTX.spk),G('mix',1,'④ 電源',WOFFTX.mix),G('bk',1,'③ 伴奏組',WOFFTX.bk),G('mic',1,'①② 麥克風組',WOFFTX.mic),G('stand',2,0,WOFFTX.stand),G('pack',2,'裝車',WOFFTX.pack),{id:'chk',ph:2,g:'',n:'清點',ic:'✅',lines:['到「打包」對一次，全部打勾才走']}];
   return [G('pack',0,0,WASM.pack),G('stand',0,0,WASM.stand),{id:'place',ph:0,g:'mix',n:'AG06、Bose 擺好',ic:'🎛',lines:WASM.place,ph2:1},
     G('mic',1,'①② 麥克風',WASM.mic),G('bk',1,'③ 伴奏',WASM.bk),G('mix',1,'④ 電源',WASM.mix),G('spk',1,'⑤ 喇叭',WASM.spk),G('iem',1,'⑥ 監聽',WASM.iem),...P]}
 function wCurIdx(m,S,done){window.wCur=window.wCur||{};let c=window.wCur[m];if(c==null||c>S.length){c=S.findIndex(x=>!done[x.id]);if(c<0)c=S.length}return c}
@@ -1295,8 +1307,8 @@ function songSheet(id){
 
 /* ---------- 設備與清單 ---------- */
 function vGear(){
-  if(gearSeg==='list')gearSeg='site';
-  let h=`<div class="seg" style="margin-bottom:16px">${[['pack','打包'],['site','現場'],['wire','接線']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
+  if(gearSeg==='list'||gearSeg==='wire')gearSeg='site';
+  let h=`<div class="seg" style="margin-bottom:16px">${[['pack','打包'],['site','現場']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
   h+=`<p class="small muted" style="margin:-8px 0 12px;text-align:right">版本 11/8 接線圖</p>`;
   if(gearSeg==='pack')return h+vPack();
   if(gearSeg==='wire')return h+vWire();
@@ -1319,7 +1331,7 @@ function vGear(){
     if(!checks.length)return h+emptyChecks();
     const both=[...pre,...on],bd=both.filter(c=>checked[c.id]).length;
     h+=`<section class="sec"><div class="sec-head"><h2>開唱前・現場</h2><span class="num muted">${bd} / ${both.length}</span></div><div class="progress"><i style="width:${both.length?Math.round(bd/both.length*100):0}%"></i></div>${checkGroups(both,[...TG,...ONSITE],checked,rain,true)}</section>`;
-    h+=`<section class="sec"><h2>現場擺位</h2>${vSite()}</section>`;
+    h+=`<section class="sec"><h2>架設・接線</h2>${vWire()}</section>`;
     h+=`<section class="sec"><button class="btn block" data-act="reset-checks" data-confirm="再按一次清空勾選">重置清單</button><p class="small muted" style="margin:0">這裡跟「下一場」分頁是同一份勾選。演出後寫紀錄會自動重置。</p></section>`;
     h+=`<p class="small" style="text-align:center"><button class="ghost" data-gearseg="stock">租借／設備庫存 ›</button></p>`;
     return h;
