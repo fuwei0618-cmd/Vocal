@@ -53,10 +53,10 @@
 .icats.use .icg{grid-template-columns:1fr!important;gap:10px!important}
 @media (max-width:1000px){.icats.use{grid-template-columns:1fr!important}}
 
-.wrigrow{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1fr);margin-bottom:12px;gap:10px;align-items:start}.wrigrow>.wmain{margin-bottom:0}
+.wrigrow{display:grid;grid-template-columns:auto minmax(0,1fr);margin-bottom:12px;gap:10px;align-items:start}.wrigrow>.wmain{margin-bottom:0}
 @media (max-width:700px){.wrigrow{grid-template-columns:1fr}}.wrigrow.one{grid-template-columns:1fr}
-.wphcols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:start}.wphcol{display:flex;flex-direction:column;gap:6px}@media (max-width:700px){.wphcols{grid-template-columns:1fr}}
-.wrigbox{background:#fff;padding:6px}.wrig{position:relative;width:100%;aspect-ratio:660/560;max-height:44vh;margin:0 auto}.rzh{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--muted);padding:4px 6px;border-bottom:1px solid var(--line);margin-bottom:6px}.rzh+.wrig+.rzh{margin-top:10px}.wrigo{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;height:130px}.wrigo .rg{position:relative!important;min-height:0}
+.wphcols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:start}.wphcol{display:flex;flex-direction:column;gap:5px}.wstepcols .wli{padding:5px 8px;align-items:center}.wstepcols .wli:not(.on) small,.wstepcols .wli:not(.on) .wlph{display:none}.wstepcols .wli:not(.on) .wlbody b{font-size:14px}.wstepcols .wlck{width:26px;height:26px}.wstepcols .wli.on{align-items:flex-start}.wstepcols .wlist{position:relative}.wstepcols .wlhead{position:absolute;right:0;top:-2px;gap:10px;padding:0}.wstepcols .wlhead .btn{padding:3px 10px}.wstepcols .wph{margin:2px 2px 0}@media (max-width:700px){.wphcols{grid-template-columns:1fr}}
+.wrigbox{background:#fff;padding:6px}.wrig{position:relative;height:min(36vh,310px);aspect-ratio:660/790;margin:0 auto}.rigseg{position:absolute;left:0;top:0;width:62%;margin:0;z-index:2;padding:2px}.rigseg button{padding:3px 0;font-size:12px}
 :is(.wrig,.wrigo) .rg{position:absolute;display:flex;flex-direction:column;align-items:center;gap:2px;border:1.5px solid transparent;border-radius:10px;background:none;padding:3px;font:inherit;color:#222;transition:opacity .2s}
 :is(.wrig,.wrigo) .rg .ri{flex:1;min-height:0;width:100%;position:relative}:is(.wrig,.wrigo) .rg img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 :is(.wrig,.wrigo) .rg b{flex:none;font-size:11px;font-weight:600;line-height:1.2;text-align:center}:is(.wrig,.wrigo) .rg.dim{opacity:.18}:is(.wrig,.wrigo) .rg.sel{border-color:var(--accent);background:rgba(31,110,119,.06)}
@@ -304,7 +304,7 @@ details.fold>.cgrid{padding:8px 8px 0}
 .wcab .xlr{stroke-width:9}.wcab .blk{stroke:#222;stroke-width:6}.wcab .brd{stroke:#222;stroke-width:10;stroke-dasharray:4 2}.wcab .gry{stroke:#8A8F94;stroke-width:10}.wcab .usbo{stroke:#bbb;stroke-width:9}.wcab .air{stroke:#1F6E77}
 .cpic rect{fill:#fff;stroke:#ccc;stroke-width:1.5}.cpic text{font-size:12px;font-weight:700;fill:#333}
 .wmain .dim{opacity:.18}
-.wmain{position:relative}.wmain svg.wire{max-height:58vh}.wscroll{overflow:visible}.wscroll.zm{overflow-x:auto;overflow-y:hidden}.wmain svg.wire{margin:0 auto}.wcab .alt{stroke-dasharray:10 8;stroke-width:5}.wzoom{position:absolute;top:8px;right:8px;z-index:2;display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.9);border-radius:999px;padding:2px}.wzoom button{width:34px;height:34px;padding:0;font-size:18px;border-radius:50%}.wzl{font-size:13px;min-width:44px;text-align:center}
+.wmain{position:relative}.wmain svg.wire{max-height:58vh}.wrigrow .wmain svg.wire{max-height:min(36vh,310px)}.wrigrow .wbox{padding:6px}.wrigrow{margin-bottom:6px!important}.wstepcols .wlhead b{font-size:14px}.wscroll{overflow:visible}.wscroll.zm{overflow-x:auto;overflow-y:hidden}.wmain svg.wire{margin:0 auto}.wcab .alt{stroke-dasharray:10 8;stroke-width:5}.wzoom{position:absolute;top:8px;right:8px;z-index:2;display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.9);border-radius:999px;padding:2px}.wzoom button{width:34px;height:34px;padding:0;font-size:18px;border-radius:50%}.wzl{font-size:13px;min-width:44px;text-align:center}
 .volmode .wcab,.volmode .wb{opacity:.25}.vring{fill:none;stroke-width:5}.vring.off{opacity:.12}
 .vgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}.vcell{display:flex;flex-wrap:wrap;gap:0 6px;justify-content:center;align-items:center;padding:6px 4px;border-radius:12px;border:2px solid var(--line,#ddd);background:#fff;font-size:13px;line-height:1.3}.vcell.on{border-color:var(--a);box-shadow:inset 0 0 0 2px var(--b)}
 .vsteps{margin:6px 0 10px;padding:0 12px 0 30px;line-height:1.7;font-size:15px}
@@ -1045,11 +1045,12 @@ function wPanel(){
   </svg><p class="small muted" style="margin:4px 8px 2px;text-align:center">點「混音組」→「放 AG06 的圖」，用官網正上方那張圖，孔會直接標在圖上</p>`;
 }
 // 腳架圖：照她 11-08 排的樣子，用她自己的器材照片；組裝到哪一步，那一組就亮
-// 腳架圖：上面「腳架」照實際位置（螢幕夾在上、麥夾在中、托盤），下面「其他物品」一排；組裝到哪一步，那一組就亮
-const WRIG=[['stand',37,1,26,98],['pclip',1,6,33,42],['clip2',1,52,33,42],['clip',66,0,33,31],['tray',66,34,33,31],['mclip',66,68,33,31]],WRIGO=['cart','chair','bose'];
-function wRig(){const I=wImg(),DV=wDevs(),F=wireSel||window.wFocus||'';
-  const one=(d,st)=>{const g=DV[d].g,dim=F&&F!==g&&!(F==='mix'&&d==='bose');return `<button class="rg${dim?' dim':''}${F===g?' sel':''}"${st?` style="${st}"`:''} data-wmenu="${d}"><span class="ri">${I[d]?`<img src="${wTh(I[d],400)}" alt="">`:''}</span><b>${esc(DV[d].n)}</b></button>`};
-  return `<div class="rzh">腳架</div><div class="wrig">${WRIG.filter(([d])=>DV[d]).map(([d,x,y,w,h])=>one(d,`left:${x}%;top:${y}%;width:${w}%;height:${h}%`)).join('')}</div><div class="rzh">其他物品</div><div class="wrigo">${WRIGO.filter(d=>DV[d]).map(d=>one(d)).join('')}</div>`}
+// 腳架圖：照她 11-08 排的樣子；上面按鈕切「全部／腳架／其他物品」亮燈；組裝到哪一步，那一組也會亮
+const WRIG=[['clip',70,1,28,18],['tray',70,26,28,18],['mclip',70,50,28,18],['bose',70,77,28,21],['pclip',1,22,29,18],['clip2',1,46,29,18],['chair',18,72,24,24],['cart',32,24,17,26],['stand',46,20,22,56]],WRIGSET={stand:['stand','clip','tray','mclip','pclip','clip2'],etc:['cart','chair','bose']};
+function wRig(){const I=wImg(),DV=wDevs(),F=wireSel||window.wFocus||'',R=window.rigF||'all',set=WRIGSET[R];
+  const seg=`<div class="seg rigseg">${[['all','全部'],['stand','腳架'],['etc','其他物品']].map(([k,t])=>`<button data-rigf="${k}" aria-pressed="${R===k}">${t}</button>`).join('')}</div>`;
+  return `<div class="wrig">${seg}${WRIG.filter(([d])=>DV[d]).map(([d,x,y,w,h])=>{const g=DV[d].g,dim=(F&&F!==g&&!(F==='mix'&&d==='bose'))||(set&&!set.includes(d)),lit=(F&&F===g)||(set&&set.includes(d));return `<button class="rg${dim?' dim':''}${lit?' sel':''}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%" data-wmenu="${d}"><span class="ri">${I[d]?`<img src="${wTh(I[d],400)}" alt="">`:''}</span>${d==='stand'?'':`<b>${esc(DV[d].n)}</b>`}</button>`}).join('')}</div>`}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-rigf]');if(!b)return;e.preventDefault();e.stopPropagation();window.rigF=b.dataset.rigf;render()},true);
 function vWire(){
   wMigrate();
   const st=wSt(),inv=st.inv||{},I=wImg(),DV=wDevs();
