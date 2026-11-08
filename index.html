@@ -174,6 +174,7 @@ details.fold>.cgrid{padding:8px 8px 0}
 .icats.pk{grid-template-columns:1fr 2fr 2fr}.icats.pk.pk4{grid-template-columns:1fr 2fr 2fr 1fr}
 .icath.pkh{display:flex;align-items:center;gap:8px}.icath.pkh .pcimg{width:30px;height:30px;object-fit:contain;border-radius:6px;background:#fff}.icath.pkh span:first-of-type{flex:1}.icath.pkh .num{font-size:12px;color:var(--muted);font-weight:400}
 .iim .pkimg{width:100%;height:100%;object-fit:contain;display:block}.iim .pkimg.multi{display:grid;grid-template-columns:1fr 1fr;gap:1px}.iim .pkimg.multi img{width:100%;height:100%;object-fit:contain}
+.isub{display:block;font-size:11px;color:var(--muted);line-height:1.35;margin-top:2px}
 .iempty{padding:14px 8px;font-size:12px;color:var(--muted);text-align:center}.icol.dropover{outline:2px dashed var(--accent);outline-offset:-2px}.irow.rainon .inm{color:#2f6db5}
 #wpop{position:fixed;z-index:1000;min-width:200px;max-width:260px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:6px 0;font-size:14px}
 #wpop button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;font:inherit;color:inherit;text-align:left;padding:8px 16px}#wpop button:active,#wpop button:hover{background:var(--accent-soft,#eef5f5)}#wpop button[disabled]{opacity:.35}
@@ -673,13 +674,27 @@ function wTh(u,max){max=max||200;if(!u||!u.startsWith('data:'))return u;const k=
 function ckImg(c,cls){const I=wImg(),u=ckDevs(c).map(d=>I[d]).filter(Boolean).slice(0,4);cls=cls||'ckimg';if(!u.length)return '';if(u.length===1)return `<img class="${cls}" src="${wTh(u[0])}" alt="">`;return `<span class="${cls} multi n${u.length}">${u.map(x=>`<img src="${wTh(x)}" alt="">`).join('')}</span>`}
 const tileBtn=(c,checked,rain)=>packEdit?`<button class="tile2 edit" data-edit-check="${esc(c.id)}">${ckImg(c,'tlimg')}<span>${esc(c.text)}</span><i class="pen" aria-hidden="true">✎</i></button>`:`<button class="tile2 ${checked[c.id]?'on':''} ${c.rain&&rain?'rainon':''}" data-tick="${esc(c.id)}" aria-pressed="${!!checked[c.id]}"><i></i>${ckImg(c,'tlimg')}<span>${esc(c.text)}</span></button>`;
 const ptiles=(l,checked,rain,bag)=>`<div class="ptiles">${l.length?l.map(c=>tileBtn(c,checked,rain)).join(''):(packEdit?'':'<span class="small muted">（空）</span>')}${packEdit&&bag!==undefined?`<button class="tile2 add" data-add-bag="${bag}">＋ 新增</button>`:''}</div>`;
+// 11-08 她選「照圖改」：打包的器材改用清點的器材（名稱跟著清點走），線材跟著小袋；個人物品、打賞箱、名牌、雨傘、行動電源 ×N 不動。只跑一次，舊清單先備份
+const PK2=[['bose','cart','前一晚充電','黑色編織線捲在上面'],['stand','cart','出門準備'],['chair','cart','其他'],
+ ['ag06','tote1','出門準備','電源小袋：行動電源、USB-C 線｜伴奏小袋：3.5mm 線、iPad 轉接頭、Lightning 轉接頭'],['tray','tote1','出門準備'],
+ ['iem','tote2','前一晚充電'],['rx','tote2','前一晚充電'],['clip','tote2','出門準備'],['mclip','tote2','出門準備'],['pclip','tote2','出門準備'],['clip2','tote2','出門準備'],
+ ['mcase','pack2','前一晚充電','有線麥、無線麥＋接收器、充電電池、藍色 XLR、紅色防風罩'],['ipad','pack2','前一晚充電'],['iphone','pack2','前一晚充電']];
+const PK_OLD=[/^音響$/,/麥克風.*電池/,/^監聽/,/^iPad ?mini/i,/^支架/,/^AG06/i,/線材.*轉接頭/,/^椅子$/,/^腳架/];
+function pkMigrate(){const st=wSt();if(st.pkv2||!Object.keys(S.checks).length)return;
+  try{localStorage.setItem(LS+'-checks-bak-pk2',JSON.stringify(S.checks))}catch(e){}
+  Object.entries(S.checks).forEach(([id,c])=>{if(!GROUPS.includes(c.group)||c.group==='當日')return;if(PK_OLD.some(r=>r.test((c.text||'').trim())))del('checks',id)});
+  const DV=wDevs(),bagN={};PK2.forEach(([d,bag,g,sub])=>{if(!DV[d])return;const k=bagN[bag]=(bagN[bag]||0);bagN[bag]++;put('checks','d_'+d,{group:g,text:DV[d].n,bag,po:k,order:50+k,dev:d,wd:d,sub:sub||''})});
+  const fix={'打賞箱':'cart','QR Code 名牌':'cart','雨傘 ×2／地墊':'cart'};Object.entries(S.checks).forEach(([id,c])=>{if(fix[c.text]&&bagOf(c)!==fix[c.text])put('checks',id,{...c,bag:fix[c.text]})});
+  st.pkv2=1;try{localStorage.setItem(LS+'-wire',JSON.stringify(st))}catch(e){}}
+const ckName=c=>c.wd&&wDevs()[c.wd]?wDevs()[c.wd].n:c.text;
 function vPack(){
+  pkMigrate();
   const n=next(),checked=n.checked||{},rain=!!n.rain;
   const items=sorted('checks','order').filter(c=>GROUPS.includes(c.group)&&c.group!=='當日');
   const prev=!!window.mergePrev;
   if(!items.length&&!prev)return emptyChecks();
   const src=prev?mergedChecks():items;
-  const by=k=>src.filter(c=>bagOf(c)===k);
+  const by=k=>src.filter(c=>bagOf(c)===k&&!/^拉車/.test(c.text));
   const cnt=l=>`<span class="pcnt num">${l.filter(c=>checked[c.id]).length}/${l.length}</span>`;
   const cart=by('cart'),t1=by('tote1'),t2=by('tote2'),pk=by('pack'),pk2=by('pack2');
   const tiles=prev?(l)=>`<div class="ptiles">${l.map(c=>`<div class="tile2">${c.group==='前一晚充電'?'<em class="zap">⚡</em>':''}${ckImg(c,'tlimg')}<span>${esc(c.text)}</span></div>`).join('')}</div>`:ptiles;
@@ -697,7 +712,7 @@ function vPack(){
   return h}
   // 跟清點同一種樣子：一個包一大欄、每層一小欄；勾、照片、名稱、⋯；按住拖曳換位置或換包
   const po=l=>l.slice().sort((a,b)=>(a.po??1e9)-(b.po??1e9));
-  const row=c=>{const on=!!checked[c.id];return `<div class="irow ${on?'on':''} ${c.rain&&rain?'rainon':''}" data-pk="${esc(c.id)}"><button class="imain" data-tick="${esc(c.id)}"><span class="iwrap"><span class="iim">${ckImg(c,'pkimg')}</span><span class="ick">${on?'✓':''}</span></span><span class="inm">${esc(c.text)}</span></button><button class="idot" data-edit-check="${esc(c.id)}" aria-label="編輯">⋯</button></div>`};
+  const row=c=>{const on=!!checked[c.id];return `<div class="irow ${on?'on':''} ${c.rain&&rain?'rainon':''}" data-pk="${esc(c.id)}"><button class="imain" data-tick="${esc(c.id)}"><span class="iwrap"><span class="iim">${ckImg(c,'pkimg')}</span><span class="ick">${on?'✓':''}</span></span><span class="inm">${esc(ckName(c))}${c.sub?`<small class="isub">${c.sub.split('｜').map(esc).join('<br>')}</small>`:''}</span></button><button class="idot" data-edit-check="${esc(c.id)}" aria-label="編輯">⋯</button></div>`};
   const col=(bag,nm,l,ren)=>`<div class="icol ${l.length&&l.every(c=>checked[c.id])?'ok':''}" data-drop="${bag}"><div class="ichead"><b>${esc(nm)}</b>${ren?`<button class="idot" data-bagren="${bag}" aria-label="改名">✏️</button>`:''}<span class="num">${l.filter(c=>checked[c.id]).length}/${l.length}</span><button class="idot" data-add-bag="${bag}" aria-label="新增">＋</button></div>${po(l).map(row).join('')||'<div class="iempty">拖到這裡</div>'}</div>`;
   const cat=(nm,fb,cols)=>{const all=cols.flatMap(x=>x[2]);return `<div class="icat" style="--n:${cols.length}"><div class="icath pkh">${bagImg(nm,fb)}<span>${nm}</span><span class="num">${all.filter(c=>checked[c.id]).length}/${all.length}</span></div><div class="icg">${cols.map(x=>col(...x)).join('')}</div></div>`};
   const none=src.filter(c=>!BAG_NAME[bagOf(c)]&&!/^拉車/.test(c.text));// 拉車本身是容器，不算要放進包包的東西
