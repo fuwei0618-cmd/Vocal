@@ -604,7 +604,7 @@ function migrate(){
   if(!m.contacts){if(!Object.values(S.checks).some(c=>(c.text||'').includes('隱形眼鏡')))put('checks','c36',{group:'隨身',text:'隱形眼鏡',rain:false,order:5,bag:'pack'});put('meta','migr',{...m,contacts:true})}
 }
 // 清單項目 → 器材照片（可以多張）。照名字猜，猜錯就在項目裡點照片自己選（存在 c.dev，逗號分隔；''＝不要照片）
-const CKRULE=[['支架',['clip','clip2','mclip','pclip'],1],['夾具',['clip','clip2','mclip','pclip'],1],['線材',['xlr','trs','aux','usbc']],['轉接頭',['adpI','adpP']],['Bose',['bose']],['音響',['bose']],['監聽',['iem','rx']],['麥克風',['mic','wl']],['電池',['batt']],['iPhone',['iphone']],['iPad',['ipad']],['行動電源',['bat']],['拉車',['cart']],['腳架',['stand']],['AG06',['ag06']],['椅子',['chair']],['伸縮椅',['chair']],['水杯',['tray']],['托盤',['tray']],['麥架',['mclip']],['直播',['pclip']],['防風',['wind']],['XLR',['xlr']],['收納盒',['mcase']]];
+const CKRULE=[['收納盒',['mcase','mic','wl','xlr'],1],['伴奏小袋',['aux','adpI','adpP'],1],['電源小袋',['usbc','bat'],1],['支架',['clip','clip2','mclip','pclip'],1],['夾具',['clip','clip2','mclip','pclip'],1],['線材',['xlr','trs','aux','usbc']],['轉接頭',['adpI','adpP']],['Bose',['bose']],['音響',['bose']],['監聽',['iem','rx']],['麥克風',['mic','wl']],['電池',['batt']],['iPhone',['iphone']],['iPad',['ipad']],['行動電源',['bat']],['拉車',['cart']],['腳架',['stand']],['AG06',['ag06']],['椅子',['chair']],['伸縮椅',['chair']],['水杯',['tray']],['托盤',['tray']],['麥架',['mclip']],['直播',['pclip']],['防風',['wind']],['XLR',['xlr']],['收納盒',['mcase']]];
 function ckDevs(c){if(c.dev!==undefined)return c.dev?c.dev.split(','):[];const t=c.text||'',o=[];for(const [k,d,stop] of CKRULE){if(t.includes(k)){d.forEach(x=>{if(!o.includes(x))o.push(x)});if(stop)break}}return o}
 function ckDev(c){return ckDevs(c)[0]||''}
 // 縮圖：同一張 800px 照片在畫面上重複出現很多次，iPad 解碼太多大圖會畫到一半就停（11-08 畫面被切掉），所以小格子一律用 200px 縮圖
@@ -681,11 +681,11 @@ function vSite(){
 const WG=[
  {k:'pack',n:'收納組',ic:'🧳',items:['拉車','伸縮椅','麥克風收納盒'],plug:['到場先打開拉車，拿出椅子和麥克風收納盒；收工時全部裝回拉車'],jk:[]},
  {k:'stand',n:'架子組',ic:'🦿',items:['腳架 ×2','托盤（放 AG06）','iPad 夾（長臂）','iPad 夾（車把夾）','麥克風延伸臂夾','麥克風彈簧夾','麥克風 O 型夾','管夾（手機用）','水杯托盤'],plug:['兩支腳架立好 → 裝水杯托盤 → 夾上 iPad 夾、麥克風夾、管夾'],jk:[]},
- {k:'mix',n:'混音組',ic:'🎛',items:['Yamaha AG06','行動電源','白色 USB-C 線'],plug:['AG06 放上水杯托盤','行動電源 → 白色 USB-C → AG06 背面 5V DC（④ 供電）'],jk:['usb']},
- {k:'mic',n:'麥克風組',ic:'🎤',items:['有線麥克風','紅色防風罩','藍色 XLR 線','無線麥克風','無線接收器','充電電池（已充飽）','電池充電器'],plug:['有線麥克風 → 藍色 XLR 線 → ① CH1','無線接收器直接插 ② CH2'],jk:['ch1','ch2']},
- {k:'bk',n:'伴奏組',ic:'🎵',items:['iPad','iPhone','iPad 轉接頭','Lightning 轉接頭','黑色 3.5mm 線'],plug:['iPad（或 iPhone）→ 自己的轉接頭 → 黑色細線 → ③ AUX（手機圖示）'],jk:['aux']},
+ {k:'mix',n:'混音組',ic:'🎛',items:['Yamaha AG06','行動電源','白色 USB-C 線'],plug:['AG06 連同「電源小袋」「伴奏小袋」一起拿出來，AG06 放上水杯托盤','電源小袋：行動電源 → 白色 USB-C → AG06 背面 5V DC（④ 供電）'],jk:['usb']},
+ {k:'mic',n:'麥克風組',ic:'🎤',items:['有線麥克風','紅色防風罩','藍色 XLR 線','無線麥克風','無線接收器','充電電池（已充飽）','電池充電器'],plug:['打開麥克風收納盒（兩隻麥、電池、接收器、藍色 XLR 都在裡面）','有線麥克風 → 藍色 XLR 線 → ① CH1','無線接收器直接插 ② CH2'],jk:['ch1','ch2']},
+ {k:'bk',n:'伴奏組',ic:'🎵',items:['iPad','iPhone','iPad 轉接頭','Lightning 轉接頭','黑色 3.5mm 線'],plug:['從 AG06 旁的「伴奏小袋」拿 3.5mm 線和轉接頭','iPad（或 iPhone）→ 自己的轉接頭 → 黑色細線 → ③ AUX（手機圖示）'],jk:['aux']},
  {k:'iem',n:'監聽組',ic:'🎧',items:['灰色發射器','接收器 ×2','入耳耳機 ×2'],plug:['灰色發射器直接插 ⑥ MONITOR OUT R','兩個接收器各接一副耳機，頻道跟發射器一樣'],jk:['st']},
- {k:'spk',n:'喇叭組',ic:'🔊',items:['Bose S1 Pro+','黑色編織線（6.3mm 轉 XLR）'],plug:['⑤ MONITOR OUT L → 黑色編織線（6.3mm 那頭插 AG06，XLR 那頭插 Bose）→ Bose INPUT 1'],jk:['mon']},
+ {k:'spk',n:'喇叭組',ic:'🔊',items:['Bose S1 Pro+','黑色編織線（6.3mm 轉 XLR）'],plug:['黑色編織線捲好收在 Bose 上','⑤ MONITOR OUT L → 黑色編織線（6.3mm 那頭插 AG06，XLR 那頭插 Bose）→ Bose INPUT 1'],jk:['mon']},
 ];
 const WON=['開 AG06（電源開關在右上）','開監聽發射器、兩個接收器','Bose 音量轉到最小再開機','試音：慢慢把 Bose 音量轉大'];
 const WOFF=['Bose 音量轉小 → 關 Bose','關監聽發射器、接收器','關 AG06'];
