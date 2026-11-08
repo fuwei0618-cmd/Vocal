@@ -151,6 +151,19 @@ details.fold>.cgrid{padding:8px 8px 0}
 .wsc-btn{display:flex;gap:8px;justify-content:space-between}.wsc-btn .btn{flex:1;padding:12px;font-size:16px}
 .wset{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}.wset>summary{cursor:pointer;font-weight:600;color:var(--muted);list-style:none}
 @media (max-width:620px){.wsc-ph{max-width:100%}.wsc-main{flex-wrap:wrap}}
+.wsplit{display:grid;grid-template-columns:minmax(300px,1fr) 1.5fr;gap:12px;align-items:start}.wdia{position:sticky;top:8px}
+@media (max-width:820px){.wsplit{grid-template-columns:1fr}.wdia{position:static}}
+.wlist{display:flex;flex-direction:column;gap:6px}.wlhead{display:flex;justify-content:space-between;align-items:center;padding:2px 2px 4px}
+.wli{display:flex;gap:8px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px}.wli.on{border:2px solid var(--accent);background:var(--accent-soft)}.wli.ok{opacity:.55}
+.wlck{flex:none;width:30px;height:30px;border-radius:50%;border:2px solid var(--line);background:#fff;font-weight:700;font-size:13px;color:var(--muted);padding:0}.wli.ok .wlck{background:var(--ok);border-color:var(--ok);color:#fff}
+.wlbody{flex:1;min-width:0;text-align:left;border:0;background:none;padding:0;font:inherit;display:flex;flex-direction:column;gap:1px}.wlbody b{font-size:15px}.wlbody small{font-size:12.5px;color:var(--muted);line-height:1.45}
+.wlph{display:flex;gap:3px;flex:none;max-width:110px;flex-wrap:wrap}.wlph img{width:34px;height:30px;object-fit:contain;background:#fff;border-radius:5px}
+.icols{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;align-items:start}.icol{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}.icol.ok{border-color:var(--ok)}
+.ichead{display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--line)}
+.irow{display:flex;align-items:center;gap:10px;width:100%;padding:6px 10px;border:0;border-bottom:1px solid var(--line);background:none;font:inherit;text-align:left}.irow:last-child{border-bottom:0}.irow.on{background:var(--ok-bg);color:var(--ok)}
+.ick{width:22px;height:22px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;flex:none;font-size:13px;font-weight:700}.irow.on .ick{background:var(--ok);border-color:var(--ok);color:#fff}
+.iim{width:52px;height:42px;flex:none;display:grid;place-items:center;background:#fff;border-radius:8px}.iim{overflow:hidden}.iim img{width:100%;height:100%;object-fit:contain}.inm{flex:1;font-size:14.5px}
+.irow .ghost{padding:4px 8px;font-size:15px}
 .pcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;align-items:start}
 .pcard{background:var(--surface,#fff);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .pchead{display:flex;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid var(--line)}.pchead b{font-size:16px;flex:1}
@@ -702,11 +715,13 @@ function wSt(){try{return JSON.parse(localStorage.getItem(LS+'-wire')||'{}')}cat
 function wSet(f){const s=wSt();f(s);try{localStorage.setItem(LS+'-wire',JSON.stringify(s))}catch(e){}render()}
 const JN={ch1:'①',ch2:'②',aux:'③',usb:'④',mon:'⑤',st:'⑥'};
 // 設備圖片：她從 iPad 選官網產品圖，只存在這台裝置（不進公開 GitHub）
-const WDEV={mic:{n:'有線麥克風',g:'mic'},wl:{n:'無線麥克風＋接收器',g:'mic'},ipad:{n:'iPad',g:'bk'},ag06:{n:'AG06 正面',g:'mix'},ag06b:{n:'AG06 背面',g:'mix'},bat:{n:'行動電源',g:'mix'},bose:{n:'Bose S1 Pro+',g:'spk'},iem:{n:'監聽發射器',g:'iem'},rx:{n:'接收器＋耳機 ×2',g:'iem'},
+const WDEV={mic:{n:'有線麥克風',g:'mic'},wl:{n:'無線麥克風＋接收器',g:'mic'},ipad:{n:'iPad',g:'bk'},ag06:{n:'AG06',g:'mix'},ag06b:{n:'AG06（背面照片）',g:'mix',sub:'ag06'},bat:{n:'行動電源',g:'mix'},bose:{n:'Bose S1 Pro+',g:'spk'},iem:{n:'監聽發射器',g:'iem'},rx:{n:'接收器＋耳機 ×2',g:'iem'},
   cart:{n:'拉車',g:'pack'},chair:{n:'伸縮椅',g:'pack'},mcase:{n:'麥克風收納盒',g:'pack'},stand:{n:'腳架 ×2',g:'stand'},tray:{n:'水杯托盤',g:'stand'},clip:{n:'iPad 夾（長臂）',g:'stand'},clip2:{n:'iPad 夾（車把夾）',g:'stand'},mclip:{n:'麥克風延伸臂夾',g:'stand'},mspr:{n:'麥克風彈簧夾',g:'stand'},mo:{n:'麥克風 O 型夾',g:'stand'},pclip:{n:'管夾（手機用）',g:'stand'},wind:{n:'紅色防風罩',g:'mic'},xlr:{n:'藍色 XLR 線',g:'mic'},aux:{n:'3.5mm 音源線',g:'bk'},adpI:{n:'iPad 轉接頭',g:'bk'},iphone:{n:'iPhone',g:'bk'},adpP:{n:'Lightning 轉接頭',g:'bk'},usbc:{n:'USB-C 線',g:'mix'},trs:{n:'6.3mm 轉 XLR 線',g:'spk'},batt:{n:'充電電池＋充電器',g:'mic'}};
 let WIMG=null;function wImg(){if(!WIMG){try{WIMG=JSON.parse(localStorage.getItem(LS+'-wimg')||'{}')}catch(e){WIMG={}}if(WIMG.adp&&!WIMG.adpI){WIMG.adpI=WIMG.adp;delete WIMG.adp;if(WIMG._alt_adp){WIMG._alt_adpI=WIMG._alt_adp;delete WIMG._alt_adp}}}return WIMG}
 function wDevs(){const st=wSt(),nm=st.names||{},o={};Object.entries(WDEV).forEach(([k,v])=>o[k]={...v,n:nm[k]||v.n});(st.custom||[]).forEach(c=>o[c.id]={n:nm[c.id]||c.n,g:c.g,c:1});return o}
-function wItems(g){return Object.values(wDevs()).filter(v=>v.g===g.k).map(v=>v.n)}
+function wItems(g){return wList(g.k).map(([d,v])=>v.n)}
+// 一組裡的器材（照她排的順序；AG06 背面照片不算一件）
+function wList(k){const st=wSt(),o=(st.order||{})[k]||[],L=Object.entries(wDevs()).filter(([d,v])=>v.g===k&&!v.sub);return L.sort((a,b)=>{const i=o.indexOf(a[0]),j=o.indexOf(b[0]);return (i<0?999:i)-(j<0?999:j)})}
 function wAlt(d){return wImg()['_alt_'+d]||[]}
 function wUse(d,i){const I=wImg(),a=wAlt(d).slice(),pick=a.splice(i,1)[0];if(I[d])a.unshift(I[d]);I[d]=pick;I['_alt_'+d]=a;wImgSave();render()}
 function wDel(d){const I=wImg(),a=wAlt(d).slice();if(a.length)I[d]=a.shift();else delete I[d];I['_alt_'+d]=a;if(!a.length)delete I['_alt_'+d];wImgSave();render()}
@@ -825,20 +840,19 @@ function vWire(){
   const M=wireMode==='vol'?'vol':wireMode;window.wView=M==='vol'?'vol':'wire';
   let h=`<div class="seg wmodes">${[['asm','🔧 組裝'],['off','📦 拆卸'],['inv','✅ 清點'],['vol','🎚 試音量']].map(([k,t])=>`<button data-wmode="${k}" aria-pressed="${M===k}">${t}</button>`).join('')}</div>`;
   window.wFocus='';
+  let side='';
   if(M==='asm'||M==='off'){
-    const S=wSteps(M),done=st[M]||{},cur=wCurIdx(M,S,done);
-    if(cur<S.length){const x=S[cur];window.wFocus=x.g;
-      h+=`<div class="wsc"><div class="wsc-top"><b>第 ${cur+1} 步／${S.length}</b><span class="wdots">${S.map((y,i)=>`<button class="wdot ${done[y.id]?'ok':''} ${i===cur?'on':''}" data-wjump="${i}" aria-label="第 ${i+1} 步"></button>`).join('')}</span></div>
-      <div class="wsc-main"><div class="wsc-ic">${x.ic}</div><div class="wsc-tx"><b>${esc(x.n)}</b>${x.lines.map(l=>`<div>${esc(l)}</div>`).join('')}</div>${x.ph?`<div class="wsc-ph">${thumbs(x.g)}</div>`:''}</div>
-      <div class="wsc-btn"><button class="btn" data-wstep="-1" ${cur===0?'disabled':''}>← 上一步</button><button class="btn primary" data-wstep="1">完成 ✓ 下一步</button></div></div>`}
-    else h+=`<div class="wsc done"><div class="wsc-main"><div class="wsc-ic">🎉</div><div class="wsc-tx"><b>${M==='asm'?'組裝完成！':'拆卸完成，可以回家了！'}</b><div>${S.length} 步都做完了</div></div></div><div class="wsc-btn"><button class="btn" data-wstep="-1">← 回上一步</button><button class="btn" data-act="wreset" data-wm="${M}">重來一次</button></div></div>`;
+    const S=wSteps(M),done=st[M]||{},cur=wCurIdx(M,S,done),n=S.filter(x=>done[x.id]).length;
+    window.wFocus=cur<S.length?S[cur].g:'';
+    side=`<div class="wlist"><div class="wlhead"><b>${M==='asm'?'組裝':'拆卸'}　${n}/${S.length}</b><button class="btn sm" data-act="wreset" data-wm="${M}">重來</button></div>${S.map((x,i)=>`<div class="wli ${done[x.id]?'ok':''} ${i===cur?'on':''}"><button class="wlck" data-wtick="${x.id}" aria-label="完成">${done[x.id]?'✓':i+1}</button><button class="wlbody" data-wjump="${i}"><b>${x.ic} ${esc(x.n)}</b>${x.lines.map(l=>`<small>${esc(l)}</small>`).join('')}</button>${x.ph?`<span class="wlph">${thumbs(x.g)}</span>`:''}</div>`).join('')}</div>`;
   }
   if(M==='vol')h+=vVolPanel('grid');
   if(M==='inv'){
-    const tot=WG.reduce((n,x)=>n+Object.values(DV).filter(v=>v.g===x.k).length,0),got=WG.reduce((n,x)=>n+Object.values(DV).filter(v=>v.g===x.k&&inv[x.k+'|'+v.n]).length,0);
-    h+=`<div class="packbar"><p class="small muted" style="margin:0">點一下＝有帶到。已清點 <b>${got}/${tot}</b></p><button class="btn sm" data-act="wreset" data-wm="inv">全部清掉重點</button></div><div class="pcards">${WG.map(x=>{const L=Object.entries(DV).filter(([d,v])=>v.g===x.k);const n=L.filter(([d,v])=>inv[x.k+'|'+v.n]).length;return `<div class="pcard"><div class="pchead"><b>${x.ic} ${x.n}</b><span class="pcnt num">${n}/${L.length}</span></div><div class="pcbody"><div class="ptiles">${L.map(([d,v])=>{const k=x.k+'|'+v.n,on=!!inv[k];return `<button class="tile2 ${on?'on':''}" data-winv="${esc(k)}"><i></i>${I[d]?`<img class="tlimg" src="${wTh(I[d])}" alt="">`:''}<span>${esc(v.n)}</span></button>`}).join('')}</div></div></div>`}).join('')}</div>`;
+    const ed=!!window.wInvEdit,G=WG.map(x=>({x,L:wList(x.k)})),tot=G.reduce((n,o)=>n+o.L.length,0),got=G.reduce((n,o)=>n+o.L.filter(([d,v])=>inv[o.x.k+'|'+v.n]).length,0);
+    h+=`<div class="packbar"><p class="small muted" style="margin:0">${ed?'改名：點 ✏️；排順序：按 ↑ ↓。':'點一下＝有帶到。'}已清點 <b>${got}/${tot}</b></p><span style="display:flex;gap:6px"><button class="btn sm ${ed?'primary':''}" data-act="winvedit">${ed?'完成':'✏️ 改名／排序'}</button>${ed?'':'<button class="btn sm" data-act="wreset" data-wm="inv">全部清掉</button>'}</span></div>
+    <div class="icols">${G.map(({x,L})=>{const n=L.filter(([d,v])=>inv[x.k+'|'+v.n]).length;return `<div class="icol ${n===L.length&&L.length?'ok':''}"><div class="ichead"><b>${x.ic} ${x.n}</b><span class="num">${n}/${L.length}</span></div>${L.map(([d,v],i)=>{const k=x.k+'|'+v.n,on=!!inv[k],im=I[d];return ed?`<div class="irow"><span class="iim">${im?`<img src="${wTh(im)}" alt="">`:''}</span><span class="inm">${esc(v.n)}</span><button class="ghost" data-wren="${d}" aria-label="改名">✏️</button><button class="ghost" data-wmv="${x.k}|${d}|-1" ${i?'':'disabled'} aria-label="往上">↑</button><button class="ghost" data-wmv="${x.k}|${d}|1" ${i<L.length-1?'':'disabled'} aria-label="往下">↓</button></div>`:`<button class="irow ${on?'on':''}" data-winv="${esc(k)}"><span class="ick">${on?'✓':''}</span><span class="iim">${im?`<img src="${wTh(im)}" alt="">`:''}</span><span class="inm">${esc(v.n)}</span></button>`}).join('')}</div>`}).join('')}</div>`;
   } else {
-    h+=`<div class="wbox wmain${M==='vol'?' volmode':''}"><div class="wzoom"><button class="ghost" data-wz="-1" aria-label="縮小">－</button><span class="wzl">${wZoomLab()}</span><button class="ghost" data-wz="1" aria-label="放大">＋</button></div><div class="wscroll${window.wZf?' zm':''}">${wDiagram()}</div></div>${M==='vol'?vVolPanel():''}`;
+    h+=`${side?`<div class="wsplit">${side}<div class="wdia">`:''}<div class="wbox wmain${M==='vol'?' volmode':''}"><div class="wzoom"><button class="ghost" data-wz="-1" aria-label="縮小">－</button><span class="wzl">${wZoomLab()}</span><button class="ghost" data-wz="1" aria-label="放大">＋</button></div><div class="wscroll${window.wZf?' zm':''}">${wDiagram()}</div></div>${side?'</div></div>':''}${M==='vol'?vVolPanel():''}`;
   }
   h+=`<details class="wset" ${wireSel?'open':''}><summary>🖼 器材照片設定（換照片、改名、新增項目）</summary><div class="packbar" style="margin-top:8px"><p class="small muted" style="margin:0">點一組，下面會出現那一組的照片格子。</p><button class="btn sm" data-act="wpack">📦 匯入圖片包</button></div>
   <div class="wchips">${WG.map(x=>`<button class="wchip ${wireSel===x.k?'on':''}" data-wire="${x.k}"><b>${x.ic} ${x.n}</b><span>${thumbs(x.k)}</span></button>`).join('')}</div><div class="wtop">`;
@@ -1130,7 +1144,7 @@ function checkSheet(id,group,bag){
     <label class="f"><span>項目</span><input id="c-text" value="${esc(c.text||'')}"></label>
     <div class="f"><span>放在哪裡（打包圖）</span><div class="pick">${[['','不用打包'],...Object.entries(BAG_NAME)].map(([k,v])=>`<label><input type="radio" name="c-bag" value="${k}" ${(bagOf(c)||'')===k?'checked':''}><span>${v}</span></label>`).join('')}</div></div>
     <div class="f"><span>分類（準備清單）</span><div class="pick">${[...GROUPS,...ONSITE].map(g=>`<label><input type="radio" name="c-group" value="${esc(g)}" ${g===c.group?'checked':''}><span>${esc(g)}</span></label>`).join('')}</div></div>
-    <div class="f"><span>連到哪些器材照片（點照片選／取消，可以選很多張）</span><input type="hidden" id="c-dev" value="${c.dev===undefined?'*':c.dev}"><div class="dpick">${Object.entries(wDevs()).filter(([k])=>wImg()[k]).map(([k,v])=>`<button type="button" class="dp ${ckDevs(c).includes(k)?'on':''}" data-dpick="${k}"><img src="${wImg()[k]}" alt="" loading="lazy"><small>${esc(v.n)}</small></button>`).join('')}</div><div class="small muted" style="margin-top:4px"><button type="button" class="ghost" data-dpick="*">恢復自動（照名字猜）</button>　<button type="button" class="ghost" data-dpick="-">不要照片</button></div></div>
+    <div class="f"><span>連到哪些器材照片（點照片選／取消，可以選很多張）</span><input type="hidden" id="c-dev" value="${c.dev===undefined?'*':c.dev}"><div class="dpick">${Object.entries(wDevs()).filter(([k,v])=>wImg()[k]&&!v.sub).map(([k,v])=>`<button type="button" class="dp ${ckDevs(c).includes(k)?'on':''}" data-dpick="${k}"><img src="${wImg()[k]}" alt="" loading="lazy"><small>${esc(v.n)}</small></button>`).join('')}</div><div class="small muted" style="margin-top:4px"><button type="button" class="ghost" data-dpick="*">恢復自動（照名字猜）</button>　<button type="button" class="ghost" data-dpick="-">不要照片</button></div></div>
     <label class="check" style="padding:0"><input type="checkbox" id="c-rain" ${c.rain?'checked':''}><span style="text-decoration:none;color:var(--ink)">只在雨天模式出現</span></label>`,
   ()=>{const text=$('#c-text').value.trim();if(!text){toast('請填項目');return false}
     const grp=(document.querySelector('input[name=c-group]:checked')||{}).value||c.group||'出門準備';
@@ -1295,6 +1309,8 @@ document.addEventListener('click',e=>{
   if(d.wcdel){const id=d.wcdel;delete wImg()[id];delete wImg()['_alt_'+id];wImgSave();return wSet(s=>{s.custom=(s.custom||[]).filter(c=>c.id!==id)})}
   if(d.wmode){wireMode=d.wmode;wireSel='';render();return}
   if(d.wstep){const m=wireMode,S=wSteps(m);window.wCur=window.wCur||{};const st=wSt(),done=st[m]||{};let c=wCurIdx(m,S,done);if(+d.wstep>0&&c<S.length){const id=S[c].id;window.wCur[m]=c+1;return wSet(s=>{s[m]=s[m]||{};s[m][id]=1})}window.wCur[m]=Math.max(0,c-1);render();return}
+  if(d.wtick){const m=wireMode,id=d.wtick;if(window.wCur)delete window.wCur[m];return wSet(s=>{s[m]=s[m]||{};if(s[m][id])delete s[m][id];else s[m][id]=1})}
+  if(d.wmv){const [k,id,dir]=d.wmv.split('|');const ids=wList(k).map(e=>e[0]),i=ids.indexOf(id),j=i+(+dir);if(j<0||j>=ids.length)return;[ids[i],ids[j]]=[ids[j],ids[i]];return wSet(s=>{s.order=s.order||{};s.order[k]=ids})}
   if(d.wjump){window.wCur=window.wCur||{};window.wCur[wireMode]=+d.wjump;render();return}
   if(d.bagren){const k=d.bagren,v=prompt('這一層叫什麼？',bagLab(k,k==='pack'?'個人物品':'音樂設備'));if(v==null)return;return wSet(s=>{s.bagn=s.bagn||{};if(v.trim())s.bagn[k]=v.trim();else delete s.bagn[k]})}
   if(d.wview){window.wView=d.wview;render();return}
@@ -1328,6 +1344,7 @@ document.addEventListener('click',e=>{
     case 'pack-edit':packEdit=!packEdit;return render();
     case 'wadd':{const v=($('#wadd')||{}).value;const n=(v||'').trim();if(!n||!wireSel)return;return wSet(s=>{s.custom=(s.custom||[]).concat({id:'c'+Date.now().toString(36),n,g:wireSel})})}
     case 'wpack':return wPack();
+    case 'winvedit':window.wInvEdit=!window.wInvEdit;return render();
     case 'wreset':if(window.wCur)delete window.wCur[d.wm];return wSet(s=>{s[d.wm]={}});
     case 'gear-edit':gearEdit=!gearEdit;return render();
     case 'fill-bags':return fillDefaultBags();
