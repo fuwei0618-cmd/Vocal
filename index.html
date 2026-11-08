@@ -74,6 +74,18 @@
 
 .bagseg{margin:0 0 8px}.bagseg button{padding:6px 0}
 .wstepcols .wli.bdim{opacity:.3}.wstepcols .wli.blit{border:2px solid var(--accent)}
+
+/* 11-09 按用途一頁：四欄（架設｜進聲音｜混音＋出聲音｜其他），每行縮小 */
+.icats.use{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important}
+.icats.use .icat.etc{grid-column:auto}.icats.use .icat.etc .icol{display:block}
+.icats.use .icath{font-size:13.5px!important;padding-bottom:4px!important}
+.icats.use .icg{gap:6px!important}.icats.use .ichead{padding:4px 6px 4px 10px!important}.icats.use .ichead b{font-size:12px!important}
+.icats.use .irow{min-height:0}.icats.use .imain{gap:7px!important;padding:3px 0 3px 8px!important;align-items:center}
+.icats.use .ick{width:16px!important;height:16px!important;margin-top:0!important;align-self:center!important;font-size:10px!important}
+.icats.use .iim{width:30px!important;height:30px!important;border-radius:6px;align-self:center}
+.icats.use .inn{font-size:12.5px;line-height:1.25}.icats.use .isub{display:none}
+.icats.use .idot{margin-top:0;align-self:center;padding:0 6px!important;font-size:14px}
+@media (max-width:1000px){.icats.use{grid-template-columns:1fr 1fr!important}}@media (max-width:560px){.icats.use{grid-template-columns:1fr!important}}
 </style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1"><link rel="icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vocal"><meta name="theme-color" content="#EDEFEA"><script src="https://fuwei0618-cmd.github.io/Entry/sync/origina-sync.js" data-app="vocal" data-keys="busk-app-v1,busk-app-v1-wimg,busk-app-v1-wire" data-pos="br"></script>
 </head><body>
 <title>街演 App</title>
