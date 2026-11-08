@@ -673,7 +673,8 @@ function vToday(){
 const DEFAULT_CHECKS={'前一晚充電':['音響','麥克風＋充電電池','監聽＋2 耳機','iPad mini＋接線 ×2','行動電源 ×3'],'出門準備':['拉車（大號＋行李袋）','腳架 ×2','支架（2 iPad、2 麥、1 手機、1 平台）','雨傘 ×2／地墊','行動電源 ×2','AG06＋2 線'],'其他':['打賞箱','QR Code 名牌','椅子'],'隨身':['錢包、耳機、鑰匙','行動電源','水','衛生紙','悠遊卡','隱形眼鏡'],'當日':['宣傳','開嗓','廁所','水'],'現場・表演':['人聲靜音','結束慢切','升降調','當日主題']};
 function loadDefaultChecks(){let j=0;Object.entries(DEFAULT_CHECKS).forEach(([g,items])=>items.forEach((t,i)=>{j++;const id='c'+String(j).padStart(2,'0');if(!S.checks[id])put('checks',id,{group:g,text:t,rain:t.startsWith('雨傘'),order:i,bag:g==='當日'||g.startsWith('現場')?'':(DEFAULT_BAG[t]||'')})}));toast('已放入原本的清單')}
 const emptyChecks=()=>`<div class="empty"><p>這台裝置上還沒有清單。</p><button class="btn primary" data-act="load-checks">放入原本的準備清單</button></div>`;
-function checkGroups(items,groups,checked,rain,strip){return `<div class="cgrid">${groups.map(g=>{const l=items.filter(c=>c.group===g);if(!l.length)return '';const d=l.filter(c=>checked[c.id]).length;return `<div class="cgroup"><div class="glabel"><span>${esc(strip?g.replace('現場・',''):g)}</span><span class="num">${d}/${l.length}</span></div>`+l.map(c=>checkRow(c,checked,rain)).join('')+'</div>'}).join('')}</div>`}
+const GLAB={'當日':'開唱前'},gLab=g=>GLAB[g]||g;
+function checkGroups(items,groups,checked,rain,strip){return `<div class="cgrid">${groups.map(g=>{const l=items.filter(c=>c.group===g);if(!l.length)return '';const d=l.filter(c=>checked[c.id]).length;return `<div class="cgroup"><div class="glabel"><span>${esc(gLab(strip?g.replace('現場・',''):g))}</span><span class="num">${d}/${l.length}</span></div>`+l.map(c=>checkRow(c,checked,rain)).join('')+'</div>'}).join('')}</div>`}
 const BAG_NAME={cart:'拉車',tote1:'手提袋・大層',tote2:'手提袋・小層',pack:'後背包・個人物品',pack2:'後背包・音樂設備'};
 // 11-08 整合版：總清單＋接線清單合成一份，一件器材一項（group＝什麼時候、bag＝放哪、dev＝照片）
 const MERGED=[
@@ -1317,7 +1318,7 @@ function vGear(){
     if(rain)h+=`<div class="banner warn" style="margin-bottom:14px">雨天：記得帶雨傘、地墊。</div>`;
     if(!checks.length)return h+emptyChecks();
     const both=[...pre,...on],bd=both.filter(c=>checked[c.id]).length;
-    h+=`<section class="sec"><div class="sec-head"><h2>當日・現場</h2><span class="num muted">${bd} / ${both.length}</span></div><div class="progress"><i style="width:${both.length?Math.round(bd/both.length*100):0}%"></i></div>${checkGroups(both,[...TG,...ONSITE],checked,rain,true)}</section>`;
+    h+=`<section class="sec"><div class="sec-head"><h2>開唱前・現場</h2><span class="num muted">${bd} / ${both.length}</span></div><div class="progress"><i style="width:${both.length?Math.round(bd/both.length*100):0}%"></i></div>${checkGroups(both,[...TG,...ONSITE],checked,rain,true)}</section>`;
     h+=`<section class="sec"><h2>現場擺位</h2>${vSite()}</section>`;
     h+=`<section class="sec"><button class="btn block" data-act="reset-checks" data-confirm="再按一次清空勾選">重置清單</button><p class="small muted" style="margin:0">這裡跟「下一場」分頁是同一份勾選。演出後寫紀錄會自動重置。</p></section>`;
     h+=`<p class="small" style="text-align:center"><button class="ghost" data-gearseg="stock">租借／設備庫存 ›</button></p>`;
@@ -1325,7 +1326,7 @@ function vGear(){
   }
   h+=`<section class="sec"><button class="btn sm primary" data-act="gear-edit">完成編輯</button><p class="small muted" style="margin:0">點項目可以改字、換分類或刪除。標「雨天」的項目在雨天模式會特別標出來。</p></section>`;
   [...GROUPS,...ONSITE].forEach(g=>{const list=checks.filter(c=>c.group===g);
-    h+=`<section class="sec"><div class="sec-head"><h3>${esc(g)}</h3><button class="ghost" data-new-check="${esc(g)}">＋ 新增</button></div>${list.length?`<ul class="list">${list.map(c=>`<li><button class="row" data-edit-check="${esc(c.id)}"><div class="main">${esc(c.text)}</div>${c.rain?'<span class="chip accent">雨天</span>':''}</button></li>`).join('')}</ul>`:''}</section>`});
+    h+=`<section class="sec"><div class="sec-head"><h3>${esc(gLab(g))}</h3><button class="ghost" data-new-check="${esc(g)}">＋ 新增</button></div>${list.length?`<ul class="list">${list.map(c=>`<li><button class="row" data-edit-check="${esc(c.id)}"><div class="main">${esc(c.text)}</div>${c.rain?'<span class="chip accent">雨天</span>':''}</button></li>`).join('')}</ul>`:''}</section>`});
   return h;
 }
 function backupBlock(){return downloads?`<section class="sec"><h3>資料備份</h3><p class="small muted" style="margin:0">把所有歌、場地、紀錄、清單下載成一個 JSON 檔留底。</p><button class="btn" data-act="backup">下載備份檔</button></section>`:''}
