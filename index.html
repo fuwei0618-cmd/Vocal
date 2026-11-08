@@ -1090,7 +1090,7 @@ function vWire(){
   if(M==='asm'||M==='off'){
     const S=wSteps(M),done=st[M]||{},cur=wCurIdx(M,S,done),n=S.filter(x=>done[x.id]).length;
     window.wFocus=cur<S.length?S[cur].g:'';
-    const stepBag=x=>{const B=window.bagF;if(!B)return '';if(B==='all')return ' blit';const hit=x.g&&Object.keys(DV).some(d=>x.g.split(',').includes(DV[d].g)&&!DV[d].sub&&wDevBag(d)===B);return hit?' blit':' bdim'};
+    const stepBag=x=>{const B=window.bagF;if(!B)return '';if(B==='all')return ' blit';const hit=x.g&&Object.keys(DV).some(d=>d!=='stand'&&x.g.split(',').includes(DV[d].g)&&!DV[d].sub&&wDevBag(d)===B);return hit?' blit':' bdim'};
     const it=(x,i)=>`<div class="wli ${done[x.id]?'ok':''} ${i===cur?'on':''}${stepBag(x)}"><button class="wlck" data-wtick="${x.id}" aria-label="完成">${done[x.id]?'✓':i+1}</button><button class="wlbody" data-wjump="${i}"><b>${x.ic} ${esc(x.n)}</b>${x.lines.map(l=>`<small>${esc(l)}</small>`).join('')}${x.g&&x.ph!==(M==='off'?0:2)&&bagsOf(x.g).length?`<small class="wbagl">🎒 ${M==='off'?'收回':'從'} ${bagsOf(x.g).map(esc).join('、')}${M==='off'?'':' 拿'}</small>`:''}</button>${x.ph2&&x.g?`<span class="wlph">${thumbs(x.g)}</span>`:''}</div>`;side=`<div class="wlist"><div class="wlhead"><b>${M==='asm'?'組裝':'拆卸'}　${n}/${S.length}</b><button class="btn sm" data-act="wreset" data-wm="${M}">重來</button></div><div class="wphcols">${WPH[M].map((p,ph)=>`<div class="wphcol"><div class="wph"><b>${p[0]}</b><span>${p[1]}</span></div>${S.map((x,i)=>x.ph===ph?it(x,i):'').join('')}</div>`).join('')}</div></div>`;
   }
   if(M==='vol')side=vVolSheet();
