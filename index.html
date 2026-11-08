@@ -16,12 +16,44 @@
 .chip.q{font-size:12.5px;padding:3px 9px}
 .vg .vrow{display:flex;gap:8px;flex-wrap:nowrap}.vg .vrow .bl.box{flex:1;width:auto}
 .wins2{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.wins2 .w{display:inline-flex;align-items:center;gap:5px;background:var(--accent-soft);border-radius:99px;padding:2px 4px 2px 10px;font-size:13px}.wins2 small{color:var(--muted)}.wins2 .x{font-size:15px;padding:0 4px}
+
+/* 11-08 打包重排：一套字級；分類左到右、項目上到下；盒子裡的東西一行一個 */
+.icats{display:flex!important;flex-wrap:wrap;gap:20px 14px!important;align-items:flex-start}
+.icat{flex:var(--n) 1 calc(var(--n)*215px);min-width:0;gap:8px!important}
+.icg{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr))!important;gap:8px!important}
+@media (max-width:560px){.icg{grid-template-columns:1fr!important}.icat{flex-basis:100%}}
+.icath{display:flex;align-items:center;gap:8px;font-family:var(--body)!important;font-size:15px!important;font-weight:700;letter-spacing:.04em;border-bottom:1.5px solid var(--ink)!important;padding:0 2px 7px!important}
+.icath .num{margin-left:auto;font-size:12px!important;font-weight:500;color:var(--muted);letter-spacing:0}.icath.pkh span:first-of-type{flex:none!important}.icath .idot{font-size:16px!important;padding:0 4px!important}
+.icath .pcimg{width:24px!important;height:24px!important}
+.icats .icol{border-radius:12px;border-color:var(--line);box-shadow:0 1px 2px rgba(0,0,0,.035)}
+.icats .ichead{padding:8px 6px 8px 12px!important;background:var(--sunk);border-bottom:1px solid var(--line)}.icats .ichead b{font-size:13px!important;font-weight:700;letter-spacing:.03em}.icats .ichead .num{font-size:11.5px!important}
+.icats .irow{min-height:58px}.icats .imain{display:flex;align-items:center;gap:10px!important;padding:9px 0 9px 10px!important}
+.icats .ick{position:static!important;width:20px!important;height:20px!important;border-radius:50%!important;border:1.5px solid #B9C0BB!important;background:var(--surface);font-size:12px!important;flex:none;align-self:center}
+.icats .irow.on .ick{background:var(--ok)!important;border-color:var(--ok)!important;color:#fff}
+.icats .iim{width:44px!important;height:44px!important;border-radius:9px;background:#fff;border:1px solid var(--line);flex:none;align-self:flex-start}.icats .iim.none{background:var(--sunk);border-color:transparent}
+.icats .inm{flex:1;min-width:0;display:block}.icats .inn{display:block;font-size:14px;font-weight:500;line-height:1.35;color:var(--ink)}
+.icats .irow.on .inn{color:var(--ok)}
+.icats .isub{display:block;margin-top:4px}.icats .iit{display:block;position:relative;padding-left:11px;font-size:12px;line-height:1.5;color:var(--muted)}.icats .iit::before{content:'';position:absolute;left:2px;top:.68em;width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.6}
+.icats .ilab{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--ink);opacity:.7;margin:6px 0 1px}.icats .ilab:first-child{margin-top:2px}
+.izap{font-style:normal;font-size:11px;margin-left:4px;opacity:.8}.irow.chg .inm::after{content:none!important}
+.icats .irow.chg{background:#FFF7DC}.icats .irow.chg.on{background:var(--ok-bg)}
+.icats .isec{font-size:11px!important;letter-spacing:.08em;color:var(--muted)!important;background:none!important;padding:10px 12px 4px!important;border-bottom:0!important}
+.icats .idot{align-self:flex-start;margin-top:10px;color:var(--muted)}
+.icats .ick{align-self:flex-start!important;margin-top:12px}.icats .iloc{display:block;font-size:11.5px;color:var(--muted)}
+/* 外觀風格（試用中） */
+@media not (prefers-color-scheme: dark){
+:root[data-style="clean"]{--bg:#F4F4F1;--surface:#FFFFFF;--sunk:#F0F0EC;--ink:#1C1C1E;--muted:#727276;--line:#E4E4DF;--accent:#1C1C1E;--accent-ink:#fff;--accent-soft:#ECECE7;--display:"Noto Sans TC",system-ui,sans-serif}
+:root[data-style="warm"]{--bg:#F3EDE4;--surface:#FCF9F4;--sunk:#EFE7DB;--ink:#2B2320;--muted:#7C6E63;--line:#E3D8C9;--accent:#A9512E;--accent-ink:#fff;--accent-soft:#F2DED1;--display:"Noto Serif TC",serif}
+:root[data-style="mist"]{--bg:#EEF1F5;--surface:#FFFFFF;--sunk:#F1F4F8;--ink:#18202C;--muted:#677284;--line:#DCE2EA;--accent:#3557C7;--accent-ink:#fff;--accent-soft:#E3E9FA;--display:"Noto Sans TC",system-ui,sans-serif}
+}
+.stylepick{display:flex;gap:8px;flex-wrap:wrap}.stylepick button{flex:1 1 120px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);padding:10px;font:inherit;color:inherit;text-align:left}.stylepick button[aria-pressed=true]{border-color:var(--accent)}.stylepick i{display:flex;gap:3px;margin-bottom:6px}.stylepick i b{width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,.1)}
 </style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1"><link rel="icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vocal"><meta name="theme-color" content="#EDEFEA"><script src="https://fuwei0618-cmd.github.io/Entry/sync/origina-sync.js" data-app="vocal" data-keys="busk-app-v1,busk-app-v1-wimg,busk-app-v1-wire" data-pos="br"></script>
 </head><body>
 <title>街演 App</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@500;700&display=swap">
+<script>try{const v=localStorage.getItem('busk-style');if(v)document.documentElement.dataset.style=v}catch(e){}</script>
 <style>
 /* Layout: one-hand phone app. Sticky title bar, scrolling content, fixed bottom tab bar; edits open in bottom sheets. */
 :root{
@@ -608,7 +640,9 @@ function vToday(){
   const checks=sorted('checks','order'), checked=n.checked||{}, rain=!!n.rain;
   const pre=checks.filter(c=>GROUPS.includes(c.group));
   const done=pre.filter(c=>checked[c.id]).length;
-  let h=`<button class="panel visionEntry" data-tab="vision"><span class="eyebrow">MY VOCAL VISION</span><b>我的 Vocal 願景</b><span class="muted small">出發前先來這裡看一下 →</span></button>`;
+  const ST=[['','原本',['#EDEFEA','#1F6E77','#FAFBF8']],['clean','簡約黑白',['#F4F4F1','#1C1C1E','#FFFFFF']],['warm','暖紙',['#F3EDE4','#A9512E','#FCF9F4']],['mist','霧藍',['#EEF1F5','#3557C7','#FFFFFF']]],cur=document.documentElement.dataset.style||'';
+  let h=`<section class="sec"><h3 style="margin:0 0 8px">外觀風格（試用）</h3><div class="stylepick">${ST.map(([k,n,c])=>`<button data-style-set="${k}" aria-pressed="${cur===k}"><i>${c.map(x=>`<b style="background:${x}"></b>`).join('')}</i>${n}</button>`).join('')}</div></section>`;
+  h+=`<button class="panel visionEntry" data-tab="vision"><span class="eyebrow">MY VOCAL VISION</span><b>我的 Vocal 願景</b><span class="muted small">出發前先來這裡看一下 →</span></button>`;
   licenseWarnings().forEach(w=>h+=`<div class="banner warn">${esc(w)}</div>`);
   h+='<section class="sec">';
   if(n.date){
@@ -710,7 +744,7 @@ function vPack(){
   const cnt=l=>`<span class="pcnt num">${l.filter(c=>checked[c.id]).length}/${l.length}</span>`;
   const cart=by('cart'),t1=by('tote1'),t2=by('tote2'),pk=by('pack'),pk2=by('pack2');
   const tiles=prev?(l)=>`<div class="ptiles">${l.map(c=>`<div class="tile2">${c.group==='前一晚充電'?'<em class="zap">⚡</em>':''}${ckImg(c,'tlimg')}<span>${esc(c.text)}</span></div>`).join('')}</div>`:ptiles;
-  let h=prev?`<div class="mprev"><div><b>👀 整合版預覽（還沒套用）</b><div class="small">一件器材只出現一次；⚡＝前一晚要充電。拉車本身不放進任何包。</div></div><div class="mbtn"><button class="btn sm" data-act="merge-off">關閉</button><button class="btn sm primary" data-act="merge-apply">套用這份</button></div></div>`:`<div class="packbar"><p class="small muted" style="margin:0"><span class="chgkey">⚡ 黃底</span>＝前一晚要充電。出門裝包、收工清點都用這頁。點一下＝打勾；按住拖曳＝換位置或換包；⋯＝改名、換照片。</p><span style="display:flex;gap:6px"><button class="btn sm" data-act="wpack">📦 匯入圖片包</button><button class="btn sm" data-act="pack-clear">收工：清掉勾重點</button></span></div>`;
+  let h=prev?`<div class="mprev"><div><b>👀 整合版預覽（還沒套用）</b><div class="small">一件器材只出現一次；⚡＝前一晚要充電。拉車本身不放進任何包。</div></div><div class="mbtn"><button class="btn sm" data-act="merge-off">關閉</button><button class="btn sm primary" data-act="merge-apply">套用這份</button></div></div>`:`<div class="packbar"><p class="small muted" style="margin:0"><span class="chgkey">⚡ 黃底</span>＝前一晚要充電。出門裝包、收工清點都用這頁。點一下＝打勾；按住拖曳＝換位置或換包；⋯＝改名、換照片。</p><span style="display:flex;gap:6px"><button class="btn sm" data-act="wpack">📦 匯入圖片包</button><button class="btn sm" data-act="pack-clear">收工：清掉全部勾</button></span></div>`;
   if(rain)h+=`<div class="banner warn small" style="margin-bottom:10px">雨天：雨傘、地墊放拉車。</div>`;
   // 包包用她收納組的實物照片當標題（名字對到「拉車／手提袋／後背包」）
   const bagImg=(nm,fb)=>{const I=wImg(),e=Object.entries(wDevs()).find(([d,v])=>v.n.includes(nm)&&I[d]);const u=e?I[e[0]]:I[fb];return u?`<img class="pcimg" src="${wTh(u)}" alt="">`:''};
@@ -724,19 +758,28 @@ function vPack(){
   return h}
   // 跟清點同一種樣子：一個包一大欄、每層一小欄；勾、照片、名稱、⋯；按住拖曳換位置或換包
   const po=l=>l.slice().sort((a,b)=>(a.po??1e9)-(b.po??1e9));
-  const CHGD=new Set(CHG.map(x=>x[0])),isChg=c=>CHGD.has(c.wd)||/行動電源/.test((c.text||'')+(c.sub||''));
-  const row=c=>{const on=!!checked[c.id];return `<div class="irow ${on?'on':''} ${c.rain&&rain?'rainon':''} ${isChg(c)?'chg':''}" data-pk="${esc(c.id)}"><button class="imain" data-tick="${esc(c.id)}"><span class="iwrap"><span class="iim">${c.wd&&wImg()[c.wd]?`<img class="pkimg" src="${wTh(wImg()[c.wd])}" alt="">`:ckImg(c,'pkimg')}</span><span class="ick">${on?'✓':''}</span></span><span class="inm">${esc(ckName(c))}${c.sub?`<small class="isub">${c.sub.split('｜').map(esc).join('<br>')}</small>`:''}</span></button>${c.wd&&wDevs()[c.wd]?`<button class="idot" data-wmenu="${c.wd}" data-ck="${esc(c.id)}" aria-label="更多">⋯</button>`:`<button class="idot" data-edit-check="${esc(c.id)}" aria-label="編輯">⋯</button>`}</div>`};
-  const col=(bag,nm,l,ren)=>`<div class="icol ${l.length&&l.every(c=>checked[c.id])?'ok':''}" data-drop="${bag}"><div class="ichead"><b>${esc(nm)}</b>${ren?`<button class="idot" data-bagren="${bag}" aria-label="改名">✏️</button>`:''}<span class="num">${l.filter(c=>checked[c.id]).length}/${l.length}</span><button class="idot" data-add-bag="${bag}" aria-label="新增">＋</button></div>${secRows(po(l))||'<div class="iempty">拖到這裡</div>'}</div>`;
+  const CHGD=new Set(CHG.map(x=>x[0]).concat(['iem','rx','wl','batt','ipad','iphone','bat'])),isChg=c=>CHGD.has(c.wd)||/行動電源/.test((c.text||'')+(c.sub||''));
+  const subHtml=t=>!t?'':`<span class="isub">${t.split('｜').map(g=>{const m=g.match(/^([^：]{1,8})：(.*)$/),its=(m?m[2]:g).split('、').map(x=>x.trim()).filter(Boolean);return (m?`<span class="ilab">${esc(m[1])}</span>`:'')+its.map(x=>`<span class="iit">${esc(x)}</span>`).join('')}).join('')}</span>`;
+  const pic=im=>`<span class="iim${im?'':' none'}">${im}</span>`;
+  const row=c=>{const on=!!checked[c.id];return `<div class="irow ${on?'on':''} ${c.rain&&rain?'rainon':''} ${isChg(c)?'chg':''}" data-pk="${esc(c.id)}"><button class="imain" data-tick="${esc(c.id)}"><span class="ick">${on?'✓':''}</span>${pic(c.wd&&wImg()[c.wd]?`<img class="pkimg" src="${wTh(wImg()[c.wd])}" alt="">`:ckImg(c,'pkimg'))}<span class="inm"><span class="inn">${esc(ckName(c))}${isChg(c)?'<i class="izap">⚡</i>':''}</span>${subHtml(c.sub)}</span></button>${c.wd&&wDevs()[c.wd]?`<button class="idot" data-wmenu="${c.wd}" data-ck="${esc(c.id)}" aria-label="更多">⋯</button>`:`<button class="idot" data-edit-check="${esc(c.id)}" aria-label="編輯">⋯</button>`}</div>`};
+  const col=(bag,nm,l,ren,solo)=>`<div class="icol ${l.length&&l.every(c=>checked[c.id])?'ok':''}" data-drop="${bag}">${solo?'':`<div class="ichead"><b>${esc(nm)}</b>${ren?`<button class="idot" data-bagren="${bag}" aria-label="改名">✏️</button>`:''}<span class="num">${l.filter(c=>checked[c.id]).length}/${l.length}</span><button class="idot" data-add-bag="${bag}" aria-label="新增">＋</button></div>`}${secRows(po(l))||'<div class="iempty">拖到這裡</div>'}</div>`;
   // 同一層裡可以再分小類（c.sec，例如 麥架／螢幕架）；同一小類排在一起
   const secRows=l=>{const ord=[];l.forEach(c=>{const k=c.sec||'';if(!ord.includes(k))ord.push(k)});let o='';ord.forEach(k=>{if(k)o+=`<div class="isec">${esc(k)}</div>`;o+=l.filter(c=>(c.sec||'')===k).map(row).join('')});return o};
-  const cat=(nm,fb,cols)=>{const all=cols.flatMap(x=>x[2]);return `<div class="icat" style="--n:${cols.length}"><div class="icath pkh">${bagImg(nm,fb)}<span>${nm}</span><span class="num">${all.filter(c=>checked[c.id]).length}/${all.length}</span></div><div class="icg">${cols.map(x=>col(...x)).join('')}</div></div>`};
+  const cat=(nm,fb,cols)=>{const all=cols.flatMap(x=>x[2]);return `<div class="icat" style="--n:${cols.length}"><div class="icath pkh">${bagImg(nm,fb)}<span>${nm}</span><span class="num">${all.filter(c=>checked[c.id]).length}/${all.length}</span>${cols.length===1?`<button class="idot" data-add-bag="${cols[0][0]}" aria-label="新增">＋</button>`:''}</div><div class="icg">${cols.map(x=>cols.length===1?col(x[0],x[1],x[2],x[3],1):col(...x)).join('')}</div></div>`};
   const none=src.filter(c=>!BAG_NAME[bagOf(c)]&&!/^拉車/.test(c.text));// 拉車本身是容器，不算要放進包包的東西
   const V=window.pkView||'bag';h+=`<div class="seg pkseg">${[['bag','按包包'],['use','按用途']].map(([k,t])=>`<button data-pkview="${k}" aria-pressed="${V===k}">${t}</button>`).join('')}</div>`;
-  if(V==='use'){const all=src.filter(c=>!/^拉車/.test(c.text)),gOf=c=>{const d=c.wd&&wDevs()[c.wd];return c.wd==='mcase'?'mic':d?d.g:''};
-    const ucol=(k,nm,l)=>`<div class="icol ${l.length&&l.every(c=>checked[c.id])?'ok':''}"><div class="ichead"><b>${nm}</b><span class="num">${l.filter(c=>checked[c.id]).length}/${l.length}</span></div>${secRows(po(l)).replace(/ data-pk="/g,' data-pku="')}</div>`;
-    const cats=WCAT.map(([cn,ks])=>[cn,ks.map(k=>{const g=WG.find(x=>x.k===k);return [k,g.ic+' '+g.n,all.filter(c=>gOf(c)===k)]})]);
-    cats.push(['其他',[['etc','👜 個人＆其他',all.filter(c=>!gOf(c))]]]);
-    h+=`<div class="icats use">${cats.map(([cn,cols])=>`<div class="icat" style="--n:${cols.length}"><div class="icath">${cn}</div><div class="icg">${cols.map(x=>ucol(...x)).join('')}</div></div>`).join('')}</div><p class="small muted">按用途只看、打勾；要換包或排順序請切回「按包包」。</p>`;
+  if(V==='use'){const DV=wDevs(),I=wImg(),ckOf={},par={};src.forEach(c=>{if(c.wd&&DV[c.wd])ckOf[c.wd]=c});const cc=src.find(c=>/^拉車/.test(c.text));if(cc&&!ckOf.cart)ckOf.cart=cc;
+    Object.entries(WKIDS).forEach(([pp,ks])=>ks.forEach(k=>par[k]=pp));
+    // 一件器材一行；在盒子／小袋裡的，跟著盒子的勾，也可以單獨勾
+    const urow=d=>{const v=DV[d],c=ckOf[d],pc=!c&&ckOf[par[d]],key=c?c.id:'u_'+d,on=!!checked[key]||!!(pc&&checked[pc.id]);
+      return `<div class="irow ${on?'on':''} ${CHGD.has(d)?'chg':''}"><button class="imain" data-tick="${esc(key)}"><span class="ick">${on?'✓':''}</span>${pic(I[d]?`<img class="pkimg" src="${wTh(I[d])}" alt="">`:'')}<span class="inm"><span class="inn">${esc(v.n)}${CHGD.has(d)?'<i class="izap">⚡</i>':''}</span>${pc?`<span class="isub"><span class="iloc">在 ${esc(ckName(pc))} 裡</span></span>`:''}</span></button><button class="idot" data-wmenu="${d}"${c?` data-ck="${esc(c.id)}"`:''} aria-label="更多">⋯</button></div>`};
+    const devs=k=>Object.keys(DV).filter(d=>DV[d].g===k&&!DV[d].sub).concat(k==='pack'&&DV.iembox?['iembox']:[]);
+    const ucol=(nm,rows,n,t)=>`<div class="icol ${t&&n===t?'ok':''}"><div class="ichead"><b>${nm}</b><span class="num">${n}/${t}</span></div>${rows}</div>`;
+    const keyOn=d=>{const c=ckOf[d],pc=!c&&ckOf[par[d]];return !!checked[c?c.id:'u_'+d]||!!(pc&&checked[pc.id])};
+    const cats=WCAT.map(([cn,ks])=>[cn,ks.map(k=>{const g=WG.find(x=>x.k===k),l=devs(k);return ucol(esc(g.n),l.map(urow).join(''),l.filter(keyOn).length,l.length)})]);
+    const etc=src.filter(c=>!(c.wd&&DV[c.wd])&&!/^拉車/.test(c.text));
+    cats.push(['其他',[ucol('個人＆其他',po(etc).map(row).join('').replace(/ data-pk="/g,' data-pku="'),etc.filter(c=>checked[c.id]).length,etc.length)]]);
+    h+=`<div class="icats use">${cats.map(([cn,cols])=>`<div class="icat" style="--n:${cols.length}"><div class="icath">${cn}</div><div class="icg">${cols.join('')}</div></div>`).join('')}</div><p class="small muted">按用途只看、打勾；要換包或排順序請切回「按包包」。</p>`;
     return h}
   h+=`<div class="icats pk${none.length?' pk4':''}">${cat('拉車','cart',[['cart','拉車',cart]])}${cat('手提袋','',[['tote1','大層',t1],['tote2','小層',t2]])}${cat('後背包','',[['pack',bagLab('pack','個人物品'),pk,1],['pack2',bagLab('pack2','音樂設備'),pk2,1]])}${none.length?`<div class="icat" style="--n:1"><div class="icath pkh"><span>還沒放進包包</span><button class="btn sm" data-act="fill-bags">照預設放</button></div><div class="icg"><div class="icol" data-drop="">${none.map(row).join('')}</div></div></div>`:''}</div>`;
   return h;
@@ -878,6 +921,7 @@ async function wSaveImg(d){const u=wImg()[d];if(!u)return;const nm=(wDevs()[d]||
   const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download=f.name;document.body.appendChild(a);a.click();a.remove();toast('已下載原圖')}catch(e){if(e&&e.name==='AbortError')return;toast('存不了：長按照片也可以「拷貝」')}}
 let invDragSup=0;
 document.addEventListener('click',e=>{const b=e.target.closest('[data-pkview]');if(!b)return;e.preventDefault();e.stopPropagation();window.pkView=b.dataset.pkview;render()},true);
+document.addEventListener('click',e=>{const b=e.target.closest('[data-style-set]');if(!b)return;e.preventDefault();e.stopPropagation();const v=b.dataset.styleSet;if(v)document.documentElement.dataset.style=v;else delete document.documentElement.dataset.style;try{v?localStorage.setItem('busk-style',v):localStorage.removeItem('busk-style')}catch(x){}render()},true);
 // 打包：按住半秒拖到別層／別的包，或在同一層排順序（存在 check.po）
 document.addEventListener('pointerdown',e=>{const t=e.target.closest('.irow[data-pk]');if(!t||e.button>0||e.target.closest('.idot'))return;
   const id=t.dataset.pk,sx=e.clientX,sy=e.clientY,mouse=e.pointerType==='mouse';let armed=false,ghost=null,over=null,tgt=null,after=false;
@@ -1509,7 +1553,7 @@ document.addEventListener('click',e=>{
     case 'wreset':if(window.wCur)delete window.wCur[d.wm];return wSet(s=>{s[d.wm]={}});
     case 'gear-edit':gearEdit=!gearEdit;return render();
     case 'fill-bags':return fillDefaultBags();
-    case 'pack-clear':{const n=clone(next());const ck=n.checked||{};Object.values(S.checks).length&&Object.entries(S.checks).forEach(([id,c])=>{if(!id.startsWith('q_')&&(BAG_NAME[bagOf(c)]||id.startsWith('d_')))delete ck[id]});n.checked=ck;putNextSoon(n);toast('勾都清掉了，收工一樣一樣點');return}
+    case 'pack-clear':{const n=clone(next());const ck=n.checked||{};Object.values(S.checks).length&&Object.entries(S.checks).forEach(([id,c])=>{if(!id.startsWith('q_')&&(BAG_NAME[bagOf(c)]||id.startsWith('d_')))delete ck[id]});Object.keys(ck).forEach(k=>{if(k.startsWith('u_'))delete ck[k]});n.checked=ck;putNextSoon(n);toast('勾都清掉了，收工一樣一樣點');return}
     case 'load-checks':return loadDefaultChecks();
     case 'new-record':return recordSheet(null);
     case 'new-venue':return venueSheet(null);
