@@ -158,13 +158,22 @@ details.fold>.cgrid{padding:8px 8px 0}
 .wlck{flex:none;width:30px;height:30px;border-radius:50%;border:2px solid var(--line);background:#fff;font-weight:700;font-size:13px;color:var(--muted);padding:0}.wli.ok .wlck{background:var(--ok);border-color:var(--ok);color:#fff}
 .wlbody{flex:1;min-width:0;text-align:left;border:0;background:none;padding:0;font:inherit;display:flex;flex-direction:column;gap:1px}.wlbody b{font-size:15px}.wlbody small{font-size:12.5px;color:var(--muted);line-height:1.45}
 .wlph{display:flex;gap:3px;flex:none;max-width:110px;flex-wrap:wrap}.wlph img{width:34px;height:30px;object-fit:contain;background:#fff;border-radius:5px}
+.wph{display:flex;align-items:baseline;gap:8px;margin:6px 2px 0}.wph b{background:var(--accent);color:#fff;border-radius:8px;padding:1px 10px;font-size:15px}.wph span{font-size:12px;color:var(--muted)}
+.icats{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;align-items:start}.icat{display:flex;flex-direction:column;gap:8px}.icath{font-weight:700;font-size:15px;border-bottom:3px solid var(--accent);padding:0 2px 3px}
 .icols{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;align-items:start}.icol{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}.icol.ok{border-color:var(--ok)}
 .ichead{display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--line)}
 .irow{display:flex;align-items:center;gap:10px;width:100%;padding:6px 10px;border:0;border-bottom:1px solid var(--line);background:none;font:inherit;text-align:left}.irow:last-child{border-bottom:0}.irow.on{background:var(--ok-bg);color:var(--ok)}
 .ick{width:22px;height:22px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;flex:none;font-size:13px;font-weight:700}.irow.on .ick{background:var(--ok);border-color:var(--ok);color:#fff}
 .iim{width:52px;height:42px;flex:none;display:grid;place-items:center;background:#fff;border-radius:8px}.iim{overflow:hidden}.iim img{width:100%;height:100%;object-fit:contain}.inm{flex:1;font-size:14.5px}
 .irow .ghost{padding:4px 8px;font-size:15px}
-.vsheet{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-content:start}.vbox{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:7px 10px;font-size:13px;line-height:1.5;display:flex;flex-direction:column;gap:1px}.vbox>b:first-child{font-size:14px;margin-bottom:2px}
+.vsheet{display:flex;flex-direction:column;gap:5px}.vtgt{border:2px solid var(--accent)}
+.vkh,.vk{display:grid;grid-template-columns:74px 1.3fr 1fr 1.2fr;gap:6px;align-items:center}
+.vkh{font-size:12px;color:var(--muted);padding:0 10px;font-weight:700}
+.vk{text-align:left;background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--c);border-radius:10px;padding:7px 10px;font-size:13px;line-height:1.35;color:var(--text,inherit)}
+.vk.on{border-color:var(--c);border-width:2px 2px 2px 6px;background:color-mix(in srgb,var(--c) 10%,var(--surface))}
+.vkn{font-weight:700;display:flex;align-items:center;gap:5px}.vkn i{font-style:normal;width:20px;height:20px;border-radius:50%;background:var(--c);color:#fff;display:inline-grid;place-items:center;font-size:12px;flex:none}
+.vk .vtx{color:var(--accent)}.vfoot{font-size:12px;color:var(--muted);padding:2px 4px}
+.vbox{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:7px 10px;font-size:13px;line-height:1.5;display:flex;flex-direction:column;gap:1px}.vbox>b:first-child{font-size:14px;margin-bottom:2px}
 .vtgt{grid-column:1/-1;border:2px solid var(--accent)}.vcalc{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.vcalc label{display:flex;align-items:center;gap:3px}.vcalc input{width:52px;padding:4px 6px;font-size:16px;border:1px solid var(--line);border-radius:8px;text-align:center}
 .vpre{display:flex;gap:6px;margin:6px 0 4px}.vpre button{flex:1;padding:5px 0;border-radius:8px;border:1px solid var(--line,#ccc);background:transparent;font-size:13px}
 .vres{font-size:15px}.vres b{font-size:24px;color:var(--accent)}.vsel{grid-column:1/-1;border:2px solid var(--accent);background:var(--accent-soft)}
@@ -714,7 +723,8 @@ const WG=[
  {k:'iem',n:'監聽組',ic:'🎧',items:['灰色發射器','接收器 ×2','入耳耳機 ×2'],plug:['灰色發射器直接插 ⑥ MONITOR OUT R','兩個接收器各接一副耳機，頻道跟發射器一樣'],jk:['st']},
  {k:'spk',n:'喇叭組',ic:'🔊',items:['Bose S1 Pro+','黑色編織線（6.3mm 轉 XLR）'],plug:['黑色編織線捲好收在 Bose 上','⑤ MONITOR OUT L → 黑色編織線（6.3mm 那頭插 AG06，XLR 那頭插 Bose）→ Bose INPUT 1'],jk:['mon']},
 ];
-const WON=['開 AG06（電源開關在右上）','開監聽發射器、兩個接收器','Bose 音量轉到最小再開機','試音：慢慢把 Bose 音量轉大'];
+const WCAT=[['架設',['pack','stand']],['進聲音',['mic','bk']],['混音＋出聲音',['mix','iem','spk']]];
+const WON=['開 AG06（電源開關在右上）','開監聽發射器、兩個接收器','Bose 音量轉到最小再開機','到「🎚 試音量」照 1 → 5 調音量'];
 const WOFF=['Bose 音量轉小 → 關 Bose','關監聽發射器、接收器','關 AG06'];
 let wireSel='', wireMode='asm';
 function wSt(){try{return JSON.parse(localStorage.getItem(LS+'-wire')||'{}')}catch(e){return {}}}
@@ -760,22 +770,26 @@ const VOLSTEP={
  'spk|music':['iPad／iPhone 本身音量先開到七八成','AG06 藍圈：伴奏那軌的音量','AG06 綠圈','Bose 綠圈：CH1 音量，從最小慢慢轉大'],
  'spk|mic':['先照下面「麥克風基準」把黃圈調好','AG06 綠圈','Bose 綠圈：CH1 音量，從最小慢慢轉大']};
 const GAINSTEP=['先把下面的 LEVEL 旋鈕轉到 12 點鐘方向（基準線）','對著麥克風發出最大聲音，慢慢往右轉上面的 GAIN，轉到 PEAK 燈快亮但沒亮（或只有最高峰閃一下）為止','最後才用下面的 LEVEL，照實際聽到的音量微調'];
-function volOn(t){const v=window.wVol;if(!v)return true;return v.split('|').includes(t)}
+function volOn(t){const v=(window.wVol||'').split('#')[0];if(!v)return true;return v.split('|').includes(t)}
 function volRing(x,y,t,r){return `<circle class="vring${volOn(t)?'':' off'}" cx="${x}" cy="${y}" r="${r||16}" stroke="${VOLC[t]}"/>`}
 // 試音量一頁小抄：目標＝底噪＋8，不超過上限（上限她之後會給各場地規定）
-function vVolSheet(){const st=wSt(),vs=st.vs||{},nz=vs.noise||'',lim=vs.lim||'',t=volTarget(nz,lim),v=window.wVol||'';
-  const C=(c,t)=>`<span class="vdot" style="background:${VOLC[c]}"></span>${t}`;
+function vVolSheet(){const st=wSt(),vs=st.vs||{},nz=vs.noise||'',lim=vs.lim||'',t=volTarget(nz,lim),v=window.wVol||'',T=`<b class="vtx">${t||'目標'}</b>`;
+  // 每張卡同一個格式：轉哪顆 → 看哪裡 → 停在哪；點卡片，接線圖上只亮那顆旋鈕
+  const K=[['mic','GAIN','上排黃圈 GAIN（LEVEL 先 12 點）','PEAK 紅燈','唱最大聲，紅燈快亮沒亮'],
+    ['spk','音響','AG06 綠圈 12 點，Bose 從最小轉','耳朵','大概一半，先別動'],
+    ['mic','LEVEL','下排黃圈 LEVEL','3 公尺外的分貝','唱最大聲＝'+T+' dB'],
+    ['music','伴奏','藍圈（iPad 先開七八成）','3 公尺外的分貝','副歌＝'+T+' dB'],
+    ['mon','監聽','紅圈＋耳機接收器','自己耳朵','聽得清楚就停']];
   return `<div class="vsheet">
-  <div class="vbox vtgt"><b>① 目標音量</b><div class="vcalc"><label>底噪<input id="vnoise" inputmode="decimal" value="${esc(nz)}" placeholder="量">dB</label><span>＋8</span><label>上限<input id="vlim" inputmode="decimal" value="${esc(lim)}" placeholder="場地">dB</label></div><div class="vres">目標 <b id="vtgt">${t||'—'}</b> dB</div><div class="vpre"><button data-vlim="77">白天 77</button><button data-vlim="62">19 點後 62</button></div><small>喇叭正前方 3 公尺（約 4 大步），手機舉到胸口高（離地 1.2–1.5 公尺）量 30 秒。太吵量不準時：改在喇叭前 10 公分量，白天 ≤106.5、晚上 ≤91.5</small></div>
-  <div class="vbox"><b>${C('mic','②')} 麥克風（每人）</b><div><b>GAIN 看燈</b>：LEVEL 先 12 點，唱最大聲，轉到 PEAK 快亮沒亮</div><div><b>LEVEL 看分貝</b>：3 公尺處讀數＝目標</div></div>
-  <div class="vbox"><b>${C('music','③')} 伴奏（每首）</b><div>iPad／iPhone 開七八成</div><div>副歌最大聲時，轉藍圈讓讀數＝目標</div></div>
-  <div class="vbox"><b>${C('spk','④')} 音響</b><div>Bose 綠圈從最小慢慢轉大，配 AG06 綠圈</div><b style="margin-top:4px">${C('mon','⑤')} 監聽（最後）</b><div>紅圈＋接收器，自己聽清楚就好</div></div>
-  <div class="vbox"><b>現場微調</b><div>皺眉走開、店家出來 → <b>小</b></div><div>觀眾一直往前靠 → <b>大</b></div><div>換場地 → 從 ① 重來</div></div>
-  ${v?`<div class="vbox vsel"><b>${VOLN[v.split('|')[0]]}・${VOLN[v.split('|')[1]]}</b>${VOLSTEP[v].map((x,i)=>`<div>${i+1}. ${esc(x)}</div>`).join('')}</div>`:''}
+  <div class="vbox vtgt"><b>目標音量</b><div class="vcalc"><label>底噪<input id="vnoise" inputmode="decimal" value="${esc(nz)}" placeholder="量">dB</label><span>＋8</span><label>上限<input id="vlim" inputmode="decimal" value="${esc(lim)}" placeholder="場地">dB</label></div><div class="vpre"><button data-vlim="77">白天 77</button><button data-vlim="62">19 點後 62</button></div><div class="vres">目標 <b id="vtgt">${t||'—'}</b> dB</div><small>喇叭正前方 3 公尺（約 4 大步），手機舉到胸口高量 30 秒。太吵量不準：改在喇叭前 10 公分量，白天 ≤106.5、晚上 ≤91.5</small></div>
+  <div class="vkh"><span></span><span>轉</span><span>看</span><span>停在</span></div>
+  ${K.map(([c,n,turn,look,stop],i)=>`<button class="vk${v===c+'#'+i?' on':''}" data-vk="${c}#${i}" style="--c:${VOLC[c]}"><span class="vkn"><i>${i+1}</i>${n}</span><span>${turn}</span><span>${look}</span><span>${stop}</span></button>`).join('')}
+  <div class="vfoot">現場：有人皺眉走開 → <b>小</b>　觀眾往前靠 → <b>大</b>　換場地 → 重量底噪</div>
   </div>`}
 function volTarget(nz,lim){const n=parseFloat(nz),l=parseFloat(lim);if(isNaN(n))return '';let t=n+8;if(!isNaN(l))t=Math.min(t,l);return Math.round(t*10)/10}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-vk]');if(!b)return;e.preventDefault();e.stopPropagation();window.wVol=window.wVol===b.dataset.vk?'':b.dataset.vk;render()},true);
 document.addEventListener('click',e=>{const b=e.target.closest('[data-vlim]');if(!b)return;e.preventDefault();e.stopPropagation();const l=$('#vlim');l.value=b.dataset.vlim;l.dispatchEvent(new Event('input',{bubbles:true}))},true);
-document.addEventListener('input',e=>{if(e.target.id!=='vnoise'&&e.target.id!=='vlim')return;const nz=$('#vnoise').value,lim=$('#vlim').value;$('#vtgt').textContent=volTarget(nz,lim)||'—';clearTimeout(window._vsT);window._vsT=setTimeout(()=>{const s=wSt();s.vs={noise:nz,lim};try{localStorage.setItem(LS+'-wire',JSON.stringify(s))}catch(_){}},400)});
+document.addEventListener('input',e=>{if(e.target.id!=='vnoise'&&e.target.id!=='vlim')return;const nz=$('#vnoise').value,lim=$('#vlim').value;const _t=volTarget(nz,lim);$('#vtgt').textContent=_t||'—';document.querySelectorAll('.vtx').forEach(x=>x.textContent=_t||'目標');{const s=wSt();s.vs={noise:nz,lim};try{localStorage.setItem(LS+'-wire',JSON.stringify(s))}catch(_){}}});
 function vVolPanel(part){const v=window.wVol||'';
   const cell=(r,c)=>{const k=r+'|'+c;return `<button class="vcell${v===k?' on':''}" data-wvolk="${k}" style="--a:${VOLC[r]};--b:${VOLC[c]}"><b style="color:${VOLC[r]}">${VOLN[r]}</b><span style="color:${VOLC[c]}">${VOLN[c]}</span></button>`};
   if(part==='grid')return `<div class="vgrid">${cell('mon','music')}${cell('mon','mic')}${cell('spk','music')}${cell('spk','mic')}</div>`;
@@ -865,13 +879,13 @@ function vWire(){
   if(M==='asm'||M==='off'){
     const S=wSteps(M),done=st[M]||{},cur=wCurIdx(M,S,done),n=S.filter(x=>done[x.id]).length;
     window.wFocus=cur<S.length?S[cur].g:'';
-    side=`<div class="wlist"><div class="wlhead"><b>${M==='asm'?'組裝':'拆卸'}　${n}/${S.length}</b><button class="btn sm" data-act="wreset" data-wm="${M}">重來</button></div>${S.map((x,i)=>`<div class="wli ${done[x.id]?'ok':''} ${i===cur?'on':''}"><button class="wlck" data-wtick="${x.id}" aria-label="完成">${done[x.id]?'✓':i+1}</button><button class="wlbody" data-wjump="${i}"><b>${x.ic} ${esc(x.n)}</b>${x.lines.map(l=>`<small>${esc(l)}</small>`).join('')}</button>${x.ph?`<span class="wlph">${thumbs(x.g)}</span>`:''}</div>`).join('')}</div>`;
+    side=`<div class="wlist"><div class="wlhead"><b>${M==='asm'?'組裝':'拆卸'}　${n}/${S.length}</b><button class="btn sm" data-act="wreset" data-wm="${M}">重來</button></div>${S.map((x,i)=>`${!i||S[i-1].ph!==x.ph?`<div class="wph"><b>${WPH[M][x.ph][0]}</b><span>${WPH[M][x.ph][1]}</span></div>`:''}<div class="wli ${done[x.id]?'ok':''} ${i===cur?'on':''}"><button class="wlck" data-wtick="${x.id}" aria-label="完成">${done[x.id]?'✓':i+1}</button><button class="wlbody" data-wjump="${i}"><b>${x.ic} ${esc(x.n)}</b>${x.lines.map(l=>`<small>${esc(l)}</small>`).join('')}</button>${x.ph2&&x.g?`<span class="wlph">${thumbs(x.g)}</span>`:''}</div>`).join('')}</div>`;
   }
   if(M==='vol')side=vVolSheet();
   if(M==='inv'){
     const ed=!!window.wInvEdit,G=WG.map(x=>({x,L:wList(x.k)})),tot=G.reduce((n,o)=>n+o.L.length,0),got=G.reduce((n,o)=>n+o.L.filter(([d,v])=>inv[o.x.k+'|'+v.n]).length,0);
     h+=`<div class="packbar"><p class="small muted" style="margin:0">${ed?'改名：點 ✏️；排順序：按 ↑ ↓。':'點一下＝有帶到。'}已清點 <b>${got}/${tot}</b></p><span style="display:flex;gap:6px"><button class="btn sm ${ed?'primary':''}" data-act="winvedit">${ed?'完成':'✏️ 改名／排序'}</button>${ed?'':'<button class="btn sm" data-act="wreset" data-wm="inv">全部清掉</button>'}</span></div>
-    <div class="icols">${G.map(({x,L})=>{const n=L.filter(([d,v])=>inv[x.k+'|'+v.n]).length;return `<div class="icol ${n===L.length&&L.length?'ok':''}"><div class="ichead"><b>${x.ic} ${x.n}</b><span class="num">${n}/${L.length}</span></div>${L.map(([d,v],i)=>{const k=x.k+'|'+v.n,on=!!inv[k],im=I[d];return ed?`<div class="irow"><span class="iim">${im?`<img src="${wTh(im)}" alt="">`:''}</span><span class="inm">${esc(v.n)}</span><button class="ghost" data-wren="${d}" aria-label="改名">✏️</button><button class="ghost" data-wmv="${x.k}|${d}|-1" ${i?'':'disabled'} aria-label="往上">↑</button><button class="ghost" data-wmv="${x.k}|${d}|1" ${i<L.length-1?'':'disabled'} aria-label="往下">↓</button></div>`:`<button class="irow ${on?'on':''}" data-winv="${esc(k)}"><span class="ick">${on?'✓':''}</span><span class="iim">${im?`<img src="${wTh(im)}" alt="">`:''}</span><span class="inm">${esc(v.n)}</span></button>`}).join('')}</div>`}).join('')}</div>`;
+    <div class="icats">${WCAT.map(([cn,ks])=>`<div class="icat"><div class="icath">${cn}</div>${G.filter(o=>ks.includes(o.x.k)).map(({x,L})=>{const n=L.filter(([d,v])=>inv[x.k+'|'+v.n]).length;return `<div class="icol ${n===L.length&&L.length?'ok':''}"><div class="ichead"><b>${x.ic} ${x.n}</b><span class="num">${n}/${L.length}</span></div>${L.map(([d,v],i)=>{const k=x.k+'|'+v.n,on=!!inv[k],im=I[d];return ed?`<div class="irow"><span class="iim">${im?`<img src="${wTh(im)}" alt="">`:''}</span><span class="inm">${esc(v.n)}</span><button class="ghost" data-wren="${d}" aria-label="改名">✏️</button><button class="ghost" data-wmv="${x.k}|${d}|-1" ${i?'':'disabled'} aria-label="往上">↑</button><button class="ghost" data-wmv="${x.k}|${d}|1" ${i<L.length-1?'':'disabled'} aria-label="往下">↓</button></div>`:`<button class="irow ${on?'on':''}" data-winv="${esc(k)}"><span class="ick">${on?'✓':''}</span><span class="iim">${im?`<img src="${wTh(im)}" alt="">`:''}</span><span class="inm">${esc(v.n)}</span></button>`}).join('')}</div>`}).join('')}</div>`).join('')}</div>`;
   } else {
     h+=`${side?`<div class="wsplit">${side}<div class="wdia">`:''}<div class="wbox wmain${M==='vol'?' volmode':''}"><div class="wzoom"><button class="ghost" data-wz="-1" aria-label="縮小">－</button><span class="wzl">${wZoomLab()}</span><button class="ghost" data-wz="1" aria-label="放大">＋</button></div><div class="wscroll${window.wZf?' zm':''}">${wDiagram()}</div></div>${side?'</div></div>':''}`;
   }
@@ -893,8 +907,17 @@ function vWire(){
 }
 // 組裝／拆卸：一步一步走，圖上只亮這一步的那一組
 const WOFFTX={pack:['椅子、麥克風收納盒、所有東西裝回拉車'],stand:['夾子拆下 → 托盤拿下 → 腳架收起來'],mix:['拔 ④ USB-C，連行動電源收回「電源小袋」','AG06 連同電源小袋、伴奏小袋一起收'],mic:['拔 ① ②','兩隻麥、接收器、電池、藍色 XLR 收回麥克風收納盒'],bk:['拔 ③','3.5mm 線和轉接頭收回「伴奏小袋」'],iem:['拔 ⑥','發射器、接收器、耳機收回監聽包'],spk:['拔 ⑤','黑色編織線捲好，收在 Bose 上']};
-function wSteps(m){const G=m==='off'?[...WG].reverse():WG,P=(m==='off'?WOFF:WON).map((t,i)=>({id:'p'+i,ic:'⚡',n:t,lines:[],g:'mix'}));
-  const S=G.map(x=>({id:x.k,ic:x.ic,n:x.n,lines:m==='off'?(WOFFTX[x.k]||[]):x.plug,g:x.k,ph:1}));return m==='off'?[...P,...S]:[...S,...P]}
+// 組裝：擺 → 接（照號碼 ①→⑥）→ 開；拆卸：關 → 拔（⑥→①）→ 收
+const WPH={asm:[['擺','先把東西擺到位置'],['接','照號碼 ① → ⑥ 接線'],['開','開電源、試音']],off:[['關','先關電源'],['拔','照號碼 ⑥ → ① 拔線，收回各自的袋子'],['收','收架子、裝車、清點']]};
+const WASM={pack:['打開拉車，拿出椅子和麥克風收納盒'],stand:['兩支腳架立好 → 裝水杯托盤 → 夾上 iPad 夾、麥克風夾、管夾'],place:['AG06 連同電源小袋、伴奏小袋放上托盤','Bose 擺好位置，iPad 夾上'],
+  mic:['有線麥克風 → 藍色 XLR → ① CH1','無線接收器直接插 ② CH2'],bk:['伴奏小袋拿 3.5mm 線和轉接頭','iPad／iPhone → 轉接頭 → 黑色細線 → ③ AUX'],mix:['電源小袋：行動電源 → 白色 USB-C → AG06 背面 ④'],
+  spk:['黑色編織線：6.3mm 插 ⑤ MONITOR OUT L，XLR 插 Bose INPUT 1'],iem:['灰色發射器插 ⑥ MONITOR OUT R','兩個接收器各接一副耳機，頻道跟發射器一樣']};
+function wSteps(m){const W=k=>WG.find(x=>x.k===k),st=(id,ph,g,n,ic,lines,photo)=>({id,ph,g,n,ic,lines,ph2:photo});
+  const P=(m==='off'?WOFF:WON).map((t,i)=>st('p'+i,m==='off'?0:2,'mix',t,'⚡',[]));
+  const G=(k,ph,n,lines)=>{const x=W(k);return {id:k,ph,g:k,n:n||x.n,ic:x.ic,lines,ph2:1}};
+  if(m==='off')return [...P,G('iem',1,'⑥ 監聽組',WOFFTX.iem),G('spk',1,'⑤ 喇叭組',WOFFTX.spk),G('mix',1,'④ 電源',WOFFTX.mix),G('bk',1,'③ 伴奏組',WOFFTX.bk),G('mic',1,'①② 麥克風組',WOFFTX.mic),G('stand',2,0,WOFFTX.stand),G('pack',2,'裝車',WOFFTX.pack),{id:'chk',ph:2,g:'',n:'清點',ic:'✅',lines:['到「✅ 清點」對一次，全部打勾才走']}];
+  return [G('pack',0,0,WASM.pack),G('stand',0,0,WASM.stand),{id:'place',ph:0,g:'mix',n:'AG06、Bose 擺好',ic:'🎛',lines:WASM.place,ph2:1},
+    G('mic',1,'①② 麥克風',WASM.mic),G('bk',1,'③ 伴奏',WASM.bk),G('mix',1,'④ 電源',WASM.mix),G('spk',1,'⑤ 喇叭',WASM.spk),G('iem',1,'⑥ 監聽',WASM.iem),...P]}
 function wCurIdx(m,S,done){window.wCur=window.wCur||{};let c=window.wCur[m];if(c==null||c>S.length){c=S.findIndex(x=>!done[x.id]);if(c<0)c=S.length}return c}
 const ICON={cart:'<svg viewBox="0 0 48 48" class="bagicon"><path d="M30 6v28"/><path d="M26 6h8"/><rect x="10" y="14" width="18" height="20" rx="2"/><path d="M10 22h18"/><circle cx="14" cy="39" r="3"/><circle cx="28" cy="39" r="3"/><path d="M8 34h24"/></svg>',
 tote:'<svg viewBox="0 0 48 48" class="bagicon"><path d="M17 15v-3a7 7 0 0 1 14 0v3"/><path d="M9 15h30l-3 27H12z"/><path d="M10.2 24h27.6M11.2 33h25.6"/></svg>',
