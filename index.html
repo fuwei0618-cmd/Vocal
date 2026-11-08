@@ -175,6 +175,7 @@ details.fold>.cgrid{padding:8px 8px 0}
 .icath.pkh{display:flex;align-items:center;gap:8px}.icath.pkh .pcimg{width:30px;height:30px;object-fit:contain;border-radius:6px;background:#fff}.icath.pkh span:first-of-type{flex:1}.icath.pkh .num{font-size:12px;color:var(--muted);font-weight:400}
 .iim .pkimg{width:100%;height:100%;object-fit:contain;display:block}.iim .pkimg.multi{display:grid;grid-template-columns:1fr 1fr;gap:1px}.iim .pkimg.multi img{width:100%;height:100%;object-fit:contain}
 .isub{display:block;font-size:11px;color:var(--muted);line-height:1.35;margin-top:2px}
+.ichg{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));margin-bottom:14px}.ichg .irow{border-bottom:0;border-right:1px solid var(--line)}
 .iempty{padding:14px 8px;font-size:12px;color:var(--muted);text-align:center}.icol.dropover{outline:2px dashed var(--accent);outline-offset:-2px}.irow.rainon .inm{color:#2f6db5}
 #wpop{position:fixed;z-index:1000;min-width:200px;max-width:260px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:6px 0;font-size:14px}
 #wpop button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;font:inherit;color:inherit;text-align:left;padding:8px 16px}#wpop button:active,#wpop button:hover{background:var(--accent-soft,#eef5f5)}#wpop button[disabled]{opacity:.35}
@@ -720,6 +721,8 @@ function vPack(){
   const col=(bag,nm,l,ren)=>`<div class="icol ${l.length&&l.every(c=>checked[c.id])?'ok':''}" data-drop="${bag}"><div class="ichead"><b>${esc(nm)}</b>${ren?`<button class="idot" data-bagren="${bag}" aria-label="改名">✏️</button>`:''}<span class="num">${l.filter(c=>checked[c.id]).length}/${l.length}</span><button class="idot" data-add-bag="${bag}" aria-label="新增">＋</button></div>${po(l).map(row).join('')||'<div class="iempty">拖到這裡</div>'}</div>`;
   const cat=(nm,fb,cols)=>{const all=cols.flatMap(x=>x[2]);return `<div class="icat" style="--n:${cols.length}"><div class="icath pkh">${bagImg(nm,fb)}<span>${nm}</span><span class="num">${all.filter(c=>checked[c.id]).length}/${all.length}</span></div><div class="icg">${cols.map(x=>col(...x)).join('')}</div></div>`};
   const none=src.filter(c=>!BAG_NAME[bagOf(c)]&&!/^拉車/.test(c.text));// 拉車本身是容器，不算要放進包包的東西
+  const chg=sorted('checks','order').filter(c=>c.group==='前一晚充電'&&!c.id.startsWith('d_'));
+  if(chg.length)h+=`<div class="icath pkh" style="margin-bottom:6px"><span>⚡ 前一晚充電</span><span class="num">${chg.filter(c=>checked[c.id]).length}/${chg.length}</span></div><div class="icol ichg">${chg.map(c=>row(c).replace('data-pk=','data-chg=')).join('')}</div>`;
   h+=`<div class="icats pk${none.length?' pk4':''}">${cat('拉車','cart',[['cart','拉車',cart]])}${cat('手提袋','',[['tote1','大層',t1],['tote2','小層',t2]])}${cat('後背包','',[['pack',bagLab('pack','個人物品'),pk,1],['pack2',bagLab('pack2','音樂設備'),pk2,1]])}${none.length?`<div class="icat" style="--n:1"><div class="icath pkh"><span>還沒放進包包</span><button class="btn sm" data-act="fill-bags">照預設放</button></div><div class="icg"><div class="icol" data-drop="">${none.map(row).join('')}</div></div></div>`:''}</div>`;
   return h;
 }
@@ -1233,10 +1236,10 @@ function songSheet(id){
 
 /* ---------- 設備與清單 ---------- */
 function vGear(){
-  let h=`<div class="seg" style="margin-bottom:16px">${[['list','清單'],['pack','打包'],['site','現場'],['wire','接線']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
+  if(gearSeg==='list')gearSeg='site';
+  let h=`<div class="seg" style="margin-bottom:16px">${[['pack','打包'],['site','現場'],['wire','接線']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
   h+=`<p class="small muted" style="margin:-8px 0 12px;text-align:right">版本 11/8 接線圖</p>`;
   if(gearSeg==='pack')return h+vPack();
-  if(gearSeg==='site')return h+vSite();
   if(gearSeg==='wire')return h+vWire();
   if(gearSeg==='stock'){
     const gs=sorted('gear','name');
@@ -1249,13 +1252,15 @@ function vGear(){
   if(!gearEdit){
     pkMigrate();pkV3();
     const n=next(),checked=n.checked||{},rain=!!n.rain;
-    const TG=['前一晚充電','當日'],pre=checks.filter(c=>TG.includes(c.group)),on=checks.filter(c=>ONSITE.includes(c.group));
+    if(gearSeg!=='site')gearSeg='site';
+    const TG=['當日'],pre=checks.filter(c=>TG.includes(c.group)),on=checks.filter(c=>ONSITE.includes(c.group));
     const done=pre.filter(c=>checked[c.id]).length;
     h+=`<section class="sec"><div class="btns"><button class="btn sm ${rain?'primary':''}" data-act="rain" aria-pressed="${rain}">${rain?'☂ 雨天模式開':'☂ 雨天模式'}</button><button class="btn sm" data-act="gear-edit">編輯清單</button></div>${checkLinks()}</section>`;
     if(rain)h+=`<div class="banner warn" style="margin-bottom:14px">雨天：記得帶雨傘、地墊。</div>`;
     if(!checks.length)return h+emptyChecks();
-    h+=`<section class="sec"><div class="sec-head"><h2>前一晚／當日</h2><span class="num muted">${done} / ${pre.length}</span></div><div class="progress"><i style="width:${pre.length?Math.round(done/pre.length*100):0}%"></i></div>${checkGroups(pre,TG,checked,rain)}<p class="small muted" style="margin:6px 0 0">要帶的器材和隨身物品在「打包」打勾。</p></section>`;
+    h+=`<section class="sec"><div class="sec-head"><h2>當日</h2><span class="num muted">${done} / ${pre.length}</span></div><div class="progress"><i style="width:${pre.length?Math.round(done/pre.length*100):0}%"></i></div>${checkGroups(pre,TG,checked,rain)}</section>`;
     if(on.length)h+=`<section class="sec"><h2>現場</h2>${checkGroups(on,ONSITE,checked,rain,true)}</section>`;
+    h+=`<section class="sec"><h2>現場擺位</h2>${vSite()}</section>`;
     h+=`<section class="sec"><button class="btn block" data-act="reset-checks" data-confirm="再按一次清空勾選">重置清單</button><p class="small muted" style="margin:0">這裡跟「下一場」分頁是同一份勾選。演出後寫紀錄會自動重置。</p></section>`;
     h+=`<p class="small" style="text-align:center"><button class="ghost" data-gearseg="stock">租借／設備庫存 ›</button></p>`;
     return h;
