@@ -175,6 +175,10 @@ details.fold>.cgrid{padding:8px 8px 0}
 .icath.pkh{display:flex;align-items:center;gap:8px}.icath.pkh .pcimg{width:30px;height:30px;object-fit:contain;border-radius:6px;background:#fff}.icath.pkh span:first-of-type{flex:1}.icath.pkh .num{font-size:12px;color:var(--muted);font-weight:400}
 .iim .pkimg{width:100%;height:100%;object-fit:contain;display:block}.iim .pkimg.multi{display:grid;grid-template-columns:1fr 1fr;gap:1px}.iim .pkimg.multi img{width:100%;height:100%;object-fit:contain}
 .iempty{padding:14px 8px;font-size:12px;color:var(--muted);text-align:center}.icol.dropover{outline:2px dashed var(--accent);outline-offset:-2px}.irow.rainon .inm{color:#2f6db5}
+#wpop{position:fixed;z-index:1000;min-width:200px;max-width:260px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:6px 0;font-size:14px}
+#wpop button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;font:inherit;color:inherit;text-align:left;padding:8px 16px}#wpop button:active,#wpop button:hover{background:var(--accent-soft,#eef5f5)}#wpop button[disabled]{opacity:.35}
+#wpop .pic{width:20px;text-align:center}#wpop hr{border:0;border-top:1px solid var(--line);margin:5px 0}#wpop .ptitle{font-size:12px;color:var(--muted);padding:4px 16px 2px}
+#wpop .palts{display:flex;flex-wrap:wrap;gap:6px;padding:4px 16px 6px}#wpop .palts img{width:44px;height:44px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:8px}
 .packbar .btn{white-space:nowrap}
 .irow.dragsrc{opacity:.35}.irow.armed{background:var(--accent-soft,#eef5f5)}.irow.dropbefore{box-shadow:inset 0 3px 0 var(--accent)}.irow.dropafter{box-shadow:inset 0 -3px 0 var(--accent)}
 .irow.ghost{position:fixed;z-index:999;pointer-events:none;width:220px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.2);transform:translate(-30px,-50%)}
@@ -811,9 +815,19 @@ function vVolSheet(){const st=wSt(),vs=st.vs||{},nz=vs.noise||'',lim=vs.lim||'',
   <div class="vfoot">現場：有人皺眉走開 → <b>小</b>　觀眾往前靠 → <b>大</b>　換場地 → 重量底噪</div>
   </div>`}
 function volTarget(nz,lim){const n=parseFloat(nz),l=parseFloat(lim);if(isNaN(n))return '';let t=n+8;if(!isNaN(l))t=Math.min(t,l);return Math.round(t*10)/10}
+// ⋯ 選單：像右鍵選單一樣直的一排，浮在 ⋯ 旁邊
+function wPopClose(){const m=document.getElementById('wpop');if(m)m.remove()}
+function wPop(btn,d){const was=document.getElementById('wpop');wPopClose();if(was&&was.dataset.d===d)return;
+  const I=wImg(),v=wDevs()[d]||{},im=I[d],al=wAlt(d),it=(a,ic,t,dis)=>`<button ${dis?'disabled':`data-${a}="${d}"`}><span class="pic">${ic}</span>${t}</button>`,hr='<hr>';
+  const m=document.createElement('div');m.id='wpop';m.dataset.d=d;
+  m.innerHTML=`<div class="ptitle">${esc(v.n||'')}</div>`+it('wren','✏️','改名')+hr+it('wpaste','📋','貼上圖片')+it('wimg','🖼','從相簿選')+it('wcut','✂️','去背',!im)+hr+it('wcopy','📄','複製圖片',!im)+it('wsave','💾','存原圖',!im)+hr+it('wimgdel','🗑','移除照片',!im)+(v.c?it('wcdel','✕','刪掉這一項'):'')+(al.length?`${hr}<div class="ptitle">候選照片（點一下換上）</div><div class="palts">${al.map((u,j)=>`<img src="${wTh(u,120)}" alt="" data-wuse="${d}" data-wi="${j}">`).join('')}</div>`:'');
+  document.body.appendChild(m);const R=btn.getBoundingClientRect(),W=m.offsetWidth,H=m.offsetHeight;
+  let x=R.right-W,y=R.bottom+4;if(x<8)x=8;if(y+H>innerHeight-70)y=Math.max(8,R.top-H-4);m.style.left=x+'px';m.style.top=y+'px'}
+document.addEventListener('click',e=>{const m=document.getElementById('wpop');if(!m)return;if(e.target.closest('[data-wmenu]'))return;if(!m.contains(e.target)){wPopClose();return}if(e.target.closest('button:not([disabled]),img[data-wuse]'))setTimeout(wPopClose,0)},true);
+addEventListener('scroll',()=>wPopClose(),{passive:true});
 // 清點：⋯ 開工具列、＋ 新增項目、💾 存原圖、按住拖曳排順序（同一組內）
 document.addEventListener('click',e=>{const b=e.target.closest('[data-wmenu],[data-wgadd],[data-wsave],[data-wcopy]');if(!b)return;e.preventDefault();e.stopPropagation();
-  if(b.dataset.wmenu){window.wMenu=window.wMenu===b.dataset.wmenu?'':b.dataset.wmenu;return render()}
+  if(b.dataset.wmenu)return wPop(b,b.dataset.wmenu);
   if(b.dataset.wgadd){const n=(prompt('新增項目（'+WG.find(x=>x.k===b.dataset.wgadd).n+'）','')||'').trim();if(!n)return;const g=b.dataset.wgadd;return wSet(s=>{s.custom=(s.custom||[]).concat({id:'c'+Date.now().toString(36),n,g})})}
   if(b.dataset.wcopy)return wCopyImg(b.dataset.wcopy);
   if(b.dataset.wsave)wSaveImg(b.dataset.wsave)},true);
@@ -958,7 +972,7 @@ function vWire(){
     const img=(im,im2)=>`<span class="iim${im2?' two':''}">${im?`<img src="${wTh(im)}" alt="">`:''}${im2?`<img src="${wTh(im2)}" alt="">`:''}</span>`;
     const menu=(d,v)=>{const im=I[d],al=wAlt(d);return `<div class="imenu"><button data-wren="${d}">✏️ 改名</button><button data-wpaste="${d}">📋 貼上</button><button data-wimg="${d}">🖼 相簿</button>${im?`<button data-wcut="${d}">✂️ 去背</button><button data-wcopy="${d}">📄 複製圖片</button><button data-wsave="${d}">💾 存原圖</button><button data-wimgdel="${d}">移除照片</button>`:''}${v.c?`<button data-wcdel="${d}">刪掉這項</button>`:''}${al.length?`<div class="walts">${al.map((u,j)=>`<span class="walt"><img src="${wTh(u,120)}" alt="" data-wuse="${d}" data-wi="${j}"><button data-waltdel="${d}" data-wi="${j}" aria-label="刪掉這張">×</button></span>`).join('')}</div>`:''}</div>`};
     h+=`<div class="packbar"><p class="small muted" style="margin:0">點一下＝有帶到；按住拖曳＝排順序；⋯＝改名、換照片。已清點 <b>${got}/${tot}</b></p><span style="display:flex;gap:6px"><button class="btn sm" data-act="wpack">📦 匯入圖片包</button><button class="btn sm" data-act="wreset" data-wm="inv">全部清掉</button></span></div>
-    <div class="icats">${WCAT.map(([cn,ks])=>{const GG=G.filter(o=>ks.includes(o.x.k));return `<div class="icat" style="--n:${GG.length}"><div class="icath">${cn}</div><div class="icg">${GG.map(({x,L})=>{const n=L.filter(([d,v])=>inv[x.k+'|'+v.n]).length;return `<div class="icol ${n===L.length&&L.length?'ok':''}" data-igrp="${x.k}"><div class="ichead"><b>${x.ic} ${x.n}</b><span class="num">${n}/${L.length}</span><button class="idot" data-wgadd="${x.k}" aria-label="新增項目">＋</button></div>${L.map(([d,v])=>{const k=x.k+'|'+v.n,on=!!inv[k];return `<div class="irow ${on?'on':''}" data-irow="${d}"><button class="imain" data-winv="${esc(k)}"><span class="iwrap">${img(I[d],v.with&&I[v.with])}<span class="ick">${on?'✓':''}</span></span><span class="inm">${esc(v.n)}</span></button><button class="idot" data-wmenu="${d}" aria-label="更多">⋯</button></div>${mn===d?menu(d,v):''}`}).join('')}</div>`}).join('')}</div></div>`}).join('')}</div>`;
+    <div class="icats">${WCAT.map(([cn,ks])=>{const GG=G.filter(o=>ks.includes(o.x.k));return `<div class="icat" style="--n:${GG.length}"><div class="icath">${cn}</div><div class="icg">${GG.map(({x,L})=>{const n=L.filter(([d,v])=>inv[x.k+'|'+v.n]).length;return `<div class="icol ${n===L.length&&L.length?'ok':''}" data-igrp="${x.k}"><div class="ichead"><b>${x.ic} ${x.n}</b><span class="num">${n}/${L.length}</span><button class="idot" data-wgadd="${x.k}" aria-label="新增項目">＋</button></div>${L.map(([d,v])=>{const k=x.k+'|'+v.n,on=!!inv[k];return `<div class="irow ${on?'on':''}" data-irow="${d}"><button class="imain" data-winv="${esc(k)}"><span class="iwrap">${img(I[d],v.with&&I[v.with])}<span class="ick">${on?'✓':''}</span></span><span class="inm">${esc(v.n)}</span></button><button class="idot" data-wmenu="${d}" aria-label="更多">⋯</button></div>`}).join('')}</div>`}).join('')}</div></div>`}).join('')}</div>`;
   } else {
     h+=`${side?`<div class="wsplit">${side}<div class="wdia">`:''}<div class="wbox wmain${M==='vol'?' volmode':''}"><div class="wzoom"><button class="ghost" data-wz="-1" aria-label="縮小">－</button><span class="wzl">${wZoomLab()}</span><button class="ghost" data-wz="1" aria-label="放大">＋</button></div><div class="wscroll${window.wZf?' zm':''}">${wDiagram()}</div></div>${side?'</div></div>':''}`;
   }
