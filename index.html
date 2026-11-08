@@ -792,7 +792,7 @@ function wDiagram(){
   const bdg=(x,y,n)=>`<g class="wb"><circle cx="${x}" cy="${y}" r="13"/><text x="${x}" y="${y+5}">${n}</text></g>`,badge=(k,n)=>bdg(...jp(k),n);
   const [c1x,c1y]=jp('ch1'),[c2x,c2y]=jp('ch2'),[ax,ay]=jp('aux'),[mx,my]=jp('mon'),[sx,sy]=jp('st');
   const br=wRatio(IM.bose)||1,[ox,oy,ow,oh]=imRect(0,0,170,164,br),bj=wSt().bosej,bu=bj?bj[0]:(170*BOSEJ[0]-ox)/ow-.045,bv=bj?bj[1]:(164*BOSEJ[1]-oy)/oh-.055,[nx,ny,nw,nh]=imRect(760,100,235,204,br),bjx=nx+nw*bu,bjy=ny+nh*bv;
-  return `<svg class="wire" viewBox="0 0 1000 890" role="img" aria-label="接線總圖" style="${wZoomCss()}">
+  return `<svg class="wire" viewBox="0 0 ${window.wView==='vol'?1230:1000} 890" role="img" aria-label="接線總圖" style="${wZoomCss()}">
   <g class="wd${sel('mix')}" data-wire="mix" data-wdrop="ag06">${IM.ag06?`<image href="${IM.ag06}" x="${AX}" y="${AY}" width="${AW}" height="${AH}" preserveAspectRatio="xMidYMid meet"/>`:`<rect class="hit" x="${AX}" y="${AY}" width="${AS}" height="${AS}" rx="18"/><text x="500" y="${AY+AS/2}" class="wt" text-anchor="middle">放 AG06 正面圖</text>`}</g>
   <g class="wd${sel('mix')}" data-wire="mix" data-wdrop="ag06b">${IM.ag06b?`<image href="${IM.ag06b}" x="${BX}" y="${BY}" width="${BW}" height="${BH}" preserveAspectRatio="xMidYMid meet"/>`:`<rect class="hit" x="${BX}" y="${BY}" width="${BW}" height="${BH}" rx="14"/><text x="500" y="${BY+BH/2+5}" class="wt" text-anchor="middle">放 AG06 背面圖（鏡射）</text>`}</g>
   ${dev('bat',170,30,130,130)}
@@ -811,6 +811,7 @@ function wDiagram(){
   ${cab('iem','air','',`M905 560 V650`,840,605,'無線')}
   <g class="wb sm" data-bosej="${nx},${ny},${nw},${nh}" style="cursor:move;touch-action:none"><circle cx="${bjx}" cy="${bjy}" r="9"/><text x="${bjx}" y="${bjy+4}" style="font-size:11px">⑤</text></g>${bdg(jx,jy,'④')}${badge('ch1','①')}${badge('ch2','②')}${badge('aux','③')}${badge('mon','⑤')}${badge('st','⑥')}
   ${window.wView==='vol'?`<g class="vols">${AGKNOB.map(([px,py,t])=>volRing(AX+AW*px/100,AY+AH*py/100,t,AW*.045)).join('')}${volRing(nx+nw*((170*.282-ox)/ow),ny+nh*((164*.308-oy)/oh),'spk',14)}${volRing(820+170*.6,650+154*.247,'mon',20)}<rect class="vring${volOn('music')?'':' off'}" x="22" y="582" width="236" height="296" rx="18" stroke="${VOLC.music}"/></g>`:''}
+  ${window.wView==='vol'?(()=>{const v=window.wVol||'',P=(r,c,x,y)=>{const k=r+'|'+c,on=v===k;return `<g class="vpill${on?' on':''}" data-wvolk="${k}" style="cursor:pointer"><rect x="${x}" y="${y}" width="200" height="46" rx="23" fill="${on?'#fff':'#fff'}" stroke="${on?VOLC[r]:'#ccc'}" stroke-width="${on?4:2}"/><text x="${x+100}" y="${y+30}" text-anchor="middle" style="font-size:19px;font-weight:700"><tspan fill="${VOLC[r]}">${VOLN[r]}</tspan><tspan fill="${VOLC[c]}" dx="8">${VOLN[c]}</tspan></text></g>`};return P('spk','music',1015,140)+P('spk','mic',1015,200)+P('mon','music',1015,680)+P('mon','mic',1015,740)})():''}
   </svg>`;
 }
 // AG06 官網正上方圖上的孔位置（％）
@@ -846,7 +847,7 @@ function vWire(){
     window.wFocus=cur<S.length?S[cur].g:'';
     side=`<div class="wlist"><div class="wlhead"><b>${M==='asm'?'組裝':'拆卸'}　${n}/${S.length}</b><button class="btn sm" data-act="wreset" data-wm="${M}">重來</button></div>${S.map((x,i)=>`<div class="wli ${done[x.id]?'ok':''} ${i===cur?'on':''}"><button class="wlck" data-wtick="${x.id}" aria-label="完成">${done[x.id]?'✓':i+1}</button><button class="wlbody" data-wjump="${i}"><b>${x.ic} ${esc(x.n)}</b>${x.lines.map(l=>`<small>${esc(l)}</small>`).join('')}</button>${x.ph?`<span class="wlph">${thumbs(x.g)}</span>`:''}</div>`).join('')}</div>`;
   }
-  if(M==='vol')h+=vVolPanel('grid');
+  if(M==='vol')h+=`<p class="small muted" style="margin:0 0 8px">點音響或接收器旁邊的按鈕，圖上會圈出要轉的旋鈕，下面寫順序。</p>`;
   if(M==='inv'){
     const ed=!!window.wInvEdit,G=WG.map(x=>({x,L:wList(x.k)})),tot=G.reduce((n,o)=>n+o.L.length,0),got=G.reduce((n,o)=>n+o.L.filter(([d,v])=>inv[o.x.k+'|'+v.n]).length,0);
     h+=`<div class="packbar"><p class="small muted" style="margin:0">${ed?'改名：點 ✏️；排順序：按 ↑ ↓。':'點一下＝有帶到。'}已清點 <b>${got}/${tot}</b></p><span style="display:flex;gap:6px"><button class="btn sm ${ed?'primary':''}" data-act="winvedit">${ed?'完成':'✏️ 改名／排序'}</button>${ed?'':'<button class="btn sm" data-act="wreset" data-wm="inv">全部清掉</button>'}</span></div>
@@ -1251,6 +1252,7 @@ document.addEventListener('pointerdown',e=>{
 document.addEventListener('click',e=>{const b=e.target.closest('[data-dpick]');if(!b)return;e.preventDefault();e.stopPropagation();const inp=$('#c-dev'),box=b.closest('.f'),k=b.dataset.dpick;
   if(k==='*'||k==='-'){inp.value=k==='*'?'*':'';box.querySelectorAll('.dp').forEach(x=>x.classList.remove('on'));return}
   b.classList.toggle('on');inp.value=[...box.querySelectorAll('.dp.on')].map(x=>x.dataset.dpick).join(',')},true);
+document.addEventListener('click',e=>{const g=e.target.closest&&e.target.closest('g[data-wvolk]');if(!g)return;e.stopPropagation();const k=g.dataset.wvolk;window.wVol=window.wVol===k?'':k;render()},true);
 let dragSup=0,dragHold=false;
 // 按住拖曳時不要讓頁面跟著捲
 document.addEventListener('touchmove',e=>{if(dragHold)e.preventDefault()},{passive:false});
