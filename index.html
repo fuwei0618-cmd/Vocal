@@ -137,6 +137,9 @@ details.fold>.cgrid{padding:8px 8px 0}
 .tlayer{border-top:3px dashed var(--line);padding-top:8px;display:grid;gap:6px}
 .lname{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:.06em}
 .ptiles{display:flex;flex-wrap:wrap;gap:6px}
+.multi{display:grid!important;grid-template-columns:1fr 1fr;gap:1px;padding:1px;overflow:hidden;box-sizing:border-box}.multi.n2{grid-template-columns:1fr 1fr;grid-template-rows:1fr}.multi.n3,.multi.n4{grid-template-rows:1fr 1fr}.multi img{width:100%;height:100%;object-fit:contain;min-height:0;background:#fff}
+.tlimg.multi{border-radius:6px}
+.dpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px;max-height:260px;overflow:auto;padding:2px}.dp{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px;border:2px solid var(--line);border-radius:10px;background:#fff;font:inherit}.dp img{width:100%;height:44px;object-fit:contain}.dp small{font-size:11px;line-height:1.2;text-align:center}.dp.on{border-color:var(--accent);background:var(--accent-soft)}
 .ckimg{width:40px;height:32px;object-fit:contain;background:#fff;border-radius:6px;border:1px solid var(--line);flex:none}
 .mprev{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 14px;margin-bottom:10px;border-radius:14px;background:var(--accent-soft);border:1px solid var(--accent)}.mbtn{display:flex;gap:6px}
 .zap{position:absolute;top:3px;right:5px;font-style:normal;font-size:12px}.bren{padding:0 4px;font-size:12px;border:0;background:none}
@@ -600,13 +603,15 @@ function migrate(){
   const m=S.meta.migr||{};
   if(!m.contacts){if(!Object.values(S.checks).some(c=>(c.text||'').includes('隱形眼鏡')))put('checks','c36',{group:'隨身',text:'隱形眼鏡',rain:false,order:5,bag:'pack'});put('meta','migr',{...m,contacts:true})}
 }
-const CKMAP=[['Bose','bose'],['音響','bose'],['監聽','iem'],['麥克風','mic'],['支架','clip'],['麥架','mclip'],['iPad','ipad'],['行動電源','bat'],['拉車','cart'],['腳架','stand'],['支架','clip'],['AG06','ag06'],['椅子','chair'],['水杯','tray'],['托盤','tray'],['電池','batt'],['麥架','mclip'],['直播','pclip'],['麥克風','mic'],['防風','wind'],['XLR','xlr'],['收納盒','mcase']];
-function ckDev(c){if(c.dev!==undefined)return c.dev;const t=c.text||'';const m=CKMAP.find(([k])=>t.includes(k));return m?m[1]:''}
+// 清單項目 → 器材照片（可以多張）。照名字猜，猜錯就在項目裡點照片自己選（存在 c.dev，逗號分隔；''＝不要照片）
+const CKRULE=[['支架',['clip','clip2','mclip','pclip'],1],['夾具',['clip','clip2','mclip','pclip'],1],['線材',['xlr','trs','aux','usbc']],['轉接頭',['adpI','adpP']],['Bose',['bose']],['音響',['bose']],['監聽',['iem','rx']],['麥克風',['mic','wl']],['電池',['batt']],['iPhone',['iphone']],['iPad',['ipad']],['行動電源',['bat']],['拉車',['cart']],['腳架',['stand']],['AG06',['ag06']],['椅子',['chair']],['伸縮椅',['chair']],['水杯',['tray']],['托盤',['tray']],['麥架',['mclip']],['直播',['pclip']],['防風',['wind']],['XLR',['xlr']],['收納盒',['mcase']]];
+function ckDevs(c){if(c.dev!==undefined)return c.dev?c.dev.split(','):[];const t=c.text||'',o=[];for(const [k,d,stop] of CKRULE){if(t.includes(k)){d.forEach(x=>{if(!o.includes(x))o.push(x)});if(stop)break}}return o}
+function ckDev(c){return ckDevs(c)[0]||''}
 // 縮圖：同一張 800px 照片在畫面上重複出現很多次，iPad 解碼太多大圖會畫到一半就停（11-08 畫面被切掉），所以小格子一律用 200px 縮圖
 const _th={};let _thT=null;
 function wTh(u,max){max=max||200;if(!u||!u.startsWith('data:'))return u;const k=max+'|'+u.length+'|'+u.slice(-48);const v=_th[k];if(v&&v!=='…')return v;if(!v){_th[k]='…';const i=new Image();i.onload=()=>{const r=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(i.width*r));c.height=Math.max(1,Math.round(i.height*r));const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(i,0,0,c.width,c.height);c.toBlob(b=>{_th[k]=b?URL.createObjectURL(b):u;clearTimeout(_thT);_thT=setTimeout(()=>{if(tab==='gear'||tab==='today')render()},60)},'image/jpeg',.85)};i.onerror=()=>{_th[k]=u};i.src=u}
   return 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='}
-function ckImg(c,cls){const d=ckDev(c),u=d&&wImg()[d];return u?`<img class="${cls||'ckimg'}" src="${wTh(u)}" alt="">`:''}
+function ckImg(c,cls){const I=wImg(),u=ckDevs(c).map(d=>I[d]).filter(Boolean).slice(0,4);cls=cls||'ckimg';if(!u.length)return '';if(u.length===1)return `<img class="${cls}" src="${wTh(u[0])}" alt="">`;return `<span class="${cls} multi n${u.length}">${u.map(x=>`<img src="${wTh(x)}" alt="">`).join('')}</span>`}
 const tileBtn=(c,checked,rain)=>packEdit?`<button class="tile2 edit" data-edit-check="${esc(c.id)}">${ckImg(c,'tlimg')}<span>${esc(c.text)}</span><i class="pen" aria-hidden="true">✎</i></button>`:`<button class="tile2 ${checked[c.id]?'on':''} ${c.rain&&rain?'rainon':''}" data-tick="${esc(c.id)}" aria-pressed="${!!checked[c.id]}"><i></i>${ckImg(c,'tlimg')}<span>${esc(c.text)}</span></button>`;
 const ptiles=(l,checked,rain,bag)=>`<div class="ptiles">${l.length?l.map(c=>tileBtn(c,checked,rain)).join(''):(packEdit?'':'<span class="small muted">（空）</span>')}${packEdit&&bag!==undefined?`<button class="tile2 add" data-add-bag="${bag}">＋ 新增</button>`:''}</div>`;
 function vPack(){
@@ -1107,12 +1112,12 @@ function checkSheet(id,group,bag){
     <label class="f"><span>項目</span><input id="c-text" value="${esc(c.text||'')}"></label>
     <div class="f"><span>放在哪裡（打包圖）</span><div class="pick">${[['','不用打包'],...Object.entries(BAG_NAME)].map(([k,v])=>`<label><input type="radio" name="c-bag" value="${k}" ${(bagOf(c)||'')===k?'checked':''}><span>${v}</span></label>`).join('')}</div></div>
     <div class="f"><span>分類（準備清單）</span><div class="pick">${[...GROUPS,...ONSITE].map(g=>`<label><input type="radio" name="c-group" value="${esc(g)}" ${g===c.group?'checked':''}><span>${esc(g)}</span></label>`).join('')}</div></div>
-    <label class="f"><span>對應的器材（顯示照片）</span><select id="c-dev"><option value="">自動（照名字猜）</option><option value="-" ${c.dev===''?'selected':''}>不要照片</option>${Object.entries(wDevs()).map(([k,v])=>`<option value="${k}" ${c.dev===k?'selected':''}>${esc(v.n)}</option>`).join('')}</select></label>
+    <div class="f"><span>連到哪些器材照片（點照片選／取消，可以選很多張）</span><input type="hidden" id="c-dev" value="${c.dev===undefined?'*':c.dev}"><div class="dpick">${Object.entries(wDevs()).filter(([k])=>wImg()[k]).map(([k,v])=>`<button type="button" class="dp ${ckDevs(c).includes(k)?'on':''}" data-dpick="${k}"><img src="${wImg()[k]}" alt="" loading="lazy"><small>${esc(v.n)}</small></button>`).join('')}</div><div class="small muted" style="margin-top:4px"><button type="button" class="ghost" data-dpick="*">恢復自動（照名字猜）</button>　<button type="button" class="ghost" data-dpick="-">不要照片</button></div></div>
     <label class="check" style="padding:0"><input type="checkbox" id="c-rain" ${c.rain?'checked':''}><span style="text-decoration:none;color:var(--ink)">只在雨天模式出現</span></label>`,
   ()=>{const text=$('#c-text').value.trim();if(!text){toast('請填項目');return false}
     const grp=(document.querySelector('input[name=c-group]:checked')||{}).value||c.group||'出門準備';
     const order=id&&c.group===grp?c.order:Math.max(0,...Object.values(S.checks).filter(x=>x.group===grp).map(x=>x.order||0))+1;
-    const dv=$('#c-dev').value,nc={...c,text,group:grp,rain:$('#c-rain').checked,order,bag:(document.querySelector('input[name=c-bag]:checked')||{}).value||''};if(dv==='')delete nc.dev;else nc.dev=dv==='-'?'':dv;put('checks',id||uid('c'),nc);return true},
+    const dv=$('#c-dev').value,nc={...c,text,group:grp,rain:$('#c-rain').checked,order,bag:(document.querySelector('input[name=c-bag]:checked')||{}).value||''};if(dv==='*')delete nc.dev;else nc.dev=dv;put('checks',id||uid('c'),nc);return true},
   id?{onDelete:()=>del('checks',id)}:{});
 }
 
@@ -1211,6 +1216,9 @@ document.addEventListener('pointerdown',e=>{
 });
 
 /* ---------- drag items between bags ---------- */
+document.addEventListener('click',e=>{const b=e.target.closest('[data-dpick]');if(!b)return;e.preventDefault();e.stopPropagation();const inp=$('#c-dev'),box=b.closest('.f'),k=b.dataset.dpick;
+  if(k==='*'||k==='-'){inp.value=k==='*'?'*':'';box.querySelectorAll('.dp').forEach(x=>x.classList.remove('on'));return}
+  b.classList.toggle('on');inp.value=[...box.querySelectorAll('.dp.on')].map(x=>x.dataset.dpick).join(',')},true);
 let dragSup=0,dragHold=false;
 // 按住拖曳時不要讓頁面跟著捲
 document.addEventListener('touchmove',e=>{if(dragHold)e.preventDefault()},{passive:false});
