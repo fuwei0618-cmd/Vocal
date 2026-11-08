@@ -60,6 +60,11 @@
 :is(.wrig,.wrigo) .rg{position:absolute;display:flex;flex-direction:column;align-items:center;gap:2px;border:1.5px solid transparent;border-radius:10px;background:none;padding:3px;font:inherit;color:#222;transition:opacity .2s}
 :is(.wrig,.wrigo) .rg .ri{flex:1;min-height:0;width:100%;position:relative}:is(.wrig,.wrigo) .rg img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 :is(.wrig,.wrigo) .rg b{flex:none;font-size:11px;font-weight:600;line-height:1.2;text-align:center}:is(.wrig,.wrigo) .rg.dim{opacity:.18}:is(.wrig,.wrigo) .rg.sel{border-color:var(--accent);background:rgba(31,110,119,.06)}
+
+.sitebar{display:flex;flex-wrap:wrap;gap:6px;margin:-6px 0 8px}.sitebar .btn{text-decoration:none;color:var(--ink)}
+.sitechk{margin-bottom:8px!important}.sitechk .cgrid{display:flex;flex-wrap:wrap;gap:8px;columns:auto}.sitechk .cgroup{margin:0;flex:1 1 220px;max-width:360px}
+.sitechk .cgroup{display:grid!important;grid-template-columns:1fr 1fr}.sitechk .glabel{grid-column:1/-1}.sitechk .check{min-height:30px;padding:3px 10px;font-size:13.5px}
+.wbagl{color:var(--accent)!important;font-weight:600}
 </style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1"><link rel="icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vocal"><meta name="theme-color" content="#EDEFEA"><script src="https://fuwei0618-cmd.github.io/Entry/sync/origina-sync.js" data-app="vocal" data-keys="busk-app-v1,busk-app-v1-wimg,busk-app-v1-wire" data-pos="br"></script>
 </head><body>
 <title>街演 App</title>
@@ -992,7 +997,7 @@ function imRect(x,y,w,h,r){const W=r>=w/h?w:h*r,H=W/r;return [x+(w-W)/2,y+(h-H)/
 document.addEventListener('click',e=>{const b=e.target.closest('[data-wvolgo]');if(!b)return;e.preventDefault();e.stopPropagation();gearSeg='site';wireMode='vol';window.wView='vol';window.wVol=b.dataset.wvolgo?b.dataset.wvolgo+'|music':'';render();scrollTo(0,0)},true);
 function wDiagram(){
   // 實物版：AG06 正面大圖在中間、背面圖在上面（已鏡射，跟正面同方向）；線直接接到圖上真正的孔
-  const IM=wImg(),DV=wDevs(),F=wireSel||window.wFocus||'',on=g=>!F||F===g?'':' dim',sel=g=>F===g?' sel':'';
+  const IM=wImg(),DV=wDevs(),F=wireSel||window.wFocus||'',FS=F.split(','),on=g=>!F||FS.includes(g)?'':' dim',sel=g=>F&&FS.includes(g)?' sel':'';
   const AS=340,r=wRatio(IM.ag06)||1,AW=r>=1?AS:AS*r,AH=r>=1?AS/r:AS,AX=500-AW/2,AY=300+(AS-AH)/2,jp=k=>[AX+AW*AGPOS[k][0]/100,AY+AH*AGPOS[k][1]/100];
   const rb=wRatio(IM.ag06b)||2.6,BW=AW,BH=BW/rb,BX=500-BW/2,BY=AY-BH-20,jx=BX+BW*AGBACK.usb[0]/100,jy=BY+BH*AGBACK.usb[1]/100;
   const I={mic:'<circle cx="24" cy="12" r="8"/><path d="M24 20v14M18 42h12M24 34v8"/>',wl:'<circle cx="24" cy="12" r="8"/><path d="M24 20v22"/><path d="M36 6a14 14 0 0 1 0 14"/>',ipad:'<rect x="10" y="4" width="28" height="40" rx="4"/>',iphone:'<rect x="15" y="6" width="18" height="36" rx="4"/>',adpI:'<rect x="16" y="8" width="16" height="32" rx="4"/>',adpP:'<rect x="16" y="8" width="16" height="32" rx="4"/>',bat:'<rect x="8" y="12" width="30" height="24" rx="4"/>',bose:VI.speaker,iem:'<rect x="14" y="4" width="20" height="38" rx="4"/>',rx:'<rect x="6" y="10" width="16" height="22" rx="3"/><rect x="26" y="10" width="16" height="22" rx="3"/>'};
@@ -1047,14 +1052,16 @@ function wPanel(){
 // 腳架圖：照她 11-08 排的樣子，用她自己的器材照片；組裝到哪一步，那一組就亮
 // 腳架圖：照她 11-08 排的樣子；上面按鈕切「全部／腳架／其他物品」亮燈；組裝到哪一步，那一組也會亮
 const WRIG=[['clip',70,1,28,18],['tray',70,26,28,18],['mclip',70,50,28,18],['bose',70,77,28,21],['pclip',1,22,29,18],['clip2',1,46,29,18],['chair',18,72,24,24],['cart',32,24,17,26],['stand',46,20,22,56]],WRIGSET={stand:['stand','clip','tray','mclip','pclip','clip2'],etc:['cart','chair','bose']};
-function wRig(){const I=wImg(),DV=wDevs(),F=wireSel||window.wFocus||'',R=window.rigF||'all',set=WRIGSET[R];
+function wRig(){const I=wImg(),DV=wDevs(),F=wireSel||window.wFocus||'',FS=F.split(','),R=window.rigF||'all',set=WRIGSET[R];
   const seg=`<div class="seg rigseg">${[['all','全部'],['stand','腳架'],['etc','其他物品']].map(([k,t])=>`<button data-rigf="${k}" aria-pressed="${R===k}">${t}</button>`).join('')}</div>`;
-  return `<div class="wrig">${seg}${WRIG.filter(([d])=>DV[d]).map(([d,x,y,w,h])=>{const g=DV[d].g,dim=(F&&F!==g&&!(F==='mix'&&d==='bose'))||(set&&!set.includes(d)),lit=(F&&F===g)||(set&&set.includes(d));return `<button class="rg${dim?' dim':''}${lit?' sel':''}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%" data-wmenu="${d}"><span class="ri">${I[d]?`<img src="${wTh(I[d],400)}" alt="">`:''}</span>${d==='stand'?'':`<b>${esc(DV[d].n)}</b>`}</button>`}).join('')}</div>`}
+  return `<div class="wrig">${seg}${WRIG.filter(([d])=>DV[d]).map(([d,x,y,w,h])=>{const g=DV[d].g,dim=set?!set.includes(d):(F&&!FS.includes(g)),lit=set?set.includes(d):(F&&FS.includes(g));return `<button class="rg${dim?' dim':''}${lit?' sel':''}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%" data-wmenu="${d}"><span class="ri">${I[d]?`<img src="${wTh(I[d],400)}" alt="">`:''}</span>${d==='stand'?'':`<b>${esc(DV[d].n)}</b>`}</button>`}).join('')}</div>`}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-rigf]');if(!b)return;e.preventDefault();e.stopPropagation();window.rigF=b.dataset.rigf;render()},true);
 function vWire(){
   wMigrate();
   const st=wSt(),inv=st.inv||{},I=wImg(),DV=wDevs();
-  const thumbs=k=>Object.entries(DV).filter(([d,v])=>v.g===k&&I[d]).map(([d,v])=>`<img src="${wTh(I[d],120)}" alt="${esc(v.n)}" title="${esc(v.n)}">`).join('');
+  const BL={cart:'拉車',tote1:'手提袋大層',tote2:'手提袋小層',pack:'後背包・'+bagLab('pack','個人物品'),pack2:'後背包・'+bagLab('pack2','音樂設備')},par={};Object.entries(WKIDS).forEach(([pp,ks])=>ks.forEach(k=>par[k]=pp));
+  const bagsOf=k=>{if(!k)return [];const out=[];Object.entries(DV).forEach(([d,v])=>{if(!k.split(',').includes(v.g)||v.sub)return;const c=S.checks['d_'+d]||S.checks['d_'+par[d]]||(d==='cart'?null:null);const b=c&&bagOf(c);if(b&&BL[b]&&!out.includes(BL[b]))out.push(BL[b])});return out};
+  const thumbs=k=>Object.entries(DV).filter(([d,v])=>k.split(',').includes(v.g)&&!v.sub&&I[d]).map(([d,v])=>`<img src="${wTh(I[d],120)}" alt="${esc(v.n)}" title="${esc(v.n)}">`).join('');
   const M=wireMode==='vol'?'vol':wireMode==='inv'?'asm':wireMode;window.wView=M==='vol'?'vol':'wire';
   let h=`<div class="seg wmodes">${[['all','👀 全部'],['asm','🔧 組裝'],['off','📦 拆卸'],['vol','🎚 試音量']].map(([k,t])=>`<button data-wmode="${k}" aria-pressed="${M===k}">${t}</button>`).join('')}</div>`;
   window.wFocus='';if(M==='all')wireSel='';
@@ -1062,7 +1069,7 @@ function vWire(){
   if(M==='asm'||M==='off'){
     const S=wSteps(M),done=st[M]||{},cur=wCurIdx(M,S,done),n=S.filter(x=>done[x.id]).length;
     window.wFocus=cur<S.length?S[cur].g:'';
-    const it=(x,i)=>`<div class="wli ${done[x.id]?'ok':''} ${i===cur?'on':''}"><button class="wlck" data-wtick="${x.id}" aria-label="完成">${done[x.id]?'✓':i+1}</button><button class="wlbody" data-wjump="${i}"><b>${x.ic} ${esc(x.n)}</b>${x.lines.map(l=>`<small>${esc(l)}</small>`).join('')}</button>${x.ph2&&x.g?`<span class="wlph">${thumbs(x.g)}</span>`:''}</div>`;side=`<div class="wlist"><div class="wlhead"><b>${M==='asm'?'組裝':'拆卸'}　${n}/${S.length}</b><button class="btn sm" data-act="wreset" data-wm="${M}">重來</button></div><div class="wphcols">${WPH[M].map((p,ph)=>`<div class="wphcol"><div class="wph"><b>${p[0]}</b><span>${p[1]}</span></div>${S.map((x,i)=>x.ph===ph?it(x,i):'').join('')}</div>`).join('')}</div></div>`;
+    const it=(x,i)=>`<div class="wli ${done[x.id]?'ok':''} ${i===cur?'on':''}"><button class="wlck" data-wtick="${x.id}" aria-label="完成">${done[x.id]?'✓':i+1}</button><button class="wlbody" data-wjump="${i}"><b>${x.ic} ${esc(x.n)}</b>${x.lines.map(l=>`<small>${esc(l)}</small>`).join('')}${x.g&&x.ph!==(M==='off'?0:2)&&bagsOf(x.g).length?`<small class="wbagl">🎒 ${M==='off'?'收回':'從'} ${bagsOf(x.g).map(esc).join('、')}${M==='off'?'':' 拿'}</small>`:''}</button>${x.ph2&&x.g?`<span class="wlph">${thumbs(x.g)}</span>`:''}</div>`;side=`<div class="wlist"><div class="wlhead"><b>${M==='asm'?'組裝':'拆卸'}　${n}/${S.length}</b><button class="btn sm" data-act="wreset" data-wm="${M}">重來</button></div><div class="wphcols">${WPH[M].map((p,ph)=>`<div class="wphcol"><div class="wph"><b>${p[0]}</b><span>${p[1]}</span></div>${S.map((x,i)=>x.ph===ph?it(x,i):'').join('')}</div>`).join('')}</div></div>`;
   }
   if(M==='vol')side=vVolSheet();
   if(M==='inv'){
@@ -1084,10 +1091,10 @@ const WASM={pack:['打開拉車，拿出椅子和麥克風收納盒'],stand:['�
   mic:['有線麥克風 → 藍色 XLR → ① CH1','無線接收器直接插 ② CH2'],bk:['伴奏小袋拿 3.5mm 線和轉接頭','iPad／iPhone → 轉接頭 → 黑色細線 → ③ AUX'],mix:['電源小袋：行動電源 → 白色 USB-C → AG06 背面 ④'],
   spk:['黑色編織線：6.3mm 插 ⑤ MONITOR OUT L，XLR 插 Bose INPUT 1'],iem:['灰色發射器插 ⑥ MONITOR OUT R','兩個接收器各接一副耳機，頻道跟發射器一樣']};
 function wSteps(m){const W=k=>WG.find(x=>x.k===k),st=(id,ph,g,n,ic,lines,photo)=>({id,ph,g,n,ic,lines,ph2:photo});
-  const P=(m==='off'?WOFF:WON).map((t,i)=>st('p'+i,m==='off'?0:2,'mix',t,'⚡',[]));
+  const PG=m==='off'?['spk','iem','mix']:['mix','iem','spk',''],P=(m==='off'?WOFF:WON).map((t,i)=>st('p'+i,m==='off'?0:2,PG[i]??'mix',t,'⚡',[]));
   const G=(k,ph,n,lines)=>{const x=W(k);return {id:k,ph,g:k,n:n||x.n,ic:x.ic,lines,ph2:1}};
   if(m==='off')return [...P,G('iem',1,'⑥ 監聽組',WOFFTX.iem),G('spk',1,'⑤ 喇叭組',WOFFTX.spk),G('mix',1,'④ 電源',WOFFTX.mix),G('bk',1,'③ 伴奏組',WOFFTX.bk),G('mic',1,'①② 麥克風組',WOFFTX.mic),G('stand',2,0,WOFFTX.stand),G('pack',2,'裝車',WOFFTX.pack),{id:'chk',ph:2,g:'',n:'清點',ic:'✅',lines:['到「打包」對一次，全部打勾才走']}];
-  return [G('pack',0,0,WASM.pack),G('stand',0,0,WASM.stand),{id:'place',ph:0,g:'mix',n:'AG06、Bose 擺好',ic:'🎛',lines:WASM.place,ph2:1},
+  return [G('pack',0,0,WASM.pack),G('stand',0,0,WASM.stand),{id:'place',ph:0,g:'mix,spk',n:'AG06、Bose 擺好',ic:'🎛',lines:WASM.place,ph2:1},
     G('mic',1,'①② 麥克風',WASM.mic),G('bk',1,'③ 伴奏',WASM.bk),G('mix',1,'④ 電源',WASM.mix),G('spk',1,'⑤ 喇叭',WASM.spk),G('iem',1,'⑥ 監聽',WASM.iem),...P]}
 function wCurIdx(m,S,done){window.wCur=window.wCur||{};let c=window.wCur[m];if(c==null||c>S.length){c=S.findIndex(x=>!done[x.id]);if(c<0)c=S.length}return c}
 const ICON={cart:'<svg viewBox="0 0 48 48" class="bagicon"><path d="M30 6v28"/><path d="M26 6h8"/><rect x="10" y="14" width="18" height="20" rx="2"/><path d="M10 22h18"/><circle cx="14" cy="39" r="3"/><circle cx="28" cy="39" r="3"/><path d="M8 34h24"/></svg>',
@@ -1311,8 +1318,7 @@ function songSheet(id){
 /* ---------- 設備與清單 ---------- */
 function vGear(){
   if(gearSeg==='list'||gearSeg==='wire')gearSeg='site';
-  let h=`<div class="seg" style="margin-bottom:16px">${[['pack','打包'],['site','現場']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
-  h+=`<p class="small muted" style="margin:-8px 0 12px;text-align:right">版本 11/8 接線圖</p>`;
+  let h=`<div class="seg" style="margin-bottom:8px">${[['pack','打包'],['site','現場']].map(([k,t])=>`<button data-gearseg="${k}" aria-pressed="${gearSeg===k}">${t}</button>`).join('')}</div>`;
   if(gearSeg==='pack')return h+vPack();
   if(gearSeg==='wire')return h+vWire();
   if(gearSeg==='stock'){
@@ -1329,12 +1335,12 @@ function vGear(){
     if(gearSeg!=='site')gearSeg='site';
     const TG=['當日'],pre=checks.filter(c=>TG.includes(c.group)),on=checks.filter(c=>ONSITE.includes(c.group));
     const done=pre.filter(c=>checked[c.id]).length;
-    h+=`<section class="sec"><div class="btns"><button class="btn sm ${rain?'primary':''}" data-act="rain" aria-pressed="${rain}">${rain?'☂ 雨天模式開':'☂ 雨天模式'}</button><button class="btn sm" data-act="gear-edit">編輯清單</button></div>${checkLinks()}</section>`;
+    h+=`<div class="sitebar"><button class="btn sm ${rain?'primary':''}" data-act="rain" aria-pressed="${rain}">${rain?'☂ 雨天開':'☂ 雨天'}</button><button class="btn sm" data-act="gear-edit">編輯清單</button>${LINKS.map(l=>`<a class="btn sm" href="${l.u}" target="_blank" rel="noopener">${l.t} ↗</a>`).join('')}</div>`;
     if(rain)h+=`<div class="banner warn" style="margin-bottom:14px">雨天：記得帶雨傘、地墊。</div>`;
     if(!checks.length)return h+emptyChecks();
     const both=[...pre,...on],bd=both.filter(c=>checked[c.id]).length;
-    h+=`<section class="sec"><div class="sec-head"><h2>開唱前・現場</h2><span class="num muted">${bd} / ${both.length}</span></div><div class="progress"><i style="width:${both.length?Math.round(bd/both.length*100):0}%"></i></div>${checkGroups(both,[...TG,...ONSITE],checked,rain,true)}</section>`;
-    h+=`<section class="sec"><h2>架設・接線</h2>${vWire()}</section>`;
+    h+=`<section class="sec sitechk">${checkGroups(both,[...TG,...ONSITE],checked,rain,true)}</section>`;
+    h+=`<section class="sec">${vWire()}</section>`;
     h+=`<section class="sec"><button class="btn block" data-act="reset-checks" data-confirm="再按一次清空勾選">重置清單</button><p class="small muted" style="margin:0">這裡跟「下一場」分頁是同一份勾選。演出後寫紀錄會自動重置。</p></section>`;
     h+=`<p class="small" style="text-align:center"><button class="ghost" data-gearseg="stock">租借／設備庫存 ›</button></p>`;
     return h;
