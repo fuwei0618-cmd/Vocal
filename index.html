@@ -675,11 +675,11 @@ function wPick(dev){const inp=document.createElement('input');inp.type='file';in
 function wBlob(dev,f){{const u=URL.createObjectURL(f),im=new Image();
   im.onload=()=>{const k=Math.min(1,800/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
     {const I=wImg();if(I[dev]){I['_alt_'+dev]=[I[dev]].concat(wAlt(dev)).slice(0,6)}I[dev]=c.toDataURL('image/jpeg',.82)}URL.revokeObjectURL(u);wImgSave();render()};im.onerror=()=>toast('這張圖讀不出來');im.src=u}}
-// 接線圖縮放：全圖 → 100% → … → 300%
-const WZ=[0,1,1.3,1.6,2,2.5,3];
-function wZoomCss(){const z=WZ[window.wZ||0];return z?`width:${z*100}%;max-width:none;max-height:none`:''}
-function wZoomLab(){const z=WZ[window.wZ||0];return z?Math.round(z*100)+'%':'全圖'}
-document.addEventListener('click',e=>{const z=e.target.closest('[data-wz]');if(!z)return;window.wZ=Math.max(0,Math.min(WZ.length-1,(window.wZ||0)+(+z.dataset.wz)));const box=z.closest('.wmain'),sv=box.querySelector('svg.wire');sv.style.cssText=wZoomCss();box.querySelector('.wzl').textContent=wZoomLab()});
+// 接線圖縮放：全圖 → 兩段中間 → 100% → 125% → 150%（寬度比例存在 window.wZf）
+function wZSteps(box){const cw=box.clientWidth||1,fit=Math.min(1,(innerHeight*.58*1000/890)/cw);return fit<.95?[0,fit+(1-fit)/3,fit+(1-fit)*2/3,1,1.25,1.5]:[0,1.25,1.5]}
+function wZoomCss(){const f=window.wZf||0;return f?`width:${f*100}%;max-width:none;max-height:none`:''}
+function wZoomLab(){const f=window.wZf||0;return f?Math.round(f*100)+'%':'全圖'}
+document.addEventListener('click',e=>{const z=e.target.closest('[data-wz]');if(!z)return;const box=z.closest('.wmain'),sc=box.querySelector('.wscroll'),st=wZSteps(sc);let i=st.findIndex(v=>Math.abs(v-(window.wZf||0))<.02);if(i<0)i=0;i=Math.max(0,Math.min(st.length-1,i+(+z.dataset.wz)));window.wZf=st[i];box.querySelector('svg.wire').style.cssText=wZoomCss();box.querySelector('.wzl').textContent=wZoomLab()});
 // 圖的長寬比（孔位用百分比，要照真的比例換算）
 const _wR={};
 function wRatio(u){if(!u)return 0;if(_wR[u])return _wR[u];_wR[u]=1;const i=new Image();i.onload=()=>{const r=i.naturalWidth/i.naturalHeight||1;if(Math.abs(r-_wR[u])>.01){_wR[u]=r;if(document.querySelector('svg.wire'))render()}};i.src=u;return 1}
