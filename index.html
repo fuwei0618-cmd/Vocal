@@ -207,6 +207,7 @@ details.fold>.cgrid{padding:8px 8px 0}
 .dropover{outline:3px solid var(--coin);outline-offset:3px;background:var(--coin-bg)!important}
 .wthumbs{display:flex;flex-wrap:wrap;gap:10px;padding:4px 12px 10px}.wthumbs figure{margin:0;width:120px;text-align:center}.wthumbs img{width:120px;height:90px;object-fit:contain;background:#fff;border-radius:10px;border:1px solid var(--line)}.wthumbs figcaption{font-size:12px;color:var(--muted)}
 .wpics{display:grid;gap:10px;padding:0 12px 12px}
+.wpar{border-color:var(--accent)}.wkid{margin:-6px 0 0 34px;border-color:var(--accent);border-style:dashed;position:relative}.wkid:before{content:"↳";position:absolute;left:-26px;top:30px;font-size:20px;color:var(--accent)}
 .wpic{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:start;padding:8px;border:1px solid var(--line);border-radius:12px}
 .wpimg{width:110px;height:90px;background:#fff;border-radius:10px;border:1px dashed var(--line);display:grid;place-items:center;overflow:hidden}.wpimg img{width:100%;height:100%;object-fit:contain}.wpimg span{font-size:11px;color:#999;text-align:center;padding:4px}
 .wpr b{font-size:15px}.wbtn{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
@@ -897,7 +898,7 @@ function vWire(){
   if(g){h+=`<div class="bag packpanel wcard"><div class="baghead"><b>${g.ic} ${g.n}</b><span class="pcnt num">${wItems(g).filter(i=>inv[g.k+'|'+i]).length}/${wItems(g).length}</span><button class="btn sm" data-wire="">✕</button></div>
     <div class="wplug">${g.plug.map(p=>`<div>${esc(p)}</div>`).join('')}</div>
     <div class="witems">${wItems(g).map(i=>`<button class="wit ${inv[g.k+'|'+i]?'done':''}" data-winv="${esc(g.k+'|'+i)}">${inv[g.k+'|'+i]?'✓ ':''}${esc(i)}</button>`).join('')}</div>
-    <div class="wpics">${Object.entries(wDevs()).filter(([d,v])=>v.g===g.k).map(([d,v])=>{const im=wImg()[d],al=wAlt(d);return `<div class="wpic" data-wdrop="${d}"><div class="wpimg">${im?`<img src="${wTh(im,240)}" alt="">`:'<span>拖圖片到這裡</span>'}</div><div class="wpr"><b>${esc(v.n)}</b>
+    <div class="wpics">${(()=>{const DV=wDevs();return Object.entries(DV).filter(([d,v])=>v.g===g.k&&!(v.sub&&DV[v.sub]&&DV[v.sub].with===d))})().flatMap(([d,v])=>v.with?[[d,v,0],[v.with,wDevs()[v.with],v.n]]:[[d,v,0]]).map(([d,v,par])=>{const im=wImg()[d],al=wAlt(d);return `${par?'':''}<div class="wpic${v.with?' wpar':''}${par?' wkid':''}" data-wdrop="${d}"><div class="wpimg">${im?`<img src="${wTh(im,240)}" alt="">`:'<span>拖圖片到這裡</span>'}</div><div class="wpr"><b>${par?`<small class="muted">跟上面是同一項（第二張照片）</small><br>`:''}${esc(v.n)}</b>
       ${al.length?`<div class="walts"><small>候選（點一下換成這張）</small>${al.map((u,i)=>`<span class="walt"><img src="${u}" alt="" data-wuse="${d}" data-wi="${i}"><button data-waltdel="${d}" data-wi="${i}" aria-label="刪掉這張">×</button></span>`).join('')}</div>`:''}
       <div class="wbtn"><button class="btn sm" data-wren="${d}">✏️ 改名</button><button class="btn sm" data-wpaste="${d}">📋 貼上</button><button class="btn sm" data-wimg="${d}">🖼 相簿</button>${im?`<button class="btn sm" data-wcut="${d}">✂️ 去背</button><button class="btn sm" data-wimgdel="${d}">移除</button>`:''}${v.c?`<button class="btn sm" data-wcdel="${d}">刪掉這個項目</button>`:''}</div></div></div>`}).join('')}
       <div class="wadd"><input id="wadd" placeholder="新增項目，例如：備用電池" maxlength="30"><button class="btn sm" data-act="wadd">＋ 新增</button></div></div>
@@ -1338,7 +1339,7 @@ document.addEventListener('drop',async e=>{const t=e.target.closest&&e.target.cl
   if(!f){const u=dt.getData('text/uri-list')||dt.getData('text/plain');if(u&&/^https?:/.test(u)){try{const r=await fetch(u);const b=await r.blob();if(b.type.startsWith('image/'))f=b}catch(_){}}}
   if(f)wBlob(t.dataset.wdrop,f);else toast('這張圖拖不進來：改用長按「拷貝」再按 📋 貼上')});
 document.addEventListener('paste',e=>{if(tab!=='gear'||gearSeg!=='wire'||!wireSel)return;const f=[...(e.clipboardData&&e.clipboardData.files||[])].find(x=>x.type.startsWith('image/'));if(!f)return;const d=Object.entries(wDevs()).find(([k,v])=>v.g===wireSel&&!wImg()[k]);if(d){e.preventDefault();wBlob(d[0],f)}});
-document.addEventListener('click',e=>{const w=e.target.closest('[data-wire]');if(!w||!document.querySelector('.wbox'))return;const k=w.dataset.wire;wireSel=k&&wireSel!==k?k:'';render();e.stopPropagation()},true);
+document.addEventListener('click',e=>{const w=e.target.closest('[data-wire]');if(!w||!document.querySelector('.wbox,.wset'))return;const k=w.dataset.wire;wireSel=k&&wireSel!==k?k:'';render();e.stopPropagation()},true);
 document.addEventListener('click',e=>{
   const t=e.target.closest('button,[data-act]'); if(!t)return;
   const d=t.dataset;
