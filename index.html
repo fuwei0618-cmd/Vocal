@@ -177,6 +177,8 @@ details.fold>.cgrid{padding:8px 8px 0}
 .isub{display:block;font-size:11px;color:var(--muted);line-height:1.35;margin-top:2px}
 .ichg{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));margin-bottom:14px}.ichg .irow{border-bottom:0;border-right:1px solid var(--line)}
 .irow.chg{background:#FFF4CC}.irow.chg .inm::after{content:' ⚡';font-size:11px}.irow.chg.on{background:var(--ok-bg)}.chgkey{background:#FFF4CC;border-radius:4px;padding:0 4px;color:#7a5a00}
+.isec{font-size:11px;font-weight:700;color:var(--accent);padding:6px 10px 2px;border-bottom:1px solid var(--line);background:var(--surface)}.pkseg{margin:4px 0 10px;max-width:320px}
+.icats.use{grid-template-columns:2fr 2fr 3fr 1fr}@media (max-width:1000px){.icats.use{grid-template-columns:1fr}}
 .iempty{padding:14px 8px;font-size:12px;color:var(--muted);text-align:center}.icol.dropover{outline:2px dashed var(--accent);outline-offset:-2px}.irow.rainon .inm{color:#2f6db5}
 #wpop{position:fixed;z-index:1000;min-width:200px;max-width:260px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:6px 0;font-size:14px}
 #wpop button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;font:inherit;color:inherit;text-align:left;padding:8px 16px}#wpop button:active,#wpop button:hover{background:var(--accent-soft,#eef5f5)}#wpop button[disabled]{opacity:.35}
@@ -689,12 +691,16 @@ function pkMigrate(){const st=wSt();if(st.pkv2||!Object.keys(S.checks).length)re
   const fix={'打賞箱':'cart','QR Code 名牌':'cart','雨傘 ×2／地墊':'cart'};Object.entries(S.checks).forEach(([id,c])=>{if(fix[c.text]&&bagOf(c)!==fix[c.text])put('checks',id,{...c,bag:fix[c.text]})});
   st.pkv2=1;try{localStorage.setItem(LS+'-wire',JSON.stringify(st))}catch(e){}}
 // 充電跟打包是兩件事：前一晚充電用自己的項目（q_），勾選分開
-const CHG=[['bose','Bose 充電'],['mcase','麥克風電池充電'],['iem','監聽發射器充電'],['rx','監聽接收器充電'],['ipad','iPad 充電'],['iphone','iPhone 充電']];
+const CHG=[['iembox','監聽盒充電'],['bose','Bose 充電'],['mcase','麥克風電池充電'],['iem','監聽發射器充電'],['rx','監聽接收器充電'],['ipad','iPad 充電'],['iphone','iPhone 充電']];
 function pkV3(){const st=wSt();if(st.pkv3||!st.pkv2)return;Object.entries(S.checks).forEach(([id,c])=>{if(id.startsWith('d_')&&c.group==='前一晚充電')put('checks',id,{...c,group:'出門準備'})});
   CHG.forEach(([d,t],i)=>{if(!S.checks['q_'+d])put('checks','q_'+d,{group:'前一晚充電',text:t,order:i,dev:d})});st.pkv3=1;try{localStorage.setItem(LS+'-wire',JSON.stringify(st))}catch(e){}}
+function pkV4(){const st=wSt();if(st.pkv4||!st.pkv2)return;
+  const sec={d_clip:'螢幕架',d_clip2:'螢幕架',d_mclip:'麥架',d_pclip:'麥架'};Object.entries(sec).forEach(([id,v])=>{const c=S.checks[id];if(c&&!c.sec)put('checks',id,{...c,sec:v})});
+  const a=S.checks.d_iem,b=S.checks.d_rx;if((a||b)&&!S.checks.d_iembox){const c=a||b;put('checks','d_iembox',{group:'出門準備',text:'監聽盒',bag:bagOf(c)||'tote2',po:c.po??0,order:c.order??0,wd:'iembox',dev:'iem,rx',sub:'監聽發射器、接收器＋耳機 ×2'});if(a)del('checks','d_iem');if(b)del('checks','d_rx')}
+  st.pkv4=1;try{localStorage.setItem(LS+'-wire',JSON.stringify(st))}catch(e){}}
 const ckName=c=>c.wd&&wDevs()[c.wd]?wDevs()[c.wd].n:c.text;
 function vPack(){
-  pkMigrate();pkV3();
+  pkMigrate();pkV3();pkV4();
   const n=next(),checked=n.checked||{},rain=!!n.rain;
   const items=sorted('checks','order').filter(c=>GROUPS.includes(c.group)&&c.group!=='當日'&&!c.id.startsWith('q_'));
   const prev=!!window.mergePrev;
@@ -719,10 +725,19 @@ function vPack(){
   // 跟清點同一種樣子：一個包一大欄、每層一小欄；勾、照片、名稱、⋯；按住拖曳換位置或換包
   const po=l=>l.slice().sort((a,b)=>(a.po??1e9)-(b.po??1e9));
   const CHGD=new Set(CHG.map(x=>x[0])),isChg=c=>CHGD.has(c.wd)||/行動電源/.test((c.text||'')+(c.sub||''));
-  const row=c=>{const on=!!checked[c.id];return `<div class="irow ${on?'on':''} ${c.rain&&rain?'rainon':''} ${isChg(c)?'chg':''}" data-pk="${esc(c.id)}"><button class="imain" data-tick="${esc(c.id)}"><span class="iwrap"><span class="iim">${ckImg(c,'pkimg')}</span><span class="ick">${on?'✓':''}</span></span><span class="inm">${esc(ckName(c))}${c.sub?`<small class="isub">${c.sub.split('｜').map(esc).join('<br>')}</small>`:''}</span></button>${c.wd&&wDevs()[c.wd]?`<button class="idot" data-wmenu="${c.wd}" data-ck="${esc(c.id)}" aria-label="更多">⋯</button>`:`<button class="idot" data-edit-check="${esc(c.id)}" aria-label="編輯">⋯</button>`}</div>`};
-  const col=(bag,nm,l,ren)=>`<div class="icol ${l.length&&l.every(c=>checked[c.id])?'ok':''}" data-drop="${bag}"><div class="ichead"><b>${esc(nm)}</b>${ren?`<button class="idot" data-bagren="${bag}" aria-label="改名">✏️</button>`:''}<span class="num">${l.filter(c=>checked[c.id]).length}/${l.length}</span><button class="idot" data-add-bag="${bag}" aria-label="新增">＋</button></div>${po(l).map(row).join('')||'<div class="iempty">拖到這裡</div>'}</div>`;
+  const row=c=>{const on=!!checked[c.id];return `<div class="irow ${on?'on':''} ${c.rain&&rain?'rainon':''} ${isChg(c)?'chg':''}" data-pk="${esc(c.id)}"><button class="imain" data-tick="${esc(c.id)}"><span class="iwrap"><span class="iim">${c.wd&&wImg()[c.wd]?`<img class="pkimg" src="${wTh(wImg()[c.wd])}" alt="">`:ckImg(c,'pkimg')}</span><span class="ick">${on?'✓':''}</span></span><span class="inm">${esc(ckName(c))}${c.sub?`<small class="isub">${c.sub.split('｜').map(esc).join('<br>')}</small>`:''}</span></button>${c.wd&&wDevs()[c.wd]?`<button class="idot" data-wmenu="${c.wd}" data-ck="${esc(c.id)}" aria-label="更多">⋯</button>`:`<button class="idot" data-edit-check="${esc(c.id)}" aria-label="編輯">⋯</button>`}</div>`};
+  const col=(bag,nm,l,ren)=>`<div class="icol ${l.length&&l.every(c=>checked[c.id])?'ok':''}" data-drop="${bag}"><div class="ichead"><b>${esc(nm)}</b>${ren?`<button class="idot" data-bagren="${bag}" aria-label="改名">✏️</button>`:''}<span class="num">${l.filter(c=>checked[c.id]).length}/${l.length}</span><button class="idot" data-add-bag="${bag}" aria-label="新增">＋</button></div>${secRows(po(l))||'<div class="iempty">拖到這裡</div>'}</div>`;
+  // 同一層裡可以再分小類（c.sec，例如 麥架／螢幕架）；同一小類排在一起
+  const secRows=l=>{const ord=[];l.forEach(c=>{const k=c.sec||'';if(!ord.includes(k))ord.push(k)});let o='';ord.forEach(k=>{if(k)o+=`<div class="isec">${esc(k)}</div>`;o+=l.filter(c=>(c.sec||'')===k).map(row).join('')});return o};
   const cat=(nm,fb,cols)=>{const all=cols.flatMap(x=>x[2]);return `<div class="icat" style="--n:${cols.length}"><div class="icath pkh">${bagImg(nm,fb)}<span>${nm}</span><span class="num">${all.filter(c=>checked[c.id]).length}/${all.length}</span></div><div class="icg">${cols.map(x=>col(...x)).join('')}</div></div>`};
   const none=src.filter(c=>!BAG_NAME[bagOf(c)]&&!/^拉車/.test(c.text));// 拉車本身是容器，不算要放進包包的東西
+  const V=window.pkView||'bag';h+=`<div class="seg pkseg">${[['bag','按包包'],['use','按用途']].map(([k,t])=>`<button data-pkview="${k}" aria-pressed="${V===k}">${t}</button>`).join('')}</div>`;
+  if(V==='use'){const all=src.filter(c=>!/^拉車/.test(c.text)),gOf=c=>{const d=c.wd&&wDevs()[c.wd];return c.wd==='mcase'?'mic':d?d.g:''};
+    const ucol=(k,nm,l)=>`<div class="icol ${l.length&&l.every(c=>checked[c.id])?'ok':''}"><div class="ichead"><b>${nm}</b><span class="num">${l.filter(c=>checked[c.id]).length}/${l.length}</span></div>${secRows(po(l)).replace(/ data-pk="/g,' data-pku="')}</div>`;
+    const cats=WCAT.map(([cn,ks])=>[cn,ks.map(k=>{const g=WG.find(x=>x.k===k);return [k,g.ic+' '+g.n,all.filter(c=>gOf(c)===k)]})]);
+    cats.push(['其他',[['etc','👜 個人＆其他',all.filter(c=>!gOf(c))]]]);
+    h+=`<div class="icats use">${cats.map(([cn,cols])=>`<div class="icat" style="--n:${cols.length}"><div class="icath">${cn}</div><div class="icg">${cols.map(x=>ucol(...x)).join('')}</div></div>`).join('')}</div><p class="small muted">按用途只看、打勾；要換包或排順序請切回「按包包」。</p>`;
+    return h}
   h+=`<div class="icats pk${none.length?' pk4':''}">${cat('拉車','cart',[['cart','拉車',cart]])}${cat('手提袋','',[['tote1','大層',t1],['tote2','小層',t2]])}${cat('後背包','',[['pack',bagLab('pack','個人物品'),pk,1],['pack2',bagLab('pack2','音樂設備'),pk2,1]])}${none.length?`<div class="icat" style="--n:1"><div class="icath pkh"><span>還沒放進包包</span><button class="btn sm" data-act="fill-bags">照預設放</button></div><div class="icg"><div class="icol" data-drop="">${none.map(row).join('')}</div></div></div>`:''}</div>`;
   return h;
 }
@@ -781,7 +796,7 @@ function wSt(){try{return JSON.parse(localStorage.getItem(LS+'-wire')||'{}')}cat
 function wSet(f){const s=wSt();f(s);try{localStorage.setItem(LS+'-wire',JSON.stringify(s))}catch(e){}render()}
 const JN={ch1:'①',ch2:'②',aux:'③',usb:'④',mon:'⑤',st:'⑥'};
 // 設備圖片：她從 iPad 選官網產品圖，只存在這台裝置（不進公開 GitHub）
-const WDEV={mic:{n:'有線麥克風',g:'mic'},wl:{n:'無線麥克風＋接收器',g:'mic'},ipad:{n:'iPad',g:'bk'},ag06:{n:'AG06',g:'mix'},ag06b:{n:'AG06（背面照片）',g:'mix',sub:'ag06'},bat:{n:'行動電源',g:'mix'},bose:{n:'Bose S1 Pro+',g:'spk'},iem:{n:'監聽發射器',g:'iem'},rx:{n:'接收器＋耳機 ×2',g:'iem'},
+const WDEV={mic:{n:'有線麥克風',g:'mic'},wl:{n:'無線麥克風＋接收器',g:'mic'},ipad:{n:'iPad',g:'bk'},ag06:{n:'AG06',g:'mix'},ag06b:{n:'AG06（背面照片）',g:'mix',sub:'ag06'},bat:{n:'行動電源',g:'mix'},bose:{n:'Bose S1 Pro+',g:'spk'},iem:{n:'監聽發射器',g:'iem'},rx:{n:'接收器＋耳機 ×2',g:'iem'},iembox:{n:'監聽盒',g:'iem',sub:'iem'},
   cart:{n:'拉車',g:'pack'},chair:{n:'伸縮椅',g:'pack'},mcase:{n:'麥克風收納盒',g:'pack'},stand:{n:'腳架 ×2',g:'stand'},tray:{n:'水杯托盤',g:'stand'},clip:{n:'iPad 夾（長臂）',g:'stand'},mclip:{n:'麥克風延伸臂夾＋O 型夾',g:'stand'},pclip:{n:'管夾＋彈簧麥夾',g:'stand'},clip2:{n:'管夾＋手機／iPad 夾（備用）',g:'stand'},wind:{n:'紅色防風罩',g:'mic'},xlr:{n:'藍色 XLR 線',g:'mic'},aux:{n:'3.5mm 音源線',g:'bk'},adpI:{n:'iPad 轉接頭',g:'bk'},iphone:{n:'iPhone',g:'bk'},adpP:{n:'Lightning 轉接頭',g:'bk'},usbc:{n:'USB-C 線',g:'mix'},trs:{n:'6.3mm 轉 XLR 線',g:'spk'},batt:{n:'充電電池＋充電器',g:'mic'}};
 let WIMG=null;function wImg(){if(!WIMG){try{WIMG=JSON.parse(localStorage.getItem(LS+'-wimg')||'{}')}catch(e){WIMG={}}if(WIMG.adp&&!WIMG.adpI){WIMG.adpI=WIMG.adp;delete WIMG.adp;if(WIMG._alt_adp){WIMG._alt_adpI=WIMG._alt_adp;delete WIMG._alt_adp}}}return WIMG}
 function wDevs(){const st=wSt(),nm=st.names||{},o={};Object.entries(WDEV).forEach(([k,v])=>o[k]={...v,n:nm[k]||v.n});(st.custom||[]).forEach(c=>o[c.id]={n:nm[c.id]||c.n,g:c.g,c:1});return o}
@@ -838,7 +853,7 @@ function vVolSheet(){const st=wSt(),vs=st.vs||{},nz=vs.noise||'',lim=vs.lim||'',
   </div>`}
 function volTarget(nz,lim){const n=parseFloat(nz),l=parseFloat(lim);if(isNaN(n))return '';let t=n+8;if(!isNaN(l))t=Math.min(t,l);return Math.round(t*10)/10}
 // ⋯ 選單：像右鍵選單一樣直的一排，浮在 ⋯ 旁邊
-const WKIDS={ag06:['ag06b','bat','usbc','aux','adpI','adpP'],mcase:['mic','wl','batt','xlr','wind'],bose:['trs']};
+const WKIDS={iembox:['iem','rx'],ag06:['ag06b','bat','usbc','aux','adpI','adpP'],mcase:['mic','wl','batt','xlr','wind'],bose:['trs']};
 document.addEventListener('click',e=>{const b=e.target.closest('[data-wsub]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();const btn=window._popBtn;wPopClose();const f=document.createElement('button');f.dataset.x=1;wPop(btn&&btn.isConnected?{getBoundingClientRect:()=>btn.getBoundingClientRect(),dataset:{}}:f,b.dataset.wsub)},true);
 function wPopClose(){const m=document.getElementById('wpop');if(m)m.remove()}
 function wPop(btn,d){const was=document.getElementById('wpop');wPopClose();if(was&&was.dataset.d===d)return;
@@ -862,12 +877,13 @@ async function wSaveImg(d){const u=wImg()[d];if(!u)return;const nm=(wDevs()[d]||
   if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});return}
   const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download=f.name;document.body.appendChild(a);a.click();a.remove();toast('已下載原圖')}catch(e){if(e&&e.name==='AbortError')return;toast('存不了：長按照片也可以「拷貝」')}}
 let invDragSup=0;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-pkview]');if(!b)return;e.preventDefault();e.stopPropagation();window.pkView=b.dataset.pkview;render()},true);
 // 打包：按住半秒拖到別層／別的包，或在同一層排順序（存在 check.po）
 document.addEventListener('pointerdown',e=>{const t=e.target.closest('.irow[data-pk]');if(!t||e.button>0||e.target.closest('.idot'))return;
-  const id=t.dataset.pk,sx=e.clientX,sy=e.clientY;let armed=false,ghost=null,over=null,tgt=null,after=false;
-  const tm=setTimeout(()=>{armed=true;dragHold=true;t.classList.add('armed');navigator.vibrate&&navigator.vibrate(15)},380);
+  const id=t.dataset.pk,sx=e.clientX,sy=e.clientY,mouse=e.pointerType==='mouse';let armed=false,ghost=null,over=null,tgt=null,after=false;
+  const tm=mouse?0:setTimeout(()=>{armed=true;dragHold=true;t.classList.add('armed');navigator.vibrate&&navigator.vibrate(15)},380);
   const clr=()=>document.querySelectorAll('.dropbefore,.dropafter,.icol.dropover').forEach(x=>x.classList.remove('dropbefore','dropafter','dropover'));
-  const move=ev=>{if(!armed){if(Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){clearTimeout(tm);end()}return}
+  const move=ev=>{if(!armed){if(Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){if(mouse){armed=true;dragHold=true}else{clearTimeout(tm);end()}}if(!armed)return}
     ev.preventDefault();if(!ghost){ghost=t.cloneNode(true);ghost.classList.add('ghost');document.body.appendChild(ghost);t.classList.add('dragsrc')}
     ghost.style.left=ev.clientX+'px';ghost.style.top=ev.clientY+'px';ghost.hidden=true;const el=document.elementFromPoint(ev.clientX,ev.clientY);ghost.hidden=false;
     clr();over=el&&el.closest('.icol[data-drop]');tgt=null;if(!over)return;over.classList.add('dropover');
@@ -876,7 +892,7 @@ document.addEventListener('pointerdown',e=>{const t=e.target.closest('.irow[data
   const end=()=>{clearTimeout(tm);dragHold=false;t.classList.remove('armed','dragsrc');document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);document.removeEventListener('pointercancel',end);
     if(armed)invDragSup=Date.now();if(!ghost)return;ghost.remove();clr();if(!over||!S.checks[id])return;
     const bag=over.dataset.drop,ob=bagOf(S.checks[id]),ids=[...over.querySelectorAll('.irow[data-pk]')].map(r=>r.dataset.pk).filter(x=>x!==id);let i=tgt?ids.indexOf(tgt.dataset.pk)+(after?1:0):ids.length;ids.splice(i,0,id);
-    ids.forEach((x,k)=>{const c=S.checks[x];if(!c)return;const nb=x===id?bag:bagOf(c);if(c.po!==k||(x===id&&bagOf(c)!==bag))put('checks',x,{...c,bag:nb,po:k})});
+    const ns=tgt?(S.checks[tgt.dataset.pk]||{}).sec||'':'';ids.forEach((x,k)=>{const c=S.checks[x];if(!c)return;const nb=x===id?bag:bagOf(c);if(x===id){if(c.po!==k||bagOf(c)!==bag||(c.sec||'')!==ns)put('checks',x,{...c,bag:nb,po:k,sec:ns})}else if(c.po!==k)put('checks',x,{...c,po:k})});
     if(ob!==bag)toast('已移到'+(BAG_NAME[bag]||'不用打包'))};
   document.addEventListener('pointermove',move,{passive:false});document.addEventListener('pointerup',end);document.addEventListener('pointercancel',end)});
 document.addEventListener('dragstart',e=>{if(e.target.closest&&e.target.closest('.irow'))e.preventDefault()});
