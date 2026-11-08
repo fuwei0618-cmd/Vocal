@@ -55,7 +55,7 @@
 
 .wrigrow{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1fr);margin-bottom:12px;gap:10px;align-items:start}.wrigrow>.wmain{margin-bottom:0}
 @media (max-width:700px){.wrigrow{grid-template-columns:1fr}}.wrigrow.one{grid-template-columns:1fr}
-.wsteps .wlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;align-items:start}.wsteps .wlhead,.wsteps .wph{grid-column:1/-1}.wsteps .wli{margin:0!important}
+.wphcols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:start}.wphcol{display:flex;flex-direction:column;gap:6px}@media (max-width:700px){.wphcols{grid-template-columns:1fr}}
 .wrigbox{background:#fff;padding:6px}.wrig{position:relative;width:100%;aspect-ratio:660/790;max-height:62vh;margin:0 auto}
 .wrig .rg{position:absolute;display:flex;flex-direction:column;align-items:center;gap:2px;border:1.5px solid transparent;border-radius:10px;background:none;padding:3px;font:inherit;color:#222;transition:opacity .2s}
 .wrig .rg .ri{flex:1;min-height:0;width:100%;position:relative}.wrig .rg img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
@@ -1059,7 +1059,7 @@ function vWire(){
   if(M==='asm'||M==='off'){
     const S=wSteps(M),done=st[M]||{},cur=wCurIdx(M,S,done),n=S.filter(x=>done[x.id]).length;
     window.wFocus=cur<S.length?S[cur].g:'';
-    side=`<div class="wlist"><div class="wlhead"><b>${M==='asm'?'組裝':'拆卸'}　${n}/${S.length}</b><button class="btn sm" data-act="wreset" data-wm="${M}">重來</button></div>${S.map((x,i)=>`${!i||S[i-1].ph!==x.ph?`<div class="wph"><b>${WPH[M][x.ph][0]}</b><span>${WPH[M][x.ph][1]}</span></div>`:''}<div class="wli ${done[x.id]?'ok':''} ${i===cur?'on':''}"><button class="wlck" data-wtick="${x.id}" aria-label="完成">${done[x.id]?'✓':i+1}</button><button class="wlbody" data-wjump="${i}"><b>${x.ic} ${esc(x.n)}</b>${x.lines.map(l=>`<small>${esc(l)}</small>`).join('')}</button>${x.ph2&&x.g?`<span class="wlph">${thumbs(x.g)}</span>`:''}</div>`).join('')}</div>`;
+    const it=(x,i)=>`<div class="wli ${done[x.id]?'ok':''} ${i===cur?'on':''}"><button class="wlck" data-wtick="${x.id}" aria-label="完成">${done[x.id]?'✓':i+1}</button><button class="wlbody" data-wjump="${i}"><b>${x.ic} ${esc(x.n)}</b>${x.lines.map(l=>`<small>${esc(l)}</small>`).join('')}</button>${x.ph2&&x.g?`<span class="wlph">${thumbs(x.g)}</span>`:''}</div>`;side=`<div class="wlist"><div class="wlhead"><b>${M==='asm'?'組裝':'拆卸'}　${n}/${S.length}</b><button class="btn sm" data-act="wreset" data-wm="${M}">重來</button></div><div class="wphcols">${WPH[M].map((p,ph)=>`<div class="wphcol"><div class="wph"><b>${p[0]}</b><span>${p[1]}</span></div>${S.map((x,i)=>x.ph===ph?it(x,i):'').join('')}</div>`).join('')}</div></div>`;
   }
   if(M==='vol')side=vVolSheet();
   if(M==='inv'){
@@ -1069,7 +1069,7 @@ function vWire(){
     h+=`<div class="packbar"><p class="small muted" style="margin:0">點一下＝有帶到；按住拖曳＝排順序；⋯＝改名、換照片。已清點 <b>${got}/${tot}</b></p><span style="display:flex;gap:6px"><button class="btn sm" data-act="wpack">📦 匯入圖片包</button><button class="btn sm" data-act="wreset" data-wm="inv">全部清掉</button></span></div>
     <div class="icats">${WCAT.map(([cn,ks])=>{const GG=G.filter(o=>ks.includes(o.x.k));return `<div class="icat" style="--n:${GG.length}"><div class="icath">${cn}</div><div class="icg">${GG.map(({x,L})=>{const n=L.filter(([d,v])=>inv[x.k+'|'+v.n]).length;return `<div class="icol ${n===L.length&&L.length?'ok':''}" data-igrp="${x.k}"><div class="ichead"><b>${x.ic} ${x.n}</b><span class="num">${n}/${L.length}</span><button class="idot" data-wgadd="${x.k}" aria-label="新增項目">＋</button></div>${L.map(([d,v])=>{const k=x.k+'|'+v.n,on=!!inv[k];return `<div class="irow ${on?'on':''}" data-irow="${d}"><button class="imain" data-winv="${esc(k)}"><span class="iwrap">${img(I[d],v.with&&I[v.with])}<span class="ick">${on?'✓':''}</span></span><span class="inm">${esc(v.n)}</span></button><button class="idot" data-wmenu="${d}" aria-label="更多">⋯</button></div>`}).join('')}</div>`}).join('')}</div></div>`}).join('')}</div>`;
   } else {
-    const top=M!=='vol';h+=`${side&&!top?`<div class="wsplit">${side}<div class="wdia">`:''}<div class="wrigrow${top?'':' one'}">${M==='vol'?'':`<div class="wbox wrigbox">${wRig()}</div>`}<div class="wbox wmain${M==='vol'?' volmode':''}"><div class="wzoom"><button class="ghost" data-wz="-1" aria-label="縮小">－</button><span class="wzl">${wZoomLab()}</span><button class="ghost" data-wz="1" aria-label="放大">＋</button></div><div class="wscroll${window.wZf?' zm':''}">${wDiagram()}</div></div></div>${side&&!top?'</div></div>':''}${top?`<div class="wsteps">${side}</div>`:''}`;
+    const top=M!=='vol';h+=`${side&&!top?`<div class="wsplit">${side}<div class="wdia">`:''}<div class="wrigrow${top?'':' one'}">${M==='vol'?'':`<div class="wbox wrigbox">${wRig()}</div>`}<div class="wbox wmain${M==='vol'?' volmode':''}"><div class="wzoom"><button class="ghost" data-wz="-1" aria-label="縮小">－</button><span class="wzl">${wZoomLab()}</span><button class="ghost" data-wz="1" aria-label="放大">＋</button></div><div class="wscroll${window.wZf?' zm':''}">${wDiagram()}</div></div></div>${side&&!top?'</div></div>':''}${top?`<div class="wstepcols">${side}</div>`:''}`;
   }
   return h;
 }
