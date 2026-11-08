@@ -160,7 +160,20 @@ details.fold>.cgrid{padding:8px 8px 0}
 .wlph{display:flex;gap:3px;flex:none;max-width:110px;flex-wrap:wrap}.wlph img{width:34px;height:30px;object-fit:contain;background:#fff;border-radius:5px}
 .wph{display:flex;align-items:baseline;gap:8px;margin:6px 2px 0}.wph b{background:var(--accent);color:#fff;border-radius:8px;padding:1px 10px;font-size:15px}.wph span{font-size:12px;color:var(--muted)}
 .iim.two{display:flex;gap:1px}.iim.two img{width:50%!important}
-.icats{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;align-items:start}.icat{display:flex;flex-direction:column;gap:8px}.icath{font-weight:700;font-size:15px;border-bottom:3px solid var(--accent);padding:0 2px 3px}
+.icats{display:grid;grid-template-columns:2fr 2fr 3fr;gap:12px;align-items:start}.icat{display:flex;flex-direction:column;gap:6px;min-width:0}.icg{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:6px;align-items:start}
+@media (max-width:1000px){.icats{grid-template-columns:1fr}}@media (max-width:560px){.icg{grid-template-columns:1fr}}
+.icath{font-weight:700;font-size:15px;border-bottom:3px solid var(--accent);padding:0 2px 3px}
+.ichead{align-items:center;gap:6px}.ichead b{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.irow{padding:0!important;gap:0!important;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.imain{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:6px 4px 6px 8px;border:0;background:none;font:inherit;text-align:left;color:inherit}
+.irow .inm{font-size:13px;line-height:1.3}.irow .iim{width:40px;height:40px;flex:none}.irow img{-webkit-user-drag:none}
+.idot{flex:none;border:0;background:none;color:var(--muted);font-size:18px;padding:4px 8px;border-radius:8px}.idot:active{background:var(--line)}
+.imenu{display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px 8px;background:var(--accent-soft,#eef5f5);border-bottom:1px solid var(--line)}.imenu button{font-size:12px;padding:4px 8px;border-radius:14px;border:1px solid var(--line);background:var(--surface)}.imenu .walts{width:100%}
+.icats{gap:8px}.icg{gap:4px}.ichead{padding:6px 4px 6px 8px!important}.ichead b{font-size:13px}.ichead .num{font-size:11px;color:var(--muted)}.ichead .idot{font-size:15px;padding:2px 6px}
+.iwrap{position:relative;flex:none}.iwrap .iim{width:38px!important;height:38px!important}.iwrap .ick{position:absolute;left:-5px;top:-5px;width:17px;height:17px;border-radius:5px;font-size:11px;background:var(--surface);border-width:1.5px}
+.imain{gap:7px!important;padding:6px 0 6px 9px!important}.irow .inm{font-size:12.5px!important}.irow .idot{padding:4px 5px;font-size:16px}
+.packbar .btn{white-space:nowrap}
+.irow.dragsrc{opacity:.35}.irow.armed{background:var(--accent-soft,#eef5f5)}.irow.dropbefore{box-shadow:inset 0 3px 0 var(--accent)}.irow.dropafter{box-shadow:inset 0 -3px 0 var(--accent)}
+.irow.ghost{position:fixed;z-index:999;pointer-events:none;width:220px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.2);transform:translate(-30px,-50%)}
 .icols{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;align-items:start}.icol{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}.icol.ok{border-color:var(--ok)}
 .ichead{display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--line)}
 .irow{display:flex;align-items:center;gap:10px;width:100%;padding:6px 10px;border:0;border-bottom:1px solid var(--line);background:none;font:inherit;text-align:left}.irow:last-child{border-bottom:0}.irow.on{background:var(--ok-bg);color:var(--ok)}
@@ -789,6 +802,32 @@ function vVolSheet(){const st=wSt(),vs=st.vs||{},nz=vs.noise||'',lim=vs.lim||'',
   <div class="vfoot">現場：有人皺眉走開 → <b>小</b>　觀眾往前靠 → <b>大</b>　換場地 → 重量底噪</div>
   </div>`}
 function volTarget(nz,lim){const n=parseFloat(nz),l=parseFloat(lim);if(isNaN(n))return '';let t=n+8;if(!isNaN(l))t=Math.min(t,l);return Math.round(t*10)/10}
+// 清點：⋯ 開工具列、＋ 新增項目、💾 存原圖、按住拖曳排順序（同一組內）
+document.addEventListener('click',e=>{const b=e.target.closest('[data-wmenu],[data-wgadd],[data-wsave]');if(!b)return;e.preventDefault();e.stopPropagation();
+  if(b.dataset.wmenu){window.wMenu=window.wMenu===b.dataset.wmenu?'':b.dataset.wmenu;return render()}
+  if(b.dataset.wgadd){const n=(prompt('新增項目（'+WG.find(x=>x.k===b.dataset.wgadd).n+'）','')||'').trim();if(!n)return;const g=b.dataset.wgadd;return wSet(s=>{s.custom=(s.custom||[]).concat({id:'c'+Date.now().toString(36),n,g})})}
+  if(b.dataset.wsave)wSaveImg(b.dataset.wsave)},true);
+async function wSaveImg(d){const u=wImg()[d];if(!u)return;const nm=(wDevs()[d]||{}).n||d;try{const bl=await (await fetch(u)).blob(),ext=(bl.type.split('/')[1]||'jpg').replace('jpeg','jpg'),f=new File([bl],nm.replace(/[\\/:*?"<>|]/g,'')+'.'+ext,{type:bl.type});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download=f.name;document.body.appendChild(a);a.click();a.remove();toast('已下載原圖')}catch(e){if(e&&e.name==='AbortError')return;toast('存不了：長按照片也可以「拷貝」')}}
+let invDragSup=0;
+document.addEventListener('dragstart',e=>{if(e.target.closest&&e.target.closest('.irow'))e.preventDefault()});
+document.addEventListener('click',e=>{if(Date.now()-invDragSup<400&&e.target.closest('.irow')){e.preventDefault();e.stopPropagation()}},true);
+document.addEventListener('contextmenu',e=>{if(e.target.closest('.irow'))e.preventDefault()});
+document.addEventListener('pointerdown',e=>{const t=e.target.closest('.irow[data-irow]');if(!t||e.button>0||e.target.closest('.idot'))return;
+  const col=t.closest('[data-igrp]'),sx=e.clientX,sy=e.clientY;let armed=false,ghost=null,tgt=null,after=false;
+  const tm=setTimeout(()=>{armed=true;dragHold=true;t.classList.add('armed');navigator.vibrate&&navigator.vibrate(15)},380);
+  const clr=()=>col.querySelectorAll('.dropbefore,.dropafter').forEach(x=>x.classList.remove('dropbefore','dropafter'));
+  const move=ev=>{if(!armed){if(Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){clearTimeout(tm);end()}return}
+    ev.preventDefault();if(!ghost){ghost=t.cloneNode(true);ghost.classList.add('ghost');document.body.appendChild(ghost);t.classList.add('dragsrc')}
+    ghost.style.left=ev.clientX+'px';ghost.style.top=ev.clientY+'px';
+    const rows=[...col.querySelectorAll('.irow[data-irow]')].filter(r=>r!==t);clr();tgt=null;
+    for(const r of rows){const R=r.getBoundingClientRect();if(ev.clientY<R.top+R.height/2){tgt=r;after=false;break}tgt=r;after=true}
+    if(tgt)tgt.classList.add(after?'dropafter':'dropbefore')};
+  const end=()=>{clearTimeout(tm);dragHold=false;t.classList.remove('armed','dragsrc');document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);document.removeEventListener('pointercancel',end);
+    if(armed)invDragSup=Date.now();if(!ghost)return;ghost.remove();clr();if(!tgt)return;
+    const k=col.dataset.igrp,ids=wList(k).map(x=>x[0]).filter(x=>x!==t.dataset.irow);let i=ids.indexOf(tgt.dataset.irow);if(after)i++;ids.splice(i,0,t.dataset.irow);wSet(s=>{s.order=s.order||{};s.order[k]=ids})};
+  document.addEventListener('pointermove',move,{passive:false});document.addEventListener('pointerup',end);document.addEventListener('pointercancel',end)});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-vk]');if(!b)return;e.preventDefault();e.stopPropagation();window.wVol=window.wVol===b.dataset.vk?'':b.dataset.vk;render()},true);
 document.addEventListener('click',e=>{const b=e.target.closest('[data-vlim]');if(!b)return;e.preventDefault();e.stopPropagation();const l=$('#vlim');l.value=b.dataset.vlim;l.dispatchEvent(new Event('input',{bubbles:true}))},true);
 document.addEventListener('input',e=>{if(e.target.id!=='vnoise'&&e.target.id!=='vlim')return;const nz=$('#vnoise').value,lim=$('#vlim').value;const _t=volTarget(nz,lim);$('#vtgt').textContent=_t||'—';document.querySelectorAll('.vtx').forEach(x=>x.textContent=_t||'目標');{const s=wSt();s.vs={noise:nz,lim};try{localStorage.setItem(LS+'-wire',JSON.stringify(s))}catch(_){}}});
@@ -885,26 +924,14 @@ function vWire(){
   }
   if(M==='vol')side=vVolSheet();
   if(M==='inv'){
-    const ed=!!window.wInvEdit,G=WG.map(x=>({x,L:wList(x.k)})),tot=G.reduce((n,o)=>n+o.L.length,0),got=G.reduce((n,o)=>n+o.L.filter(([d,v])=>inv[o.x.k+'|'+v.n]).length,0);
-    h+=`<div class="packbar"><p class="small muted" style="margin:0">${ed?'改名：點 ✏️；排順序：按 ↑ ↓。':'點一下＝有帶到。'}已清點 <b>${got}/${tot}</b></p><span style="display:flex;gap:6px"><button class="btn sm ${ed?'primary':''}" data-act="winvedit">${ed?'完成':'✏️ 改名／排序'}</button>${ed?'':'<button class="btn sm" data-act="wreset" data-wm="inv">全部清掉</button>'}</span></div>
-    <div class="icats">${WCAT.map(([cn,ks])=>`<div class="icat"><div class="icath">${cn}</div>${G.filter(o=>ks.includes(o.x.k)).map(({x,L})=>{const n=L.filter(([d,v])=>inv[x.k+'|'+v.n]).length;return `<div class="icol ${n===L.length&&L.length?'ok':''}"><div class="ichead"><b>${x.ic} ${x.n}</b><span class="num">${n}/${L.length}</span></div>${L.map(([d,v],i)=>{const k=x.k+'|'+v.n,on=!!inv[k],im=I[d],im2=v.with&&I[v.with];return ed?`<div class="irow"><span class="iim${im2?' two':''}">${im?`<img src="${wTh(im)}" alt="">`:''}${im2?`<img src="${wTh(im2)}" alt="">`:''}</span><span class="inm">${esc(v.n)}</span><button class="ghost" data-wren="${d}" aria-label="改名">✏️</button><button class="ghost" data-wmv="${x.k}|${d}|-1" ${i?'':'disabled'} aria-label="往上">↑</button><button class="ghost" data-wmv="${x.k}|${d}|1" ${i<L.length-1?'':'disabled'} aria-label="往下">↓</button></div>`:`<button class="irow ${on?'on':''}" data-winv="${esc(k)}"><span class="ick">${on?'✓':''}</span><span class="iim${im2?' two':''}">${im?`<img src="${wTh(im)}" alt="">`:''}${im2?`<img src="${wTh(im2)}" alt="">`:''}</span><span class="inm">${esc(v.n)}</span></button>`}).join('')}</div>`}).join('')}</div>`).join('')}</div>`;
+    const G=WG.map(x=>({x,L:wList(x.k)})),tot=G.reduce((n,o)=>n+o.L.length,0),got=G.reduce((n,o)=>n+o.L.filter(([d,v])=>inv[o.x.k+'|'+v.n]).length,0),mn=window.wMenu||'';
+    const img=(im,im2)=>`<span class="iim${im2?' two':''}">${im?`<img src="${wTh(im)}" alt="">`:''}${im2?`<img src="${wTh(im2)}" alt="">`:''}</span>`;
+    const menu=(d,v)=>{const im=I[d],al=wAlt(d);return `<div class="imenu"><button data-wren="${d}">✏️ 改名</button><button data-wpaste="${d}">📋 貼上</button><button data-wimg="${d}">🖼 相簿</button>${im?`<button data-wcut="${d}">✂️ 去背</button><button data-wsave="${d}">💾 存原圖</button><button data-wimgdel="${d}">移除照片</button>`:''}${v.c?`<button data-wcdel="${d}">刪掉這項</button>`:''}${al.length?`<div class="walts">${al.map((u,j)=>`<span class="walt"><img src="${wTh(u,120)}" alt="" data-wuse="${d}" data-wi="${j}"><button data-waltdel="${d}" data-wi="${j}" aria-label="刪掉這張">×</button></span>`).join('')}</div>`:''}</div>`};
+    h+=`<div class="packbar"><p class="small muted" style="margin:0">點一下＝有帶到；按住拖曳＝排順序；⋯＝改名、換照片。已清點 <b>${got}/${tot}</b></p><span style="display:flex;gap:6px"><button class="btn sm" data-act="wpack">📦 匯入圖片包</button><button class="btn sm" data-act="wreset" data-wm="inv">全部清掉</button></span></div>
+    <div class="icats">${WCAT.map(([cn,ks])=>{const GG=G.filter(o=>ks.includes(o.x.k));return `<div class="icat" style="--n:${GG.length}"><div class="icath">${cn}</div><div class="icg">${GG.map(({x,L})=>{const n=L.filter(([d,v])=>inv[x.k+'|'+v.n]).length;return `<div class="icol ${n===L.length&&L.length?'ok':''}" data-igrp="${x.k}"><div class="ichead"><b>${x.ic} ${x.n}</b><span class="num">${n}/${L.length}</span><button class="idot" data-wgadd="${x.k}" aria-label="新增項目">＋</button></div>${L.map(([d,v])=>{const k=x.k+'|'+v.n,on=!!inv[k];return `<div class="irow ${on?'on':''}" data-irow="${d}"><button class="imain" data-winv="${esc(k)}"><span class="iwrap">${img(I[d],v.with&&I[v.with])}<span class="ick">${on?'✓':''}</span></span><span class="inm">${esc(v.n)}</span></button><button class="idot" data-wmenu="${d}" aria-label="更多">⋯</button></div>${mn===d?menu(d,v):''}`}).join('')}</div>`}).join('')}</div></div>`}).join('')}</div>`;
   } else {
     h+=`${side?`<div class="wsplit">${side}<div class="wdia">`:''}<div class="wbox wmain${M==='vol'?' volmode':''}"><div class="wzoom"><button class="ghost" data-wz="-1" aria-label="縮小">－</button><span class="wzl">${wZoomLab()}</span><button class="ghost" data-wz="1" aria-label="放大">＋</button></div><div class="wscroll${window.wZf?' zm':''}">${wDiagram()}</div></div>${side?'</div></div>':''}`;
   }
-  h+=`<details class="wset" ${wireSel?'open':''}><summary>🖼 器材照片設定（換照片、改名、新增項目）</summary><div class="packbar" style="margin-top:8px"><p class="small muted" style="margin:0">點一組，下面會出現那一組的照片格子。</p><button class="btn sm" data-act="wpack">📦 匯入圖片包</button></div>
-  <div class="wchips">${WG.map(x=>`<button class="wchip ${wireSel===x.k?'on':''}" data-wire="${x.k}"><b>${x.ic} ${x.n}</b><span>${thumbs(x.k)}</span></button>`).join('')}</div><div class="wtop">`;
-  const g=WG.find(x=>x.k===wireSel);
-  if(g){h+=`<div class="bag packpanel wcard"><div class="baghead"><b>${g.ic} ${g.n}</b><span class="pcnt num">${wItems(g).filter(i=>inv[g.k+'|'+i]).length}/${wItems(g).length}</span><button class="btn sm" data-wire="">✕</button></div>
-    <div class="wplug">${g.plug.map(p=>`<div>${esc(p)}</div>`).join('')}</div>
-    <div class="witems">${wItems(g).map(i=>`<button class="wit ${inv[g.k+'|'+i]?'done':''}" data-winv="${esc(g.k+'|'+i)}">${inv[g.k+'|'+i]?'✓ ':''}${esc(i)}</button>`).join('')}</div>
-    <div class="wpics">${(()=>{const DV=wDevs();return Object.entries(DV).filter(([d,v])=>v.g===g.k&&!(v.sub&&DV[v.sub]&&DV[v.sub].with===d))})().flatMap(([d,v])=>v.with?[[d,v,0],[v.with,wDevs()[v.with],v.n]]:[[d,v,0]]).map(([d,v,par])=>{const im=wImg()[d],al=wAlt(d);return `${par?'':''}<div class="wpic${v.with?' wpar':''}${par?' wkid':''}" data-wdrop="${d}"><div class="wpimg">${im?`<img src="${wTh(im,240)}" alt="">`:'<span>拖圖片到這裡</span>'}</div><div class="wpr"><b>${par?`<small class="muted">跟上面是同一項（第二張照片）</small><br>`:''}${esc(v.n)}</b>
-      ${al.length?`<div class="walts"><small>候選（點一下換成這張）</small>${al.map((u,i)=>`<span class="walt"><img src="${u}" alt="" data-wuse="${d}" data-wi="${i}"><button data-waltdel="${d}" data-wi="${i}" aria-label="刪掉這張">×</button></span>`).join('')}</div>`:''}
-      <div class="wbtn"><button class="btn sm" data-wren="${d}">✏️ 改名</button><button class="btn sm" data-wpaste="${d}">📋 貼上</button><button class="btn sm" data-wimg="${d}">🖼 相簿</button>${im?`<button class="btn sm" data-wcut="${d}">✂️ 去背</button><button class="btn sm" data-wimgdel="${d}">移除</button>`:''}${v.c?`<button class="btn sm" data-wcdel="${d}">刪掉這個項目</button>`:''}</div></div></div>`}).join('')}
-      <div class="wadd"><input id="wadd" placeholder="新增項目，例如：備用電池" maxlength="30"><button class="btn sm" data-act="wadd">＋ 新增</button></div></div>
-    ${g.jk.length?`<div class="wbox" style="margin-top:8px">${wPanel()}</div>`:''}</div>`}
-
-  h+='</div>';
-  h+='</details>';
   return h;
 }
 // 組裝／拆卸：一步一步走，圖上只亮這一步的那一組
