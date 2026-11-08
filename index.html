@@ -143,6 +143,14 @@ details.fold>.cgrid{padding:8px 8px 0}
 .ckimg{width:40px;height:32px;object-fit:contain;background:#fff;border-radius:6px;border:1px solid var(--line);flex:none}
 .mprev{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 14px;margin-bottom:10px;border-radius:14px;background:var(--accent-soft);border:1px solid var(--accent)}.mbtn{display:flex;gap:6px}
 .zap{position:absolute;top:3px;right:5px;font-style:normal;font-size:12px}.bren{padding:0 4px;font-size:12px;border:0;background:none}
+.wmodes{margin:0 0 10px}
+.wsc{background:var(--surface);border:2px solid var(--accent);border-radius:16px;padding:12px 14px;margin-bottom:10px}.wsc.done{border-color:var(--ok)}
+.wsc-top{display:flex;align-items:center;gap:10px;justify-content:space-between;font-size:14px}.wdots{display:flex;gap:5px;flex-wrap:wrap}.wdot{width:12px;height:12px;border-radius:50%;border:2px solid var(--line);background:#fff;padding:0}.wdot.ok{background:var(--ok);border-color:var(--ok)}.wdot.on{border-color:var(--accent);transform:scale(1.35)}
+.wsc-main{display:flex;gap:12px;align-items:center;margin:10px 0}.wsc-ic{font-size:34px;flex:none}.wsc-tx{flex:1;min-width:0;font-size:15.5px;line-height:1.6}.wsc-tx b{font-size:19px;display:block}
+.wsc-ph{display:flex;gap:6px;flex-wrap:wrap;max-width:45%}.wsc-ph img{width:64px;height:56px;object-fit:contain;background:#fff;border-radius:8px;border:1px solid var(--line)}
+.wsc-btn{display:flex;gap:8px;justify-content:space-between}.wsc-btn .btn{flex:1;padding:12px;font-size:16px}
+.wset{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}.wset>summary{cursor:pointer;font-weight:600;color:var(--muted);list-style:none}
+@media (max-width:620px){.wsc-ph{max-width:100%}.wsc-main{flex-wrap:wrap}}
 .pcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;align-items:start}
 .pcard{background:var(--surface,#fff);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .pchead{display:flex;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid var(--line)}.pchead b{font-size:16px;flex:1}
@@ -195,7 +203,7 @@ details.fold>.cgrid{padding:8px 8px 0}
 .wcab .xlr{stroke-width:9}.wcab .blk{stroke:#222;stroke-width:6}.wcab .brd{stroke:#222;stroke-width:10;stroke-dasharray:4 2}.wcab .gry{stroke:#8A8F94;stroke-width:10}.wcab .usbo{stroke:#bbb;stroke-width:9}.wcab .air{stroke:#1F6E77}
 .cpic rect{fill:#fff;stroke:#ccc;stroke-width:1.5}.cpic text{font-size:12px;font-weight:700;fill:#333}
 .wmain .dim{opacity:.18}
-.wmain{position:relative}.wmain svg.wire{max-height:58vh}.wscroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}.wmain svg.wire{margin:0 auto}.wcab .alt{stroke-dasharray:10 8;stroke-width:5}.wzoom{position:absolute;top:8px;right:8px;z-index:2;display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.9);border-radius:999px;padding:2px}.wzoom button{width:34px;height:34px;padding:0;font-size:18px;border-radius:50%}.wzl{font-size:13px;min-width:44px;text-align:center}
+.wmain{position:relative}.wmain svg.wire{max-height:58vh}.wscroll{overflow:visible}.wscroll.zm{overflow-x:auto;overflow-y:hidden}.wmain svg.wire{margin:0 auto}.wcab .alt{stroke-dasharray:10 8;stroke-width:5}.wzoom{position:absolute;top:8px;right:8px;z-index:2;display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.9);border-radius:999px;padding:2px}.wzoom button{width:34px;height:34px;padding:0;font-size:18px;border-radius:50%}.wzl{font-size:13px;min-width:44px;text-align:center}
 .volmode .wcab,.volmode .wb{opacity:.25}.vring{fill:none;stroke-width:5}.vring.off{opacity:.12}
 .vgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}.vcell{display:flex;flex-wrap:wrap;gap:0 6px;justify-content:center;align-items:center;padding:6px 4px;border-radius:12px;border:2px solid var(--line,#ddd);background:#fff;font-size:13px;line-height:1.3}.vcell.on{border-color:var(--a);box-shadow:inset 0 0 0 2px var(--b)}
 .vsteps{margin:6px 0 10px;padding:0 12px 0 30px;line-height:1.7;font-size:15px}
@@ -291,7 +299,7 @@ thead th{border-top:0;font-size:12px;color:var(--muted);font-weight:500}
 td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
 /* tab bar */
 .fab{position:fixed;right:12px;bottom:calc(132px + env(safe-area-inset-bottom,0px));z-index:12;width:54px;height:54px;border-radius:50%;border:0;background:var(--ink);color:var(--surface);font-size:30px;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.2);cursor:pointer}
-.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;transform:translateZ(0);-webkit-transform:translateZ(0);will-change:transform;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
 .tabs nav{max-width:none;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);height:var(--tabh)}
 .tabs button{border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--muted)}
 .tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
@@ -756,10 +764,10 @@ function wRatio(u){if(!u)return 0;if(_wR[u])return _wR[u];_wR[u]=1;const i=new I
 // Bose 照片上 INPUT 1 的位置（照她標的紅圈，器材框 170×164 內的比例）
 const BOSEJ=[.262,.736];// 舊框 170×164 裡的位置；下面換算成照片本身的比例
 function imRect(x,y,w,h,r){const W=r>=w/h?w:h*r,H=W/r;return [x+(w-W)/2,y+(h-H)/2,W,H]}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-wvolgo]');if(!b)return;e.preventDefault();e.stopPropagation();gearSeg='wire';window.wView='vol';window.wVol=b.dataset.wvolgo?b.dataset.wvolgo+'|music':'';render();scrollTo(0,0)},true);
+document.addEventListener('click',e=>{const b=e.target.closest('[data-wvolgo]');if(!b)return;e.preventDefault();e.stopPropagation();gearSeg='wire';wireMode='vol';window.wView='vol';window.wVol=b.dataset.wvolgo?b.dataset.wvolgo+'|music':'';render();scrollTo(0,0)},true);
 function wDiagram(){
   // 實物版：AG06 正面大圖在中間、背面圖在上面（已鏡射，跟正面同方向）；線直接接到圖上真正的孔
-  const IM=wImg(),DV=wDevs(),on=g=>!wireSel||wireSel===g?'':' dim',sel=g=>wireSel===g?' sel':'';
+  const IM=wImg(),DV=wDevs(),F=wireSel||window.wFocus||'',on=g=>!F||F===g?'':' dim',sel=g=>F===g?' sel':'';
   const AS=340,r=wRatio(IM.ag06)||1,AW=r>=1?AS:AS*r,AH=r>=1?AS/r:AS,AX=500-AW/2,AY=300+(AS-AH)/2,jp=k=>[AX+AW*AGPOS[k][0]/100,AY+AH*AGPOS[k][1]/100];
   const rb=wRatio(IM.ag06b)||2.6,BW=AW,BH=BW/rb,BX=500-BW/2,BY=AY-BH-20,jx=BX+BW*AGBACK.usb[0]/100,jy=BY+BH*AGBACK.usb[1]/100;
   const I={mic:'<circle cx="24" cy="12" r="8"/><path d="M24 20v14M18 42h12M24 34v8"/>',wl:'<circle cx="24" cy="12" r="8"/><path d="M24 20v22"/><path d="M36 6a14 14 0 0 1 0 14"/>',ipad:'<rect x="10" y="4" width="28" height="40" rx="4"/>',iphone:'<rect x="15" y="6" width="18" height="36" rx="4"/>',adpI:'<rect x="16" y="8" width="16" height="32" rx="4"/>',adpP:'<rect x="16" y="8" width="16" height="32" rx="4"/>',bat:'<rect x="8" y="12" width="30" height="24" rx="4"/>',bose:VI.speaker,iem:'<rect x="14" y="4" width="20" height="38" rx="4"/>',rx:'<rect x="6" y="10" width="16" height="22" rx="3"/><rect x="26" y="10" width="16" height="22" rx="3"/>'};
@@ -812,14 +820,28 @@ function wPanel(){
 }
 function vWire(){
   wMigrate();
-  const st=wSt(),steps=wireMode==='off'?[...WG].reverse():WG,done=st[wireMode]||{},inv=st.inv||{};
-  let h=`<div class="packbar"><p class="small muted" style="margin:0">點圖上的東西，下面會出現那一組要帶什麼、插哪裡。</p><button class="btn sm" data-act="wpack">📦 匯入圖片包</button></div>`;
-  const thumbs=k=>Object.entries(wDevs()).filter(([d,v])=>v.g===k&&wImg()[d]).map(([d,v])=>`<img src="${wTh(wImg()[d],120)}" alt="${esc(v.n)}" title="${esc(v.n)}">`).join('');
-  h+=`<div class="wchips">${WG.map(x=>`<button class="wchip ${wireSel===x.k?'on':''}" data-wire="${x.k}"><b>${x.ic} ${x.n}</b><span>${thumbs(x.k)}</span></button>`).join('')}</div>`;
-  const vol=window.wView==='vol';
-  h+=`<div class="seg" style="margin:0 0 10px">${[['wire','🔌 接線'],['vol','🎚 試音量']].map(([k,t])=>`<button data-wview="${k}" aria-pressed="${(window.wView||'wire')===k}">${t}</button>`).join('')}</div>`;
-  if(vol)h+=vVolPanel('grid');
-  h+=`<div class="wbox wmain${vol?' volmode':''}"><div class="wzoom"><button class="ghost" data-wz="-1" aria-label="縮小">－</button><span class="wzl">${wZoomLab()}</span><button class="ghost" data-wz="1" aria-label="放大">＋</button></div><div class="wscroll">${wDiagram()}</div></div>${vol?vVolPanel():''}<div class="wtop">`;
+  const st=wSt(),inv=st.inv||{},I=wImg(),DV=wDevs();
+  const thumbs=k=>Object.entries(DV).filter(([d,v])=>v.g===k&&I[d]).map(([d,v])=>`<img src="${wTh(I[d],120)}" alt="${esc(v.n)}" title="${esc(v.n)}">`).join('');
+  const M=wireMode==='vol'?'vol':wireMode;window.wView=M==='vol'?'vol':'wire';
+  let h=`<div class="seg wmodes">${[['asm','🔧 組裝'],['off','📦 拆卸'],['inv','✅ 清點'],['vol','🎚 試音量']].map(([k,t])=>`<button data-wmode="${k}" aria-pressed="${M===k}">${t}</button>`).join('')}</div>`;
+  window.wFocus='';
+  if(M==='asm'||M==='off'){
+    const S=wSteps(M),done=st[M]||{},cur=wCurIdx(M,S,done);
+    if(cur<S.length){const x=S[cur];window.wFocus=x.g;
+      h+=`<div class="wsc"><div class="wsc-top"><b>第 ${cur+1} 步／${S.length}</b><span class="wdots">${S.map((y,i)=>`<button class="wdot ${done[y.id]?'ok':''} ${i===cur?'on':''}" data-wjump="${i}" aria-label="第 ${i+1} 步"></button>`).join('')}</span></div>
+      <div class="wsc-main"><div class="wsc-ic">${x.ic}</div><div class="wsc-tx"><b>${esc(x.n)}</b>${x.lines.map(l=>`<div>${esc(l)}</div>`).join('')}</div>${x.ph?`<div class="wsc-ph">${thumbs(x.g)}</div>`:''}</div>
+      <div class="wsc-btn"><button class="btn" data-wstep="-1" ${cur===0?'disabled':''}>← 上一步</button><button class="btn primary" data-wstep="1">完成 ✓ 下一步</button></div></div>`}
+    else h+=`<div class="wsc done"><div class="wsc-main"><div class="wsc-ic">🎉</div><div class="wsc-tx"><b>${M==='asm'?'組裝完成！':'拆卸完成，可以回家了！'}</b><div>${S.length} 步都做完了</div></div></div><div class="wsc-btn"><button class="btn" data-wstep="-1">← 回上一步</button><button class="btn" data-act="wreset" data-wm="${M}">重來一次</button></div></div>`;
+  }
+  if(M==='vol')h+=vVolPanel('grid');
+  if(M==='inv'){
+    const tot=WG.reduce((n,x)=>n+Object.values(DV).filter(v=>v.g===x.k).length,0),got=WG.reduce((n,x)=>n+Object.values(DV).filter(v=>v.g===x.k&&inv[x.k+'|'+v.n]).length,0);
+    h+=`<div class="packbar"><p class="small muted" style="margin:0">點一下＝有帶到。已清點 <b>${got}/${tot}</b></p><button class="btn sm" data-act="wreset" data-wm="inv">全部清掉重點</button></div><div class="pcards">${WG.map(x=>{const L=Object.entries(DV).filter(([d,v])=>v.g===x.k);const n=L.filter(([d,v])=>inv[x.k+'|'+v.n]).length;return `<div class="pcard"><div class="pchead"><b>${x.ic} ${x.n}</b><span class="pcnt num">${n}/${L.length}</span></div><div class="pcbody"><div class="ptiles">${L.map(([d,v])=>{const k=x.k+'|'+v.n,on=!!inv[k];return `<button class="tile2 ${on?'on':''}" data-winv="${esc(k)}"><i></i>${I[d]?`<img class="tlimg" src="${wTh(I[d])}" alt="">`:''}<span>${esc(v.n)}</span></button>`}).join('')}</div></div></div>`}).join('')}</div>`;
+  } else {
+    h+=`<div class="wbox wmain${M==='vol'?' volmode':''}"><div class="wzoom"><button class="ghost" data-wz="-1" aria-label="縮小">－</button><span class="wzl">${wZoomLab()}</span><button class="ghost" data-wz="1" aria-label="放大">＋</button></div><div class="wscroll${window.wZf?' zm':''}">${wDiagram()}</div></div>${M==='vol'?vVolPanel():''}`;
+  }
+  h+=`<details class="wset" ${wireSel?'open':''}><summary>🖼 器材照片設定（換照片、改名、新增項目）</summary><div class="packbar" style="margin-top:8px"><p class="small muted" style="margin:0">點一組，下面會出現那一組的照片格子。</p><button class="btn sm" data-act="wpack">📦 匯入圖片包</button></div>
+  <div class="wchips">${WG.map(x=>`<button class="wchip ${wireSel===x.k?'on':''}" data-wire="${x.k}"><b>${x.ic} ${x.n}</b><span>${thumbs(x.k)}</span></button>`).join('')}</div><div class="wtop">`;
   const g=WG.find(x=>x.k===wireSel);
   if(g){h+=`<div class="bag packpanel wcard"><div class="baghead"><b>${g.ic} ${g.n}</b><span class="pcnt num">${wItems(g).filter(i=>inv[g.k+'|'+i]).length}/${wItems(g).length}</span><button class="btn sm" data-wire="">✕</button></div>
     <div class="wplug">${g.plug.map(p=>`<div>${esc(p)}</div>`).join('')}</div>
@@ -831,18 +853,14 @@ function vWire(){
     ${g.jk.length?`<div class="wbox" style="margin-top:8px">${wPanel()}</div>`:''}</div>`}
 
   h+='</div>';
-  h+=`<div class="seg" style="margin:16px 0 10px">${[['asm','組裝'],['off','拆卸'],['inv','清點']].map(([k,t])=>`<button data-wmode="${k}" aria-pressed="${wireMode===k}">${t}</button>`).join('')}</div>`;
-  if(wireMode==='inv'){
-    h+=`<div class="wsteps">${WG.map(x=>{const L=wItems(x),n=L.filter(i=>inv[x.k+'|'+i]).length;return `<div class="bag wstep ${n===L.length?'ok':''}"><div class="baghead"><b>${x.ic} ${x.n}</b><span class="pcnt num">${n}/${L.length}</span></div>${thumbs(x.k)?`<div class="wtn">${thumbs(x.k)}</div>`:''}<div class="witems">${L.map(i=>`<button class="wit ${inv[x.k+'|'+i]?'done':''}" data-winv="${esc(x.k+'|'+i)}">${inv[x.k+'|'+i]?'✓ ':''}${esc(i)}</button>`).join('')}</div></div>`}).join('')}</div>
-    <button class="btn sm" data-act="wreset" data-wm="inv" style="margin-top:10px">全部清掉重點</button>`;
-    return h}
-  const pw=wireMode==='off'?WOFF:WON,pk='p';
-  const row=(id,ic,t,sub)=>`<button class="wrow ${done[id]?'done':''}" data-wdone="${id}"><span class="wck">${done[id]?'✓':''}</span><span><b>${ic} ${esc(t)}</b>${sub?`<small>${sub}</small>`:''}</span></button>`;
-  const power=`<div class="wpow"><b>${wireMode==='off'?'先關電源':'最後開電源'}</b>${pw.map((p,i)=>row(pk+i,'⚡',p,'')).join('')}</div>`;
-  h+=`<div class="wsteps">${wireMode==='off'?power:''}${steps.map(x=>row(x.k,x.ic,x.n,x.plug.map(esc).join('<br>'))).join('')}${wireMode==='asm'?power:''}</div>
-  <button class="btn sm" data-act="wreset" data-wm="${wireMode}" style="margin-top:10px">全部清掉重來</button>`;
+  h+='</details>';
   return h;
 }
+// 組裝／拆卸：一步一步走，圖上只亮這一步的那一組
+const WOFFTX={pack:['椅子、麥克風收納盒、所有東西裝回拉車'],stand:['夾子拆下 → 托盤拿下 → 腳架收起來'],mix:['拔 ④ USB-C，連行動電源收回「電源小袋」','AG06 連同電源小袋、伴奏小袋一起收'],mic:['拔 ① ②','兩隻麥、接收器、電池、藍色 XLR 收回麥克風收納盒'],bk:['拔 ③','3.5mm 線和轉接頭收回「伴奏小袋」'],iem:['拔 ⑥','發射器、接收器、耳機收回監聽包'],spk:['拔 ⑤','黑色編織線捲好，收在 Bose 上']};
+function wSteps(m){const G=m==='off'?[...WG].reverse():WG,P=(m==='off'?WOFF:WON).map((t,i)=>({id:'p'+i,ic:'⚡',n:t,lines:[],g:'mix'}));
+  const S=G.map(x=>({id:x.k,ic:x.ic,n:x.n,lines:m==='off'?(WOFFTX[x.k]||[]):x.plug,g:x.k,ph:1}));return m==='off'?[...P,...S]:[...S,...P]}
+function wCurIdx(m,S,done){window.wCur=window.wCur||{};let c=window.wCur[m];if(c==null||c>S.length){c=S.findIndex(x=>!done[x.id]);if(c<0)c=S.length}return c}
 const ICON={cart:'<svg viewBox="0 0 48 48" class="bagicon"><path d="M30 6v28"/><path d="M26 6h8"/><rect x="10" y="14" width="18" height="20" rx="2"/><path d="M10 22h18"/><circle cx="14" cy="39" r="3"/><circle cx="28" cy="39" r="3"/><path d="M8 34h24"/></svg>',
 tote:'<svg viewBox="0 0 48 48" class="bagicon"><path d="M17 15v-3a7 7 0 0 1 14 0v3"/><path d="M9 15h30l-3 27H12z"/><path d="M10.2 24h27.6M11.2 33h25.6"/></svg>',
 pack:'<svg viewBox="0 0 48 48" class="bagicon"><path d="M19 9V7a5 5 0 0 1 10 0v2"/><rect x="11" y="9" width="26" height="33" rx="8"/><rect x="16" y="27" width="16" height="10" rx="2"/><path d="M16 31h16"/></svg>'};
@@ -1275,7 +1293,9 @@ document.addEventListener('click',e=>{
   if(d.wren){const id=d.wren,cur=wDevs()[id].n,v=prompt('改名',cur);if(v==null)return;const n=v.trim();return wSet(s=>{s.names=s.names||{};if(!n||n===(WDEV[id]||{}).n)delete s.names[id];else s.names[id]=n})}
   if(d.waltdel){wAltDel(d.waltdel,+d.wi);return}
   if(d.wcdel){const id=d.wcdel;delete wImg()[id];delete wImg()['_alt_'+id];wImgSave();return wSet(s=>{s.custom=(s.custom||[]).filter(c=>c.id!==id)})}
-  if(d.wmode){wireMode=d.wmode;render();return}
+  if(d.wmode){wireMode=d.wmode;wireSel='';render();return}
+  if(d.wstep){const m=wireMode,S=wSteps(m);window.wCur=window.wCur||{};const st=wSt(),done=st[m]||{};let c=wCurIdx(m,S,done);if(+d.wstep>0&&c<S.length){const id=S[c].id;window.wCur[m]=c+1;return wSet(s=>{s[m]=s[m]||{};s[m][id]=1})}window.wCur[m]=Math.max(0,c-1);render();return}
+  if(d.wjump){window.wCur=window.wCur||{};window.wCur[wireMode]=+d.wjump;render();return}
   if(d.bagren){const k=d.bagren,v=prompt('這一層叫什麼？',bagLab(k,k==='pack'?'個人物品':'音樂設備'));if(v==null)return;return wSet(s=>{s.bagn=s.bagn||{};if(v.trim())s.bagn[k]=v.trim();else delete s.bagn[k]})}
   if(d.wview){window.wView=d.wview;render();return}
   if(d.wvolk){window.wVol=window.wVol===d.wvolk?'':d.wvolk;render();return}
@@ -1308,7 +1328,7 @@ document.addEventListener('click',e=>{
     case 'pack-edit':packEdit=!packEdit;return render();
     case 'wadd':{const v=($('#wadd')||{}).value;const n=(v||'').trim();if(!n||!wireSel)return;return wSet(s=>{s.custom=(s.custom||[]).concat({id:'c'+Date.now().toString(36),n,g:wireSel})})}
     case 'wpack':return wPack();
-    case 'wreset':return wSet(s=>{s[d.wm]={}});
+    case 'wreset':if(window.wCur)delete window.wCur[d.wm];return wSet(s=>{s[d.wm]={}});
     case 'gear-edit':gearEdit=!gearEdit;return render();
     case 'fill-bags':return fillDefaultBags();
     case 'load-checks':return loadDefaultChecks();
