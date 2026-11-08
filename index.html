@@ -138,13 +138,14 @@ details.fold>.cgrid{padding:8px 8px 0}
 .lname{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:.06em}
 .ptiles{display:flex;flex-wrap:wrap;gap:6px}
 .ckimg{width:40px;height:32px;object-fit:contain;background:#fff;border-radius:6px;border:1px solid var(--line);flex:none}
-.pcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;align-items:start}
-.pcard{background:var(--surface,#fff);border:1px solid var(--line);border-radius:18px;overflow:hidden}
-.pchead{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line)}.pchead b{font-size:18px;flex:1}
-.pcimg{width:72px;height:72px;object-fit:contain;background:#fff;border-radius:12px;flex:none}
-.pcbody{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px}.pcbody .lname{width:100%;font-size:13px;color:var(--muted)}
-.pcard .tile2{flex-direction:column;align-items:center;justify-content:flex-start;width:96px;min-height:64px;padding:22px 6px 6px;text-align:center;position:relative;font-size:12.5px}
-.pcard .tile2 i{position:absolute;top:5px;left:5px}.pcard .tlimg{width:72px;height:60px}
+.pcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;align-items:start}
+.pcard{background:var(--surface,#fff);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.pchead{display:flex;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid var(--line)}.pchead b{font-size:16px;flex:1}
+.pcimg{width:44px;height:44px;object-fit:contain;background:#fff;border-radius:10px;flex:none}
+.pcbody{padding:8px 10px}.pcbody .lname{font-size:12px;color:var(--muted);margin:0 0 4px}.pcbody .ptiles{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px}
+.pcard .tile2{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:auto;height:92px;padding:6px 4px 5px;text-align:center;position:relative;font-size:12px;line-height:1.25;overflow:hidden}
+.pcard .tile2>span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pcard .tile2 i{position:absolute;top:4px;left:4px;width:13px;height:13px}.pcard .tlimg{width:100%;height:46px;flex:none}
 .pcard .tile2.on .tlimg{opacity:.4}
 .tlimg{width:30px;height:26px;object-fit:contain;background:#fff;border-radius:5px;flex:none}
 .vsimg{width:52px;height:44px;object-fit:contain;background:#fff;border-radius:8px}
@@ -733,7 +734,7 @@ function wDiagram(){
   const cab=(g,cls,d,path,cx,cy,t)=>`<g class="wcab${on(g)}" data-wire="${g}"${d?` data-wdrop="${d}"`:''}><path class="${cls}" d="${path}"/>${t?lab(cx,cy,t,d):''}</g>`;
   const bdg=(x,y,n)=>`<g class="wb"><circle cx="${x}" cy="${y}" r="13"/><text x="${x}" y="${y+5}">${n}</text></g>`,badge=(k,n)=>bdg(...jp(k),n);
   const [c1x,c1y]=jp('ch1'),[c2x,c2y]=jp('ch2'),[ax,ay]=jp('aux'),[mx,my]=jp('mon'),[sx,sy]=jp('st');
-  const br=wRatio(IM.bose)||1,[ox,oy,ow,oh]=imRect(0,0,170,164,br),bu=(170*BOSEJ[0]-ox)/ow,bv=(164*BOSEJ[1]-oy)/oh,[nx,ny,nw,nh]=imRect(760,100,235,204,br),bjx=nx+nw*bu,bjy=ny+nh*bv;
+  const br=wRatio(IM.bose)||1,[ox,oy,ow,oh]=imRect(0,0,170,164,br),bu=(170*BOSEJ[0]-ox)/ow+.075,bv=(164*BOSEJ[1]-oy)/oh-.012,[nx,ny,nw,nh]=imRect(760,100,235,204,br),bjx=nx+nw*bu,bjy=ny+nh*bv;
   return `<svg class="wire" viewBox="0 0 1000 890" role="img" aria-label="接線總圖" style="${wZoomCss()}">
   <g class="wd${sel('mix')}" data-wire="mix" data-wdrop="ag06">${IM.ag06?`<image href="${IM.ag06}" x="${AX}" y="${AY}" width="${AW}" height="${AH}" preserveAspectRatio="xMidYMid meet"/>`:`<rect class="hit" x="${AX}" y="${AY}" width="${AS}" height="${AS}" rx="18"/><text x="500" y="${AY+AS/2}" class="wt" text-anchor="middle">放 AG06 正面圖</text>`}</g>
   <g class="wd${sel('mix')}" data-wire="mix" data-wdrop="ag06b">${IM.ag06b?`<image href="${IM.ag06b}" x="${BX}" y="${BY}" width="${BW}" height="${BH}" preserveAspectRatio="xMidYMid meet"/>`:`<rect class="hit" x="${BX}" y="${BY}" width="${BW}" height="${BH}" rx="14"/><text x="500" y="${BY+BH/2+5}" class="wt" text-anchor="middle">放 AG06 背面圖（鏡射）</text>`}</g>
