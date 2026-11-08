@@ -178,7 +178,7 @@ details.fold>.cgrid{padding:8px 8px 0}
 .iempty{padding:14px 8px;font-size:12px;color:var(--muted);text-align:center}.icol.dropover{outline:2px dashed var(--accent);outline-offset:-2px}.irow.rainon .inm{color:#2f6db5}
 #wpop{position:fixed;z-index:1000;min-width:200px;max-width:260px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:6px 0;font-size:14px}
 #wpop button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;font:inherit;color:inherit;text-align:left;padding:8px 16px}#wpop button:active,#wpop button:hover{background:var(--accent-soft,#eef5f5)}#wpop button[disabled]{opacity:.35}
-#wpop .pic{width:20px;text-align:center}#wpop hr{border:0;border-top:1px solid var(--line);margin:5px 0}#wpop .ptitle{font-size:12px;color:var(--muted);padding:4px 16px 2px}
+#wpop .pic{width:20px;text-align:center}#wpop .pic img{width:22px;height:22px;object-fit:contain;vertical-align:middle}#wpop hr{border:0;border-top:1px solid var(--line);margin:5px 0}#wpop .ptitle{font-size:12px;color:var(--muted);padding:4px 16px 2px}
 #wpop .palts{display:flex;flex-wrap:wrap;gap:6px;padding:4px 16px 6px}#wpop .palts img{width:44px;height:44px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:8px}
 .packbar .btn{white-space:nowrap}
 .irow.dragsrc{opacity:.35}.irow.armed{background:var(--accent-soft,#eef5f5)}.irow.dropbefore{box-shadow:inset 0 3px 0 var(--accent)}.irow.dropafter{box-shadow:inset 0 -3px 0 var(--accent)}
@@ -675,10 +675,10 @@ function ckImg(c,cls){const I=wImg(),u=ckDevs(c).map(d=>I[d]).filter(Boolean).sl
 const tileBtn=(c,checked,rain)=>packEdit?`<button class="tile2 edit" data-edit-check="${esc(c.id)}">${ckImg(c,'tlimg')}<span>${esc(c.text)}</span><i class="pen" aria-hidden="true">✎</i></button>`:`<button class="tile2 ${checked[c.id]?'on':''} ${c.rain&&rain?'rainon':''}" data-tick="${esc(c.id)}" aria-pressed="${!!checked[c.id]}"><i></i>${ckImg(c,'tlimg')}<span>${esc(c.text)}</span></button>`;
 const ptiles=(l,checked,rain,bag)=>`<div class="ptiles">${l.length?l.map(c=>tileBtn(c,checked,rain)).join(''):(packEdit?'':'<span class="small muted">（空）</span>')}${packEdit&&bag!==undefined?`<button class="tile2 add" data-add-bag="${bag}">＋ 新增</button>`:''}</div>`;
 // 11-08 她選「照圖改」：打包的器材改用清點的器材（名稱跟著清點走），線材跟著小袋；個人物品、打賞箱、名牌、雨傘、行動電源 ×N 不動。只跑一次，舊清單先備份
-const PK2=[['bose','cart','前一晚充電','黑色編織線捲在上面'],['stand','cart','出門準備'],['chair','cart','其他'],
+const PK2=[['bose','cart','出門準備','黑色編織線捲在上面'],['stand','cart','出門準備'],['chair','cart','其他'],
  ['ag06','tote1','出門準備','電源小袋：行動電源、USB-C 線｜伴奏小袋：3.5mm 線、iPad 轉接頭、Lightning 轉接頭'],['tray','tote1','出門準備'],
- ['iem','tote2','前一晚充電'],['rx','tote2','前一晚充電'],['clip','tote2','出門準備'],['mclip','tote2','出門準備'],['pclip','tote2','出門準備'],['clip2','tote2','出門準備'],
- ['mcase','pack2','前一晚充電','有線麥、無線麥＋接收器、充電電池、藍色 XLR、紅色防風罩'],['ipad','pack2','前一晚充電'],['iphone','pack2','前一晚充電']];
+ ['iem','tote2','出門準備'],['rx','tote2','出門準備'],['clip','tote2','出門準備'],['mclip','tote2','出門準備'],['pclip','tote2','出門準備'],['clip2','tote2','出門準備'],
+ ['mcase','pack2','出門準備','有線麥、無線麥＋接收器、充電電池、藍色 XLR、紅色防風罩'],['ipad','pack2','出門準備'],['iphone','pack2','出門準備']];
 const PK_OLD=[/^音響$/,/麥克風.*電池/,/^監聽/,/^iPad ?mini/i,/^支架/,/^AG06/i,/線材.*轉接頭/,/^椅子$/,/^腳架/];
 function pkMigrate(){const st=wSt();if(st.pkv2||!Object.keys(S.checks).length)return;
   try{localStorage.setItem(LS+'-checks-bak-pk2',JSON.stringify(S.checks))}catch(e){}
@@ -686,11 +686,15 @@ function pkMigrate(){const st=wSt();if(st.pkv2||!Object.keys(S.checks).length)re
   const DV=wDevs(),bagN={};PK2.forEach(([d,bag,g,sub])=>{if(!DV[d])return;const k=bagN[bag]=(bagN[bag]||0);bagN[bag]++;put('checks','d_'+d,{group:g,text:DV[d].n,bag,po:k,order:50+k,dev:d,wd:d,sub:sub||''})});
   const fix={'打賞箱':'cart','QR Code 名牌':'cart','雨傘 ×2／地墊':'cart'};Object.entries(S.checks).forEach(([id,c])=>{if(fix[c.text]&&bagOf(c)!==fix[c.text])put('checks',id,{...c,bag:fix[c.text]})});
   st.pkv2=1;try{localStorage.setItem(LS+'-wire',JSON.stringify(st))}catch(e){}}
+// 充電跟打包是兩件事：前一晚充電用自己的項目（q_），勾選分開
+const CHG=[['bose','Bose 充電'],['mcase','麥克風電池充電'],['iem','監聽發射器充電'],['rx','監聽接收器充電'],['ipad','iPad 充電'],['iphone','iPhone 充電']];
+function pkV3(){const st=wSt();if(st.pkv3||!st.pkv2)return;Object.entries(S.checks).forEach(([id,c])=>{if(id.startsWith('d_')&&c.group==='前一晚充電')put('checks',id,{...c,group:'出門準備'})});
+  CHG.forEach(([d,t],i)=>{if(!S.checks['q_'+d])put('checks','q_'+d,{group:'前一晚充電',text:t,order:i,dev:d})});st.pkv3=1;try{localStorage.setItem(LS+'-wire',JSON.stringify(st))}catch(e){}}
 const ckName=c=>c.wd&&wDevs()[c.wd]?wDevs()[c.wd].n:c.text;
 function vPack(){
-  pkMigrate();
+  pkMigrate();pkV3();
   const n=next(),checked=n.checked||{},rain=!!n.rain;
-  const items=sorted('checks','order').filter(c=>GROUPS.includes(c.group)&&c.group!=='當日');
+  const items=sorted('checks','order').filter(c=>GROUPS.includes(c.group)&&c.group!=='當日'&&!c.id.startsWith('q_'));
   const prev=!!window.mergePrev;
   if(!items.length&&!prev)return emptyChecks();
   const src=prev?mergedChecks():items;
@@ -698,7 +702,7 @@ function vPack(){
   const cnt=l=>`<span class="pcnt num">${l.filter(c=>checked[c.id]).length}/${l.length}</span>`;
   const cart=by('cart'),t1=by('tote1'),t2=by('tote2'),pk=by('pack'),pk2=by('pack2');
   const tiles=prev?(l)=>`<div class="ptiles">${l.map(c=>`<div class="tile2">${c.group==='前一晚充電'?'<em class="zap">⚡</em>':''}${ckImg(c,'tlimg')}<span>${esc(c.text)}</span></div>`).join('')}</div>`:ptiles;
-  let h=prev?`<div class="mprev"><div><b>👀 整合版預覽（還沒套用）</b><div class="small">一件器材只出現一次；⚡＝前一晚要充電。拉車本身不放進任何包。</div></div><div class="mbtn"><button class="btn sm" data-act="merge-off">關閉</button><button class="btn sm primary" data-act="merge-apply">套用這份</button></div></div>`:`<div class="packbar"><p class="small muted" style="margin:0">點一下＝裝好了；按住拖曳＝換位置或換包；⋯＝改名、換照片、刪除。勾選跟準備清單是同一份。</p></div>`;
+  let h=prev?`<div class="mprev"><div><b>👀 整合版預覽（還沒套用）</b><div class="small">一件器材只出現一次；⚡＝前一晚要充電。拉車本身不放進任何包。</div></div><div class="mbtn"><button class="btn sm" data-act="merge-off">關閉</button><button class="btn sm primary" data-act="merge-apply">套用這份</button></div></div>`:`<div class="packbar"><p class="small muted" style="margin:0">出門裝包、收工清點都用這頁。點一下＝打勾；按住拖曳＝換位置或換包；⋯＝改名、換照片。</p><span style="display:flex;gap:6px"><button class="btn sm" data-act="wpack">📦 匯入圖片包</button><button class="btn sm" data-act="pack-clear">收工：清掉勾重點</button></span></div>`;
   if(rain)h+=`<div class="banner warn small" style="margin-bottom:10px">雨天：雨傘、地墊放拉車。</div>`;
   // 包包用她收納組的實物照片當標題（名字對到「拉車／手提袋／後背包」）
   const bagImg=(nm,fb)=>{const I=wImg(),e=Object.entries(wDevs()).find(([d,v])=>v.n.includes(nm)&&I[d]);const u=e?I[e[0]]:I[fb];return u?`<img class="pcimg" src="${wTh(u)}" alt="">`:''};
@@ -712,7 +716,7 @@ function vPack(){
   return h}
   // 跟清點同一種樣子：一個包一大欄、每層一小欄；勾、照片、名稱、⋯；按住拖曳換位置或換包
   const po=l=>l.slice().sort((a,b)=>(a.po??1e9)-(b.po??1e9));
-  const row=c=>{const on=!!checked[c.id];return `<div class="irow ${on?'on':''} ${c.rain&&rain?'rainon':''}" data-pk="${esc(c.id)}"><button class="imain" data-tick="${esc(c.id)}"><span class="iwrap"><span class="iim">${ckImg(c,'pkimg')}</span><span class="ick">${on?'✓':''}</span></span><span class="inm">${esc(ckName(c))}${c.sub?`<small class="isub">${c.sub.split('｜').map(esc).join('<br>')}</small>`:''}</span></button><button class="idot" data-edit-check="${esc(c.id)}" aria-label="編輯">⋯</button></div>`};
+  const row=c=>{const on=!!checked[c.id];return `<div class="irow ${on?'on':''} ${c.rain&&rain?'rainon':''}" data-pk="${esc(c.id)}"><button class="imain" data-tick="${esc(c.id)}"><span class="iwrap"><span class="iim">${ckImg(c,'pkimg')}</span><span class="ick">${on?'✓':''}</span></span><span class="inm">${esc(ckName(c))}${c.sub?`<small class="isub">${c.sub.split('｜').map(esc).join('<br>')}</small>`:''}</span></button>${c.wd&&wDevs()[c.wd]?`<button class="idot" data-wmenu="${c.wd}" data-ck="${esc(c.id)}" aria-label="更多">⋯</button>`:`<button class="idot" data-edit-check="${esc(c.id)}" aria-label="編輯">⋯</button>`}</div>`};
   const col=(bag,nm,l,ren)=>`<div class="icol ${l.length&&l.every(c=>checked[c.id])?'ok':''}" data-drop="${bag}"><div class="ichead"><b>${esc(nm)}</b>${ren?`<button class="idot" data-bagren="${bag}" aria-label="改名">✏️</button>`:''}<span class="num">${l.filter(c=>checked[c.id]).length}/${l.length}</span><button class="idot" data-add-bag="${bag}" aria-label="新增">＋</button></div>${po(l).map(row).join('')||'<div class="iempty">拖到這裡</div>'}</div>`;
   const cat=(nm,fb,cols)=>{const all=cols.flatMap(x=>x[2]);return `<div class="icat" style="--n:${cols.length}"><div class="icath pkh">${bagImg(nm,fb)}<span>${nm}</span><span class="num">${all.filter(c=>checked[c.id]).length}/${all.length}</span></div><div class="icg">${cols.map(x=>col(...x)).join('')}</div></div>`};
   const none=src.filter(c=>!BAG_NAME[bagOf(c)]&&!/^拉車/.test(c.text));// 拉車本身是容器，不算要放進包包的東西
@@ -831,11 +835,13 @@ function vVolSheet(){const st=wSt(),vs=st.vs||{},nz=vs.noise||'',lim=vs.lim||'',
   </div>`}
 function volTarget(nz,lim){const n=parseFloat(nz),l=parseFloat(lim);if(isNaN(n))return '';let t=n+8;if(!isNaN(l))t=Math.min(t,l);return Math.round(t*10)/10}
 // ⋯ 選單：像右鍵選單一樣直的一排，浮在 ⋯ 旁邊
+const WKIDS={ag06:['ag06b','bat','usbc','aux','adpI','adpP'],mcase:['mic','wl','batt','xlr','wind'],bose:['trs']};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-wsub]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();const btn=window._popBtn;wPopClose();const f=document.createElement('button');f.dataset.x=1;wPop(btn&&btn.isConnected?{getBoundingClientRect:()=>btn.getBoundingClientRect(),dataset:{}}:f,b.dataset.wsub)},true);
 function wPopClose(){const m=document.getElementById('wpop');if(m)m.remove()}
 function wPop(btn,d){const was=document.getElementById('wpop');wPopClose();if(was&&was.dataset.d===d)return;
   const I=wImg(),v=wDevs()[d]||{},im=I[d],al=wAlt(d),it=(a,ic,t,dis)=>`<button ${dis?'disabled':`data-${a}="${d}"`}><span class="pic">${ic}</span>${t}</button>`,hr='<hr>';
-  const m=document.createElement('div');m.id='wpop';m.dataset.d=d;
-  m.innerHTML=`<div class="ptitle">${esc(v.n||'')}</div>`+it('wren','✏️','改名')+hr+it('wpaste','📋','貼上圖片')+it('wimg','🖼','從相簿選')+it('wcut','✂️','去背',!im)+hr+it('wcopy','📄','複製圖片',!im)+it('wsave','💾','存原圖',!im)+hr+it('wimgdel','🗑','移除照片',!im)+(v.c?it('wcdel','✕','刪掉這一項'):'')+(al.length?`${hr}<div class="ptitle">候選照片（點一下換上）</div><div class="palts">${al.map((u,j)=>`<img src="${wTh(u,120)}" alt="" data-wuse="${d}" data-wi="${j}">`).join('')}</div>`:'');
+  const m=document.createElement('div');m.id='wpop';m.dataset.d=d;window._popBtn=btn;const ck=btn.dataset.ck,kids=(WKIDS[d]||[]).filter(k=>wDevs()[k]);
+  m.innerHTML=`<div class="ptitle">${esc(v.n||'')}</div>`+it('wren','✏️','改名')+hr+it('wpaste','📋','貼上圖片')+it('wimg','🖼','從相簿選')+it('wcut','✂️','去背',!im)+hr+it('wcopy','📄','複製圖片',!im)+it('wsave','💾','存原圖',!im)+hr+it('wimgdel','🗑','移除照片',!im)+(v.c?it('wcdel','✕','刪掉這一項'):'')+(kids.length?`${hr}<div class="ptitle">裡面的東西（點了換它的照片、名字）</div>${kids.map(k=>`<button data-wsub="${k}"><span class="pic">${I[k]?`<img src="${wTh(I[k],60)}" alt="">`:'·'}</span>${esc(wDevs()[k].n)}</button>`).join('')}`:'')+(ck?`${hr}<button data-edit-check="${esc(ck)}"><span class="pic">📝</span>換包、分類、刪除</button>`:'')+(al.length?`${hr}<div class="ptitle">候選照片（點一下換上）</div><div class="palts">${al.map((u,j)=>`<img src="${wTh(u,120)}" alt="" data-wuse="${d}" data-wi="${j}">`).join('')}</div>`:'');
   document.body.appendChild(m);const R=btn.getBoundingClientRect(),W=m.offsetWidth,H=m.offsetHeight;
   let x=R.right-W,y=R.bottom+4;if(x<8)x=8;if(y+H>innerHeight-70)y=Math.max(8,R.top-H-4);m.style.left=x+'px';m.style.top=y+'px'}
 document.addEventListener('click',e=>{const m=document.getElementById('wpop');if(!m)return;if(e.target.closest('[data-wmenu]'))return;if(!m.contains(e.target)){wPopClose();return}if(e.target.closest('button:not([disabled]),img[data-wuse]'))setTimeout(wPopClose,0)},true);
@@ -972,8 +978,8 @@ function vWire(){
   wMigrate();
   const st=wSt(),inv=st.inv||{},I=wImg(),DV=wDevs();
   const thumbs=k=>Object.entries(DV).filter(([d,v])=>v.g===k&&I[d]).map(([d,v])=>`<img src="${wTh(I[d],120)}" alt="${esc(v.n)}" title="${esc(v.n)}">`).join('');
-  const M=wireMode==='vol'?'vol':wireMode;window.wView=M==='vol'?'vol':'wire';
-  let h=`<div class="seg wmodes">${[['asm','🔧 組裝'],['off','📦 拆卸'],['inv','✅ 清點'],['vol','🎚 試音量']].map(([k,t])=>`<button data-wmode="${k}" aria-pressed="${M===k}">${t}</button>`).join('')}</div>`;
+  const M=wireMode==='vol'?'vol':wireMode==='inv'?'asm':wireMode;window.wView=M==='vol'?'vol':'wire';
+  let h=`<div class="seg wmodes">${[['asm','🔧 組裝'],['off','📦 拆卸'],['vol','🎚 試音量']].map(([k,t])=>`<button data-wmode="${k}" aria-pressed="${M===k}">${t}</button>`).join('')}</div>`;
   window.wFocus='';
   let side='';
   if(M==='asm'||M==='off'){
@@ -1013,7 +1019,7 @@ pack:'<svg viewBox="0 0 48 48" class="bagicon"><path d="M19 9V7a5 5 0 0 1 10 0v2
 function bagItems(list,checked,rain){return list.length?list.map(c=>`<label class="check pk ${checked[c.id]?'done':''} ${c.rain&&rain?'rainon':''}"><input type="checkbox" data-check="${esc(c.id)}" ${checked[c.id]?'checked':''}><span>${esc(c.text)}</span></label>`).join(''):'<div class="muted small" style="padding:6px 12px">（空）</div>'}
 const LINKS=[{t:'中央氣象署',sub:'看天氣、降雨',u:'https://www.cwa.gov.tw/V8/C/'},{t:'國道路況',sub:'去台北場地前先看高速公路',u:'https://tw.live/national-highway/1/'}];
 function checkLinks(){return `<div class="links">${LINKS.map(l=>`<a class="btn linkbtn" href="${l.u}" target="_blank" rel="noopener"><b>${l.t} ↗</b><span>${l.sub}</span></a>`).join('')}</div>`}
-const checkRow=(c,checked,rain)=>`<label class="check ${checked[c.id]?'done':''} ${c.rain?'rain':''} ${c.rain&&rain?'rainon':''}"><input type="checkbox" data-check="${esc(c.id)}" ${checked[c.id]?'checked':''}>${ckImg(c)}<span>${esc(c.text)}</span>${/音量/.test(c.text||'')?`<button class="ckvol" data-wvolgo="${/監聽/.test(c.text)?'mon':/音響/.test(c.text)?'spk':''}">🎚 看旋鈕</button>`:''}</label>`;
+const checkRow=(c,checked,rain)=>`<label class="check ${checked[c.id]?'done':''} ${c.rain?'rain':''} ${c.rain&&rain?'rainon':''}"><input type="checkbox" data-check="${esc(c.id)}" ${checked[c.id]?'checked':''}>${ckImg(c)}<span>${esc(ckName(c))}</span>${/音量/.test(c.text||'')?`<button class="ckvol" data-wvolgo="${/監聽/.test(c.text)?'mon':/音響/.test(c.text)?'spk':''}">🎚 看旋鈕</button>`:''}</label>`;
 
 function venueOptions(sel){
   const vs=sorted('venues','name');
@@ -1241,13 +1247,14 @@ function vGear(){
   }
   const checks=sorted('checks','order');
   if(!gearEdit){
+    pkMigrate();pkV3();
     const n=next(),checked=n.checked||{},rain=!!n.rain;
-    const pre=checks.filter(c=>GROUPS.includes(c.group)),on=checks.filter(c=>ONSITE.includes(c.group));
+    const TG=['前一晚充電','當日'],pre=checks.filter(c=>TG.includes(c.group)),on=checks.filter(c=>ONSITE.includes(c.group));
     const done=pre.filter(c=>checked[c.id]).length;
     h+=`<section class="sec"><div class="btns"><button class="btn sm ${rain?'primary':''}" data-act="rain" aria-pressed="${rain}">${rain?'☂ 雨天模式開':'☂ 雨天模式'}</button><button class="btn sm" data-act="gear-edit">編輯清單</button></div>${checkLinks()}</section>`;
     if(rain)h+=`<div class="banner warn" style="margin-bottom:14px">雨天：記得帶雨傘、地墊。</div>`;
     if(!checks.length)return h+emptyChecks();
-    h+=`<section class="sec"><div class="sec-head"><h2>出門前</h2><span class="num muted">${done} / ${pre.length}</span></div><div class="progress"><i style="width:${pre.length?Math.round(done/pre.length*100):0}%"></i></div>${checkGroups(pre,GROUPS,checked,rain)}</section>`;
+    h+=`<section class="sec"><div class="sec-head"><h2>前一晚／當日</h2><span class="num muted">${done} / ${pre.length}</span></div><div class="progress"><i style="width:${pre.length?Math.round(done/pre.length*100):0}%"></i></div>${checkGroups(pre,TG,checked,rain)}<p class="small muted" style="margin:6px 0 0">要帶的器材和隨身物品在「打包」打勾。</p></section>`;
     if(on.length)h+=`<section class="sec"><h2>現場</h2>${checkGroups(on,ONSITE,checked,rain,true)}</section>`;
     h+=`<section class="sec"><button class="btn block" data-act="reset-checks" data-confirm="再按一次清空勾選">重置清單</button><p class="small muted" style="margin:0">這裡跟「下一場」分頁是同一份勾選。演出後寫紀錄會自動重置。</p></section>`;
     h+=`<p class="small" style="text-align:center"><button class="ghost" data-gearseg="stock">租借／設備庫存 ›</button></p>`;
@@ -1481,6 +1488,7 @@ document.addEventListener('click',e=>{
     case 'wreset':if(window.wCur)delete window.wCur[d.wm];return wSet(s=>{s[d.wm]={}});
     case 'gear-edit':gearEdit=!gearEdit;return render();
     case 'fill-bags':return fillDefaultBags();
+    case 'pack-clear':{const n=clone(next());const ck=n.checked||{};Object.values(S.checks).length&&Object.entries(S.checks).forEach(([id,c])=>{if(!id.startsWith('q_')&&(BAG_NAME[bagOf(c)]||id.startsWith('d_')))delete ck[id]});n.checked=ck;putNextSoon(n);toast('勾都清掉了，收工一樣一樣點');return}
     case 'load-checks':return loadDefaultChecks();
     case 'new-record':return recordSheet(null);
     case 'new-venue':return venueSheet(null);
