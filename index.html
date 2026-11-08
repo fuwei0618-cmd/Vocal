@@ -166,6 +166,7 @@ details.fold>.cgrid{padding:8px 8px 0}
 .irow .ghost{padding:4px 8px;font-size:15px}
 .vsheet{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-content:start}.vbox{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:7px 10px;font-size:13px;line-height:1.5;display:flex;flex-direction:column;gap:1px}.vbox>b:first-child{font-size:14px;margin-bottom:2px}
 .vtgt{grid-column:1/-1;border:2px solid var(--accent)}.vcalc{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.vcalc label{display:flex;align-items:center;gap:3px}.vcalc input{width:52px;padding:4px 6px;font-size:16px;border:1px solid var(--line);border-radius:8px;text-align:center}
+.vpre{display:flex;gap:6px;margin:6px 0 4px}.vpre button{flex:1;padding:5px 0;border-radius:8px;border:1px solid var(--line,#ccc);background:transparent;font-size:13px}
 .vres{font-size:15px}.vres b{font-size:24px;color:var(--accent)}.vsel{grid-column:1/-1;border:2px solid var(--accent);background:var(--accent-soft)}
 .vdot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
 @media (min-width:821px){.wsplit:has(.vsheet){grid-template-columns:minmax(320px,.9fr) 1.6fr}}
@@ -765,7 +766,7 @@ function volRing(x,y,t,r){return `<circle class="vring${volOn(t)?'':' off'}" cx=
 function vVolSheet(){const st=wSt(),vs=st.vs||{},nz=vs.noise||'',lim=vs.lim||'',t=volTarget(nz,lim),v=window.wVol||'';
   const C=(c,t)=>`<span class="vdot" style="background:${VOLC[c]}"></span>${t}`;
   return `<div class="vsheet">
-  <div class="vbox vtgt"><b>① 目標音量</b><div class="vcalc"><label>底噪<input id="vnoise" inputmode="decimal" value="${esc(nz)}" placeholder="量">dB</label><span>＋8</span><label>上限<input id="vlim" inputmode="decimal" value="${esc(lim)}" placeholder="場地">dB</label></div><div class="vres">目標 <b id="vtgt">${t||'—'}</b> dB</div><small>站喇叭前 3 公尺（約 4 大步）量 30 秒</small></div>
+  <div class="vbox vtgt"><b>① 目標音量</b><div class="vcalc"><label>底噪<input id="vnoise" inputmode="decimal" value="${esc(nz)}" placeholder="量">dB</label><span>＋8</span><label>上限<input id="vlim" inputmode="decimal" value="${esc(lim)}" placeholder="場地">dB</label></div><div class="vres">目標 <b id="vtgt">${t||'—'}</b> dB</div><div class="vpre"><button data-vlim="77">白天 77</button><button data-vlim="62">19 點後 62</button></div><small>喇叭正前方 3 公尺（約 4 大步），手機舉到胸口高（離地 1.2–1.5 公尺）量 30 秒。太吵量不準時：改在喇叭前 10 公分量，白天 ≤106.5、晚上 ≤91.5</small></div>
   <div class="vbox"><b>${C('mic','②')} 麥克風（每人）</b><div><b>GAIN 看燈</b>：LEVEL 先 12 點，唱最大聲，轉到 PEAK 快亮沒亮</div><div><b>LEVEL 看分貝</b>：3 公尺處讀數＝目標</div></div>
   <div class="vbox"><b>${C('music','③')} 伴奏（每首）</b><div>iPad／iPhone 開七八成</div><div>副歌最大聲時，轉藍圈讓讀數＝目標</div></div>
   <div class="vbox"><b>${C('spk','④')} 音響</b><div>Bose 綠圈從最小慢慢轉大，配 AG06 綠圈</div><b style="margin-top:4px">${C('mon','⑤')} 監聽（最後）</b><div>紅圈＋接收器，自己聽清楚就好</div></div>
@@ -773,6 +774,7 @@ function vVolSheet(){const st=wSt(),vs=st.vs||{},nz=vs.noise||'',lim=vs.lim||'',
   ${v?`<div class="vbox vsel"><b>${VOLN[v.split('|')[0]]}・${VOLN[v.split('|')[1]]}</b>${VOLSTEP[v].map((x,i)=>`<div>${i+1}. ${esc(x)}</div>`).join('')}</div>`:''}
   </div>`}
 function volTarget(nz,lim){const n=parseFloat(nz),l=parseFloat(lim);if(isNaN(n))return '';let t=n+8;if(!isNaN(l))t=Math.min(t,l);return Math.round(t*10)/10}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-vlim]');if(!b)return;e.preventDefault();e.stopPropagation();const l=$('#vlim');l.value=b.dataset.vlim;l.dispatchEvent(new Event('input',{bubbles:true}))},true);
 document.addEventListener('input',e=>{if(e.target.id!=='vnoise'&&e.target.id!=='vlim')return;const nz=$('#vnoise').value,lim=$('#vlim').value;$('#vtgt').textContent=volTarget(nz,lim)||'—';clearTimeout(window._vsT);window._vsT=setTimeout(()=>{const s=wSt();s.vs={noise:nz,lim};try{localStorage.setItem(LS+'-wire',JSON.stringify(s))}catch(_){}},400)});
 function vVolPanel(part){const v=window.wVol||'';
   const cell=(r,c)=>{const k=r+'|'+c;return `<button class="vcell${v===k?' on':''}" data-wvolk="${k}" style="--a:${VOLC[r]};--b:${VOLC[c]}"><b style="color:${VOLC[r]}">${VOLN[r]}</b><span style="color:${VOLC[c]}">${VOLN[c]}</span></button>`};
