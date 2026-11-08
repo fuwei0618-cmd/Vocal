@@ -86,6 +86,20 @@
 .icats.use .inn{font-size:12.5px;line-height:1.25}.icats.use .isub{display:none}
 .icats.use .idot{margin-top:0;align-self:center;padding:0 6px!important;font-size:14px}
 @media (max-width:1000px){.icats.use{grid-template-columns:1fr 1fr!important}}@media (max-width:560px){.icats.use{grid-template-columns:1fr!important}}
+
+/* 11-09 按包包一頁：每行縮小、盒子內容接成一段（字全留）、手提袋分兩欄 */
+.icats.pk{gap:10px!important}.icats.pk .icat{flex-basis:calc(var(--n)*200px)}
+.icats.pk .icat:has([data-drop=tote1]){flex:2 1 400px}
+.icats.pk .icol[data-drop=tote1]{columns:2;column-gap:0}.icats.pk .icol[data-drop=tote1]>*,.icats.pk .ibg{break-inside:avoid}
+.icats.pk .icath{font-size:13.5px!important;padding-bottom:4px!important}.icats.pk .ichead{padding:4px 6px 4px 10px!important}.icats.pk .ichead b{font-size:12px!important}
+.icats.pk .irow{min-height:0}.icats.pk .imain{gap:7px!important;padding:3px 0 3px 8px!important}
+.icats.pk .ick{width:16px!important;height:16px!important;margin-top:7px!important;font-size:10px!important}
+.icats.pk .iim{width:30px!important;height:30px!important;border-radius:6px}
+.icats.pk .inn{font-size:12.5px;line-height:1.3}.icats.pk .idot{margin-top:3px;padding:0 6px!important;font-size:14px}
+.icats.pk .isub{margin-top:1px;line-height:1.35}.icats.pk .iit{display:inline;padding:0;font-size:11px}.icats.pk .iit::before{content:none}.icats.pk .iit+.iit::before{content:'・';position:static;width:auto;height:auto;background:none;opacity:.6}
+.icats.pk .ilab{display:inline;margin:0 3px 0 0;font-size:10.5px}.icats.pk .ilab:not(:first-child){margin-left:6px}.icats.pk .ilab::after{content:'：'}
+.icats.pk .ibgrp{padding:3px 10px;font-size:11.5px}.icats.pk .isec{padding:4px 10px 1px!important;font-size:10.5px!important}
+@media (max-width:700px){.icats.pk .icol[data-drop=tote1]{columns:1}}
 </style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1"><link rel="icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vocal"><meta name="theme-color" content="#EDEFEA"><script src="https://fuwei0618-cmd.github.io/Entry/sync/origina-sync.js" data-app="vocal" data-keys="busk-app-v1,busk-app-v1-wimg,busk-app-v1-wire" data-pos="br"></script>
 </head><body>
 <title>街演 App</title>
@@ -805,7 +819,7 @@ function vPack(){
   const secRows=l=>{const ord=[];l.forEach(c=>{const k=c.sec||'';if(!ord.includes(k))ord.push(k)});let o='';ord.forEach(k=>{if(k)o+=`<div class="isec">${esc(k)}</div>`;o+=l.filter(c=>(c.sec||'')===k).map(row).join('')});return o};
   // 包包裡再按用途分組（架子組、混音組…），組裡再分小類（麥架／螢幕架）
   const GORD=['pack','stand','mix','mic','bk','iem','spk'],gOfC=c=>{const d=c.wd&&wDevs()[c.wd];return c.wd==='mcase'?'mic':c.wd==='iembox'?'iem':d?d.g:''};
-  const grpRows=l=>{const ks=[...GORD,''].filter(k=>l.some(c=>gOfC(c)===k));if(ks.length===1&&!ks[0])return secRows(l);return ks.map(k=>{const g=WG.find(x=>x.k===k);return `<div class="ibgrp">${g?esc(g.ic+' '+g.n):'👜 其他'}</div>`+secRows(l.filter(c=>gOfC(c)===k))}).join('')};
+  const grpRows=l=>{const ks=[...GORD,''].filter(k=>l.some(c=>gOfC(c)===k));if(ks.length===1&&!ks[0])return secRows(l);return ks.map(k=>{const g=WG.find(x=>x.k===k);return `<div class="ibg"><div class="ibgrp">${g?esc(g.ic+' '+g.n):'👜 其他'}</div>`+secRows(l.filter(c=>gOfC(c)===k))+'</div>'}).join('')};
   const cat=(nm,fb,cols)=>{const all=cols.flatMap(x=>x[2]);return `<div class="icat" style="--n:${cols.length}"><div class="icath pkh">${bagImg(nm,fb)}<span>${nm}</span><span class="num">${all.filter(c=>checked[c.id]).length}/${all.length}</span>${cols.length===1?`<button class="idot" data-add-bag="${cols[0][0]}" aria-label="新增">＋</button>`:''}</div><div class="icg">${cols.map(x=>cols.length===1?col(x[0],x[1],x[2],x[3],1):col(...x)).join('')}</div></div>`};
   const none=src.filter(c=>!BAG_NAME[bagOf(c)]&&!/^拉車/.test(c.text));// 拉車本身是容器，不算要放進包包的東西
   const V=window.pkView||'bag';h+=`<div class="seg pkseg">${[['bag','按包包'],['use','按用途']].map(([k,t])=>`<button data-pkview="${k}" aria-pressed="${V===k}">${t}</button>`).join('')}</div>`;
