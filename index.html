@@ -180,7 +180,7 @@ details.fold>.cgrid{padding:8px 8px 0}
 .wcab .xlr{stroke-width:9}.wcab .blk{stroke:#222;stroke-width:6}.wcab .brd{stroke:#222;stroke-width:10;stroke-dasharray:4 2}.wcab .gry{stroke:#8A8F94;stroke-width:10}.wcab .usbo{stroke:#bbb;stroke-width:9}.wcab .air{stroke:#1F6E77}
 .cpic rect{fill:#fff;stroke:#ccc;stroke-width:1.5}.cpic text{font-size:12px;font-weight:700;fill:#333}
 .wmain .dim{opacity:.18}
-.wmain{position:relative}.wmain svg.wire{max-height:58vh}.wmain.big{overflow-x:auto}.wmain.big svg.wire{max-height:none;min-width:900px}.wzoom{position:absolute;top:8px;right:8px;z-index:2;padding:4px 10px;font-size:13px}
+.wmain{position:relative}.wmain svg.wire{max-height:58vh}.wscroll{overflow:auto;max-height:80vh}.wmain svg.wire{margin:0 auto}.wcab .alt{stroke-dasharray:10 8;stroke-width:5}.wzoom{position:absolute;top:8px;right:8px;z-index:2;display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.9);border-radius:999px;padding:2px}.wzoom button{width:34px;height:34px;padding:0;font-size:18px;border-radius:50%}.wzl{font-size:13px;min-width:44px;text-align:center}
 .wtop{display:grid;gap:10px}@media (min-width:900px){.wtop{grid-template-columns:1.25fr 1fr;align-items:start}}
 .wbox{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:8px}
 svg.wire,svg.wpanel{width:100%;height:auto;display:block}svg.wpanel{max-width:560px;margin:0 auto}
@@ -639,8 +639,8 @@ const WG=[
  {k:'stand',n:'架子組',ic:'🦿',items:['腳架 ×2','托盤（放 AG06）','iPad 夾（長臂）','iPad 夾（車把夾）','麥克風延伸臂夾','麥克風彈簧夾','麥克風 O 型夾','管夾（手機用）','水杯托盤'],plug:['兩支腳架立好 → 裝水杯托盤 → 夾上 iPad 夾、麥克風夾、管夾'],jk:[]},
  {k:'mix',n:'混音組',ic:'🎛',items:['Yamaha AG06','行動電源','白色 USB-C 線'],plug:['AG06 放上水杯托盤','行動電源 → 白色 USB-C → AG06 背面 5V DC（④ 供電）'],jk:['usb']},
  {k:'mic',n:'麥克風組',ic:'🎤',items:['有線麥克風','紅色防風罩','藍色 XLR 線','無線麥克風','無線接收器','充電電池（已充飽）','電池充電器'],plug:['有線麥克風 → 藍色 XLR 線 → ① CH1','無線接收器直接插 ② CH2'],jk:['ch1','ch2']},
- {k:'bk',n:'伴奏組',ic:'🎵',items:['iPad','3.5mm 轉接頭','黑色 3.5mm 線'],plug:['iPad → 轉接頭 → 黑色細線 → ③ AUX（手機圖示）'],jk:['aux']},
- {k:'iem',n:'監聽組',ic:'🎧',items:['灰色發射器','接收器 ×2','入耳耳機 ×2'],plug:['灰色發射器直接插 ⑥ STEREO OUT','兩個接收器各接一副耳機，頻道跟發射器一樣'],jk:['st']},
+ {k:'bk',n:'伴奏組',ic:'🎵',items:['iPad','iPhone','iPad 轉接頭','iPhone 轉接頭','黑色 3.5mm 線'],plug:['iPad（或 iPhone）→ 自己的轉接頭 → 黑色細線 → ③ AUX（手機圖示）'],jk:['aux']},
+ {k:'iem',n:'監聽組',ic:'🎧',items:['灰色發射器','接收器 ×2','入耳耳機 ×2'],plug:['灰色發射器直接插 ⑥ MONITOR OUT R','兩個接收器各接一副耳機，頻道跟發射器一樣'],jk:['st']},
  {k:'spk',n:'喇叭組',ic:'🔊',items:['Bose S1 Pro+','黑色編織線（6.3mm 轉 XLR）'],plug:['⑤ MONITOR OUT L → 黑色編織線（6.3mm 那頭插 AG06，XLR 那頭插 Bose）→ Bose INPUT 1'],jk:['mon']},
 ];
 const WON=['開 AG06（電源開關在右上）','開監聽發射器、兩個接收器','Bose 音量轉到最小再開機','試音：慢慢把 Bose 音量轉大'];
@@ -651,8 +651,8 @@ function wSet(f){const s=wSt();f(s);try{localStorage.setItem(LS+'-wire',JSON.str
 const JN={ch1:'①',ch2:'②',aux:'③',usb:'④',mon:'⑤',st:'⑥'};
 // 設備圖片：她從 iPad 選官網產品圖，只存在這台裝置（不進公開 GitHub）
 const WDEV={mic:{n:'有線麥克風',g:'mic'},wl:{n:'無線麥克風＋接收器',g:'mic'},ipad:{n:'iPad',g:'bk'},ag06:{n:'AG06 正面',g:'mix'},ag06b:{n:'AG06 背面',g:'mix'},bat:{n:'行動電源',g:'mix'},bose:{n:'Bose S1 Pro+',g:'spk'},iem:{n:'監聽發射器',g:'iem'},rx:{n:'接收器＋耳機 ×2',g:'iem'},
-  cart:{n:'拉車',g:'pack'},chair:{n:'伸縮椅',g:'pack'},mcase:{n:'麥克風收納盒',g:'pack'},stand:{n:'腳架 ×2',g:'stand'},tray:{n:'水杯托盤',g:'stand'},clip:{n:'iPad 夾（長臂）',g:'stand'},clip2:{n:'iPad 夾（車把夾）',g:'stand'},mclip:{n:'麥克風延伸臂夾',g:'stand'},mspr:{n:'麥克風彈簧夾',g:'stand'},mo:{n:'麥克風 O 型夾',g:'stand'},pclip:{n:'管夾（手機用）',g:'stand'},wind:{n:'紅色防風罩',g:'mic'},xlr:{n:'藍色 XLR 線',g:'mic'},aux:{n:'3.5mm 音源線',g:'bk'},adp:{n:'iPad 轉接頭',g:'bk'},usbc:{n:'USB-C 線',g:'mix'},trs:{n:'6.3mm 轉 XLR 線',g:'spk'},batt:{n:'充電電池＋充電器',g:'mic'}};
-let WIMG=null;function wImg(){if(!WIMG){try{WIMG=JSON.parse(localStorage.getItem(LS+'-wimg')||'{}')}catch(e){WIMG={}}}return WIMG}
+  cart:{n:'拉車',g:'pack'},chair:{n:'伸縮椅',g:'pack'},mcase:{n:'麥克風收納盒',g:'pack'},stand:{n:'腳架 ×2',g:'stand'},tray:{n:'水杯托盤',g:'stand'},clip:{n:'iPad 夾（長臂）',g:'stand'},clip2:{n:'iPad 夾（車把夾）',g:'stand'},mclip:{n:'麥克風延伸臂夾',g:'stand'},mspr:{n:'麥克風彈簧夾',g:'stand'},mo:{n:'麥克風 O 型夾',g:'stand'},pclip:{n:'管夾（手機用）',g:'stand'},wind:{n:'紅色防風罩',g:'mic'},xlr:{n:'藍色 XLR 線',g:'mic'},aux:{n:'3.5mm 音源線',g:'bk'},adpI:{n:'iPad 轉接頭',g:'bk'},iphone:{n:'iPhone',g:'bk'},adpP:{n:'iPhone 轉接頭',g:'bk'},usbc:{n:'USB-C 線',g:'mix'},trs:{n:'6.3mm 轉 XLR 線',g:'spk'},batt:{n:'充電電池＋充電器',g:'mic'}};
+let WIMG=null;function wImg(){if(!WIMG){try{WIMG=JSON.parse(localStorage.getItem(LS+'-wimg')||'{}')}catch(e){WIMG={}}if(WIMG.adp&&!WIMG.adpI){WIMG.adpI=WIMG.adp;delete WIMG.adp;if(WIMG._alt_adp){WIMG._alt_adpI=WIMG._alt_adp;delete WIMG._alt_adp}}}return WIMG}
 function wDevs(){const st=wSt(),nm=st.names||{},o={};Object.entries(WDEV).forEach(([k,v])=>o[k]={...v,n:nm[k]||v.n});(st.custom||[]).forEach(c=>o[c.id]={n:nm[c.id]||c.n,g:c.g,c:1});return o}
 function wItems(g){return Object.values(wDevs()).filter(v=>v.g===g.k).map(v=>v.n)}
 function wAlt(d){return wImg()['_alt_'+d]||[]}
@@ -675,36 +675,51 @@ function wPick(dev){const inp=document.createElement('input');inp.type='file';in
 function wBlob(dev,f){{const u=URL.createObjectURL(f),im=new Image();
   im.onload=()=>{const k=Math.min(1,800/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
     {const I=wImg();if(I[dev]){I['_alt_'+dev]=[I[dev]].concat(wAlt(dev)).slice(0,6)}I[dev]=c.toDataURL('image/jpeg',.82)}URL.revokeObjectURL(u);wImgSave();render()};im.onerror=()=>toast('這張圖讀不出來');im.src=u}}
-document.addEventListener('click',e=>{const z=e.target.closest('[data-wzoom]');if(!z)return;window.wBig=!window.wBig;z.parentNode.classList.toggle('big',window.wBig);z.textContent=window.wBig?'🔍 縮小':'🔍 放大'});
-// AG06 圖的長寬比（孔位用百分比，要照真的比例換算）
-let _agR={u:'',r:1};
-function wAgRatio(u){if(!u)return 1;if(_agR.u===u)return _agR.r;_agR={u,r:1};const i=new Image();i.onload=()=>{if(_agR.u!==u)return;const r=i.naturalWidth/i.naturalHeight||1;if(Math.abs(r-_agR.r)>.01){_agR.r=r;if(document.querySelector('svg.wire'))render()}};i.src=u;return 1}
+// 接線圖縮放：全圖 → 100% → … → 300%
+const WZ=[0,1,1.3,1.6,2,2.5,3];
+function wZoomCss(){const z=WZ[window.wZ||0];return z?`width:${z*100}%;max-width:none;max-height:none`:''}
+function wZoomLab(){const z=WZ[window.wZ||0];return z?Math.round(z*100)+'%':'全圖'}
+document.addEventListener('click',e=>{const z=e.target.closest('[data-wz]');if(!z)return;window.wZ=Math.max(0,Math.min(WZ.length-1,(window.wZ||0)+(+z.dataset.wz)));const box=z.closest('.wmain'),sv=box.querySelector('svg.wire');sv.style.cssText=wZoomCss();box.querySelector('.wzl').textContent=wZoomLab()});
+// 圖的長寬比（孔位用百分比，要照真的比例換算）
+const _wR={};
+function wRatio(u){if(!u)return 0;if(_wR[u])return _wR[u];_wR[u]=1;const i=new Image();i.onload=()=>{const r=i.naturalWidth/i.naturalHeight||1;if(Math.abs(r-_wR[u])>.01){_wR[u]=r;if(document.querySelector('svg.wire'))render()}};i.src=u;return 1}
+// Bose 照片上 INPUT 1 的位置（照她標的紅圈，器材框 170×164 內的比例）
+const BOSEJ=[.262,.736];
 function wDiagram(){
-  // 實物版：AG06 正面大圖在中間，線直接接到圖上真正的孔；器材是去背後的實物圖；每條線中間放那條線的照片
+  // 實物版：AG06 正面大圖在中間、背面圖在上面（已鏡射，跟正面同方向）；線直接接到圖上真正的孔
   const IM=wImg(),DV=wDevs(),on=g=>!wireSel||wireSel===g?'':' dim',sel=g=>wireSel===g?' sel':'';
-  const AS=340,r=wAgRatio(IM.ag06),AW=r>=1?AS:AS*r,AH=r>=1?AS/r:AS,AX=500-AW/2,AY=170+(AS-AH)/2,jp=k=>[AX+AW*AGPOS[k][0]/100,AY+AH*AGPOS[k][1]/100];
-  const I={mic:'<circle cx="24" cy="12" r="8"/><path d="M24 20v14M18 42h12M24 34v8"/>',wl:'<circle cx="24" cy="12" r="8"/><path d="M24 20v22"/><path d="M36 6a14 14 0 0 1 0 14"/>',ipad:'<rect x="10" y="4" width="28" height="40" rx="4"/>',bat:'<rect x="8" y="12" width="30" height="24" rx="4"/>',bose:VI.speaker,iem:'<rect x="14" y="4" width="20" height="38" rx="4"/>',rx:'<rect x="6" y="10" width="16" height="22" rx="3"/><rect x="26" y="10" width="16" height="22" rx="3"/>'};
-  const dev=(d,x,y,w,h)=>{const g=WDEV[d].g;return `<g class="wd${on(g)}${sel(g)}" data-wire="${g}" data-wdrop="${d}"><rect class="hit" x="${x}" y="${y}" width="${w}" height="${h}" rx="14"/>${IM[d]?`<image href="${IM[d]}" x="${x}" y="${y}" width="${w}" height="${h-26}" preserveAspectRatio="xMidYMid meet"/>`:`<g class="wi" transform="translate(${x+w/2-26} ${y+(h-26)/2-26}) scale(1.08)">${I[d]||''}</g>`}<text x="${x+w/2}" y="${y+h-6}" class="wt" text-anchor="middle">${esc(DV[d].n)}</text></g>`};
-  const cab=(g,cls,d,path,cx,cy,lab)=>`<g class="wcab${on(g)}" data-wire="${g}"${d?` data-wdrop="${d}"`:''}><path class="${cls}" d="${path}"/>${d&&IM[d]?`<g class="cpic"><rect x="${cx-46}" y="${cy-30}" width="92" height="60" rx="10"/><image href="${IM[d]}" x="${cx-42}" y="${cy-27}" width="84" height="44" preserveAspectRatio="xMidYMid meet"/><text x="${cx}" y="${cy+26}" text-anchor="middle">${esc(lab)}</text></g>`:`<g class="cpic"><rect x="${cx-Math.max(46,lab.length*7+14)}" y="${cy-13}" width="${Math.max(92,lab.length*14+28)}" height="26" rx="13"/><text x="${cx}" y="${cy+5}" text-anchor="middle">${esc(lab)}</text></g>`}</g>`;
-  const badge=(k,n)=>{const [x,y]=jp(k);return `<g class="wb"><circle cx="${x}" cy="${y}" r="13"/><text x="${x}" y="${y+5}">${n}</text></g>`};
+  const AS=340,r=wRatio(IM.ag06)||1,AW=r>=1?AS:AS*r,AH=r>=1?AS/r:AS,AX=500-AW/2,AY=300+(AS-AH)/2,jp=k=>[AX+AW*AGPOS[k][0]/100,AY+AH*AGPOS[k][1]/100];
+  const rb=wRatio(IM.ag06b)||2.6,BW=AW,BH=BW/rb,BX=500-BW/2,BY=AY-BH-20,jx=BX+BW*AGBACK.usb[0]/100,jy=BY+BH*AGBACK.usb[1]/100;
+  const I={mic:'<circle cx="24" cy="12" r="8"/><path d="M24 20v14M18 42h12M24 34v8"/>',wl:'<circle cx="24" cy="12" r="8"/><path d="M24 20v22"/><path d="M36 6a14 14 0 0 1 0 14"/>',ipad:'<rect x="10" y="4" width="28" height="40" rx="4"/>',iphone:'<rect x="15" y="6" width="18" height="36" rx="4"/>',adpI:'<rect x="16" y="8" width="16" height="32" rx="4"/>',adpP:'<rect x="16" y="8" width="16" height="32" rx="4"/>',bat:'<rect x="8" y="12" width="30" height="24" rx="4"/>',bose:VI.speaker,iem:'<rect x="14" y="4" width="20" height="38" rx="4"/>',rx:'<rect x="6" y="10" width="16" height="22" rx="3"/><rect x="26" y="10" width="16" height="22" rx="3"/>'};
+  const dev=(d,x,y,w,h)=>{const g=WDEV[d].g,s=Math.min(1.08,w/56);return `<g class="wd${on(g)}${sel(g)}" data-wire="${g}" data-wdrop="${d}"><rect class="hit" x="${x}" y="${y}" width="${w}" height="${h}" rx="14"/>${IM[d]?`<image href="${IM[d]}" x="${x}" y="${y}" width="${w}" height="${h-26}" preserveAspectRatio="xMidYMid meet"/>`:`<g class="wi" transform="translate(${x+w/2-24*s} ${y+(h-26)/2-24*s}) scale(${s})">${I[d]||''}</g>`}<text x="${x+w/2}" y="${y+h-6}" class="wt" text-anchor="middle">${esc(DV[d].n)}</text></g>`};
+  const lab=(cx,cy,t,d)=>d&&IM[d]?`<g class="cpic"><rect x="${cx-46}" y="${cy-30}" width="92" height="60" rx="10"/><image href="${IM[d]}" x="${cx-42}" y="${cy-27}" width="84" height="44" preserveAspectRatio="xMidYMid meet"/><text x="${cx}" y="${cy+26}" text-anchor="middle">${esc(t)}</text></g>`:`<g class="cpic"><rect x="${cx-Math.max(46,t.length*7+14)}" y="${cy-13}" width="${Math.max(92,t.length*14+28)}" height="26" rx="13"/><text x="${cx}" y="${cy+5}" text-anchor="middle">${esc(t)}</text></g>`;
+  const cab=(g,cls,d,path,cx,cy,t)=>`<g class="wcab${on(g)}" data-wire="${g}"${d?` data-wdrop="${d}"`:''}><path class="${cls}" d="${path}"/>${t?lab(cx,cy,t,d):''}</g>`;
+  const bdg=(x,y,n)=>`<g class="wb"><circle cx="${x}" cy="${y}" r="13"/><text x="${x}" y="${y+5}">${n}</text></g>`,badge=(k,n)=>bdg(...jp(k),n);
   const [c1x,c1y]=jp('ch1'),[c2x,c2y]=jp('ch2'),[ax,ay]=jp('aux'),[mx,my]=jp('mon'),[sx,sy]=jp('st');
-  return `<svg class="wire" viewBox="0 0 1000 720" role="img" aria-label="接線總圖">
-  <g class="wd${sel('mix')}" data-wire="mix" data-wdrop="ag06">${IM.ag06?`<image href="${IM.ag06}" x="${AX}" y="${AY}" width="${AW}" height="${AH}" preserveAspectRatio="xMidYMid meet"/>`:`<rect class="hit" x="${AX}" y="${AY}" width="${AS}" height="${AS}" rx="18"/><text x="500" y="345" class="wt" text-anchor="middle">放 AG06 正面圖</text>`}</g>
-  ${cab('mic','xlr','xlr',`M190 110 C300 110 ${c1x} 60 ${c1x} ${c1y}`,300,96,DV.xlr.n)}
-  ${cab('mic','air','',`M190 330 C290 330 ${c2x} 90 ${c2x} ${c2y}`,280,300,'接收器直插')}
-  ${cab('bk','blk','aux',`M190 560 C300 560 ${ax} 470 ${ax} ${ay}`,290,560,DV.aux.n)}
-  ${cab('spk','brd','trs',`M${mx} ${my} C${mx} 70 700 110 820 110`,720,86,DV.trs.n)}
-  ${cab('iem','gry','',`M${sx} ${sy} C${sx} 120 680 330 820 330`,720,300,'發射器直插')}
-  ${cab('iem','air','',`M890 410 V470`,830,440,'無線')}
-  ${cab('mix','usbo','usbc',`M500 650 V${AY+AH}`,660,630,DV.usbc.n+'→背面 5V DC')}
-  ${dev('mic',30,30,160,170)}${dev('wl',30,250,160,170)}${dev('ipad',30,480,160,170)}
-  ${dev('bose',820,20,170,190)}${dev('iem',820,240,170,170)}${dev('rx',820,470,170,170)}${dev('bat',440,600,120,110)}
-  <g class="wb"><circle cx="500" cy="${AY+AH+24}" r="13"/><text x="500" y="${AY+AH+29}">④</text></g>${badge('ch1','①')}${badge('ch2','②')}${badge('aux','③')}${badge('mon','⑤')}${badge('st','⑥')}
+  const bjx=820+170*BOSEJ[0],bjy=130+164*BOSEJ[1];
+  return `<svg class="wire" viewBox="0 0 1000 890" role="img" aria-label="接線總圖" style="${wZoomCss()}">
+  <g class="wd${sel('mix')}" data-wire="mix" data-wdrop="ag06">${IM.ag06?`<image href="${IM.ag06}" x="${AX}" y="${AY}" width="${AW}" height="${AH}" preserveAspectRatio="xMidYMid meet"/>`:`<rect class="hit" x="${AX}" y="${AY}" width="${AS}" height="${AS}" rx="18"/><text x="500" y="${AY+AS/2}" class="wt" text-anchor="middle">放 AG06 正面圖</text>`}</g>
+  <g class="wd${sel('mix')}" data-wire="mix" data-wdrop="ag06b">${IM.ag06b?`<image href="${IM.ag06b}" x="${BX}" y="${BY}" width="${BW}" height="${BH}" preserveAspectRatio="xMidYMid meet"/>`:`<rect class="hit" x="${BX}" y="${BY}" width="${BW}" height="${BH}" rx="14"/><text x="500" y="${BY+BH/2+5}" class="wt" text-anchor="middle">放 AG06 背面圖（鏡射）</text>`}</g>
+  ${dev('bat',170,30,130,130)}
+  ${dev('mic',30,165,160,170)}${dev('wl',30,375,160,170)}
+  ${dev('ipad',30,590,120,130)}${dev('adpI',160,605,90,100)}
+  ${dev('iphone',30,740,120,130)}${dev('adpP',160,755,90,100)}
+  ${dev('bose',820,130,170,190)}${dev('iem',820,390,170,170)}${dev('rx',820,650,170,180)}
+  ${cab('mix','usbo','usbc',`M300 85 H${jx-40} Q${jx} 85 ${jx} 125 V${jy}`,400,85,DV.usbc.n)}
+  ${cab('mic','xlr','xlr',`M190 245 C330 245 ${c1x} 270 ${c1x} ${c1y}`,290,240,DV.xlr.n)}
+  ${cab('mic','air','',`M190 455 C340 455 ${c2x} 470 ${c2x} ${c2y}`,300,455,'接收器直插')}
+  <g class="wcab${on('bk')}" data-wire="bk"><path class="blk" d="M150 655 H160"/><path class="blk" d="M150 805 H160"/></g>
+  ${cab('bk','blk','aux',`M250 655 C400 655 ${ax} 600 ${ax} ${ay}`,380,650,DV.aux.n)}
+  ${cab('bk','blk alt','',`M250 805 C330 805 300 655 334 655`,300,760,'或 iPhone')}
+  ${cab('spk','brd','trs',`M${mx} ${my} C${mx+60} 250 ${bjx-140} ${bjy} ${bjx} ${bjy}`,700,262,DV.trs.n)}
+  ${cab('iem','gry','',`M830 475 C700 475 ${sx+90} ${sy} ${sx} ${sy}`,720,470,'發射器直插')}
+  ${cab('iem','air','',`M905 560 V650`,840,605,'無線')}
+  ${bdg(jx,jy,'④')}${badge('ch1','①')}${badge('ch2','②')}${badge('aux','③')}${badge('mon','⑤')}${badge('st','⑥')}
   </svg>`;
 }
 // AG06 官網正上方圖上的孔位置（％）
-const AGBACK={usb:[47.4,57.8,'5V DC（電源）']};
-const AGPOS={ch1:[26.9,18.6,'CH1'],ch2:[37.4,18.6,'CH2'],aux:[61.5,59.1,'AUX'],mon:[72,18.6,'MONITOR OUT L'],st:[64.9,18.6,'STEREO OUT L']};
+const AGBACK={usb:[52.6,57.8,'5V DC（電源）']};// 她的背面圖有鏡射過
+const AGPOS={ch1:[26.9,18.6,'CH1'],ch2:[37.4,18.6,'CH2'],aux:[61.5,59.1,'AUX'],mon:[72,18.6,'MONITOR OUT L'],st:[72,35.4,'MONITOR OUT R']};
 function wPanel(){
   const g=WG.find(x=>x.k===wireSel),hi=new Set(g?g.jk:Object.keys(JN)),IM=wImg();
   const pin=(P)=>Object.entries(P).map(([k,[x,y,l]])=>`<span class="agp${hi.has(k)?' on':''}" style="left:${x}%;top:${y}%"><b>${JN[k]}</b><i>${l}</i></span>`).join('');
@@ -727,7 +742,7 @@ function vWire(){
   let h=`<div class="packbar"><p class="small muted" style="margin:0">點圖上的東西，下面會出現那一組要帶什麼、插哪裡。</p><button class="btn sm" data-act="wpack">📦 匯入圖片包</button></div>`;
   const thumbs=k=>Object.entries(wDevs()).filter(([d,v])=>v.g===k&&wImg()[d]).map(([d,v])=>`<img src="${wImg()[d]}" alt="${esc(v.n)}" title="${esc(v.n)}">`).join('');
   h+=`<div class="wchips">${WG.map(x=>`<button class="wchip ${wireSel===x.k?'on':''}" data-wire="${x.k}"><b>${x.ic} ${x.n}</b><span>${thumbs(x.k)}</span></button>`).join('')}</div>`;
-  h+=`<div class="wbox wmain${window.wBig?' big':''}"><button class="ghost wzoom" data-wzoom="1">${window.wBig?'🔍 縮小':'🔍 放大'}</button>${wDiagram()}</div><div class="wtop">`;
+  h+=`<div class="wbox wmain"><div class="wzoom"><button class="ghost" data-wz="-1" aria-label="縮小">－</button><span class="wzl">${wZoomLab()}</span><button class="ghost" data-wz="1" aria-label="放大">＋</button></div><div class="wscroll">${wDiagram()}</div></div><div class="wtop">`;
   const g=WG.find(x=>x.k===wireSel);
   if(g){h+=`<div class="bag packpanel wcard"><div class="baghead"><b>${g.ic} ${g.n}</b><span class="pcnt num">${wItems(g).filter(i=>inv[g.k+'|'+i]).length}/${wItems(g).length}</span><button class="btn sm" data-wire="">✕</button></div>
     <div class="wplug">${g.plug.map(p=>`<div>${esc(p)}</div>`).join('')}</div>
