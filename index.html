@@ -164,6 +164,11 @@ details.fold>.cgrid{padding:8px 8px 0}
 .ick{width:22px;height:22px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;flex:none;font-size:13px;font-weight:700}.irow.on .ick{background:var(--ok);border-color:var(--ok);color:#fff}
 .iim{width:52px;height:42px;flex:none;display:grid;place-items:center;background:#fff;border-radius:8px}.iim{overflow:hidden}.iim img{width:100%;height:100%;object-fit:contain}.inm{flex:1;font-size:14.5px}
 .irow .ghost{padding:4px 8px;font-size:15px}
+.vsheet{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-content:start}.vbox{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:7px 10px;font-size:13px;line-height:1.5;display:flex;flex-direction:column;gap:1px}.vbox>b:first-child{font-size:14px;margin-bottom:2px}
+.vtgt{grid-column:1/-1;border:2px solid var(--accent)}.vcalc{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.vcalc label{display:flex;align-items:center;gap:3px}.vcalc input{width:52px;padding:4px 6px;font-size:16px;border:1px solid var(--line);border-radius:8px;text-align:center}
+.vres{font-size:15px}.vres b{font-size:24px;color:var(--accent)}.vsel{grid-column:1/-1;border:2px solid var(--accent);background:var(--accent-soft)}
+.vdot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+@media (min-width:821px){.wsplit:has(.vsheet){grid-template-columns:minmax(320px,.9fr) 1.6fr}}
 .pcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;align-items:start}
 .pcard{background:var(--surface,#fff);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .pchead{display:flex;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid var(--line)}.pchead b{font-size:16px;flex:1}
@@ -756,6 +761,19 @@ const VOLSTEP={
 const GAINSTEP=['先把下面的 LEVEL 旋鈕轉到 12 點鐘方向（基準線）','對著麥克風發出最大聲音，慢慢往右轉上面的 GAIN，轉到 PEAK 燈快亮但沒亮（或只有最高峰閃一下）為止','最後才用下面的 LEVEL，照實際聽到的音量微調'];
 function volOn(t){const v=window.wVol;if(!v)return true;return v.split('|').includes(t)}
 function volRing(x,y,t,r){return `<circle class="vring${volOn(t)?'':' off'}" cx="${x}" cy="${y}" r="${r||16}" stroke="${VOLC[t]}"/>`}
+// 試音量一頁小抄：目標＝底噪＋8，不超過上限（上限她之後會給各場地規定）
+function vVolSheet(){const st=wSt(),vs=st.vs||{},nz=vs.noise||'',lim=vs.lim||'',t=volTarget(nz,lim),v=window.wVol||'';
+  const C=(c,t)=>`<span class="vdot" style="background:${VOLC[c]}"></span>${t}`;
+  return `<div class="vsheet">
+  <div class="vbox vtgt"><b>① 目標音量</b><div class="vcalc"><label>底噪<input id="vnoise" inputmode="decimal" value="${esc(nz)}" placeholder="量">dB</label><span>＋8</span><label>上限<input id="vlim" inputmode="decimal" value="${esc(lim)}" placeholder="場地">dB</label></div><div class="vres">目標 <b id="vtgt">${t||'—'}</b> dB</div><small>站喇叭前 3 公尺（約 4 大步）量 30 秒</small></div>
+  <div class="vbox"><b>${C('mic','②')} 麥克風（每人）</b><div><b>GAIN 看燈</b>：LEVEL 先 12 點，唱最大聲，轉到 PEAK 快亮沒亮</div><div><b>LEVEL 看分貝</b>：3 公尺處讀數＝目標</div></div>
+  <div class="vbox"><b>${C('music','③')} 伴奏（每首）</b><div>iPad／iPhone 開七八成</div><div>副歌最大聲時，轉藍圈讓讀數＝目標</div></div>
+  <div class="vbox"><b>${C('spk','④')} 音響</b><div>Bose 綠圈從最小慢慢轉大，配 AG06 綠圈</div><b style="margin-top:4px">${C('mon','⑤')} 監聽（最後）</b><div>紅圈＋接收器，自己聽清楚就好</div></div>
+  <div class="vbox"><b>現場微調</b><div>皺眉走開、店家出來 → <b>小</b></div><div>觀眾一直往前靠 → <b>大</b></div><div>換場地 → 從 ① 重來</div></div>
+  ${v?`<div class="vbox vsel"><b>${VOLN[v.split('|')[0]]}・${VOLN[v.split('|')[1]]}</b>${VOLSTEP[v].map((x,i)=>`<div>${i+1}. ${esc(x)}</div>`).join('')}</div>`:''}
+  </div>`}
+function volTarget(nz,lim){const n=parseFloat(nz),l=parseFloat(lim);if(isNaN(n))return '';let t=n+8;if(!isNaN(l))t=Math.min(t,l);return Math.round(t*10)/10}
+document.addEventListener('input',e=>{if(e.target.id!=='vnoise'&&e.target.id!=='vlim')return;const nz=$('#vnoise').value,lim=$('#vlim').value;$('#vtgt').textContent=volTarget(nz,lim)||'—';clearTimeout(window._vsT);window._vsT=setTimeout(()=>{const s=wSt();s.vs={noise:nz,lim};try{localStorage.setItem(LS+'-wire',JSON.stringify(s))}catch(_){}},400)});
 function vVolPanel(part){const v=window.wVol||'';
   const cell=(r,c)=>{const k=r+'|'+c;return `<button class="vcell${v===k?' on':''}" data-wvolk="${k}" style="--a:${VOLC[r]};--b:${VOLC[c]}"><b style="color:${VOLC[r]}">${VOLN[r]}</b><span style="color:${VOLC[c]}">${VOLN[c]}</span></button>`};
   if(part==='grid')return `<div class="vgrid">${cell('mon','music')}${cell('mon','mic')}${cell('spk','music')}${cell('spk','mic')}</div>`;
@@ -847,13 +865,13 @@ function vWire(){
     window.wFocus=cur<S.length?S[cur].g:'';
     side=`<div class="wlist"><div class="wlhead"><b>${M==='asm'?'組裝':'拆卸'}　${n}/${S.length}</b><button class="btn sm" data-act="wreset" data-wm="${M}">重來</button></div>${S.map((x,i)=>`<div class="wli ${done[x.id]?'ok':''} ${i===cur?'on':''}"><button class="wlck" data-wtick="${x.id}" aria-label="完成">${done[x.id]?'✓':i+1}</button><button class="wlbody" data-wjump="${i}"><b>${x.ic} ${esc(x.n)}</b>${x.lines.map(l=>`<small>${esc(l)}</small>`).join('')}</button>${x.ph?`<span class="wlph">${thumbs(x.g)}</span>`:''}</div>`).join('')}</div>`;
   }
-  if(M==='vol')h+=`<p class="small muted" style="margin:0 0 8px">點音響或接收器旁邊的按鈕，圖上會圈出要轉的旋鈕，下面寫順序。</p>`;
+  if(M==='vol')side=vVolSheet();
   if(M==='inv'){
     const ed=!!window.wInvEdit,G=WG.map(x=>({x,L:wList(x.k)})),tot=G.reduce((n,o)=>n+o.L.length,0),got=G.reduce((n,o)=>n+o.L.filter(([d,v])=>inv[o.x.k+'|'+v.n]).length,0);
     h+=`<div class="packbar"><p class="small muted" style="margin:0">${ed?'改名：點 ✏️；排順序：按 ↑ ↓。':'點一下＝有帶到。'}已清點 <b>${got}/${tot}</b></p><span style="display:flex;gap:6px"><button class="btn sm ${ed?'primary':''}" data-act="winvedit">${ed?'完成':'✏️ 改名／排序'}</button>${ed?'':'<button class="btn sm" data-act="wreset" data-wm="inv">全部清掉</button>'}</span></div>
     <div class="icols">${G.map(({x,L})=>{const n=L.filter(([d,v])=>inv[x.k+'|'+v.n]).length;return `<div class="icol ${n===L.length&&L.length?'ok':''}"><div class="ichead"><b>${x.ic} ${x.n}</b><span class="num">${n}/${L.length}</span></div>${L.map(([d,v],i)=>{const k=x.k+'|'+v.n,on=!!inv[k],im=I[d];return ed?`<div class="irow"><span class="iim">${im?`<img src="${wTh(im)}" alt="">`:''}</span><span class="inm">${esc(v.n)}</span><button class="ghost" data-wren="${d}" aria-label="改名">✏️</button><button class="ghost" data-wmv="${x.k}|${d}|-1" ${i?'':'disabled'} aria-label="往上">↑</button><button class="ghost" data-wmv="${x.k}|${d}|1" ${i<L.length-1?'':'disabled'} aria-label="往下">↓</button></div>`:`<button class="irow ${on?'on':''}" data-winv="${esc(k)}"><span class="ick">${on?'✓':''}</span><span class="iim">${im?`<img src="${wTh(im)}" alt="">`:''}</span><span class="inm">${esc(v.n)}</span></button>`}).join('')}</div>`}).join('')}</div>`;
   } else {
-    h+=`${side?`<div class="wsplit">${side}<div class="wdia">`:''}<div class="wbox wmain${M==='vol'?' volmode':''}"><div class="wzoom"><button class="ghost" data-wz="-1" aria-label="縮小">－</button><span class="wzl">${wZoomLab()}</span><button class="ghost" data-wz="1" aria-label="放大">＋</button></div><div class="wscroll${window.wZf?' zm':''}">${wDiagram()}</div></div>${side?'</div></div>':''}${M==='vol'?vVolPanel():''}`;
+    h+=`${side?`<div class="wsplit">${side}<div class="wdia">`:''}<div class="wbox wmain${M==='vol'?' volmode':''}"><div class="wzoom"><button class="ghost" data-wz="-1" aria-label="縮小">－</button><span class="wzl">${wZoomLab()}</span><button class="ghost" data-wz="1" aria-label="放大">＋</button></div><div class="wscroll${window.wZf?' zm':''}">${wDiagram()}</div></div>${side?'</div></div>':''}`;
   }
   h+=`<details class="wset" ${wireSel?'open':''}><summary>🖼 器材照片設定（換照片、改名、新增項目）</summary><div class="packbar" style="margin-top:8px"><p class="small muted" style="margin:0">點一組，下面會出現那一組的照片格子。</p><button class="btn sm" data-act="wpack">📦 匯入圖片包</button></div>
   <div class="wchips">${WG.map(x=>`<button class="wchip ${wireSel===x.k?'on':''}" data-wire="${x.k}"><b>${x.ic} ${x.n}</b><span>${thumbs(x.k)}</span></button>`).join('')}</div><div class="wtop">`;
