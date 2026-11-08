@@ -56,10 +56,10 @@
 .wrigrow{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1fr);margin-bottom:12px;gap:10px;align-items:start}.wrigrow>.wmain{margin-bottom:0}
 @media (max-width:700px){.wrigrow{grid-template-columns:1fr}}.wrigrow.one{grid-template-columns:1fr}
 .wphcols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:start}.wphcol{display:flex;flex-direction:column;gap:6px}@media (max-width:700px){.wphcols{grid-template-columns:1fr}}
-.wrigbox{background:#fff;padding:6px}.wrig{position:relative;width:100%;aspect-ratio:660/790;max-height:62vh;margin:0 auto}
-.wrig .rg{position:absolute;display:flex;flex-direction:column;align-items:center;gap:2px;border:1.5px solid transparent;border-radius:10px;background:none;padding:3px;font:inherit;color:#222;transition:opacity .2s}
-.wrig .rg .ri{flex:1;min-height:0;width:100%;position:relative}.wrig .rg img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-.wrig .rg b{flex:none;font-size:11px;font-weight:600;line-height:1.2;text-align:center}.wrig .rg.dim{opacity:.18}.wrig .rg.sel{border-color:var(--accent);background:rgba(31,110,119,.06)}
+.wrigbox{background:#fff;padding:6px}.wrig{position:relative;width:100%;aspect-ratio:660/560;max-height:44vh;margin:0 auto}.rzh{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--muted);padding:4px 6px;border-bottom:1px solid var(--line);margin-bottom:6px}.rzh+.wrig+.rzh{margin-top:10px}.wrigo{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;height:130px}.wrigo .rg{position:relative!important;min-height:0}
+:is(.wrig,.wrigo) .rg{position:absolute;display:flex;flex-direction:column;align-items:center;gap:2px;border:1.5px solid transparent;border-radius:10px;background:none;padding:3px;font:inherit;color:#222;transition:opacity .2s}
+:is(.wrig,.wrigo) .rg .ri{flex:1;min-height:0;width:100%;position:relative}:is(.wrig,.wrigo) .rg img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+:is(.wrig,.wrigo) .rg b{flex:none;font-size:11px;font-weight:600;line-height:1.2;text-align:center}:is(.wrig,.wrigo) .rg.dim{opacity:.18}:is(.wrig,.wrigo) .rg.sel{border-color:var(--accent);background:rgba(31,110,119,.06)}
 </style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1"><link rel="icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vocal"><meta name="theme-color" content="#EDEFEA"><script src="https://fuwei0618-cmd.github.io/Entry/sync/origina-sync.js" data-app="vocal" data-keys="busk-app-v1,busk-app-v1-wimg,busk-app-v1-wire" data-pos="br"></script>
 </head><body>
 <title>街演 App</title>
@@ -841,7 +841,7 @@ const WG=[
 const WCAT=[['架設',['pack','stand']],['進聲音',['mic','bk']],['混音＋出聲音',['mix','iem','spk']]];
 const WON=['開 AG06（電源開關在右上）','開監聽發射器、兩個接收器','Bose 音量轉到最小再開機','到「🎚 試音量」照 1 → 5 調音量'];
 const WOFF=['Bose 音量轉小 → 關 Bose','關監聽發射器、接收器','關 AG06'];
-let wireSel='', wireMode='asm';
+let wireSel='', wireMode='all';
 function wSt(){try{return JSON.parse(localStorage.getItem(LS+'-wire')||'{}')}catch(e){return {}}}
 function wSet(f){const s=wSt();f(s);try{localStorage.setItem(LS+'-wire',JSON.stringify(s))}catch(e){}render()}
 const JN={ch1:'①',ch2:'②',aux:'③',usb:'④',mon:'⑤',st:'⑥'};
@@ -1045,16 +1045,18 @@ function wPanel(){
   </svg><p class="small muted" style="margin:4px 8px 2px;text-align:center">點「混音組」→「放 AG06 的圖」，用官網正上方那張圖，孔會直接標在圖上</p>`;
 }
 // 腳架圖：照她 11-08 排的樣子，用她自己的器材照片；組裝到哪一步，那一組就亮
-const WRIG=[['clip',70,1,28,18],['tray',70,26,28,18],['mclip',70,50,28,18],['bose',70,77,28,21],['pclip',1,22,29,18],['clip2',1,46,29,18],['chair',18,72,24,24],['cart',32,24,17,26],['stand',46,20,22,56]];
+// 腳架圖：上面「腳架」照實際位置（螢幕夾在上、麥夾在中、托盤），下面「其他物品」一排；組裝到哪一步，那一組就亮
+const WRIG=[['stand',37,1,26,98],['pclip',1,6,33,42],['clip2',1,52,33,42],['clip',66,0,33,31],['tray',66,34,33,31],['mclip',66,68,33,31]],WRIGO=['cart','chair','bose'];
 function wRig(){const I=wImg(),DV=wDevs(),F=wireSel||window.wFocus||'';
-  return `<div class="wrig">${WRIG.filter(([d])=>DV[d]).map(([d,x,y,w,h])=>{const g=DV[d].g,dim=F&&F!==g&&!(F==='mix'&&d==='bose');return `<button class="rg${dim?' dim':''}${F===g?' sel':''}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%" data-wmenu="${d}"><span class="ri">${I[d]?`<img src="${wTh(I[d],400)}" alt="">`:''}</span><b>${esc(DV[d].n)}</b></button>`}).join('')}</div>`}
+  const one=(d,st)=>{const g=DV[d].g,dim=F&&F!==g&&!(F==='mix'&&d==='bose');return `<button class="rg${dim?' dim':''}${F===g?' sel':''}"${st?` style="${st}"`:''} data-wmenu="${d}"><span class="ri">${I[d]?`<img src="${wTh(I[d],400)}" alt="">`:''}</span><b>${esc(DV[d].n)}</b></button>`};
+  return `<div class="rzh">腳架</div><div class="wrig">${WRIG.filter(([d])=>DV[d]).map(([d,x,y,w,h])=>one(d,`left:${x}%;top:${y}%;width:${w}%;height:${h}%`)).join('')}</div><div class="rzh">其他物品</div><div class="wrigo">${WRIGO.filter(d=>DV[d]).map(d=>one(d)).join('')}</div>`}
 function vWire(){
   wMigrate();
   const st=wSt(),inv=st.inv||{},I=wImg(),DV=wDevs();
   const thumbs=k=>Object.entries(DV).filter(([d,v])=>v.g===k&&I[d]).map(([d,v])=>`<img src="${wTh(I[d],120)}" alt="${esc(v.n)}" title="${esc(v.n)}">`).join('');
   const M=wireMode==='vol'?'vol':wireMode==='inv'?'asm':wireMode;window.wView=M==='vol'?'vol':'wire';
-  let h=`<div class="seg wmodes">${[['asm','🔧 組裝'],['off','📦 拆卸'],['vol','🎚 試音量']].map(([k,t])=>`<button data-wmode="${k}" aria-pressed="${M===k}">${t}</button>`).join('')}</div>`;
-  window.wFocus='';
+  let h=`<div class="seg wmodes">${[['all','👀 全部'],['asm','🔧 組裝'],['off','📦 拆卸'],['vol','🎚 試音量']].map(([k,t])=>`<button data-wmode="${k}" aria-pressed="${M===k}">${t}</button>`).join('')}</div>`;
+  window.wFocus='';if(M==='all')wireSel='';
   let side='';
   if(M==='asm'||M==='off'){
     const S=wSteps(M),done=st[M]||{},cur=wCurIdx(M,S,done),n=S.filter(x=>done[x.id]).length;
