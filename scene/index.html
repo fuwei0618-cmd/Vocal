@@ -96,14 +96,15 @@ body.op .chainbar small{display:none}body.op .chainbar.grp{padding:0 16px;gap:24
 .opb{margin-left:auto;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--muted);border-radius:99px;height:30px;padding:0 12px;font:inherit;font-size:12px;cursor:pointer}.opb.on{color:var(--glow);border-color:rgba(242,194,123,.5)}.opb+.pgpill{margin-left:0}
 body.op .sub,body.op.lay-top .sub{left:16px;right:16px;width:auto;transform:none;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);overflow-y:auto;pointer-events:auto;-webkit-overflow-scrolling:touch}
 .opg{display:grid;gap:.55em 24px;align-items:start;margin:0;padding:12px 16px}
-#opspots{position:fixed;left:0;top:0;z-index:5;pointer-events:none;transform-origin:0 0}
+#opspots{position:fixed;left:0;top:0;z-index:2;pointer-events:none;transform-origin:0 0}
 #opspots .spot b{font-size:18px;background:rgba(0,0,0,.45);padding:1px 8px;border-radius:8px}
 .orh{display:flex;flex-direction:column;gap:1px;padding:0 0 6px;border-bottom:1px solid rgba(242,194,123,.3);opacity:.7}.orh.now{opacity:1;border-bottom-color:var(--glow)}
 .orh b{font-family:var(--display);font-size:.92em;color:var(--glow)}.orh span{font-size:.72em;line-height:1.45;color:var(--ink)}.orh em{font-style:normal;font-size:11px;color:var(--muted)}
-.ob{opacity:.72;transition:opacity .3s;border-left:2px solid transparent;padding:.3em .6em;margin-left:0;border-radius:10px;background:rgba(10,8,6,.5);justify-self:start;max-width:100%}.ob.now{opacity:1;border-left-color:var(--glow)}
+.ob{opacity:.72;transition:opacity .3s;border-left:2px solid transparent;padding:.4em .75em;margin-left:0;border-radius:10px;background:rgba(10,8,6,.62);justify-self:stretch;min-width:0}.ob.now{opacity:1;border-left-color:var(--glow)}
 .ob .obh{font-size:.68em;color:var(--glow);letter-spacing:.04em;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ob .obh b{font-family:var(--display);font-size:1.25em}.ob .obh span{color:var(--muted)}
 body.op .sub .ob p{font-size:1em;line-height:1.45;white-space:pre-wrap}body.op .sub .ln .pn{font-size:.7em}
 body.op .sub.lines .ob:not(.now) .ln{opacity:.8}
+body.op .spot{opacity:0!important}
 @media (max-width:760px){.orh span,.orh em{display:none}.opg{padding:10px}.ob .obh span{display:none}}
 .sub .ln{pointer-events:auto;cursor:pointer;display:inline-block;position:relative}
 .ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none}
@@ -401,7 +402,7 @@ const SCENES={
       {sec:'尾聲',spot:['bubbles','stage'],word:'唱',cue:'邀大家一起 la la',n:4},
     ]},
   prank:{
-    title:'惡作劇',artist:'王藍茵',img:'prank.jpg?v=1',ratio:1600/893,layout:'top',dim:.55,
+    title:'惡作劇',artist:'王藍茵',img:'prank.jpg?v=1',ratio:1600/893,layout:'top',dim:.55,cols:[5],
     story:'城市街角，貼滿便利貼的腳踏車、偷可頌的貓、雨棚上的紙飛機，心動擋都擋不住。懷疑是不是惡作劇，還是忍不住笑，鼓起勇氣投入。',
     spots:{notes:{x:56,y:72,name:'貼滿便利貼的腳踏車'},cat:{x:50,y:58,name:'偷可頌的貓'},plane:{x:17,y:21,name:'雨棚上的紙飛機'},petals:{x:62,y:30,name:'飄落的花瓣'},
       face:{x:42,y:88,name:'粉筆鬼臉'},arrow:{x:63,y:86,name:'粉筆箭頭'},couple:{x:83,y:66,name:'牽手的背影'},window:{x:41,y:18,name:'飄起的窗簾'}},
@@ -477,7 +478,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=116;
+const VER=117;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -574,7 +575,7 @@ function show(i,anim=true){
     const tb=document.querySelector('.bar');if(tb)sub.style.top=(tb.getBoundingClientRect().bottom+8)+'px';
     const R=null,dr=0;  // 輪次標籤只放在上面的段落條（一頁時三段等寬，對齊下面三欄）
     sub.innerHTML=`<div class="opg" style="grid-template-columns:repeat(${C},minmax(0,1fr))">${R?R.map((x,c)=>`<div class="orh${pos[cur].c===c?' now':''}" style="grid-column:${c+1};grid-row:1"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></div>`).join(''):''}${sc.steps.map((x,i)=>{const ls=blocks[i]||[];const h=`<div class="ob${i===cur?' now':''}" style="grid-column:${pos[i].c+1};grid-row:${pos[i].r+1+dr}"><div class="obh">${esc(x.sec)} <b>${esc(x.word)}</b> <span>${esc(namesOf(sc,x))}</span></div><p>${ls.map((l,k)=>lnHtml(l,o+k)).join('<br>')}</p></div>`;o+=ls.length;return h}).join('')}</div>`;
-    lightLine();opFit();opSpots(sc,ks);
+    lightLine();opFit();opSpots(null);  // 物品名已寫在每段標題，浮動字會壓到歌詞
   }else if(sub&&blocks){sub.style.top='';opSpots(null);
     const nx=sc.steps[cur+1];
     const off=blocks.slice(0,cur).reduce((a,b)=>a+b.length,0);
@@ -1245,7 +1246,8 @@ function playFrom(sec,l){
 // 有 mel（照簡譜標的旋律代號）就照旋律對齊，沒有就比第一句歌詞
 function tocGrid(){const nm=x=>String(x||'').replace(/[\s，。、！？,.!?~～…「」]/g,''),pos=[],orig=[];let c=0,last=-1;
   const mel=SCENES[key].mel,id=i=>mel&&mel.length===blocks.length?mel[i]:nm(blocks[i][0]);
-  blocks.forEach((ls,i)=>{const f=id(i);let m=-1;if(f)for(let j=0;j<i;j++)if(id(j)===f){m=j;break}
+  const nc=SCENES[key].cols||[];
+  blocks.forEach((ls,i)=>{if(i&&nc.includes(i)){c++;last=-1}const f=id(i);let m=-1;if(f)for(let j=0;j<i;j++)if(id(j)===f){m=j;break}
     let r;if(m<0){r=last+1;orig[i]=i}else{orig[i]=orig[m];const tgt=pos[orig[m]].r;
       if(i&&orig[i-1]===orig[i])r=last+1;else if(tgt<=last){c++;r=tgt}else r=tgt}
     pos[i]={c,r};last=r});return pos}
