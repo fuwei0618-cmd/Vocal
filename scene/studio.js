@@ -153,7 +153,11 @@ function sTake(){
   const full=k.start<2&&k.end>S.dur*.85,adj=k.adj||0;
   e.innerHTML=`<span>這次錄音 ${mmss(k.start)}–${mmss(k.end)}${adj?`・已挪 ${adj>0?'晚':'早'} ${Math.abs(adj).toFixed(2)} 秒`:''}</span><button data-act="sauto">自動對齊</button><button data-act="sadj" data-d="-1">早一點</button><button data-act="sadj" data-d="1">晚一點</button><a class="btn" data-act="tdl" download="${esc(SCENES[key].title)}-${mmss(k.start).replace(':','')}.${/webm/.test(k.blob.type)?'webm':/wav/.test(k.blob.type)?'wav':'m4a'}" href="${URL.createObjectURL(k.blob)}">存到檔案</a>${full?'<button data-act="talign">用這次對歌詞拍</button>':''}<button data-act="sdel">🗑 刪掉</button><button data-act="sdesel">✕</button>`;
 }
-function sGains(){S.lanes.forEach(l=>{const g=S.gains[l.id];if(g)g.gain.value=audible(l)?l.vol:0})}
+// 每首歌的音檔大小聲不一樣（流行歌的母帶特別大聲）。原音模式沒有消回音，喇叭的音樂會被錄進去，
+// 所以錄音時把太大聲的音檔壓到同一個音量（只會變小、不會變大）
+function laneRms(b){if(b._rms)return b._rms;const d=b.getChannelData(0),st=Math.max(1,Math.floor(d.length/200000));let sum=0,n=0;for(let i=0;i<d.length;i+=st){sum+=d[i]*d[i];n++}return b._rms=Math.sqrt(sum/Math.max(1,n))||1e-4}
+const REC_RMS=.1;
+function sGains(){S.lanes.forEach(l=>{const g=S.gains[l.id];if(!g)return;let v=audible(l)?l.vol:0;if(v&&S.recd&&S.recd.raw&&l.id!=='me'&&l.buf)v*=Math.min(1,REC_RMS/laneRms(l.buf));g.gain.value=v})}
 function sPlay(from){
   sStop();const c=S.ctx;if(c.state==='suspended')c.resume();
   const T=c.currentTime+.08;S.T=T;S.from=from;S.playing=true;S.srcs=[];S.gains={};
