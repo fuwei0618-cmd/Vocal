@@ -67,13 +67,16 @@ input[type=range]{width:200px;accent-color:var(--glow)}
 .belt p{margin:4px 0;font-size:14px;line-height:1.6}.belt b{color:var(--glow);font-weight:600}
 .small{font-size:12px;color:var(--muted)}
 .load{font-size:12px;color:var(--muted);margin-top:8px;min-height:1em}
+.brs{display:flex;justify-content:center;gap:12px;margin:12px 0 4px;flex-wrap:wrap}.brs span{display:flex;flex-direction:column;align-items:center;min-width:90px;padding:10px 16px;border:1px solid var(--line);border-radius:14px;font-family:var(--display);font-size:32px}
+.brs span small{font-family:var(--body);font-size:12px;color:var(--muted)}.brs span.now{background:var(--glow);color:#1a130c;border-color:var(--glow)}.brs span.now small{color:#1a130c}
+.brc{font-size:28px;font-variant-numeric:tabular-nums;min-height:1.3em;color:var(--glow)}.list button .small{flex:1}
 @media (max-width:820px){.wrap{grid-template-columns:1fr}.belt{grid-template-columns:1fr}.list{display:grid;grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<div class="bar"><a href="javascript:history.length>1?history.back():location.href='learn.html'">← 返回</a><h1>發聲練習</h1><span class="by">・v1</span><button class="pill" data-act="mind">🛝 心態</button></div>
+<div class="bar"><a href="javascript:history.length>1?history.back():location.href='learn.html'">← 返回</a><h1>發聲練習</h1><span class="by">・v2</span><button class="pill" data-act="mind">🛝 心態</button></div>
 <div class="wrap">
-  <div class="box"><h2>音階（點一組）</h2><div class="list" id="list"></div></div>
+  <div class="box"><h2 id="lh">音階（點一組）</h2><div class="list" id="list"></div></div>
   <div class="main">
     <div class="box stage">
       <div class="key" id="key"></div>
@@ -84,8 +87,8 @@ input[type=range]{width:200px;accent-color:var(--glow)}
     </div>
     <div class="box">
       <div class="row"><span>速度</span><input type="range" min="60" max="140" step="5" id="tempo"><b id="tv"></b></div>
-      <div class="row"><span>方向</span><div class="seg" id="mode"></div></div>
-      <div class="row"><span class="pair"><span>起始的 1</span><div class="stp"><button data-act="st" data-d="-1">−</button><b id="sv"></b><button data-act="st" data-d="1">＋</button></div></span>
+      <div class="row prow"><span>方向</span><div class="seg" id="mode"></div></div>
+      <div class="row prow"><span class="pair"><span>起始的 1</span><div class="stp"><button data-act="st" data-d="-1">−</button><b id="sv"></b><button data-act="st" data-d="1">＋</button></div></span>
         <span class="pair"><span>最高到</span><div class="stp"><button data-act="tp" data-d="-1">−</button><b id="tpv"></b><button data-act="tp" data-d="1">＋</button></div></span>
         <span class="pair"><span>最低到</span><div class="stp"><button data-act="lo" data-d="-1">−</button><b id="lov"></b><button data-act="lo" data-d="1">＋</button></div></span></div>
       <div class="row"><span>發音方式</span><div class="chips" id="vow"></div></div>
@@ -108,11 +111,17 @@ const SC=[ // 她的練習 app 的 7 組（[級數, 拍數]，8＝高八度的 1
   {n:'音階6',p:[[1,1],[2,1],[3,1],[2,1],[1,2]]},
   {n:'音階7',p:[[1,1],[3,1],[5,1],[3,1],[1,2]]}];
 const DEG=[0,0,2,4,5,7,9,11,12];
-const VOW=[['hum','哼鳴','嘴唇輕閉、牙齒分開，感覺鼻子和嘴唇在震。最省力，適合第一個暖。'],['tr','打嘟','嘴唇放鬆抖動，靠穩定的氣推著走；抖到斷掉，通常是腰帶鬆了、氣不穩。'],['i','閉口音 i','嘴角微微往兩邊，聲音往前、亮亮的，舌頭不要往下壓。'],['a','開口音 a','下巴放鬆往下，口腔像打哈欠一樣打開，喉嚨不要跟著出力。'],['ng','咽音','聲音小而集中，像一條細線；喉嚨不擠，不舒服就停。']];
+const VOW=[['hum','哼鳴','嘴唇輕閉、牙齒分開，感覺鼻子和嘴唇在震。最省力，適合第一個暖。'],['tr','打嘟','嘴唇放鬆抖動，靠穩定的氣推著走；抖到斷掉，通常是腰帶鬆了、氣不穩。'],['i','閉口音 i','嘴角微微往兩邊，聲音往前、亮亮的，舌頭不要往下壓。'],['a','開口音 a','下巴放鬆往下，口腔像打哈欠一樣打開，喉嚨不要跟著出力。'],['ng','咽音','聲音小而集中，像一條細線；喉嚨不擠，不舒服就停。'],['ts','ㄘ聲','不用音高，只練氣：牙齒輕靠、舌尖抵住，氣從齒縫送出「ㄘ——」。聲音要細、穩、不抖，抖了就是腰帶鬆了。']];
+// ㄘ聲＝氣息練習：不彈鋼琴，用節拍器帶（ph：[名稱, 拍數, 提示種類, 提示]；拍數 0＝自己唱到沒氣再按）
+const BR=[
+  {n:'長ㄘ',d:'吸 4 拍，一口氣「ㄘ——」越久越好，計秒數',r:1,ph:[['吸',4,'breath','吸氣：側腰撐開腰帶'],['ㄘ',0,'sing','ㄘ——腰帶一格一格慢慢收，沒氣了按「停」']]},
+  {n:'節奏ㄘ',d:'吸 2 拍，跟著節拍「ㄘ ㄘ ㄘ ㄘ」短促送氣',r:4,ph:[['吸',2,'breath','吸氣：撐開腰帶'],['ㄘ',4,'sing','每一拍一個 ㄘ：腰帶彈一下，肩膀不動']]},
+  {n:'4-4-8',d:'吸 4、停 4（撐住不放）、ㄘ 8 拍慢慢收',r:4,ph:[['吸',4,'breath','吸氣：側腰撐開'],['停',4,'high','停住：腰帶撐著，喉嚨不要關'],['ㄘ',8,'sing','ㄘ——均勻地收，最後一拍剛好用完']]},
+  {n:'漸強漸弱',d:'吸 4 拍，ㄘ 8 拍由小到大再到小',r:3,ph:[['吸',4,'breath','吸氣：撐開腰帶'],['ㄘ',4,'sing','由小到大：下腹慢慢往內往上推'],['ㄘ',4,'high','由大到小：音量變小，腰帶不能鬆']]}];
 const MODES=[['up','上行'],['down','下行'],['updown','上行再下行']];
 const NN=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'],nm=m=>NN[m%12]+(Math.floor(m/12)-1);
 const LK='warmup-v1';
-let P={sc:0,tempo:100,mode:'up',start:57,top:79,low:52,vow:'a'};try{Object.assign(P,JSON.parse(localStorage.getItem(LK)||'{}'))}catch(e){}
+let P={br:0,sc:0,tempo:100,mode:'up',start:57,top:79,low:52,vow:'a'};try{Object.assign(P,JSON.parse(localStorage.getItem(LK)||'{}'))}catch(e){}
 const save=()=>{try{localStorage.setItem(LK,JSON.stringify(P))}catch(e){}};
 let run=null,off=0,dir=1,timers=[];
 const $=id=>document.getElementById(id);
@@ -120,16 +129,35 @@ const span=s=>Math.max(...s.p.map(x=>DEG[x[0]]));
 function jp(s,cur){let out='',ms='',beat=0;s.p.forEach(([d,b],i)=>{const t=d===8?1:d,cls='n'+(b<1?' u':'')+(d===8?' hi':'')+(i===cur?' now':'');
     ms+=`<span class="${cls}">${t}</span>`;if(b>=2)ms+='<span class="d">–</span>';beat+=b;if(beat>=2-1e-9){out+=`<span class="ms">${ms}</span>`;ms='';beat=0}});
   if(ms)out+=`<span class="ms">${ms}</span>`;return `<span class="jp">${out}</span>`}
-function draw(cur){const s=SC[P.sc];
+const isTs=()=>P.vow==='ts';
+function drawBr(){const b=BR[P.br]||BR[0];
+  $('list').innerHTML=BR.map((x,i)=>`<button data-act="br" data-i="${i}" class="${i===P.br?'on':''}"><b>${x.n}</b><span class="small">${x.d}</span></button>`).join('');
+  $('key').innerHTML=`ㄘ聲・氣息練習（不用音高）${brun?`　第 ${brun.round} / ${b.r} 輪`:''}${P.best?`　長ㄘ最佳 <b>${P.best} 秒</b>`:''}`;
+  $('score').innerHTML=`<div class="brs">${b.ph.map((x,i)=>`<span class="${brun&&brun.ph===i?'now':''}">${x[0]}<small>${x[1]?x[1]+' 拍':'到沒氣'}</small></span>`).join('')}</div><div class="brc" id="brc">${brun?brun.cnt:''}</div>`;
+  $('play').textContent=brun?'■ 停':'▶ 開始';$('play').className='big'+(brun?' stop':'');document.querySelector('[data-act=again]').hidden=true}
+function draw(cur){if(isTs()){drawBr();drawCtl();return}document.querySelector('[data-act=again]').hidden=false;const s=SC[P.sc];
   $('list').innerHTML=SC.map((x,i)=>`<button data-act="sc" data-i="${i}" class="${i===P.sc?'on':''}"><b>${x.n}</b>${jp(x,-1)}</button>`).join('');
   $('score').innerHTML=jp(s,cur==null?-1:cur);
   const root=P.start+off;$('key').innerHTML=`1 = <b>${nm(root)}</b>　最高音 ${nm(root+span(s))}${run?`　第 ${run.round} 輪`:''}`;
+  drawCtl();
+  $('play').textContent=run?'■ 停':'▶ 開始';$('play').className='big'+(run?' stop':'');}
+function drawCtl(){
+  $('lh').textContent=isTs()?'氣息練習（點一個）':'音階（點一組）';document.querySelectorAll('.prow').forEach(r=>r.hidden=isTs());
   $('tempo').value=P.tempo;$('tv').textContent=P.tempo;
   $('mode').innerHTML=MODES.map(([k,t])=>`<button data-act="mode" data-k="${k}" class="${P.mode===k?'on':''}">${t}</button>`).join('');
   $('sv').textContent=nm(P.start);$('tpv').textContent=nm(P.top);$('lov').textContent=nm(P.low);
   $('vow').innerHTML=VOW.map(([k,t])=>`<button data-act="vow" data-k="${k}" class="${P.vow===k?'on':''}">${t}</button>`).join('');
-  $('vtip').textContent=(VOW.find(v=>v[0]===P.vow)||VOW[0])[2];
-  $('play').textContent=run?'■ 停':'▶ 開始';$('play').className='big'+(run?' stop':'');}
+  $('vtip').textContent=(VOW.find(v=>v[0]===P.vow)||VOW[0])[2];}
+// 節拍器（直接用 Web Audio，不用等鋼琴）
+let ac=null;const click=(hi)=>{try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;o.frequency.value=hi?1500:1000;g.gain.setValueAtTime(.35,t);g.gain.exponentialRampToValueAtTime(.001,t+.06);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+.07)}catch(e){}};
+let brun=null;
+function brStart(){const b=BR[P.br];brun={round:1,ph:0,cnt:'',t0:0};brPhase()}
+function brPhase(){if(!brun)return;const b=BR[P.br],x=b.ph[brun.ph],bt=60/P.tempo*1000;cue(x[2],x[3]);
+  if(!x[1]){brun.t0=performance.now();const tick=()=>{if(!brun||brun.ph!==b.ph.indexOf(x))return;brun.cnt=((performance.now()-brun.t0)/1000).toFixed(1)+' 秒';const c=$('brc');if(c)c.textContent=brun.cnt;later(100,tick)};drawBr();tick();return}
+  for(let k=0;k<x[1];k++)later(k*bt,()=>{if(!brun)return;click(k===0);brun.cnt=x[0]+' '+(k+1);drawBr()});
+  later(x[1]*bt,()=>{if(!brun)return;brun.ph++;if(brun.ph>=b.ph.length){brun.ph=0;brun.round++;if(brun.round>b.r)return brStop('完成 ✓ 休息一下')}brPhase()})}
+function brStop(msg){const b=BR[P.br];let m=msg;if(brun&&!msg&&b.ph[brun.ph]&&!b.ph[brun.ph][1]&&brun.t0){const sec=+((performance.now()-brun.t0)/1000).toFixed(1);if(sec>1){m=`這次 ${sec} 秒`+(sec>(P.best||0)?'，新紀錄 🎉':'');if(sec>(P.best||0)){P.best=sec;save()}}}
+  timers.forEach(clearTimeout);timers=[];brun=null;drawBr();cue('',m||'按「開始」：跟著節拍吸氣、ㄘ')}
 function cue(kind,t){const c=$('cue');c.className='cue '+kind;c.textContent=t}
 // 鋼琴：跟音準室同一套鋼琴取樣；載不到就用簡單的合成音
 let inst=null,ready=null;
@@ -153,11 +181,12 @@ async function start(){await Tone.start();await piano();off=0;dir=P.mode==='down
 function stop(msg){timers.forEach(clearTimeout);timers=[];run=null;try{inst&&inst.releaseAll&&inst.releaseAll()}catch(e){}off=0;draw(-1);cue('',msg||'按「開始」：先聽和弦、吸氣，再跟著唱')}
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;const k=a.dataset.act;
   if(k==='mind'){window.mindOpen&&mindOpen('../');return}
-  if(k==='play'){run?stop():start();return}
+  if(k==='play'){if(isTs()){brun?brStop():(click(true),brStart())}else run?stop():start();return}
   if(k==='again'){if(run)run.again=true;else start();return}
-  if(k==='sc'){P.sc=+a.dataset.i;if(run)stop()}
+  if(k==='br'){if(brun)brStop();P.br=+a.dataset.i}
+  else if(k==='sc'){P.sc=+a.dataset.i;if(run)stop()}
   else if(k==='mode'){P.mode=a.dataset.k;if(run)stop()}
-  else if(k==='vow')P.vow=a.dataset.k;
+  else if(k==='vow'){if(run)stop();if(brun)brStop();P.vow=a.dataset.k}
   else if(k==='st')P.start=Math.max(36,Math.min(84,P.start+ +a.dataset.d));
   else if(k==='tp')P.top=Math.max(P.start+5,Math.min(96,P.top+ +a.dataset.d));
   else if(k==='lo')P.low=Math.max(30,Math.min(P.start,P.low+ +a.dataset.d));
