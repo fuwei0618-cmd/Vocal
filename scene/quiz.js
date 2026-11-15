@@ -100,7 +100,7 @@ const qzBack=()=>qLane('inst')?'inst':'orig';
 const qzOrig=()=>qLane('orig')?['orig']:[qzBack(),qzRef()];
 function qzHear(ids){S.lanes.forEach(l=>{l.solo=false;l.mute=!ids.includes(l.id)});sGains();sDraw()}
 function qzHas(a,b){return sCover().some(c=>c.a<b-.2&&c.b>a+.2)}
-function qzHint(t){try{sHint(t)}catch(e){}}
+function qzHint(t){if(Q){Q.tip=t;const e=document.querySelector('#s-quiz .qz-tipbar');if(e){e.textContent=t;e.hidden=!t}clearTimeout(Q.tipT);Q.tipT=setTimeout(()=>{if(Q){Q.tip='';const e2=document.querySelector('#s-quiz .qz-tipbar');if(e2)e2.hidden=true}},6000)}else try{sHint(t)}catch(e){}}
 // ---------- 開關、播放 ----------
 function qzOpen(cat){
   if(!S)return;if(getTimes().length<2){qzHint('這首還沒對拍：先在歌詞表對拍，題組才知道每一段在哪裡');return}
@@ -113,7 +113,7 @@ function qzClose(){
   if(!Q)return;if(S){if(S.recd)return;sStop();Q.prev.forEach(p=>{const l=S.lanes.find(x=>x.id===p.id);if(l){l.mute=p.mute;l.solo=p.solo}});sGains();S.stopAt=0}
   if(S)S.noBig=0;Q=null;const el=document.getElementById('s-quiz');if(el)el.remove();const d=document.getElementById('studio');if(d)d.classList.remove('quiz');if(S)setTimeout(sLayout,50);
 }
-function qzFocus(){const q=Q.list[Q.i];if(!q)return;S.sel=qzRecRange(q);S.loop=false;S.pos=S.sel[0];sView0();sDraw()}
+function qzFocus(){const q=Q.list[Q.i];if(!q)return;S.sel=qzRecRange(q);{const [x,y]=S.sel,k=takes.slice().sort((u,v)=>v.at-u.at).find(k=>k.start<y&&k.end>x);S.selTake=k?k.id:null}S.loop=false;S.pos=S.sel[0];sView0();sDraw()}
 function qzGo(j){if(S&&S.recd)return;Q.seq=null;sStop();Q.i=Math.max(0,Math.min(Q.list.length-1,j));Q.sum=false;Q.act='';Q.rev=false;Q.k=-2;qzSaveLast();qzFocus();qzRender()}
 function qzPlay(act,ids,from,until,mute){
   Q.seq=null;Q.who='';if(S.playing&&Q.act===act){sStop();Q.act='';Q.mute=null;qzRender();return}
@@ -189,7 +189,7 @@ function qzRender(){
   const sc=SCENES[key],n=Q.list.length,q=Q.list[Q.i],C=QCAT[q.cat],r=qzGet(q.id),m=r.m||q.m,st=sc.steps[q.s],[a,b]=qzRange(q),[ra,rb]=qzRecRange(q),
     on=x=>S.playing&&Q.act===x?' on':'',recd=!!S.recd,has=qzHas(ra,rb),A=qzAllLines(),L=getLines(),nm=Object.keys(r.mk||{}).length;
   const who=`<div class="qz-st qz-who">${Q.who?`<span class="${Q.who==='我'?'me':'ref'}">▶ 正在放：${Q.who}</span>`:`<span>${q.cat==='beat'?'輪流比＝原唱開口、妳開口，聽是不是同一刻':'輪流比＝原唱一句、妳一句；聽到不對的字，在右邊點它'}</span>`}</div>`;
-  const cmp=n0=>`<div class="qz-st"><b>${n0}</b><span>比一比</span><button data-q="alt" class="go${on('alt')}" ${has?'':'disabled'}>${on('alt')?'⏹ 停':'🔁 輪流比'}</button><button data-q="cmp" data-c="both" class="${on('both')}" ${has?'':'disabled'}>原唱＋我</button><button data-q="cmp" data-c="me" class="${on('me')}" ${has?'':'disabled'}>只聽我</button></div>${who}`;
+  const cmp=n0=>`<div class="qz-st"><b>${n0}</b><span>比一比</span><button data-q="alt" class="go${on('alt')}" ${has?'':'disabled'}>${on('alt')?'⏹ 停':'🔁 輪流比'}</button><button data-q="cmp" data-c="both" class="${on('both')}" ${has?'':'disabled'}>原唱＋我</button><button data-q="cmp" data-c="me" class="${on('me')}" ${has?'':'disabled'}>只聽我</button></div>${has&&!recd?`<div class="qz-st qz-adj"><span>錄音跟原唱對不齊？</span><button data-act="sadj" data-d="-1">◀ 早一點</button><button data-act="sadj" data-d="1">晚一點 ▶</button></div>`:''}${who}`;
   const recB=(n0,t)=>`<div class="qz-st"><b>${n0}</b><button data-q="rec" class="rec${recd?' on':''}">${recd?'⏹ 停止錄音':t}</button>${has&&!recd?'<span>✓ 錄好了，可以重錄</span>':''}</div>`;
   let title=esc(st.sec),tip='',steps='',right='';
   if(q.cat==='pitch'){
@@ -230,7 +230,7 @@ function qzRender(){
   <div class="qz-b"><div class="qz-steps">${steps}
       <div class="qz-res"><span>這題的結果<small>過關＝${C.pass}</small></span>${Object.keys(C.res).map(k=>`<button data-q="res" data-v="${k}" class="${k}${r.res===k?' on':''}">${C.res[k]}</button>`).join('')}</div>
       <div class="qz-nav"><button data-q="go" data-j="${Q.i-1}" ${Q.i?'':'disabled'}>← 上一題</button>${Q.i<n-1?`<button data-q="go" data-j="${Q.i+1}" class="go">下一題 →</button>`:'<button data-q="sum" class="go">看成績單 →</button>'}</div></div>
-    <div class="qz-r">${right}<input class="qz-in" data-q="note" placeholder="筆記：例如「人海」的海掉下來" value="${esc(r.n||'')}"></div></div>`;
+    <div class="qz-r">${right}<input class="qz-in" data-q="note" placeholder="筆記：例如「人海」的海掉下來" value="${esc(r.n||'')}"></div></div><div class="qz-tipbar"${Q.tip?'':' hidden'}>${esc(Q.tip||'')}</div>`;
   Q.k=-2;
 }
 app.addEventListener('click',e=>{
@@ -265,7 +265,8 @@ app.addEventListener('click',e=>{
 },true);
 app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!Q.list[Q.i])return;qzSet(Q.list[Q.i].id,{n:t.value})});
 (()=>{const s=document.createElement('style');s.textContent=`
-#studio.quiz{grid-template-rows:auto minmax(0,1fr) auto 170px auto auto}
+#studio.quiz{grid-template-rows:auto minmax(0,1fr)}#studio.quiz>.s-ruler,#studio.quiz>.s-lanes,#studio.quiz>.s-take,#studio.quiz>.s-bot{display:none}#studio.quiz .s-pic{margin-bottom:12px}
+.qz-tipbar{position:sticky;bottom:0;margin-top:auto;align-self:center;background:var(--glow);color:#1a130c;border-radius:99px;padding:8px 18px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.5)}.qz-tipbar[hidden]{display:none}.qz-adj span{font-size:12px!important}#studio .qz-adj button{padding:4px 10px;font-size:12px}
 #studio.quiz .s-lane:not(.me){flex:0 0 32px!important}#studio.quiz .s-lyr{display:none}#studio.quiz .s-pic::before{display:none}
 #studio .qz-open{margin-left:auto}#studio.quiz .qz-open{background:rgba(242,194,123,.22);border-color:var(--glow);color:var(--glow)}
 #s-quiz{position:absolute;inset:0;background:rgba(18,15,11,.95);overflow:auto;padding:12px 18px 16px;display:flex;flex-direction:column;gap:8px;-webkit-user-select:none;user-select:none}
@@ -322,5 +323,5 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 .qz-ans b{color:var(--glow);font-size:30px;margin-right:12px}.qz-ans small{font-size:14px;color:var(--muted)}
 .qz-lyr span.focus{box-shadow:inset 0 -3px 0 var(--glow)}
 .qz-lyr span.x,.qz-leg .x,.qz-words .x{background:rgba(232,128,111,.38)}
-@media (max-width:820px){.qz-home{grid-template-columns:1fr}#studio.quiz{grid-template-rows:auto minmax(0,1fr) auto 120px auto auto}#studio.quiz .s-lane:not(.me){flex:0 0 24px!important}.qz-b{grid-template-columns:1fr;gap:10px}.qz-modes{margin-left:0}.qz-lyr p{font-size:19px}#s-quiz{padding:10px 12px}.qz-dots{order:5;flex-basis:100%}.qz-r{order:-1}.qz-blank{font-size:20px;letter-spacing:.06em}.qz-lyr.one p{font-size:24px}.qz-ans b{font-size:24px}.qz-lyr p{font-size:18px;line-height:1.5}#studio.quiz .s-take{display:none}#studio.quiz{grid-template-rows:auto minmax(0,1fr) auto 130px auto auto}#studio.quiz .s-lanes{overflow:hidden}}
+@media (max-width:820px){.qz-home{grid-template-columns:1fr}.qz-b{grid-template-columns:1fr;gap:10px}.qz-modes{margin-left:0}.qz-lyr p{font-size:19px}#s-quiz{padding:10px 12px}.qz-dots{order:5;flex-basis:100%}.qz-r{order:-1}.qz-blank{font-size:20px;letter-spacing:.06em}.qz-lyr.one p{font-size:24px}.qz-ans b{font-size:24px}.qz-lyr p{font-size:18px;line-height:1.5}}
 `;document.head.appendChild(s)})();
