@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>今天練什麼</title>
+<meta name="theme-color" content="#0d0b09">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png?v=1">
+<link rel="icon" href="../icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<script src="../mindset.js?v=1"></script>
+<style>
+/* 今天練什麼（11-15）：練歌一條路。開練前（心態＋發聲）→ 健檢 4 題 → 第一個卡住的＝今天功課 → 收尾找一個「對！」 */
+:root{--bg:#0d0b09;--ink:#f6efe4;--muted:#bfb3a3;--line:rgba(255,255,255,.16);--glow:#f2c27b;--glow-soft:rgba(242,194,123,.16);--ok:#8fd19e;--bad:#f08a72;
+  --display:"LXGW WenKai TC","Noto Sans TC","PingFang TC",serif;--body:"Noto Sans TC",system-ui,-apple-system,"PingFang TC",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);-webkit-tap-highlight-color:transparent}
+button,a.b{font:inherit;color:inherit;cursor:pointer}
+.bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;border-bottom:1px solid var(--line)}
+.bar a{color:var(--muted);text-decoration:none;font-size:14px}.bar h1{margin:0;font-family:var(--display);font-size:22px}.bar .by{color:var(--muted);font-size:13px}
+.wrap{max-width:1100px;margin:0 auto;padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 28px);display:flex;flex-direction:column;gap:14px}
+.box{border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.04);padding:14px 16px}
+.step{display:flex;align-items:baseline;gap:10px;margin:0 0 10px}.step b{font-family:var(--display);font-size:20px;color:var(--glow)}.step span{color:var(--muted);font-size:13px}
+.mind{display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:center}.mind img{width:100%;border-radius:12px;display:block}
+.mind p{margin:0 0 6px;font-family:var(--display);font-size:22px}.mind small{color:var(--muted);font-size:13px;line-height:1.6;display:block}
+.pill{display:inline-block;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:99px;padding:7px 14px;font-size:14px;text-decoration:none;color:var(--ink);margin-top:8px}
+.pill.go{background:var(--glow);color:#1a130c;border-color:var(--glow);font-weight:600}
+.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.ch{display:flex;flex-direction:column;gap:4px;text-align:left;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.04);padding:16px;text-decoration:none;color:var(--ink)}
+.ch b{font-family:var(--display);font-size:22px}.ch span{color:var(--muted);font-size:13px;line-height:1.5}.ch.on{border-color:var(--glow);background:var(--glow-soft)}
+.songs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.songs button{border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.04);padding:10px 12px;text-align:left}.songs button b{display:block;font-size:16px}.songs button small{color:var(--muted);font-size:12px}
+.songs button.sug{border-color:var(--glow)}.songs button.sug small{color:var(--glow)}
+.checks{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.ck{border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.ck.ok{border-color:rgba(143,209,158,.6);background:rgba(143,209,158,.08)}.ck.bad{border-color:rgba(240,138,114,.7);background:rgba(240,138,114,.08)}
+.ck h3{margin:0;font-size:17px;font-family:var(--display)}.ck h3 i{font-style:normal;color:var(--glow);margin-right:6px}
+.ck p{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
+.ck .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:2px}
+.yn{border:1px solid var(--line);border-radius:99px;background:none;padding:6px 14px;font-size:14px}
+.yn.y.on{background:var(--ok);color:#10200f;border-color:var(--ok)}.yn.n.on{background:var(--bad);color:#2a0d06;border-color:var(--bad)}
+.rx{border:2px solid var(--glow);border-radius:16px;padding:14px 16px;background:var(--glow-soft)}
+.rx h3{margin:0 0 4px;font-family:var(--display);font-size:22px}.rx p{margin:4px 0;font-size:15px;line-height:1.6}
+.muted{color:var(--muted);font-size:13px}
+.done{font-size:15px;margin-top:8px}
+.hidden{display:none!important}
+@media (max-width:820px){.mind{grid-template-columns:1fr}.choices{grid-template-columns:1fr}.songs{grid-template-columns:repeat(2,1fr)}.checks{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="bar"><a href="javascript:history.length>1?history.back():location.href='../#songs'">← 返回</a><h1>今天練什麼</h1><span class="by">・v1</span></div>
+<div class="wrap" id="app"></div>
+<script>
+const SONGS=[['jiayi','甲乙丙丁'],['summer','盛夏的果實'],['darwin','達爾文'],['hug','大大的擁抱'],['houlai','後來'],['hands','小手拉大手'],['prank','惡作劇'],['zhizu','知足']];
+const TTL=Object.fromEntries(SONGS);
+// 健檢 4 題：怎麼檢查（do＝情境頁幫妳打開的東西）、卡住時今天做什麼
+const CK=[
+  {id:'c1',n:'架構',q:'不看歌詞，說得出每一段的順序和第一句嗎？',how:'打開架構表的「回想」：蓋起來，一段一段說出來。',do:'map',
+   rx:'架構表回想',rxd:['蓋起來，一段一段說出下一段是什麼，說不出就打開看一眼，再蓋起來。','整首能從頭說到尾，這一關就過了。'],rdo:'map'},
+  {id:'c2',n:'歌詞',q:'切到伴奏，看著圖不看歌詞，唱得完一輪嗎？',how:'會幫妳切到伴奏；卡住的句子用螢光筆標起來。',do:'lyr',
+   rx:'跟唱，再腦內聽',rxd:['跟著原曲唱 3 遍，先不管好不好。','再按「靜音」，在腦中把歌詞聽一遍。','重點練剛剛標起來的句子。'],rdo:'sing'},
+  {id:'c3',n:'進拍',q:'只用伴奏，每一段都能自己準時進來嗎？',how:'會幫妳切到伴奏；慢半拍的地方記下來。',do:'beat',
+   rx:'🔁 重複這段＋拍手',rxd:['選慢半拍的那一段，按 🔁 重複。','跟著拍子拍手，看哪些字撞到「強的那一下」：那就是老師說的重音。','標起來，唱的時候腰帶在那個字「彈一下」。'],rdo:'beat'},
+  {id:'c4',n:'音準',q:'靜音在腦中唱 4 小節，切回原曲時還在對的音上嗎？',how:'會幫妳切到原曲；按「靜音」腦內唱，再按回來對。',do:'pitch',
+   rx:'跟原唱哼',rxd:['跟著原唱一起哼（不唱詞），對準每個音。','哼穩了再唱詞；不順的地方用「感受氣流」。'],rdo:'hum'}];
+const PK='practice-v1',today=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})();
+let D={};try{D=JSON.parse(localStorage.getItem(PK)||'{}')||{}}catch(e){}
+const save=()=>{try{localStorage.setItem(PK,JSON.stringify(D))}catch(e){}};
+const prog=()=>{try{return JSON.parse(localStorage.getItem('scene-prog-v1')||'{}')||{}}catch(e){return {}}};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const go=(k,d)=>`index.html?do=${d}#${k}`;
+// 幫我挑：練習紀錄最少的那首（最不熟）
+function suggest(){const P=prog();let best=null,bn=1e9;SONGS.forEach(([k])=>{const n=Object.keys(P[k]||{}).length+Object.keys(D[k]||{}).length;if(n<bn){bn=n;best=k}});return best}
+function route(){const m=location.hash.match(/song=(\w+)/);return {song:m&&TTL[m[1]]?m[1]:'',pick:/pick/.test(location.hash)}}
+function mindBox(){return `<div class="box"><div class="step"><b>0 開練前</b><span>先進包廂，再暖聲音</span></div><div class="mind"><img src="../play.jpg?v=1" alt="">
+  <div><p>這裡很安全，我只是跟著音樂一起玩。</p><small>注意力朝外（音樂、朋友），不盯著「唱得好不好」。<br>先放原曲揮手晃一晃，身體動了再開口。</small>
+  <button class="pill" data-act="mind">🛝 看完整心態</button> <a class="pill" href="warmup.html">🫁 發聲 5 分鐘</a></div></div></div>`}
+function draw(){const R=route(),a=document.getElementById('app');let h=mindBox();
+  if(!R.song){const sg=suggest();
+    h+=`<div class="box"><div class="step"><b>今天想練什麼？</b></div><div class="choices">
+      <a class="ch" href="warmup.html"><b>🫁 只練發聲</b><span>音階跟著鋼琴、ㄘ聲練氣。做完就收工，也算一次練習。</span></a>
+      <button class="ch${R.pick?'':' on'}" data-act="pickopen"><b>🎵 練一首歌</b><span>選一首，照健檢告訴妳今天練哪裡。</span></button>
+      <button class="ch" data-act="song" data-k="${sg}"><b>🤔 幫我挑</b><span>挑練習紀錄最少（最不熟）的那首：<b style="font-size:inherit;color:var(--glow)">${esc(TTL[sg])}</b></span></button></div>
+      <div class="songs">${SONGS.map(([k,t])=>`<button data-act="song" data-k="${k}" class="${k===sg?'sug':''}"><b>${esc(t)}</b><small>${k===sg?'最不熟・推薦':'&nbsp;'}</small></button>`).join('')}</div></div>`;
+    a.innerHTML=h;return}
+  const k=R.song,T=(D[k]=D[k]||{}),r=T[today]=T[today]||{},bad=CK.find(c=>r[c.id]===0),all=CK.every(c=>r[c.id]===1);
+  h+=`<div class="box"><div class="step"><b>1 健檢・${esc(TTL[k])}</b><span>點「去檢查」試一下，回來按 ✓ 或 ✗</span><a class="pill" style="margin:0 0 0 auto" href="practice.html">換一首</a></div><div class="checks">${CK.map((c,i)=>`<div class="ck${r[c.id]===1?' ok':r[c.id]===0?' bad':''}"><h3><i>${'①②③④'[i]}</i>${c.n}</h3><p><b style="color:var(--ink)">${c.q}</b></p><p>${c.how}</p>
+      <div class="row"><a class="pill" style="margin:0" href="${go(k,c.do)}">去檢查 ↗</a><button class="yn y${r[c.id]===1?' on':''}" data-act="yn" data-c="${c.id}" data-v="1">✓ 過了</button><button class="yn n${r[c.id]===0?' on':''}" data-act="yn" data-c="${c.id}" data-v="0">✗ 卡住</button></div></div>`).join('')}</div></div>`;
+  h+=`<div class="box"><div class="step"><b>2 今天的功課</b><span>第一個卡住的，就是今天要練的</span></div>${bad?`<div class="rx"><h3>${'①②③④'[CK.indexOf(bad)]} ${bad.n}卡住 → ${bad.rx}</h3>${bad.rxd.map(t=>`<p>・${t}</p>`).join('')}<a class="pill go" href="${go(k,bad.rdo)}">開始練 ↗</a></div>`
+     :all?`<div class="rx"><h3>四題都過了 🎉 → 錄一段完整的</h3><p>・打開錄音室，從頭錄一次。</p><p>・用 KTV 聽朋友的耳朵聽自己：先找一個喜歡的地方。</p><a class="pill go" href="${go(k,'studio')}">打開錄音室 ↗</a></div>`
+     :`<p class="muted">先做上面的健檢，按 ✓ 或 ✗ 之後，這裡會告訴妳今天練什麼。</p>`}</div>`;
+  h+=`<div class="box"><div class="step"><b>3 收尾</b><span>停在一個靠近的瞬間</span></div><p class="muted" style="margin:0">錄一小段（或就唱一次），用 KTV 的耳朵聽，找到一句「對！就是這個」就停。</p>
+    ${r.yes?`<p class="done">✓ 今天找到「對！」了，收工 🎉</p>`:`<button class="pill go" data-act="yes">找到一個「對！」</button>`}
+    <a class="pill" href="${go(k,'nat')}">進度（自然／架構／場合）↗</a></div>`;
+  a.innerHTML=h}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const act=b.dataset.act;
+  if(act==='mind'){window.mindOpen&&mindOpen('../');return}
+  if(act==='pickopen'){location.hash='pick';return}
+  if(act==='song'){location.hash='song='+b.dataset.k;scrollTo(0,0);return}
+  const R=route();if(!R.song)return;const r=D[R.song][today];
+  if(act==='yn'){const v=+b.dataset.v;r[b.dataset.c]=r[b.dataset.c]===v?undefined:v;save();draw()}
+  if(act==='yes'){r.yes=1;save();draw()}});
+addEventListener('hashchange',draw);draw();
+</script>
+</body>
+</html>

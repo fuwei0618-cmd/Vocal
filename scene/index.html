@@ -184,7 +184,7 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 .pgh .lmap{float:right;color:var(--glow);font-size:12px;font-weight:500;text-decoration:none}
 .pgpill i{font-style:normal;opacity:.5}
 .pgpill{margin-left:auto;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--muted);border-radius:99px;height:30px;padding:0 10px;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}.bar .pgpill span{color:#f2c27b;letter-spacing:1px}
-.bar .pgpills+.menu{margin-left:0}.pgpills{display:flex;gap:6px;margin-left:auto}.opb+.pgpills{margin-left:0}.pgpills .pgpill{margin-left:0;color:var(--glow);border-color:rgba(242,194,123,.45)}
+.bar .pgpills+.menu{margin-left:0}.pgpills{display:flex;gap:6px;margin-left:auto}.pgpill.today{border-color:rgba(242,194,123,.6);color:var(--glow)}.opb+.pgpills{margin-left:0}.pgpills .pgpill{margin-left:0;color:var(--glow);border-color:rgba(242,194,123,.45)}
 #natf{position:fixed;inset:0;z-index:60;background:#0b0b0b}#natf iframe{width:100%;height:100%;border:0;display:block}
 .flow{display:grid;gap:4px}.flow small{color:var(--muted);font-size:12px}.flow div{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.flow span{padding:5px 10px;border-radius:99px;border:1px solid var(--line);font-size:13px;color:var(--muted)}.flow span.ok{color:var(--glow);border-color:rgba(242,194,123,.5);background:rgba(242,194,123,.1)}.flow i{font-style:normal;color:var(--muted)}
 .arcnat{font-style:normal;font-size:12.5px;color:var(--glow);margin-top:4px;padding:5px 10px;border:1px solid rgba(242,194,123,.45);border-radius:99px;width:max-content;max-width:100%}
@@ -480,7 +480,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=121;
+const VER=122;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -613,6 +613,7 @@ app.addEventListener('click',e=>{
     else if(act==='next'){if(au){au.currentTime=Math.min(au.duration||1e9,au.currentTime+5);updateProg();sync()}else step(cur+1)}
     else if(act==='menu')openMenu();
     else if(act==='pg')openPg();
+    else if(act==='today'){location.href='practice.html#song='+key}
     else if(act==='mind'){if(window.mindOpen)mindOpen('../')}
     else if(act==='natopen')openNat(a.dataset.u!=null?+a.dataset.u:null);
     else if(act==='natv'){e.stopPropagation();const on=natTap(key,a.dataset.s);openPg();hint(on?'今天考過了 ✓':'取消今天這次考試');hintT=setTimeout(()=>hint(''),1200)}
@@ -847,7 +848,8 @@ const natLv=n=>n>=5?3:n>=2?2:n?1:0;
 function natTap(k,id){const a=pgAll(),m=a[k]||(a[k]={}),t=pgToday();let d=natDays(m,id).slice();d=d.includes(t)?d.filter(x=>x!==t):d.concat(t);if(d.length)m[id]=d;else delete m[id];try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}return d.includes(t)}
 function pgAll(){try{return JSON.parse(localStorage.getItem('scene-prog-v1'))||{}}catch(e){return {}}}
 function pgToggle(k,id){const a=pgAll(),m=a[k]||(a[k]={});if(m[id])delete m[id];else{const d=new Date();m[id]=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}}
-function pgPills(k){arcMig(k);const m=pgAll()[k]||{};return `<button class="pgpill" data-act="mind" title="開練前：唱歌心態">🛝 心態</button><button class="pgpill" data-act="natopen">自然 ${PGN.filter(([id])=>Object.keys(m).some(x=>(x===id||x.startsWith(id+'@'))&&natDays(m,x).length)).length}/${PGN.length}</button><button class="pgpill" data-act="arcopen">架構 ${arcSteps().filter(x=>m[x.id]).length}/${arcSteps().length}</button><button class="pgpill" data-act="pg">場合 ${PG.filter(([id])=>m[id]).length}/${PG.length}</button>`}
+function pgPills(k){arcMig(k);return `<button class="pgpill today" data-act="today">🎯 今天練什麼</button><button class="pgpill" data-act="natopen">進度</button>`}
+function pgPillsOld(k){arcMig(k);const m=pgAll()[k]||{};return `<button class="pgpill" data-act="mind" title="開練前：唱歌心態">🛝 心態</button><button class="pgpill" data-act="natopen">自然 ${PGN.filter(([id])=>Object.keys(m).some(x=>(x===id||x.startsWith(id+'@'))&&natDays(m,x).length)).length}/${PGN.length}</button><button class="pgpill" data-act="arcopen">架構 ${arcSteps().filter(x=>m[x.id]).length}/${arcSteps().length}</button><button class="pgpill" data-act="pg">場合 ${PG.filter(([id])=>m[id]).length}/${PG.length}</button>`}
 function pgRefresh(){const b=document.querySelector('.bar .pgpills');if(b)b.innerHTML=pgPills(key)}
 // 自然養成＝學歌地圖，用 iframe 疊在情境頁上：頁面沒換，音樂照放
 function openNat(u){closeMenu();closeNat();closeArc();const U=arcUnits();if(u==null)u=Math.min(curUnit(),U.length-1);const f=document.createElement('div');f.id='natf';f.innerHTML=`<iframe src="learn.html?v=17&embed=1&u=${u}&units=${encodeURIComponent(U.map(x=>x.n).join('|'))}#${key}" title="學歌地圖"></iframe>`;document.body.appendChild(f)}
@@ -1274,6 +1276,18 @@ function opAlign(g,on){const cs=[...g.querySelectorAll('.ob')];cs.forEach(e=>e.s
 function opFit(){const sub=document.getElementById('sub'),g=sub&&sub.querySelector('.opg');if(!g)return;
   const fit=on=>{let f=17;g.style.fontSize=f+'px';opAlign(g,on);while(f>10&&sub.scrollHeight>sub.clientHeight+1){f-=.5;g.style.fontSize=f+'px';opAlign(g,on)}return f};
   const fn=fit(false),fa=fit(true);if(fa<fn-1)fit(false)}
+// 從「今天練什麼」帶過來：?do=map|lyr|beat|pitch|sing|hum|studio|nat，打開對應的東西並給一句提示
+setTimeout(()=>{let d='';try{d=new URLSearchParams(location.search).get('do')||''}catch(e){}if(!d||typeof key==='undefined')return;
+  try{history.replaceState(null,'',location.pathname+location.hash)}catch(e){}
+  const tip=t=>{hint(t);clearTimeout(hintT);hintT=setTimeout(()=>hint(''),7000)},to=w=>{try{if(track!==w&&have[w])switchTrack()}catch(e){}};
+  if(d==='map'){mapRecall=true;mapShown=0;openMap()}
+  else if(d==='lyr'){to('inst');tip('伴奏：看著圖、不看歌詞唱一輪，卡住的句子用螢光筆標起來')}
+  else if(d==='beat'){to('inst');tip('伴奏：每一段自己準時進來；慢半拍的地方按 🔁 重複，跟著拍手找重音')}
+  else if(d==='pitch'){to('orig');tip('原曲：按「靜音」在腦中唱 4 小節，再切回來，聽自己還在不在音上')}
+  else if(d==='sing'){to('orig');tip('原曲：跟著唱 3 遍，先不管好不好；再按「靜音」腦內聽一遍')}
+  else if(d==='hum'){to('orig');tip('原曲：跟原唱一起哼（不唱詞），對準每個音')}
+  else if(d==='studio'){try{openStudio()}catch(e){}}
+  else if(d==='nat'){openNat()}},1200);
 addEventListener('resize',()=>{if(document.body.classList.contains('op'))setTimeout(()=>show(cur,false),100)});
 addEventListener('resize',()=>{if(document.getElementById('arcf'))arcFit()});
 const onePage=()=>{let v=null;try{v=localStorage.getItem('scene-op-v1')}catch(e){}return v?v==='1':innerWidth>=700};
