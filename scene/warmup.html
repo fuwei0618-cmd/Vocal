@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>發聲練習</title>
+<meta name="theme-color" content="#0d0b09">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png?v=1">
+<link rel="icon" href="../icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<script src="../mindset.js?v=1"></script>
+<style>
+/* 發聲練習（11-15）：她練習 app 的 7 組音階＋鋼琴自動升降調＋中壢老師的「彈性腰帶」提示 */
+:root{--bg:#0d0b09;--ink:#f6efe4;--muted:#bfb3a3;--line:rgba(255,255,255,.16);--glow:#f2c27b;--glow-soft:rgba(242,194,123,.16);--card:rgba(255,255,255,.04);
+  --display:"LXGW WenKai TC","Noto Sans TC","PingFang TC",serif;--body:"Noto Sans TC",system-ui,-apple-system,"PingFang TC",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer}
+.bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;border-bottom:1px solid var(--line)}
+.bar a{color:var(--muted);text-decoration:none;font-size:14px}
+.bar h1{margin:0;font-family:var(--display);font-size:22px}
+.bar .by{color:var(--muted);font-size:13px}
+.pill{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.25);border-radius:99px;padding:5px 14px;font-size:13px}
+.bar .pill{margin-left:auto}
+.wrap{max-width:1200px;margin:0 auto;padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 24px);display:grid;grid-template-columns:300px 1fr;gap:14px;align-items:start}
+.box{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:12px 14px}
+.box h2{margin:0 0 8px;font-size:13px;color:var(--muted);font-weight:500;letter-spacing:.04em}
+.list button{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:9px 2px;text-align:left}
+.list button:last-child{border-bottom:0}
+.list button b{font-size:13px;color:var(--muted);font-weight:500;min-width:44px}
+.list button.on b{color:var(--glow)}.list button.on .jp{color:var(--glow)}
+.jp{font-family:var(--body);display:inline-flex;align-items:flex-end;gap:0;font-variant-numeric:tabular-nums}
+.jp .ms{display:inline-flex;align-items:flex-end;padding:0 .35em;border-left:1.5px solid currentColor}.jp .ms:last-child{border-right:1.5px solid currentColor;box-shadow:3px 0 0 -1px currentColor}
+.jp .n{position:relative;display:inline-block;padding:0 .14em;line-height:1.5}
+.jp .u{border-bottom:1.5px solid currentColor}
+.jp .n.hi::before{content:'';position:absolute;left:50%;top:.05em;width:.2em;height:.2em;border-radius:50%;background:currentColor;transform:translateX(-50%)}
+.jp .d{padding:0 .3em;opacity:.8}
+.jp .n.now{color:#1a130c;background:var(--glow);border-radius:.25em}
+.list .jp{font-size:15px}
+.main{display:flex;flex-direction:column;gap:14px}
+.stage{text-align:center;padding:18px 14px}
+.stage .key{color:var(--muted);font-size:14px}.stage .key b{color:var(--glow);font-size:18px;font-family:var(--display)}
+.stage .jp{font-size:clamp(28px,5vw,52px);margin:10px 0 6px}
+.cue{margin:10px auto 0;max-width:640px;border-radius:14px;padding:12px 16px;font-size:clamp(17px,2.2vw,22px);font-family:var(--display);background:rgba(255,255,255,.05);border:1px solid var(--line);min-height:56px;transition:background .3s,border-color .3s}
+.cue.breath{background:rgba(120,180,255,.12);border-color:rgba(120,180,255,.5)}
+.cue.sing{background:var(--glow-soft);border-color:rgba(242,194,123,.55)}
+.cue.high{background:rgba(255,140,110,.16);border-color:rgba(255,140,110,.6)}
+.ctl{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px}
+.big{border:0;border-radius:99px;padding:12px 28px;font-size:17px;font-weight:700;background:var(--glow);color:#1a130c}
+.big.stop{background:#e8735a;color:#fff}
+.ghost{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:99px;padding:10px 18px;font-size:15px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:6px 0}
+.row>span:not(.pair),.pair>span{font-size:13px;color:var(--muted);min-width:64px}.pair{display:inline-flex;align-items:center;gap:8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.seg button{background:none;border:0;padding:7px 14px;font-size:14px}
+.seg button.on{background:var(--glow);color:#1a130c;font-weight:600}
+.stp{display:inline-flex;align-items:center;gap:6px}.stp button{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.06);font-size:18px;line-height:1}
+.stp b{min-width:42px;text-align:center;font-variant-numeric:tabular-nums}
+input[type=range]{width:200px;accent-color:var(--glow)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{border:1px solid var(--line);background:rgba(255,255,255,.05);border-radius:99px;padding:7px 14px;font-size:14px}
+.chips button.on{border-color:var(--glow);color:var(--glow);background:var(--glow-soft)}
+.tip{font-size:14px;color:var(--ink);opacity:.9;margin:8px 0 0;line-height:1.6}
+.belt{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.belt p{margin:4px 0;font-size:14px;line-height:1.6}.belt b{color:var(--glow);font-weight:600}
+.small{font-size:12px;color:var(--muted)}
+.load{font-size:12px;color:var(--muted);margin-top:8px;min-height:1em}
+@media (max-width:820px){.wrap{grid-template-columns:1fr}.belt{grid-template-columns:1fr}.list{display:grid;grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="bar"><a href="javascript:history.length>1?history.back():location.href='learn.html'">← 返回</a><h1>發聲練習</h1><span class="by">・v1</span><button class="pill" data-act="mind">🛝 心態</button></div>
+<div class="wrap">
+  <div class="box"><h2>音階（點一組）</h2><div class="list" id="list"></div></div>
+  <div class="main">
+    <div class="box stage">
+      <div class="key" id="key"></div>
+      <div id="score"></div>
+      <div class="cue" id="cue">按「開始」：先聽和弦、吸氣，再跟著唱</div>
+      <div class="ctl"><button class="big" id="play" data-act="play">▶ 開始</button><button class="ghost" data-act="again">↺ 這個調再一次</button></div>
+      <div class="load" id="load"></div>
+    </div>
+    <div class="box">
+      <div class="row"><span>速度</span><input type="range" min="60" max="140" step="5" id="tempo"><b id="tv"></b></div>
+      <div class="row"><span>方向</span><div class="seg" id="mode"></div></div>
+      <div class="row"><span class="pair"><span>起始的 1</span><div class="stp"><button data-act="st" data-d="-1">−</button><b id="sv"></b><button data-act="st" data-d="1">＋</button></div></span>
+        <span class="pair"><span>最高到</span><div class="stp"><button data-act="tp" data-d="-1">−</button><b id="tpv"></b><button data-act="tp" data-d="1">＋</button></div></span>
+        <span class="pair"><span>最低到</span><div class="stp"><button data-act="lo" data-d="-1">−</button><b id="lov"></b><button data-act="lo" data-d="1">＋</button></div></span></div>
+      <div class="row"><span>發音方式</span><div class="chips" id="vow"></div></div>
+      <p class="tip" id="vtip"></p>
+    </div>
+    <div class="box"><h2>老師的彈性腰帶</h2><div class="belt">
+      <div><p><b>吸氣</b>：氣往下沉，腹部和側腰撐開這條腰帶。</p><p><b>發聲</b>：一格一格、慢慢均勻地收，把氣往上托；不要一開口就勒死。</p><p><b>高音</b>：往內收的同時，側腰留一點往外撐的力。</p></div>
+      <div><p><b>叉腰確認</b>：拇指在後、四指在前，虎口卡在腰側最軟的地方，唱長音時感覺那一圈微微收緊。</p><p><b>自我檢查</b>：腰帶在出力時，胸口、肩膀、下巴、喉嚨都放鬆。</p></div>
+    </div></div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
+<script>
+const SC=[ // 她的練習 app 的 7 組（[級數, 拍數]，8＝高八度的 1）
+  {n:'音階1',p:[[1,.5],[2,.5],[3,.5],[4,.5],[5,.5],[4,.5],[3,.5],[2,.5],[1,2]]},
+  {n:'音階2',p:[[1,.5],[3,.5],[5,.5],[8,.5],[5,.5],[3,.5],[1,1]]},
+  {n:'音階3',p:[[1,.5],[3,.5],[2,.5],[4,.5],[3,.5],[5,.5],[4,.5],[2,.5],[1,2]]},
+  {n:'音階4',p:[[5,1],[4,1],[3,1],[2,1],[1,2]]},
+  {n:'音階5',p:[[5,.5],[4,.5],[3,.5],[2,.5],[1,2]]},
+  {n:'音階6',p:[[1,1],[2,1],[3,1],[2,1],[1,2]]},
+  {n:'音階7',p:[[1,1],[3,1],[5,1],[3,1],[1,2]]}];
+const DEG=[0,0,2,4,5,7,9,11,12];
+const VOW=[['hum','哼鳴','嘴唇輕閉、牙齒分開，感覺鼻子和嘴唇在震。最省力，適合第一個暖。'],['tr','打嘟','嘴唇放鬆抖動，靠穩定的氣推著走；抖到斷掉，通常是腰帶鬆了、氣不穩。'],['i','閉口音 i','嘴角微微往兩邊，聲音往前、亮亮的，舌頭不要往下壓。'],['a','開口音 a','下巴放鬆往下，口腔像打哈欠一樣打開，喉嚨不要跟著出力。'],['ng','咽音','聲音小而集中，像一條細線；喉嚨不擠，不舒服就停。']];
+const MODES=[['up','上行'],['down','下行'],['updown','上行再下行']];
+const NN=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'],nm=m=>NN[m%12]+(Math.floor(m/12)-1);
+const LK='warmup-v1';
+let P={sc:0,tempo:100,mode:'up',start:57,top:79,low:52,vow:'a'};try{Object.assign(P,JSON.parse(localStorage.getItem(LK)||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem(LK,JSON.stringify(P))}catch(e){}};
+let run=null,off=0,dir=1,timers=[];
+const $=id=>document.getElementById(id);
+const span=s=>Math.max(...s.p.map(x=>DEG[x[0]]));
+function jp(s,cur){let out='',ms='',beat=0;s.p.forEach(([d,b],i)=>{const t=d===8?1:d,cls='n'+(b<1?' u':'')+(d===8?' hi':'')+(i===cur?' now':'');
+    ms+=`<span class="${cls}">${t}</span>`;if(b>=2)ms+='<span class="d">–</span>';beat+=b;if(beat>=2-1e-9){out+=`<span class="ms">${ms}</span>`;ms='';beat=0}});
+  if(ms)out+=`<span class="ms">${ms}</span>`;return `<span class="jp">${out}</span>`}
+function draw(cur){const s=SC[P.sc];
+  $('list').innerHTML=SC.map((x,i)=>`<button data-act="sc" data-i="${i}" class="${i===P.sc?'on':''}"><b>${x.n}</b>${jp(x,-1)}</button>`).join('');
+  $('score').innerHTML=jp(s,cur==null?-1:cur);
+  const root=P.start+off;$('key').innerHTML=`1 = <b>${nm(root)}</b>　最高音 ${nm(root+span(s))}${run?`　第 ${run.round} 輪`:''}`;
+  $('tempo').value=P.tempo;$('tv').textContent=P.tempo;
+  $('mode').innerHTML=MODES.map(([k,t])=>`<button data-act="mode" data-k="${k}" class="${P.mode===k?'on':''}">${t}</button>`).join('');
+  $('sv').textContent=nm(P.start);$('tpv').textContent=nm(P.top);$('lov').textContent=nm(P.low);
+  $('vow').innerHTML=VOW.map(([k,t])=>`<button data-act="vow" data-k="${k}" class="${P.vow===k?'on':''}">${t}</button>`).join('');
+  $('vtip').textContent=(VOW.find(v=>v[0]===P.vow)||VOW[0])[2];
+  $('play').textContent=run?'■ 停':'▶ 開始';$('play').className='big'+(run?' stop':'');}
+function cue(kind,t){const c=$('cue');c.className='cue '+kind;c.textContent=t}
+// 鋼琴：跟音準室同一套鋼琴取樣；載不到就用簡單的合成音
+let inst=null,ready=null;
+function piano(){if(ready)return ready;ready=new Promise(ok=>{let done=false;const syn=()=>{if(done)return;done=true;inst=new Tone.PolySynth(Tone.Synth,{oscillator:{type:'triangle'},envelope:{attack:.01,decay:.3,sustain:.4,release:.8}}).toDestination();inst.volume.value=-8;$('load').textContent='（鋼琴音色載不到，先用簡單的音）';ok()};
+  try{$('load').textContent='載入鋼琴音色…';const s=new Tone.Sampler({urls:{C3:'C3.mp3','D#3':'Ds3.mp3','F#3':'Fs3.mp3',A3:'A3.mp3',C4:'C4.mp3','D#4':'Ds4.mp3','F#4':'Fs4.mp3',A4:'A4.mp3',C5:'C5.mp3','D#5':'Ds5.mp3','F#5':'Fs5.mp3',A5:'A5.mp3',C6:'C6.mp3'},release:1,baseUrl:'https://tonejs.github.io/audio/salamander/',onload:()=>{if(done)return;done=true;inst=s;$('load').textContent='';ok()}}).toDestination()}catch(e){syn()}
+  setTimeout(syn,8000)});return ready}
+const hz=m=>440*Math.pow(2,(m-69)/12);
+function later(ms,f){timers.push(setTimeout(f,ms))}
+function round(){if(!run)return;const s=SC[P.sc],bt=60/P.tempo,root=P.start+off,top=root+span(s),hi=top>=P.top-2,t0=Tone.now()+.1;
+  draw(-1);cue('breath','吸氣：氣往下沉，把腰帶撐開');
+  [0,4,7].forEach(x=>inst.triggerAttackRelease(hz(root+x),bt*1.8,t0));
+  let t=2*bt;s.p.forEach(([d,b],i)=>{inst.triggerAttackRelease(hz(root+DEG[d]),b*bt*.92,t0+t);
+    later((t)*1000+100,()=>{draw(i);if(i===0)cue(hi?'high':'sing',hi?'高音：腰帶慢慢收、側腰往外撐，肩、下巴、喉嚨放鬆':'唱：腰帶一格一格慢慢收')});t+=b*bt});
+  later((t+bt)*1000+100,()=>{if(!run)return;if(run.again){run.again=false}else{
+      const nx=off+dir,nTop=P.start+nx+span(s),nRoot=P.start+nx;
+      if(dir>0&&nTop>P.top){if(P.mode==='updown'){dir=-1}else return stop('唱到最高了，休息一下 ✓')}
+      if(dir<0&&(nRoot<P.low||(P.mode==='updown'&&off+dir<0))){return stop('完成一組 ✓')}
+      off+=dir}
+    run.round++;round()})}
+async function start(){await Tone.start();await piano();off=0;dir=P.mode==='down'?-1:1;run={round:1,again:false};round()}
+function stop(msg){timers.forEach(clearTimeout);timers=[];run=null;try{inst&&inst.releaseAll&&inst.releaseAll()}catch(e){}off=0;draw(-1);cue('',msg||'按「開始」：先聽和弦、吸氣，再跟著唱')}
+document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;const k=a.dataset.act;
+  if(k==='mind'){window.mindOpen&&mindOpen('../');return}
+  if(k==='play'){run?stop():start();return}
+  if(k==='again'){if(run)run.again=true;else start();return}
+  if(k==='sc'){P.sc=+a.dataset.i;if(run)stop()}
+  else if(k==='mode'){P.mode=a.dataset.k;if(run)stop()}
+  else if(k==='vow')P.vow=a.dataset.k;
+  else if(k==='st')P.start=Math.max(36,Math.min(84,P.start+ +a.dataset.d));
+  else if(k==='tp')P.top=Math.max(P.start+5,Math.min(96,P.top+ +a.dataset.d));
+  else if(k==='lo')P.low=Math.max(30,Math.min(P.start,P.low+ +a.dataset.d));
+  save();draw(-1)});
+$('tempo').addEventListener('input',e=>{P.tempo=+e.target.value;save();$('tv').textContent=P.tempo});
+draw(-1);
+</script>
+</body>
+</html>
