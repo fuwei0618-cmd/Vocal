@@ -76,7 +76,7 @@ function closeStudio(){
   if(au){if(!hand)au.currentTime=p;show(secAt(p+.05))}drawPlayer();
 }
 // 大畫面：軌道收成一條細的，情境圖撐滿；錄音時自動切過去，錄完回來
-function sBig(){const d=document.getElementById('studio');if(!d)return;const on=!!(S.big||S.recd);S.bigOn=on;d.classList.toggle('big',on);document.body.classList.toggle('studio-big',on);if(on){const p=sNow();show(secAt(p+.05),false);lightLine()}const b=document.getElementById('s-picb');if(b){b.classList.toggle('on',on);b.textContent=on?'🎚 軌道':'🖼 大畫面'}setTimeout(sLayout,320)}
+function sBig(){const d=document.getElementById('studio');if(!d)return;const on=!!(S.big||(S.recd&&!S.noBig));S.bigOn=on;d.classList.toggle('big',on);document.body.classList.toggle('studio-big',on);if(on){const p=sNow();show(secAt(p+.05),false);lightLine()}const b=document.getElementById('s-picb');if(b){b.classList.toggle('on',on);b.textContent=on?'🎚 軌道':'🖼 大畫面'}setTimeout(sLayout,320)}
 // 錄音室裡的提示放在右下那行（原本的提示框會被錄音室蓋住，看起來像沒反應）
 let sHintT=0;function sHint(t){const e=document.getElementById('s-tip');if(!e)return;clearTimeout(sHintT);e.textContent=t;e.classList.add('say');
   sHintT=setTimeout(()=>{e.classList.remove('say');e.textContent='點波形或歌詞選從哪裡開始錄'},5000)}
@@ -178,8 +178,9 @@ function sLoop(){
       const tp=document.getElementById('s-tip');if(tp){const kb=S.recd.chunks.reduce((a,b)=>a+b.size,0)/1024|0;tp.textContent=S.recd.bad()?'⚠️ 麥克風被關掉了':`● 錄音中 ${mmss(Math.max(0,p-S.recd.p0))}　已收到 ${kb} KB`}}
     // 從範圍裡唱到範圍尾巴才繞回去；播放中剛選的範圍若在後面，就照常唱到那裡（音樂不中斷）
     else if(S.sel&&S.loop&&p>=S.sel[1]&&S.lastP!=null&&S.lastP<S.sel[1]&&S.lastP>=S.sel[0]-1.5){S.lastP=null;sPlay(Math.max(0,S.sel[0]-1));return}
-    else if(p>=S.dur){sStop();S.pos=S.sel?S.sel[0]:0;sHead();return}
-    S.lastP=p;sHead();sLoop()});
+    else if(S.stopAt&&p>=S.stopAt){S.stopAt=0;sStop();S.pos=S.sel?S.sel[0]:p;sHead();window.qzTick&&qzTick(-1);return}
+    else if(p>=S.dur){sStop();S.pos=S.sel?S.sel[0]:0;sHead();window.qzTick&&qzTick(-1);return}
+    S.lastP=p;sHead();window.qzTick&&qzTick(p);sLoop()});
 }
 // 錄音
 // v112：iPad 網頁錄音一定會經過通話處理（音質差、忽大忽小），改用別的 App（GarageBand、Cubasis、語音備忘錄）錄好再匯入。
