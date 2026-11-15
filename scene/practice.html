@@ -46,62 +46,101 @@ button,a.b{font:inherit;color:inherit;cursor:pointer}
 .muted{color:var(--muted);font-size:13px}
 .done{font-size:15px;margin-top:8px}
 .hidden{display:none!important}
+.head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}.head h2{margin:0;font-family:var(--display);font-size:26px;color:var(--glow)}
+.flow{display:grid;grid-template-columns:230px 1fr;gap:16px;align-items:start}
+.rail{display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:16px;padding:8px;background:rgba(255,255,255,.03)}
+.ri{display:flex;align-items:center;gap:10px;background:none;border:0;border-radius:10px;padding:9px 10px;text-align:left;font-size:15px}
+.ri i{font-style:normal;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);font-size:13px;flex:none}
+.ri.ok i{background:var(--ok);color:#10200f;border-color:var(--ok)}.ri.bad i{background:var(--bad);color:#2a0d06;border-color:var(--bad)}
+.ri.cur{background:var(--glow-soft)}.ri.cur span{color:var(--glow);font-weight:600}.ri.skip{opacity:.38}
+.cardx{border:1px solid var(--line);border-radius:18px;padding:18px 20px;background:rgba(255,255,255,.04)}.cardx.rx{border:2px solid var(--glow);background:var(--glow-soft)}
+.eb{font-size:13px;color:var(--glow);letter-spacing:.06em;margin-bottom:6px}
+.cardx h2{margin:0 0 12px;font-family:var(--display);font-size:clamp(22px,2.6vw,30px);line-height:1.35}
+.cardx h4{margin:0 0 6px;font-size:13px;color:var(--muted);font-weight:500}
+.cardx ol{margin:0 0 10px;padding-left:1.4em;font-size:16px;line-height:1.75}
+.cols{display:grid;grid-template-columns:1.4fr 1fr;gap:18px}
+.std{margin:0;font-size:16px;line-height:1.6;border-left:3px solid var(--glow);padding:4px 12px}
+.why{margin:-4px 0 10px;color:var(--muted);font-size:15px}
+.acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px}.acts .pill{margin:0}.acts .sp{flex:1}
+.yn{padding:9px 18px;font-size:15px}
+.mind h2{font-size:24px}
+@media (max-width:820px){.flow{grid-template-columns:1fr}.rail{flex-direction:row;flex-wrap:wrap}.ri{padding:6px}.ri span{display:none}.ri.cur span{display:inline;white-space:nowrap}.cols{grid-template-columns:1fr}}
 @media (max-width:820px){.mind{grid-template-columns:1fr}.choices{grid-template-columns:1fr}.songs{grid-template-columns:repeat(2,1fr)}.checks{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<div class="bar"><a href="javascript:history.length>1?history.back():location.href='../#songs'">← 返回</a><h1>今天練什麼</h1><span class="by">・v1</span></div>
+<div class="bar"><a href="javascript:history.length>1?history.back():location.href='../#songs'">← 返回</a><h1>今天練什麼</h1><span class="by">・v2</span></div>
 <div class="wrap" id="app"></div>
 <script>
 const SONGS=[['jiayi','甲乙丙丁'],['summer','盛夏的果實'],['darwin','達爾文'],['hug','大大的擁抱'],['houlai','後來'],['hands','小手拉大手'],['prank','惡作劇'],['zhizu','知足']];
 const TTL=Object.fromEntries(SONGS);
-// 健檢 4 題：怎麼檢查（do＝情境頁幫妳打開的東西）、卡住時今天做什麼
+// 健檢：照順序一題一題測（架構 → 歌詞 → 進拍 → 音準）；第一個卡住的＝今天的功課，後面今天先不用測
 const CK=[
-  {id:'c1',n:'架構',q:'不看歌詞，說得出每一段的順序和第一句嗎？',how:'打開架構表的「回想」：蓋起來，一段一段說出來。',do:'map',
-   rx:'架構表回想',rxd:['蓋起來，一段一段說出下一段是什麼，說不出就打開看一眼，再蓋起來。','整首能從頭說到尾，這一關就過了。'],rdo:'map'},
-  {id:'c2',n:'歌詞',q:'切到伴奏，看著圖不看歌詞，唱得完一輪嗎？',how:'會幫妳切到伴奏；卡住的句子用螢光筆標起來。',do:'lyr',
-   rx:'跟唱，再腦內聽',rxd:['跟著原曲唱 3 遍，先不管好不好。','再按「靜音」，在腦中把歌詞聽一遍。','重點練剛剛標起來的句子。'],rdo:'sing'},
-  {id:'c3',n:'進拍',q:'只用伴奏，每一段都能自己準時進來嗎？',how:'會幫妳切到伴奏；慢半拍的地方記下來。',do:'beat',
-   rx:'🔁 重複這段＋拍手',rxd:['選慢半拍的那一段，按 🔁 重複。','跟著拍子拍手，看哪些字撞到「強的那一下」：那就是老師說的重音。','標起來，唱的時候腰帶在那個字「彈一下」。'],rdo:'beat'},
-  {id:'c4',n:'音準',q:'靜音在腦中唱 4 小節，切回原曲時還在對的音上嗎？',how:'會幫妳切到原曲；按「靜音」腦內唱，再按回來對。',do:'pitch',
-   rx:'跟原唱哼',rxd:['跟著原唱一起哼（不唱詞），對準每個音。','哼穩了再唱詞；不順的地方用「感受氣流」。'],rdo:'hum'}];
+  {id:'c1',n:'架構',q:'不看歌詞，說得出每一段的順序嗎？',do:'map',
+   how:['按「去測」，會打開架構表，而且先蓋起來。','從第一段開始，說出段落和第一句，再點開對答案。'],pass:'整首說完，錯不超過 1 段。',
+   rx:'架構表回想',why:'不知道下一段是什麼，唱的時候就會一直慌。',rxd:['打開架構表的「回想」。','一段一段說出下一段，說不出就點開看一眼，再蓋起來。','從頭到尾順順說完 2 次。'],rdo:'map'},
+  {id:'c2',n:'歌詞',q:'只聽伴奏、不看歌詞，唱得完一輪嗎？',do:'lyr',
+   how:['按「去測」，會切到伴奏。','看著情境圖，從頭唱一輪。','卡住的句子，用螢光筆標起來。'],pass:'卡住不超過 2 句。',
+   rx:'跟唱，再腦內聽',why:'詞還沒進到身體裡，要先靠原唱帶著走。',rxd:['跟著原曲唱 3 遍，先不管好不好。','按「靜音」，在腦中把整首聽一遍。','只練標起來的那幾句，各唱 3 次。'],rdo:'sing'},
+  {id:'c3',n:'進拍',q:'只聽伴奏，每一段都能自己準時進來嗎？',do:'beat',
+   how:['按「去測」，會切到伴奏。','每一段開頭注意：有沒有慢半拍、或搶太早。','進不準的段落記下來。'],pass:'每一段都準時進來。',
+   rx:'🔁 重複＋拍手找重音',why:'進拍不穩，通常是不知道重音落在哪個字。',rxd:['選進不準的那一段，按 🔁 重複。','跟著拍子拍手，看哪些字撞到「強的那一下」：那就是重音。','把重音字標起來，唱到時腰帶「彈一下」。'],rdo:'beat'},
+  {id:'c4',n:'音準',q:'靜音在腦中唱 4 小節，切回來還在對的音上嗎？',do:'pitch',
+   how:['按「去測」，會切到原曲。','唱到一半按「靜音」，在腦中繼續唱 4 小節。','再按回原曲，聽自己是不是還在同一個音上。'],pass:'試 3 次，有 2 次對得上。',
+   rx:'跟原唱哼',why:'音高還沒記牢，先用哼的把旋律刻進去。',rxd:['跟著原唱一起哼，不唱詞，對準每個音。','哼穩了再唱詞。','不順的地方，用「感受氣流」把一口氣送出去。'],rdo:'hum'}];
 const PK='practice-v1',today=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})();
 let D={};try{D=JSON.parse(localStorage.getItem(PK)||'{}')||{}}catch(e){}
 const save=()=>{try{localStorage.setItem(PK,JSON.stringify(D))}catch(e){}};
 const prog=()=>{try{return JSON.parse(localStorage.getItem('scene-prog-v1')||'{}')||{}}catch(e){return {}}};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const go=(k,d)=>`index.html?do=${d}#${k}`;
-// 幫我挑：練習紀錄最少的那首（最不熟）
+const go=(k,d)=>`index.html?do=${d}#${k}`,NUM='①②③④',md=d=>+d.slice(5,7)+'/'+ +d.slice(8);
 function suggest(){const P=prog();let best=null,bn=1e9;SONGS.forEach(([k])=>{const n=Object.keys(P[k]||{}).length+Object.keys(D[k]||{}).length;if(n<bn){bn=n;best=k}});return best}
 function route(){const m=location.hash.match(/song=(\w+)/);return {song:m&&TTL[m[1]]?m[1]:'',pick:/pick/.test(location.hash)}}
-function mindBox(){return `<div class="box"><div class="step"><b>0 開練前</b><span>先進包廂，再暖聲音</span></div><div class="mind"><img src="../play.jpg?v=1" alt="">
-  <div><p>這裡很安全，我只是跟著音樂一起玩。</p><small>注意力朝外（音樂、朋友），不盯著「唱得好不好」。<br>先放原曲揮手晃一晃，身體動了再開口。</small>
-  <button class="pill" data-act="mind">🛝 看完整心態</button> <a class="pill" href="warmup.html">🫁 發聲 5 分鐘</a></div></div></div>`}
-function draw(){const R=route(),a=document.getElementById('app');let h=mindBox();
-  if(!R.song){const sg=suggest();
-    h+=`<div class="box"><div class="step"><b>今天想練什麼？</b></div><div class="choices">
-      <a class="ch" href="warmup.html"><b>🫁 只練發聲</b><span>音階跟著鋼琴、ㄘ聲練氣。做完就收工，也算一次練習。</span></a>
-      <button class="ch${R.pick?'':' on'}" data-act="pickopen"><b>🎵 練一首歌</b><span>選一首，照健檢告訴妳今天練哪裡。</span></button>
-      <button class="ch" data-act="song" data-k="${sg}"><b>🤔 幫我挑</b><span>挑練習紀錄最少（最不熟）的那首：<b style="font-size:inherit;color:var(--glow)">${esc(TTL[sg])}</b></span></button></div>
-      <div class="songs">${SONGS.map(([k,t])=>`<button data-act="song" data-k="${k}" class="${k===sg?'sug':''}"><b>${esc(t)}</b><small>${k===sg?'最不熟・推薦':'&nbsp;'}</small></button>`).join('')}</div></div>`;
-    a.innerHTML=h;return}
-  const k=R.song,T=(D[k]=D[k]||{}),r=T[today]=T[today]||{},bad=CK.find(c=>r[c.id]===0),all=CK.every(c=>r[c.id]===1);
-  h+=`<div class="box"><div class="step"><b>1 健檢・${esc(TTL[k])}</b><span>點「去檢查」試一下，回來按 ✓ 或 ✗</span><a class="pill" style="margin:0 0 0 auto" href="practice.html">換一首</a></div><div class="checks">${CK.map((c,i)=>`<div class="ck${r[c.id]===1?' ok':r[c.id]===0?' bad':''}"><h3><i>${'①②③④'[i]}</i>${c.n}</h3><p><b style="color:var(--ink)">${c.q}</b></p><p>${c.how}</p>
-      <div class="row"><a class="pill" style="margin:0" href="${go(k,c.do)}">去檢查 ↗</a><button class="yn y${r[c.id]===1?' on':''}" data-act="yn" data-c="${c.id}" data-v="1">✓ 過了</button><button class="yn n${r[c.id]===0?' on':''}" data-act="yn" data-c="${c.id}" data-v="0">✗ 卡住</button></div></div>`).join('')}</div></div>`;
-  h+=`<div class="box"><div class="step"><b>2 今天的功課</b><span>第一個卡住的，就是今天要練的</span></div>${bad?`<div class="rx"><h3>${'①②③④'[CK.indexOf(bad)]} ${bad.n}卡住 → ${bad.rx}</h3>${bad.rxd.map(t=>`<p>・${t}</p>`).join('')}<a class="pill go" href="${go(k,bad.rdo)}">開始練 ↗</a></div>`
-     :all?`<div class="rx"><h3>四題都過了 🎉 → 錄一段完整的</h3><p>・打開錄音室，從頭錄一次。</p><p>・用 KTV 聽朋友的耳朵聽自己：先找一個喜歡的地方。</p><a class="pill go" href="${go(k,'studio')}">打開錄音室 ↗</a></div>`
-     :`<p class="muted">先做上面的健檢，按 ✓ 或 ✗ 之後，這裡會告訴妳今天練什麼。</p>`}</div>`;
-  h+=`<div class="box"><div class="step"><b>3 收尾</b><span>停在一個靠近的瞬間</span></div><p class="muted" style="margin:0">錄一小段（或就唱一次），用 KTV 的耳朵聽，找到一句「對！就是這個」就停。</p>
-    ${r.yes?`<p class="done">✓ 今天找到「對！」了，收工 🎉</p>`:`<button class="pill go" data-act="yes">找到一個「對！」</button>`}
-    <a class="pill" href="${go(k,'nat')}">進度（自然／架構／場合）↗</a></div>`;
-  a.innerHTML=h}
+// 今天走到哪一步
+function stage(r){if(r.view)return r.view;if(!r.mind)return 'mind';for(const c of CK){if(r[c.id]==null)return c.id;if(r[c.id]===0)return r.rxdone?'end':'rx'}return r.rxdone?'end':'rx'}
+function last(k){const T=D[k]||{},ds=Object.keys(T).filter(d=>d<today).sort();const d=ds.pop();if(!d)return '';const r=T[d],b=CK.find(c=>r[c.id]===0);
+  return `上次 ${md(d)}：${b?`卡在 ${NUM[CK.indexOf(b)]} ${b.n}`:CK.every(c=>r[c.id]===1)?'四關都過':'健檢沒做完'}`}
+function home(){const sg=suggest();return `<div class="box"><div class="step"><b>今天想練什麼？</b><span>先按 🛝 進包廂，再選一個</span><button class="pill" style="margin:0 0 0 auto" data-act="mind">🛝 心態</button></div><div class="choices">
+  <a class="ch" href="warmup.html"><b>🫁 只練發聲</b><span>音階跟著鋼琴、ㄘ聲練氣。做完就收工，也算一次練習。</span></a>
+  <button class="ch" data-act="pickopen"><b>🎵 練一首歌</b><span>選一首，健檢告訴妳今天練哪裡。</span></button>
+  <button class="ch" data-act="song" data-k="${sg}"><b>🤔 幫我挑</b><span>練習紀錄最少的那首：<b style="font-size:inherit;color:var(--glow)">${esc(TTL[sg])}</b></span></button></div>
+  <div class="songs">${SONGS.map(([k,t])=>`<button data-act="song" data-k="${k}" class="${k===sg?'sug':''}"><b>${esc(t)}</b><small>${esc(last(k))||(k===sg?'最不熟・推薦':'還沒健檢過')}</small></button>`).join('')}</div></div>`}
+function rail(k,r,st){const it=(id,t,s,cls)=>`<button class="ri ${cls}${st===id?' cur':''}" data-act="view" data-v="${id}"><i>${s}</i><span>${t}</span></button>`;
+  const bad=CK.find(c=>r[c.id]===0);let h=it('mind','開練前',r.mind?'✓':'0',r.mind?'ok':'');
+  CK.forEach((c,i)=>{const v=r[c.id],skip=bad&&CK.indexOf(bad)<i;h+=it(c.id,'健檢・'+c.n,v===1?'✓':v===0?'✗':NUM[i],(v===1?'ok':v===0?'bad':'')+(skip?' skip':''))});
+  h+=it('rx','今天的功課',r.rxdone?'✓':'★',r.rxdone?'ok':(bad||CK.every(c=>r[c.id]===1))?'':'skip');
+  h+=it('end','收尾',r.yes?'✓':'♪',r.yes?'ok':'');return `<nav class="rail">${h}</nav>`}
+function card(k,r,st){const bad=CK.find(c=>r[c.id]===0),allOk=CK.every(c=>r[c.id]===1);
+  if(st==='mind')return `<div class="cardx"><div class="eb">開練前</div><div class="mind"><img src="../play.jpg?v=1" alt=""><div><h2>這裡很安全，我只是跟著音樂一起玩。</h2>
+    <ol><li>放原曲，身體先跟著晃一晃。</li><li>想暖聲音的話，做 5 分鐘發聲。</li></ol>
+    <div class="acts"><button class="pill" data-act="mind">🛝 看完整心態</button><a class="pill" href="warmup.html">🫁 發聲 5 分鐘</a><button class="pill go" data-act="ready">我準備好了 →</button></div></div></div></div>`;
+  const c=CK.find(x=>x.id===st);
+  if(c){const i=CK.indexOf(c),v=r[c.id];return `<div class="cardx"><div class="eb">健檢 ${i+1} / 4・${c.n}</div><h2>${c.q}</h2>
+    <div class="cols"><div><h4>怎麼測</h4><ol>${c.how.map(t=>`<li>${t}</li>`).join('')}<li>回來選結果。</li></ol></div><div><h4>過關標準</h4><p class="std">${c.pass}</p></div></div>
+    <div class="acts"><a class="pill" href="${go(k,c.do)}">去測 ↗</a><span class="sp"></span><button class="yn y${v===1?' on':''}" data-act="yn" data-c="${c.id}" data-v="1">✓ 過關</button><button class="yn n${v===0?' on':''}" data-act="yn" data-c="${c.id}" data-v="0">✗ 卡住</button></div></div>`}
+  if(st==='rx'){if(!bad&&!allOk)return `<div class="cardx"><div class="eb">今天的功課</div><h2>先把健檢做完</h2><p class="muted">從 ① 架構開始，遇到第一個卡住的，就是今天要練的。</p><div class="acts"><button class="pill go" data-act="view" data-v="">回到健檢 →</button></div></div>`;
+    const t=bad?{h:`${NUM[CK.indexOf(bad)]} ${bad.n}卡住 → ${bad.rx}`,why:bad.why,s:bad.rxd,d:bad.rdo,done:`練完再測一次 ${NUM[CK.indexOf(bad)]}，過了就往下一關。`}
+      :{h:'四關都過了 🎉 → 錄一段完整的',why:'熟了，現在練的是「唱給別人聽」的狀態。',s:['打開錄音室，從頭錄一次。','用 KTV 聽朋友的耳朵聽自己：先找一個喜歡的地方。'],d:'studio',done:'錄完、聽完一次就算完成。'};
+    return `<div class="cardx rx"><div class="eb">今天的功課</div><h2>${t.h}</h2><p class="why">${t.why}</p><ol>${t.s.map(x=>`<li>${x}</li>`).join('')}</ol><p class="std">完成：${t.done}</p>
+      <div class="acts"><a class="pill go" href="${go(k,t.d)}">開始練 ↗</a><button class="pill" data-act="rxdone">練完了 →</button></div></div>`}
+  return `<div class="cardx"><div class="eb">收尾</div><h2>停在一個「對！」的瞬間</h2><ol><li>唱一小段，或錄一小段。</li><li>用 KTV 聽朋友的耳朵聽：先找喜歡的地方。</li><li>找到一句「對！就是這個」，就收工。</li></ol>
+    ${r.yes?`<p class="std">✓ 今天找到「對！」了，收工 🎉${bad?`<br>下次從 ${NUM[CK.indexOf(bad)]} ${bad.n} 再測一次。`:''}</p>`:`<div class="acts"><button class="pill go" data-act="yes">找到一個「對！」</button></div>`}
+    <div class="acts"><a class="pill" href="${go(k,'nat')}">看進度 ↗</a><a class="pill" href="practice.html">換一首</a></div></div>`}
+function draw(){const R=route(),a=document.getElementById('app');
+  if(!R.song){a.innerHTML=home();return}
+  const k=R.song,T=(D[k]=D[k]||{}),r=T[today]=T[today]||{},st=stage(r);
+  a.innerHTML=`<div class="head"><h2>${esc(TTL[k])}</h2><span class="muted">${esc(last(k))}</span><a class="pill" style="margin:0 0 0 auto" href="practice.html">換一首</a></div><div class="flow">${rail(k,r,st)}${card(k,r,st)}</div>`}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const act=b.dataset.act;
   if(act==='mind'){window.mindOpen&&mindOpen('../');return}
-  if(act==='pickopen'){location.hash='pick';return}
+  if(act==='pickopen'){document.querySelector('.songs').scrollIntoView({behavior:'smooth'});return}
   if(act==='song'){location.hash='song='+b.dataset.k;scrollTo(0,0);return}
   const R=route();if(!R.song)return;const r=D[R.song][today];
-  if(act==='yn'){const v=+b.dataset.v;r[b.dataset.c]=r[b.dataset.c]===v?undefined:v;save();draw()}
-  if(act==='yes'){r.yes=1;save();draw()}});
+  if(act==='view'){r.view=b.dataset.v||'';if(!r.view)delete r.view}
+  else if(act==='ready'){r.mind=1;delete r.view}
+  else if(act==='yn'){const v=+b.dataset.v;r[b.dataset.c]=v;delete r.rxdone;delete r.view}
+  else if(act==='rxdone'){r.rxdone=1;delete r.view}
+  else if(act==='yes'){r.yes=1}
+  save();draw();scrollTo(0,0)});
 addEventListener('hashchange',draw);draw();
 </script>
 </body>
