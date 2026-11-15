@@ -100,6 +100,7 @@
 .icats.pk .ibgrp{padding:3px 10px;font-size:11.5px}.icats.pk .isec{padding:4px 10px 1px!important;font-size:10.5px!important}
 @media (max-width:700px){.icats.pk .icol[data-drop=tote1]{columns:1}}
 </style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1"><link rel="icon" href="icons/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Vocal"><meta name="theme-color" content="#EDEFEA"><script src="https://fuwei0618-cmd.github.io/Entry/sync/origina-sync.js" data-app="vocal" data-keys="busk-app-v1,busk-app-v1-wimg,busk-app-v1-wire" data-pos="br"></script>
+<script src="mindset.js?v=1"></script>
 </head><body>
 <title>街演 App</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -640,6 +641,7 @@ function vVision(){
   <details class="vg vroot"><summary class="vl">根本原因・為什麼是音樂 ▾</summary>
     <div class="tbl-wrap"><table><thead><tr><th>關鍵字<br><span class="small">比的是：用聲音的方式</span></th><th>寫字</th><th>說話</th><th>唱歌</th></tr></thead><tbody>${V_ROOT_TBL.map(r=>`<tr><td><b>${r[0]}</b><br><span class="small muted">${r[1]}</span></td><td>${r[2]}</td><td>${r[3]}</td><td><b>${r[4]}</b></td></tr>`).join('')}</tbody></table></div>
     <p class="small muted" style="margin:6px 0 0">第一列「直接」是原因，下面七個關鍵字都是它帶來的結果。所以說音樂「最無腦」：不是最淺，是最直接。</p></details>
+  <div class="vg vmind"><span class="vl">唱歌心態・KTV 的遊戲場</span>${window.mindHtml?mindHtml(''):''}</div>
   <div class="vg vnote2"><span class="vl">一句話・出發前讀這段</span>${ta('note',v.note,'範本：'+NOTE_TPL,'serif')}</div>
   <div class="vg"><span class="vl">使命・我為什麼想唱</span>${ta('why',v.why,'範本：唱歌的時候，我不用解釋自己是誰。聲音一出來，我就覺得自己在發光，也想讓聽的人亮一下。')}</div>
   <div class="vg"><span class="vl">身份・80 歲的我</span>${ta('at80',v.at80,'範本：80 歲的我還在唱。週末在公園或老宅的院子裡，唱給老朋友和路過的人聽，唱到大家跟著哼。')}
