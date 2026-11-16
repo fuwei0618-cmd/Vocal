@@ -110,7 +110,7 @@ function qzOpen(cat){
   S.big=false;S.noBig=1;sBig();qzRender();setTimeout(sLayout,50);
 }
 function qzClose(){
-  if(!Q)return;if(S){if(S.recd)return;sStop();Q.prev.forEach(p=>{const l=S.lanes.find(x=>x.id===p.id);if(l){l.mute=p.mute;l.solo=p.solo}});sGains();S.stopAt=0}
+  if(!Q)return;if(S){if(S.recd)_qzRecStop(true);sStop();Q.prev.forEach(p=>{const l=S.lanes.find(x=>x.id===p.id);if(l){l.mute=p.mute;l.solo=p.solo}});sGains();S.stopAt=0}
   if(S)S.noBig=0;Q=null;const el=document.getElementById('s-quiz');if(el)el.remove();const d=document.getElementById('studio');if(d)d.classList.remove('quiz');if(S)setTimeout(sLayout,50);
 }
 function qzFocus(){const q=Q.list[Q.i];if(!q)return;S.sel=qzRecRange(q);{const [x,y]=S.sel,k=takes.slice().sort((u,v)=>v.at-u.at).find(k=>k.start<y&&k.end>x);S.selTake=k?k.id:null}S.loop=false;S.pos=S.sel[0];sView0();sDraw()}
@@ -127,7 +127,23 @@ function qzMind(q){const L=getLines();
   if(q.l!=null){const [a,b]=qzLineRange(q.l),pv=L[q.l-1],from=pv!=null&&pv<a&&a-pv<12?pv-.2:a-4;qzPlay('mind',qzOrig(),from,b+2.5,[a-.05,b-.1]);return}
   const [a,b]=secRange(q.s),off=lineOff(q.s),n=qzLines(q.s).length,t=[];for(let i=0;i<n;i++)t.push(L[off+i]);
   const w=n>=3&&t[1]!=null&&t[n-1]!=null&&t[n-1]>t[1]?[t[1]-.1,t[n-1]-.15]:[a+(b-a)*.3,a+(b-a)*.75];qzPlay('mind',qzOrig(),a-1.5,b+.4,w)}
-function qzRec(q){if(S.recd){sRecStop();return}const [x,y]=qzRecRange(q);sStop();Q.seq=null;qzHear([qzBack()]);S.sel=[x,y];S.loop=true;S.stopAt=0;S.pos=x;Q.act='';sRecStart().then(()=>qzRender())}
+function qzRec(q){if(S.recd){sRecStop();return}const [x,y]=qzRecRange(q);sStop();Q.seq=null;qzHear([qzBack()]);S.sel=[x,y];S.loop=true;S.stopAt=0;S.pos=x;Q.act='';
+  // 一定唱到題目結尾就自動停（不靠段落長度判斷）
+  Q.recR=[x,y];sRecStart().then(()=>{const r=S&&S.recd;if(!r)return qzRender();r.until=Math.min(S.dur,y+.5);
+    // 保險：畫面時間沒在走（iPad 背景/省電）也照真實秒數停
+    const ms=(r.until-r.from+1.5)*1000;setTimeout(()=>{if(S&&S.recd===r)sRecStop()},ms);qzRender()})}
+// 題組的錄音：同一題只留最新一次，舊的自動丟掉，裝置才不會被塞滿
+const _qzSave=saveTakes;
+saveTakes=async function(){
+  if(Q&&Q.recR&&takes.length){const nw=takes[takes.length-1],[x,y]=Q.recR;
+    if(!nw.qz&&Date.now()-nw.at<60000){nw.qz=1;takes=takes.filter(k=>k===nw||!(k.qz&&k.start<y&&k.end>x))}Q.recR=null}
+  try{await putFile(key+'|takes',takes)}catch(e){
+    // 空間不夠：先丟掉題組的舊錄音（只留最新一次）再存一次
+    const nw=takes[takes.length-1],n0=takes.length;takes=takes.filter(k=>k===nw||!k.qz);
+    try{if(takes.length<n0){await putFile(key+'|takes',takes);qzHint&&qzHint('裝置空間快滿了，已經把題組的舊錄音清掉');return}}catch(e2){}
+    if(takes.length>3&&confirm(`這台裝置空間不夠，這次錄音還沒存到。\n\n這首歌有 ${takes.length} 次錄音，要刪掉舊的、只留最新 3 次，再存一次嗎？`)){
+      takes=takes.slice().sort((a,b)=>a.at-b.at).slice(-3);try{await putFile(key+'|takes',takes);if(S)sDraw();qzHint('存好了，舊錄音已經清掉');return}catch(e3){}}
+    alert('這台裝置空間不夠，錄音沒存到')}};
 // 錄完：回到題目
 const _qzRecStop=sRecStop;
 sRecStop=async function(c){const was=!!(S&&S.recd);await _qzRecStop(c);
@@ -265,7 +281,7 @@ app.addEventListener('click',e=>{
 },true);
 app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!Q.list[Q.i])return;qzSet(Q.list[Q.i].id,{n:t.value})});
 (()=>{const s=document.createElement('style');s.textContent=`
-#studio.quiz{grid-template-rows:auto minmax(0,1fr)}#studio.quiz>.s-ruler,#studio.quiz>.s-lanes,#studio.quiz>.s-take,#studio.quiz>.s-bot{display:none}#studio.quiz .s-pic{margin-bottom:12px}
+#studio.quiz{grid-template-rows:auto minmax(0,1fr) auto minmax(84px,19vh) 0 0}#studio.quiz>.s-take,#studio.quiz>.s-bot{display:none}#studio.quiz .s-lane:not(.me):not([data-l=vocal]){display:none}#studio.quiz .s-pic{margin-bottom:12px}
 .qz-tipbar{position:sticky;bottom:0;margin-top:auto;align-self:center;background:var(--glow);color:#1a130c;border-radius:99px;padding:8px 18px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.5)}.qz-tipbar[hidden]{display:none}.qz-adj span{font-size:12px!important}#studio .qz-adj button{padding:4px 10px;font-size:12px}
 #studio.quiz .s-lane:not(.me){flex:0 0 32px!important}#studio.quiz .s-lyr{display:none}#studio.quiz .s-pic::before{display:none}
 #studio .qz-open{margin-left:auto}#studio.quiz .qz-open{background:rgba(242,194,123,.22);border-color:var(--glow);color:var(--glow)}
