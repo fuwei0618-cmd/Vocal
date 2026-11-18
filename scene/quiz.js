@@ -111,7 +111,7 @@ function qzOpen(cat){
 }
 function qzClose(){
   if(!Q)return;if(S){if(S.recd)_qzRecStop(true);sStop();Q.prev.forEach(p=>{const l=S.lanes.find(x=>x.id===p.id);if(l){l.mute=p.mute;l.solo=p.solo}});sGains();S.stopAt=0}
-  if(S)S.noBig=0;Q=null;const el=document.getElementById('s-quiz');if(el)el.remove();const d=document.getElementById('studio');if(d)d.classList.remove('quiz');if(S)setTimeout(sLayout,50);
+  if(S)S.noBig=0;Q=null;const el=document.getElementById('s-quiz');if(el)el.remove();const d=document.getElementById('studio');if(d)d.classList.remove('quiz');if(S)setTimeout(sLayout,50);qzTdel();
 }
 function qzFocus(){const q=Q.list[Q.i];if(!q)return;S.sel=qzRecRange(q);{const [x,y]=S.sel,k=takes.slice().sort((u,v)=>v.at-u.at).find(k=>k.start<y&&k.end>x);S.selTake=k?k.id:null}S.loop=false;S.pos=S.sel[0];sView0();sDraw()}
 function qzGo(j){if(S&&S.recd)return;Q.seq=null;sStop();Q.i=Math.max(0,Math.min(Q.list.length-1,j));Q.sum=false;Q.act='';Q.rev=false;Q.k=-2;qzSaveLast();qzFocus();qzRender()}
@@ -155,6 +155,16 @@ const _qzOpenStudio=openStudio;
 openStudio=async function(){await _qzOpenStudio();const top=document.querySelector('#studio .s-top');
   if(top&&!top.querySelector('.qz-open')){const b=document.createElement('button');b.className='qz-open';b.dataset.q='open';b.textContent='🎯 題組';top.insertBefore(b,document.getElementById('s-time'))}
   if(window.qzWant){const c=window.qzWant;window.qzWant=0;qzOpen(typeof c==='string'?c:'')}};
+
+// 錄音軌上點一段錄音（選到）→ 右上角出現刪除鍵，不管是不是這一題的
+const _qzDraw=sDraw;
+sDraw=function(){_qzDraw.apply(this,arguments);qzTdel()};
+function qzTdel(){const d=document.getElementById('studio');if(!d)return;let b=document.getElementById('qz-tdel');
+  const k=Q&&S&&!S.recd&&S.selTake&&takes.find(x=>x.id===S.selTake);
+  if(!k){if(b)b.hidden=true;return}
+  if(!b){b=document.createElement('button');b.id='qz-tdel';b.textContent='🗑 刪掉選到的錄音';d.appendChild(b);
+    b.onclick=()=>{const k=takes.find(x=>x.id===S.selTake);if(!k||!confirm('刪掉選到的這段錄音？'))return;sStop();takes=takes.filter(t=>t!==k);S.bufs.delete(k.id);S.selTake=null;saveTakes();sDraw();qzRender();qzHint('刪掉了')}}
+  const ln=d.querySelector('.s-lane.me');if(ln){const r=ln.getBoundingClientRect();b.style.top=(r.top+8)+'px'}b.hidden=false}
 // 錄音室每一格畫面會叫這個：腦內唱的消音、亮目前這一句；p<0＝播完了
 function qzTick(p){
   if(Q&&Q.swAt&&S.recd&&p>=Q.swAt-.05){Q.swAt=0;qzHear(['inst'])}
@@ -272,7 +282,7 @@ app.addEventListener('click',e=>{
   else if(a==='alt')qzAlt(q);
   else if(a==='cmp'){const c=t.dataset.c,[x,y]=qzRange(q);qzPlay(c,c==='both'?[qzRef(),'me']:['me'],x-.5,y+.3)}
   else if(a==='rec')qzRec(q);
-  else if(a==='del'){const [x,y]=qzRecRange(q),k=takes.slice().sort((u,v)=>v.at-u.at).find(k=>k.start<y&&k.end>x);if(!k||!confirm('刪掉這題最新的這次錄音？'))return;sStop();takes=takes.filter(t=>t!==k);if(S.selTake===k.id)S.selTake=null;S.bufs.delete(k.id);saveTakes();qzSet(q.id,{rec:0});sDraw();qzRender();qzHint('刪掉了，按紅色的鍵再錄一次')}
+  else if(a==='del'){const [x,y]=qzRecRange(q),k=takes.find(t=>t.id===S.selTake)||takes.slice().sort((u,v)=>v.at-u.at).find(k=>k.start<y&&k.end>x);if(!k||!confirm('刪掉這題最新的這次錄音？'))return;sStop();takes=takes.filter(t=>t!==k);if(S.selTake===k.id)S.selTake=null;S.bufs.delete(k.id);saveTakes();qzSet(q.id,{rec:0});sDraw();qzRender();qzHint('刪掉了，按紅色的鍵再錄一次')}
   else if(a==='lplay'){const [x,y]=qzLineRange(q.l),pv=getLines()[q.l-1],from=pv!=null&&pv<x&&x-pv<12?pv-.3:x-4;qzPlay('lplay',[qzBack()],from,y+.5)}
   else if(a==='rev'){Q.rev=!Q.rev;qzRender()}
   else if(a==='mprev'){const [x]=secRange(q.s);qzPlay('mprev',qzOrig(),q.s?x-6:0,x+.05)}
@@ -284,7 +294,7 @@ app.addEventListener('click',e=>{
 },true);
 app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!Q.list[Q.i])return;qzSet(Q.list[Q.i].id,{n:t.value})});
 (()=>{const s=document.createElement('style');s.textContent=`
-#studio.quiz{grid-template-rows:auto minmax(0,1fr) auto minmax(84px,19vh) 0 0}#studio.quiz>.s-take,#studio.quiz>.s-bot{display:none}#studio.quiz .s-lane:not(.me):not([data-l=vocal]){display:none}#studio.quiz .s-pic{margin-bottom:12px}
+#studio.quiz{grid-template-rows:auto minmax(0,1fr) auto minmax(84px,19vh) 0 0}#qz-tdel{position:fixed;right:20px;z-index:60;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,138,128,.6);background:rgba(40,20,18,.92);color:#ffb3ab;font-size:14px}#qz-tdel[hidden]{display:none}#studio.quiz>.s-take,#studio.quiz>.s-bot{display:none}#studio.quiz .s-lane:not(.me):not([data-l=vocal]){display:none}#studio.quiz .s-pic{margin-bottom:12px}
 .qz-tipbar{position:sticky;bottom:0;margin-top:auto;align-self:center;background:var(--glow);color:#1a130c;border-radius:99px;padding:8px 18px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.5)}.qz-tipbar[hidden]{display:none}.qz-adj span{font-size:12px!important}#studio .qz-adj button{padding:4px 10px;font-size:12px}
 #studio.quiz .s-lane:not(.me){flex:0 0 32px!important}#studio.quiz .s-lyr{display:none}#studio.quiz .s-pic::before{display:none}
 #studio .qz-open{margin-left:auto}#studio.quiz .qz-open{background:rgba(242,194,123,.22);border-color:var(--glow);color:var(--glow)}
