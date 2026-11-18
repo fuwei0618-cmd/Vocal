@@ -104,7 +104,7 @@ function sLayout(){
 const kd=k=>(k.adj||0)-sGet();
 function sCover(){
   const out=[],ks=takes.slice().sort((x,y)=>y.at-x.at),taken=[];
-  for(const k of ks){const d=kd(k),A=k.start+d,B=k.end+d;let segs=[[A,B]];
+  for(const k of ks){if(S.bufs.get(k.id)===null)continue;const d=kd(k),A=k.start+d,B=k.end+d;let segs=[[A,B]];
     for(const [a,b] of taken)segs=segs.flatMap(([x,y])=>b<=x||a>=y?[[x,y]]:[...(a>x?[[x,a]]:[]),...(b<y?[[b,y]]:[])]);
     segs.forEach(([x,y])=>{if(y-x>.02)out.push({k,a:x,b:y,o:A-(k.lead||0)})});taken.push([A,B]);}
   return out;
