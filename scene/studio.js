@@ -198,6 +198,7 @@ function sImport(){
     sHint(st?`匯入好了，從 ${mmss(st)} 開始放。對不準就按住波形左右拖`:'匯入好了，從歌的開頭對齊。對不準就按住波形左右拖，或按「早一點／晚一點」')};
   inp.click();
 }
+const ADJ_MAX=1.5;
 function adjKey(){return lsGet('scene-recmode-v1')==='ec'?'scene-recadj-v1':'scene-recadj-raw-v1'}
 async function sRecStart(){
   if(S.recd)return sRecStop();sStop();
@@ -265,7 +266,8 @@ async function sRecStop(cancel){
   takes.push(take);S.bufs.set(take.id,{buf,peaks:peaksOf(buf)});
   // 自動對不出來，就用她上次手動挪好的量
   // 她說自動對齊不準、先手動：新錄音不自動挪，直接套她上次手動拖好的量
-  let lag=null;if(lsGet(adjKey())){take.adj=+lsGet(adjKey())||0;if(take.adj)lag=take.adj}await saveTakes();
+  // 只套「對齊」那種小量（1.5 秒內）；拖很遠是在搬位置，不算對齊
+  let lag=null;if(lsGet(adjKey())){const v=+lsGet(adjKey())||0;if(v&&Math.abs(v)<=ADJ_MAX){take.adj=v;lag=v}}await saveTakes();
   S.pos=Math.max(0,r.p0-1);S.selTake=take.id;sDraw();sTake();
   sHint(lag!=null?`錄好了，已經照你上次拖的量挪好。按 ▶ 聽聽看`:'錄好了。按住你的波形左右拖就能對齊，之後的錄音會照這個量');
 }
@@ -339,7 +341,7 @@ app.addEventListener('pointermove',e=>{if(!S||!pts.has(e.pointerId)||!g0)return;
   if(g0&&g0.mode==='tap'&&t==='pointerup'&&!S.recd){const c=g0.target,r=c.getBoundingClientRect(),x=Math.max(0,Math.min(S.dur,sT(e.clientX-r.left,r.width)));
     if(c.dataset.l==='me'){const hit=sCover().find(({a,b})=>x>=a&&x<=b);S.selTake=hit?hit.k.id:null;if(hit)sHint('選好這次錄音了：按住它左右拖可以對齊')}
     const was=S.playing;S.pos=x;if(was)sPlay(x);else sHead();sDraw()}
-  if(g0&&g0.mode==='move'){saveTakes();lsSet(adjKey(),String(g0.take.k.adj||0));if(S.playing)sPlay(sNow())}
+  if(g0&&g0.mode==='move'){saveTakes();const v=g0.take.k.adj||0;if(Math.abs(v)<=ADJ_MAX)lsSet(adjKey(),String(v));if(S.playing)sPlay(sNow())}
   // 順勢滑一下
   if(g0&&g0.mode==='pan'&&t==='pointerup'&&performance.now()-g0.lt<80&&Math.abs(g0.v)>.25){let v=g0.v,last=performance.now();const w=g0.w;
     const step=now=>{if(!S)return;const dt=now-last;last=now;const [v0,v1]=S.view,sp=v1-v0;sClampView(v0-v*dt/w*sp,sp);sDraw();v*=Math.pow(.94,dt/16);if(Math.abs(v)>.02)fling=requestAnimationFrame(step)};
@@ -367,7 +369,7 @@ app.addEventListener('click',e=>{
   else if(act==='spic'){S.big=!S.big;sBig()}
   else if(act==='smute'){const l=lane(a.dataset.l);l.mute=!l.mute;if(l.mute)l.solo=false;sGains();sDraw();stSave()}
   else if(act==='ssolo'){const l=lane(a.dataset.l);l.solo=!l.solo;if(l.solo)l.mute=false;sGains();sDraw()}
-  else if(act==='sadj'){const k=takes.find(x=>x.id===S.selTake);if(!k)return;k.adj=r2((k.adj||0)+(+a.dataset.d)*.02);saveTakes();lsSet(adjKey(),String(k.adj));if(S.playing)sPlay(sNow());sDraw()}
+  else if(act==='sadj'){const k=takes.find(x=>x.id===S.selTake);if(!k)return;k.adj=r2((k.adj||0)+(+a.dataset.d)*.02);saveTakes();if(Math.abs(k.adj)<=ADJ_MAX)lsSet(adjKey(),String(k.adj));if(S.playing)sPlay(sNow());sDraw()}
   else if(act==='sauto'){const k=takes.find(x=>x.id===S.selTake);if(!k)return;const old=k.adj;k.adj=0;const lag=sAutoAdj(k);if(lag==null){k.adj=old;sHint(S.lanes.some(l=>(l.id==='orig'||l.id==='vocal')&&l.buf)?'這次聽不出來，用早一點／晚一點手動調':'要先放原曲（或人聲檔）才能自動對齊')}else{sHint(`對齊了（挪了 ${Math.abs(lag).toFixed(2)} 秒）`);saveTakes()}if(S.playing)sPlay(sNow());sDraw()}
   else if(act==='sdel'){if(!confirm('刪掉這次錄音？'))return;takes=takes.filter(k=>k.id!==S.selTake);S.selTake=null;saveTakes();if(S.playing)sPlay(sNow());sDraw()}
   else if(act==='sdesel'){S.selTake=null;sDraw()}
