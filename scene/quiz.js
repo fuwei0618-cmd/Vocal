@@ -225,8 +225,9 @@ function qzRender(){
     title+=q.l!=null?`<small>・${q.t?QTYPE[q.t].n:'一句'}</small>`:'';
     tip=q.t==='j'?(J?`這句有一個大跳：${J.st>0?'往上':'往下'}跳 ${Math.abs(J.st)} 個半音。注意跳的那一下有沒有到位。比的時候只比跳的那附近。`:'這句有一個大跳，注意跳的那一下有沒有到位。'):q.t?QTYPE[q.t].t:QMODE[m].t;
     if(q.t)tip+=`<br>這題用${QMODE[m].v}的。`;
-    steps=m==='mind'?`<div class="qz-st"><b>1</b><button data-q="mind" class="go${on('mind')}">${on('mind')?'⏹ 停':'▶ 開始'}（${q.l!=null?'這一句會消音':'中間會消音'}）</button></div>
-      <div class="qz-st"><b>2</b><span>消音時在心裡繼續唱；聲音回來那一刻，妳還在音上嗎？對不上的字在右邊點它</span></div>`
+    steps=m==='mind'?`<div class="qz-st"><b>1</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':q.l!=null?'▶ 先聽原曲這句':'▶ 先聽原曲這段'}</button></div>
+      <div class="qz-st"><b>2</b><button data-q="mind" class="go${on('mind')}">${on('mind')?'⏹ 停':'▶ 開始'}（${q.l!=null?'這一句會消音':'中間會消音'}）</button></div>
+      <div class="qz-st"><b>3</b><span>消音時在心裡繼續唱；聲音回來那一刻，妳還在音上嗎？對不上的字在右邊點它</span></div>`
      :q.t==='f'?`${recB(1,'⏺ 跟伴奏錄：前奏後直接唱第一個字')}${cmp(2)}<div class="qz-st"><b>3</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':'▶ 再聽一次原唱的開頭'}</button></div>`
      :`<div class="qz-st"><b>1</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':q.l!=null?'▶ 先聽原曲這句':'▶ 先聽原曲這段'}</button></div>${recB(2,`⏺ 跟伴奏${QMODE[m].v}一次`)}${cmp(3)}`;
     right=`<div class="qz-lyr${q.l!=null?' one':''}">${A.length?qzChars(q,r):`<p class="qz-tip">（這首還沒貼歌詞，就用提示：${esc(st.cue)}）</p>`}</div>
