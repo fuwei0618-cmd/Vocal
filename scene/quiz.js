@@ -93,7 +93,8 @@ function qzRange(q){if(q.cat==='map'||q.l==null)return secRange(q.s);const [a,b]
   return [a,b]}
 // 這題要錄的範圍
 function qzRecRange(q){if(q.l==null)return secRange(q.s);const [a,b]=qzLineRange(q.l);if(q.cat==='beat')return [Math.max(0,a-2),a+2.5];if(q.t==='f')return [a,Math.min(b,a+1.5)];return [a,b]}
-function qzRanges(q){if(q.l!=null||q.cat==='beat')return [qzRange(q)];const L=getLines(),n=qzText(q).length,out=[];for(let li=0;li<n;li++){const g=qzGl(q,li);if(L[g]!=null)out.push(qzLineRange(g))}return out.length?out:[qzRange(q)]}
+const qzCut=q=>Q&&Q.cut&&Q.cutQ===q.id?Q.cut:null;
+function qzRanges(q){if(qzCut(q))return [qzCut(q)];if(q.l!=null||q.cat==='beat')return [qzRange(q)];const L=getLines(),n=qzText(q).length,out=[];for(let li=0;li<n;li++){const g=qzGl(q,li);if(L[g]!=null)out.push(qzLineRange(g))}return out.length?out:[qzRange(q)]}
 const qLane=id=>S&&S.lanes.find(l=>l.id===id&&(id==='me'||l.buf));
 const qzRef=()=>qLane('vocal')?'vocal':qLane('orig')?'orig':'inst';
 const qzBack=()=>qLane('inst')?'inst':'orig';
@@ -116,10 +117,10 @@ function qzClose(){
 function qzFocus(){const q=Q.list[Q.i];if(!q)return;S.sel=qzRecRange(q);{const [x,y]=S.sel,k=takes.slice().sort((u,v)=>v.at-u.at).find(k=>k.start<y&&k.end>x);S.selTake=k?k.id:null}S.loop=false;S.pos=S.sel[0];sView0();sDraw()}
 function qzGo(j){if(S&&S.recd)return;Q.seq=null;sStop();Q.i=Math.max(0,Math.min(Q.list.length-1,j));Q.sum=false;Q.act='';Q.rev=false;Q.k=-2;qzSaveLast();qzFocus();qzRender()}
 function qzPlay(act,ids,from,until,mute){
-  Q.seq=null;Q.who='';if(S.playing&&Q.act===act){sStop();Q.act='';Q.mute=null;qzRender();return}
+  Q.seq=null;Q.lastRun=null;Q.who='';if(S.playing&&Q.act===act){sStop();Q.act='';Q.mute=null;qzRender();return}
   sStop();qzHear(ids);S.loop=false;S.stopAt=until;Q.act=act;Q.mute=mute||null;Q.inn=false;sPlay(Math.max(0,from));qzRender()}
 // 輪流比：原唱一句 → 我一句 → 下一句…
-function qzSeq(act,items){if(S.playing&&Q.act===act){Q.seq=null;sStop();Q.act='';Q.who='';qzRender();return}sStop();Q.seq=items.slice();Q.act=act;Q.mute=null;qzNext()}
+function qzSeq(act,items){Q.lastRun=null;if(S.playing&&Q.act===act){Q.seq=null;sStop();Q.act='';Q.who='';qzRender();return}sStop();Q.seq=items.slice();Q.act=act;Q.mute=null;qzNext()}
 function qzNext(){if(!Q||!S)return;const it=Q.seq&&Q.seq.shift();if(!it){Q.seq=null;Q.act='';Q.who='';qzRender();return}
   qzHear(it.ids);S.loop=false;S.stopAt=it.r[1]+.1;Q.who=it.who;sPlay(Math.max(0,it.r[0]-.15));qzRender()}
 function qzAlt(q){const its=[];qzRanges(q).forEach(r=>{its.push({ids:[qzRef()],r,who:'原唱'});its.push({ids:['me'],r,who:'我'})});qzSeq('alt',its)}
@@ -159,7 +160,17 @@ openStudio=async function(){await _qzOpenStudio();const top=document.querySelect
 // 錄音軌上點一段錄音（選到）→ 右上角出現刪除鍵，不管是不是這一題的
 const _qzDraw=sDraw;
 sDraw=function(){_qzDraw.apply(this,arguments);qzTdel()};
-function qzTdel(){const d=document.getElementById('studio');if(!d)return;let b=document.getElementById('qz-tdel');
+function qzCutDraw(){const q=Q&&Q.list&&Q.list[Q.i],c=q&&qzCut(q);if(!c||!S)return;
+  document.querySelectorAll('#studio canvas[data-l]').forEach(cv=>{const g=cv.getContext('2d'),w=cv.width,h=cv.height,x=sX(c[0],w),x2=sX(c[1],w);
+    g.fillStyle='rgba(120,200,255,.18)';g.fillRect(x,0,x2-x,h);g.fillStyle='rgba(120,200,255,.9)';g.fillRect(x,0,2,h);g.fillRect(x2-2,0,2,h)})}
+let qzBx=null;
+addEventListener('pointerdown',e=>{if(!Q||!Q.boxing||!S||!e.target.closest||!e.target.closest('#studio canvas'))return;e.stopImmediatePropagation();e.preventDefault();
+  const r=e.target.getBoundingClientRect(),t=sT(e.clientX-r.left,r.width);qzBx={r,t0:t,id:e.pointerId};Q.cut=[t,t];Q.cutQ=Q.list[Q.i].id;sDraw()},true);
+addEventListener('pointermove',e=>{if(!qzBx||e.pointerId!==qzBx.id)return;e.stopImmediatePropagation();e.preventDefault();const t=sT(e.clientX-qzBx.r.left,qzBx.r.width);Q.cut=[Math.max(0,Math.min(qzBx.t0,t)),Math.min(S.dur,Math.max(qzBx.t0,t))];sDraw()},true);
+['pointerup','pointercancel'].forEach(n=>addEventListener(n,e=>{if(!qzBx||e.pointerId!==qzBx.id)return;e.stopImmediatePropagation();qzBx=null;Q.boxing=false;
+  if(!Q.cut||Q.cut[1]-Q.cut[0]<.25){Q.cut=null;qzHint('範圍太短，再拖長一點');sDraw();qzRender();return}
+  sDraw();qzRender();const b=document.querySelector('#s-quiz [data-q=alt]');if(b&&!b.disabled)b.click();qzHint('框好了：原唱、妳輪流放這一段，會一直重複；按「⏹ 停」停下來')},true));
+function qzTdel(){qzCutDraw();const d=document.getElementById('studio');if(!d)return;let b=document.getElementById('qz-tdel');
   const k=Q&&S&&!S.recd&&S.selTake&&takes.find(x=>x.id===S.selTake);
   if(!k){if(b)b.hidden=true;return}
   if(!b){b=document.createElement('button');b.id='qz-tdel';b.textContent='🗑 刪掉選到的錄音';d.appendChild(b);
@@ -169,7 +180,8 @@ function qzTdel(){const d=document.getElementById('studio');if(!d)return;let b=d
 function qzTick(p){
   if(Q&&Q.swAt&&S.recd&&p>=Q.swAt-.05){Q.swAt=0;qzHear(['inst'])}
   if(!Q||Q.sum)return;const el=document.getElementById('s-quiz');if(!el)return;
-  if(p<0){el.classList.remove('hush');Q.mute=null;if(Q.seq&&Q.seq.length&&Q.act){setTimeout(()=>{if(Q&&Q.seq)qzNext()},350);return}Q.seq=null;Q.act='';Q.who='';qzRender();return}
+  if(p<0){el.classList.remove('hush');Q.mute=null;if(Q.seq&&Q.seq.length&&Q.act){setTimeout(()=>{if(Q&&Q.seq)qzNext()},350);return}
+    if(Q.lastRun){const f=Q.lastRun;Q.seq=null;setTimeout(()=>{if(Q&&Q.lastRun===f){f();Q.lastRun=f}},400);return}Q.seq=null;Q.act='';Q.who='';qzRender();return}
   if(Q.mute){const inn=p>=Q.mute[0]&&p<Q.mute[1];if(inn!==Q.inn){Q.inn=inn;if(inn)S.lanes.forEach(l=>{const g=S.gains[l.id];if(g)g.gain.value=l.id==='inst'&&l.buf?(l.vol||1):0});else sGains();el.classList.toggle('hush',inn)}}
   const q=Q.list[Q.i];if(!q)return;const L=getLines();let k=-1;qzText(q).forEach((_,li)=>{const t=L[qzGl(q,li)];if(t!=null&&p>=t-.3)k=li});
   if(k!==Q.k){Q.k=k;el.querySelectorAll('.qz-lyr p').forEach(x=>x.classList.toggle('on',+x.dataset.li===k))}
@@ -217,7 +229,7 @@ function qzRender(){
   const sc=SCENES[key],n=Q.list.length,q=Q.list[Q.i],C=QCAT[q.cat],r=qzGet(q.id),m=r.m||q.m,st=sc.steps[q.s],[a,b]=qzRange(q),[ra,rb]=qzRecRange(q),
     on=x=>S.playing&&Q.act===x?' on':'',recd=!!S.recd,has=qzHas(ra,rb),A=qzAllLines(),L=getLines(),nm=Object.keys(r.mk||{}).length;
   const who=`<div class="qz-st qz-who">${Q.who?`<span class="${Q.who==='我'?'me':'ref'}">▶ 正在放：${Q.who}</span>`:`<span>${q.cat==='beat'?'輪流比＝原唱開口、妳開口，聽是不是同一刻':'輪流比＝原唱一句、妳一句；聽到不對的字，在右邊點它'}</span>`}</div>`;
-  const cmp=n0=>`<div class="qz-st"><b>${n0}</b><span>比一比</span><button data-q="alt" class="go${on('alt')}" ${has?'':'disabled'}>${on('alt')?'⏹ 停':'🔁 輪流比'}</button><button data-q="cmp" data-c="both" class="${on('both')}" ${has?'':'disabled'}>原唱＋我</button><button data-q="cmp" data-c="me" class="${on('me')}" ${has?'':'disabled'}>只聽我</button></div>${has&&!recd?`<div class="qz-st qz-adj"><span>錄音跟原唱對不齊？</span><button data-act="sadj" data-d="-1">◀ 早一點</button><button data-act="sadj" data-d="1">晚一點 ▶</button></div>`:''}${who}`;
+  const cmp=n0=>`<div class="qz-st"><b>${n0}</b><span>比一比</span><button data-q="alt" class="go${on('alt')}" ${has?'':'disabled'}>${on('alt')?'⏹ 停':'🔁 輪流比'}</button><button data-q="cmp" data-c="both" class="${on('both')}" ${has?'':'disabled'}>原唱＋我</button><button data-q="cmp" data-c="me" class="${on('me')}" ${has?'':'disabled'}>只聽我</button></div>${has&&!recd?`<div class="qz-st qz-adj"><span>錄音跟原唱對不齊？</span><button data-act="sadj" data-d="-1">◀ 早一點</button><button data-act="sadj" data-d="1">晚一點 ▶</button></div>`:''}${has&&!recd?(()=>{const c=qzCut(q);return `<div class="qz-st qz-cut"><span>重複某幾個字</span><button data-q="box" class="${Q.boxing?'on':''}">${Q.boxing?'✂️ 在下面波形上拖一段…':'✂️ 框選一段'}</button>${c?`<span>已框 ${mmss(c[0])}–${mmss(c[1])}，比一比會一直重複</span><button data-q="uncut">✕ 取消</button>`:''}</div>`})():''}${who}`;
   const recB=(n0,t)=>`<div class="qz-st"><b>${n0}</b><button data-q="rec" class="rec${recd?' on':''}">${recd?'⏹ 停止錄音':t}</button>${has&&!recd?'<span>✓ 錄好了</span><button data-q="del" class="qz-del">🗑 刪掉這次</button>':''}</div>`;
   let title=esc(st.sec),tip='',steps='',right='';
   if(q.cat==='pitch'){
@@ -280,8 +292,10 @@ app.addEventListener('click',e=>{
   if(a==='mode'){if(S.recd)return;sStop();qzSet(q.id,{m:t.dataset.m});Q.act='';qzRender()}
   else if(a==='listen'){const [x,y]=q.cat==='beat'?qzRange(q):qzRecRange(q);qzPlay('listen',q.cat==='lyr'?[qzRef()]:qzOrig(),q.cat==='beat'?x-2:x-1.5,y+.4)}
   else if(a==='mind')qzMind(q);
-  else if(a==='alt')qzAlt(q);
-  else if(a==='cmp'){const c=t.dataset.c,[x,y]=qzRange(q);qzPlay(c,c==='both'?[qzRef(),'me']:['me'],x-.5,y+.3)}
+  else if(a==='alt'){qzAlt(q);if(qzCut(q)&&Q.act)Q.lastRun=()=>qzAlt(q)}
+  else if(a==='cmp'){const c=t.dataset.c,run=()=>{const [x,y]=qzCut(q)||qzRange(q),k=qzCut(q)?.05:.5;qzPlay(c,c==='both'?[qzRef(),'me']:['me'],x-k,y+(qzCut(q)?.05:.3))};run();if(qzCut(q)&&Q.act)Q.lastRun=run}
+  else if(a==='box'){sStop();Q.seq=null;Q.act='';Q.boxing=!Q.boxing;qzRender();if(Q.boxing)qzHint('在下面的波形上，手指從要重複的第一個字拖到最後一個字')}
+  else if(a==='uncut'){Q.cut=null;Q.lastRun=null;sStop();Q.act='';sDraw();qzRender()}
   else if(a==='rec')qzRec(q);
   else if(a==='del'){const [x,y]=qzRecRange(q),k=takes.find(t=>t.id===S.selTake)||takes.slice().sort((u,v)=>v.at-u.at).find(k=>k.start<y&&k.end>x);if(!k||!confirm('刪掉這題最新的這次錄音？'))return;sStop();takes=takes.filter(t=>t!==k);if(S.selTake===k.id)S.selTake=null;S.bufs.delete(k.id);saveTakes();qzSet(q.id,{rec:0});sDraw();qzRender();qzHint('刪掉了，按紅色的鍵再錄一次')}
   else if(a==='lplay'){const [x,y]=qzLineRange(q.l),pv=getLines()[q.l-1],from=pv!=null&&pv<x&&x-pv<12?pv-.3:x-4;qzPlay('lplay',[qzBack()],from,y+.5)}
