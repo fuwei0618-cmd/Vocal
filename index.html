@@ -690,6 +690,9 @@ function licenseWarnings(){
   return out;
 }
 // 繼續測驗：讀情境頁題組存的最後一份卷（同一個網站，localStorage 共用）
+// 主畫面自己也會更新：伺服器上的主畫面比較新，就重新載入（iPad 會把舊的主畫面存著）
+const HOMEV=2;
+fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const HOMEV=(\d+);/);if(m&&+m[1]>HOMEV)location.replace(location.pathname+'?h='+m[1]+location.hash)}).catch(()=>{});
 // 版本號：跟情境頁（題組、錄音室）同一個號碼，打開 App 就看得到
 fetch('scene/index.html?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/),e=document.getElementById('appver');if(m&&e)e.textContent='v'+m[1]}).catch(()=>{});
 function quizCont(){let A={};try{A=JSON.parse(localStorage.getItem('scene-pquiz-last')||'{}')||{}}catch(e){}
