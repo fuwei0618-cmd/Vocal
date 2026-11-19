@@ -138,7 +138,7 @@ button{cursor:pointer}
 .app{max-width:none;margin:0 auto;padding-inline:16px;padding-block:0 calc(var(--tabh) + 32px + env(safe-area-inset-bottom,0px))}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-block:14px 10px;border-bottom:1px solid var(--line);margin-bottom:14px}
 .top h1{font-family:var(--display);font-weight:700;font-size:26px;margin:0;letter-spacing:.02em}
-.top .sync{font-size:12px;color:var(--muted)}
+.top .ver{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}.top .sync{font-size:12px;color:var(--muted)}
 h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance}
 h2{font-size:20px} h3{font-size:16px}
 .sec{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
@@ -507,7 +507,7 @@ legend{font-family:var(--display);font-weight:700;padding:0 6px}
 </style>
 
 <div class="app">
-  <header class="top"><h1 id="title">下一場</h1><span class="sync" id="sync">載入中…</span></header>
+  <header class="top"><div style="display:flex;align-items:baseline;gap:8px"><h1 id="title">下一場</h1><span class="ver" id="appver"></span></div><span class="sync" id="sync">載入中…</span></header>
   <main id="main"></main>
 </div>
 <button class="fab" id="fab" aria-label="新增" hidden>＋</button>
@@ -690,6 +690,8 @@ function licenseWarnings(){
   return out;
 }
 // 繼續測驗：讀情境頁題組存的最後一份卷（同一個網站，localStorage 共用）
+// 版本號：跟情境頁（題組、錄音室）同一個號碼，打開 App 就看得到
+fetch('scene/index.html?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/),e=document.getElementById('appver');if(m&&e)e.textContent='v'+m[1]}).catch(()=>{});
 function quizCont(){let A={};try{A=JSON.parse(localStorage.getItem('scene-pquiz-last')||'{}')||{}}catch(e){}
   const ks=Object.keys(A).filter(k=>A[k]&&A[k].ids&&A[k].ids.length);if(!ks.length)return '';
   ks.sort((a,b)=>(A[b].t||0)-(A[a].t||0));const k=ks[0],l=A[k];
