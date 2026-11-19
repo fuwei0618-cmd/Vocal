@@ -159,12 +159,12 @@ function laneRms(b){if(b._rms)return b._rms;const d=b.getChannelData(0),st=Math.
 const REC_RMS=.1;
 function sGains(){S.lanes.forEach(l=>{const g=S.gains[l.id];if(!g)return;let v=audible(l)?l.vol:0;if(v&&S.recd&&S.recd.raw&&l.id!=='me'&&l.buf)v*=Math.min(1,REC_RMS/laneRms(l.buf));g.gain.value=v})}
 // 切去別的 App（例如 IG 放音樂）再回來，iPad 的聲音引擎會卡住：先叫醒，叫不醒就換一個新的
-async function sWake(){let c=S.ctx;if(c.state==='running')return;
+async function sWake(){if(ctxStale&&!S.playing&&!S.recd){S.ctx=audioCtx()}let c=S.ctx;if(c.state==='running')return;
   try{await Promise.race([c.resume(),new Promise(r=>setTimeout(r,400))])}catch(e){}
   if(S.ctx.state!=='running'){try{const old=actx;actx=null;S.ctx=audioCtx();if(old&&old!==S.ctx&&old.close)old.close()}catch(e){}
     try{await Promise.race([S.ctx.resume(),new Promise(r=>setTimeout(r,400))])}catch(e){}}}
 function sPlay(from,again){
-  if(!again&&S.ctx.state!=='running'){sWake().then(()=>{if(S)sPlay(from,1)});return}
+  if(!again&&(ctxStale||S.ctx.state!=='running')){sWake().then(()=>{if(S)sPlay(from,1)});return}
   sStop();const c=S.ctx;if(c.state!=='running')c.resume();
   const T=c.currentTime+.08;S.T=T;S.from=from;S.playing=true;S.srcs=[];S.gains={};
   // 錄音時 iPad 會把喇叭壓小聲：錄音時整體放大 3 倍，再用壓縮器防爆音
