@@ -693,7 +693,7 @@ function licenseWarnings(){
 function quizCont(){let A={};try{A=JSON.parse(localStorage.getItem('scene-pquiz-last')||'{}')||{}}catch(e){}
   const ks=Object.keys(A).filter(k=>A[k]&&A[k].ids&&A[k].ids.length);if(!ks.length)return '';
   ks.sort((a,b)=>(A[b].t||0)-(A[a].t||0));const k=ks[0],l=A[k];
-  return `<a class="panel visionEntry qcont" href="scene/index.html?do=quiz-cont#${encodeURIComponent(k)}" style="text-decoration:none;color:inherit"><span class="eyebrow">QUIZ</span><b>繼續測驗${l.song?'・'+esc(l.song):''}</b><span class="muted small">${l.name?esc(l.name)+'・':''}第 ${(l.i||0)+1} / ${l.ids.length} 題 →</span></a>`}
+  return `<a class="panel visionEntry qcont" href="scene/index.html?do=quiz-cont&t=${Date.now()}#${encodeURIComponent(k)}" style="text-decoration:none;color:inherit"><span class="eyebrow">QUIZ</span><b>繼續測驗${l.song?'・'+esc(l.song):''}</b><span class="muted small">${l.name?esc(l.name)+'・':''}第 ${(l.i||0)+1} / ${l.ids.length} 題 →</span></a>`}
 function vToday(){
   const n=next(), v=S.venues[n.venueId], info=setlistInfo(n.setlist||[]);
   const checks=sorted('checks','order'), checked=n.checked||{}, rain=!!n.rain;
