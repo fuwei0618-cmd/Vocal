@@ -158,8 +158,14 @@ function sTake(){
 function laneRms(b){if(b._rms)return b._rms;const d=b.getChannelData(0),st=Math.max(1,Math.floor(d.length/200000));let sum=0,n=0;for(let i=0;i<d.length;i+=st){sum+=d[i]*d[i];n++}return b._rms=Math.sqrt(sum/Math.max(1,n))||1e-4}
 const REC_RMS=.1;
 function sGains(){S.lanes.forEach(l=>{const g=S.gains[l.id];if(!g)return;let v=audible(l)?l.vol:0;if(v&&S.recd&&S.recd.raw&&l.id!=='me'&&l.buf)v*=Math.min(1,REC_RMS/laneRms(l.buf));g.gain.value=v})}
-function sPlay(from){
-  sStop();const c=S.ctx;if(c.state==='suspended')c.resume();
+// 切去別的 App（例如 IG 放音樂）再回來，iPad 的聲音引擎會卡住：先叫醒，叫不醒就換一個新的
+async function sWake(){let c=S.ctx;if(c.state==='running')return;
+  try{await Promise.race([c.resume(),new Promise(r=>setTimeout(r,400))])}catch(e){}
+  if(S.ctx.state!=='running'){try{const old=actx;actx=null;S.ctx=audioCtx();if(old&&old!==S.ctx&&old.close)old.close()}catch(e){}
+    try{await Promise.race([S.ctx.resume(),new Promise(r=>setTimeout(r,400))])}catch(e){}}}
+function sPlay(from,again){
+  if(!again&&S.ctx.state!=='running'){sWake().then(()=>{if(S)sPlay(from,1)});return}
+  sStop();const c=S.ctx;if(c.state!=='running')c.resume();
   const T=c.currentTime+.08;S.T=T;S.from=from;S.playing=true;S.srcs=[];S.gains={};
   // 錄音時 iPad 會把喇叭壓小聲：錄音時整體放大 3 倍，再用壓縮器防爆音
   let out=c.destination;if(S.recd&&!S.recd.raw){const cp=c.createDynamicsCompressor();cp.threshold.value=-10;cp.knee.value=6;cp.ratio.value=12;cp.attack.value=.003;cp.release.value=.2;
@@ -214,7 +220,7 @@ async function sRecStart(){
   try{if(navigator.audioSession)navigator.audioSession.type='play-and-record'}catch(e){}
   try{st=await navigator.mediaDevices.getUserMedia({audio:raw?{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}:lsGet('scene-recplain-v1')==='1'?true:{echoCancellation:true,noiseSuppression:false,autoGainControl:false,channelCount:1}})}
   catch(e){alert('沒辦法用麥克風：到「設定 → Safari → 麥克風」允許，或重新打開再按一次');return}
-  const c=S.ctx;if(c.state==='suspended')await c.resume();
+  await sWake();const c=S.ctx;
   // 從播放頭開始錄（前面多播 2 秒預備）；播放頭在選的段落裡，唱到段尾自動停
   const p0=S.pos,keep=Math.max(0,p0-.3),from=Math.max(0,p0-(S.pre||2)),until=S.sel&&S.loop&&p0<S.sel[1]-.5?Math.min(S.dur,S.sel[1]+.5):0;
   // 用 iPad 自己的錄音器（MediaRecorder）錄，Web Audio 直接收麥克風在 iPad 上會收到一片靜音
