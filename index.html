@@ -483,7 +483,7 @@ legend{font-family:var(--display);font-weight:700;padding:0 6px}
 .cardrow .body{font-size:13px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .link{color:var(--accent);text-decoration:none;font-size:13px}
 .link{background:none;border:0;padding:0;cursor:pointer}
-.visionEntry{display:grid;gap:2px;width:100%;text-align:left;margin-bottom:18px;cursor:pointer;background:linear-gradient(135deg,var(--surface),var(--accent-soft))}
+.qcont{background:linear-gradient(135deg,#f6dfae,#efc97f)!important}.visionEntry{display:grid;gap:2px;width:100%;text-align:left;margin-bottom:18px;cursor:pointer;background:linear-gradient(135deg,var(--surface),var(--accent-soft))}
 .visionEntry b{font-family:var(--display);font-size:17px}
 .eyebrow{font-size:11px;letter-spacing:.2em;color:var(--accent);font-weight:600}
 .vtop{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
@@ -689,12 +689,17 @@ function licenseWarnings(){
     if(days<0)out.push(n+'街頭藝人證照已在 '+fmtD(L[k],true)+' 到期');else if(days<=45)out.push(n+'證照 '+days+' 天後到期（'+fmtD(L[k],true)+'）')});
   return out;
 }
+// 繼續測驗：讀情境頁題組存的最後一份卷（同一個網站，localStorage 共用）
+function quizCont(){let A={};try{A=JSON.parse(localStorage.getItem('scene-pquiz-last')||'{}')||{}}catch(e){}
+  const ks=Object.keys(A).filter(k=>A[k]&&A[k].ids&&A[k].ids.length);if(!ks.length)return '';
+  ks.sort((a,b)=>(A[b].t||0)-(A[a].t||0));const k=ks[0],l=A[k];
+  return `<a class="panel visionEntry qcont" href="scene/index.html?do=quiz-cont#${encodeURIComponent(k)}" style="text-decoration:none;color:inherit"><span class="eyebrow">QUIZ</span><b>繼續測驗${l.song?'・'+esc(l.song):''}</b><span class="muted small">${l.name?esc(l.name)+'・':''}第 ${(l.i||0)+1} / ${l.ids.length} 題 →</span></a>`}
 function vToday(){
   const n=next(), v=S.venues[n.venueId], info=setlistInfo(n.setlist||[]);
   const checks=sorted('checks','order'), checked=n.checked||{}, rain=!!n.rain;
   const pre=checks.filter(c=>GROUPS.includes(c.group));
   const done=pre.filter(c=>checked[c.id]).length;
-  let h='';
+  let h=quizCont();
   h+=`<button class="panel visionEntry" data-tab="vision"><span class="eyebrow">MY VOCAL VISION</span><b>我的 Vocal 願景</b><span class="muted small">出發前先來這裡看一下 →</span></button>`;
   licenseWarnings().forEach(w=>h+=`<div class="banner warn">${esc(w)}</div>`);
   h+='<section class="sec">';
@@ -1330,7 +1335,7 @@ addEventListener('pageshow',e=>{if(e.persisted)render()});
 function vSongs(){
   const st=stats();
   const songs=sorted('songs').filter(s=>(songFilter==='全部'||(s.groups||[]).includes(songFilter)||(songFilter==='未設定熟練度'&&!s.level))&&(whoF==='全部'||(whoF==='未分類'?!s.who:s.who===whoF)));
-  let h=`<a class="panel visionEntry" href="scene/practice.html" style="text-decoration:none;color:inherit"><span class="eyebrow">PRACTICE</span><b>🎯 今天練什麼</b><span class="muted small">只練發聲、練一首歌，或讓我幫妳挑 →</span></a><section class="sec"><label class="f"><span class="label">搜尋歌名或原唱</span><input id="song-q" type="search" value="${esc(songQ)}" autocomplete="off"></label>
+  let h=quizCont()+`<a class="panel visionEntry" href="scene/practice.html" style="text-decoration:none;color:inherit"><span class="eyebrow">PRACTICE</span><b>🎯 今天練什麼</b><span class="muted small">只練發聲、練一首歌，或讓我幫妳挑 →</span></a><section class="sec"><label class="f"><span class="label">搜尋歌名或原唱</span><input id="song-q" type="search" value="${esc(songQ)}" autocomplete="off"></label>
     <div class="f" style="margin:4px 0 0"><span class="label">哪一個我在唱</span><div class="chips">${['全部',...WHO.map(w=>w[0]),'未分類'].map(g=>`<button class="chip ${g===whoF?'accent':''}" data-who-f="${esc(g)}">${esc(g)}</button>`).join('')}</div></div>
     <div class="f" style="margin:4px 0 0"><span class="label">場合</span><div class="chips">${['全部',...SONG_GROUPS].map(g=>`<button class="chip ${g===songFilter?'accent':''}" data-song-f="${esc(g)}">${esc(g)}</button>`).join('')}</div></div></section>`;
   h+=`<section class="sec"><div class="sec-head"><h2>情境圖</h2><a class="link" href="scene/learn.html?v=17">學歌地圖 ↗</a></div><ul class="list">${SCENES.map(x=>{const k=x.href.split('#')[1],m=pgAll()[k]||{},cnt=L=>L.filter(([id])=>m[id]).length,nl=PGN.filter(([id])=>natDays(m,id).length).length,ch=(L,lb)=>{const n=L===PGN?nl:cnt(L);return `<span class="chip ${n===L.length?'ok':n?'warn':''}">${lb} ${n}/${L.length}</span>`},row=(L,lb)=>`<div class="chips pgrow"><span class="pgl">${lb}</span>${L.map(([id,t])=>`<button class="chip ${m[id]?'ok':''}" data-pg="${esc(k)}" data-pgs="${id}">${m[id]?'✓ ':''}${t}</button>`).join('')}</div>`;return `<li><a class="row" href="${esc(x.href)}" style="text-decoration:none;color:inherit"><div class="main"><div class="title">${esc(x.title)} ${ch(PGN,'自然')} ${ch(PG,'場合')}</div><div class="sub">${esc(x.tl)}</div></div><span class="link">打開 ↗</span></a><div class="chips pgrow"><span class="pgl">自然</span>${PGN.map(([id,t])=>{const n=natDays(m,id).length;return `<button class="chip nat lv${natLv(n)}" data-nat="${esc(k)}" data-pgs="${id}">${t}${n?` ${n}`:''}</button>`}).join('')}</div>${row(PG,'場合')}</li>`}).join('')}</ul></section>`;

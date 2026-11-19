@@ -77,7 +77,7 @@ function qzPaperList(cat,part){const bank=Q.bank||(Q.bank=qzBank()),lt=qzLatest(
 function qzPct(list){const lt=qzLatest();if(!list.length)return 0;return Math.round(list.filter(q=>lt[qzBase(q.id)]==='ok').length/list.length*100)}
 function qzShuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 const qzLastAll=()=>{try{return JSON.parse(qzLS('scene-pquiz-last')||'{}')||{}}catch(e){return {}}};
-function qzSaveLast(){if(!Q||!Q.paper)return;const A=qzLastAll();A[key]=Object.assign({},Q.paper,{ids:Q.list.map(q=>q.id),i:Q.i});qzLS('scene-pquiz-last',JSON.stringify(A))}
+function qzSaveLast(){if(!Q||!Q.paper)return;const A=qzLastAll();A[key]=Object.assign({},Q.paper,{ids:Q.list.map(q=>q.id),i:Q.i,t:Date.now(),song:SCENES[key].title,name:qzPaperName(Q.paper)});qzLS('scene-pquiz-last',JSON.stringify(A))}
 function qzPaperName(p){const sc=SCENES[key];return QPAPER[p.cat].n+(p.part==='all'?'':`・Part ${+p.part+1} ${sc.steps[+p.part].sec}`)+(p.ord==='rand'?'・隨機':'・照順序')}
 function qzBegin(cat,part,ord,ids,i){const list=ids?ids.map(id=>qzQ(id)).filter(Boolean):qzPaperList(cat,part);if(!list.length){qzHint('這份卷現在沒有題目');return}
   Q.paper={cat,part,ord};Q.list=ord==='rand'&&!ids?qzShuffle(list):list;Q.home=false;Q.sum=false;Q.i=Math.min(i||0,Q.list.length-1);Q.act='';Q.rev=false;Q.seq=null;Q.k=-2;qzSaveLast();qzFocus();qzRender()}
@@ -154,7 +154,7 @@ closeStudio=function(){qzClose();_qzClose()};
 const _qzOpenStudio=openStudio;
 openStudio=async function(){await _qzOpenStudio();const top=document.querySelector('#studio .s-top');
   if(top&&!top.querySelector('.qz-open')){const b=document.createElement('button');b.className='qz-open';b.dataset.q='open';b.textContent='🎯 題組';top.insertBefore(b,document.getElementById('s-time'))}
-  if(window.qzWant){const c=window.qzWant;window.qzWant=0;qzOpen(typeof c==='string'?c:'')}};
+  if(window.qzWant){const c=window.qzWant;window.qzWant=0;if(c==='cont'){qzOpen('');const l=qzLastAll()[key];if(l&&l.ids&&Q)qzBegin(l.cat,l.part,l.ord,l.ids,l.i)}else qzOpen(typeof c==='string'?c:'')}};
 
 // 錄音軌上點一段錄音（選到）→ 右上角出現刪除鍵，不管是不是這一題的
 const _qzDraw=sDraw;
