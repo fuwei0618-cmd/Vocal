@@ -235,7 +235,7 @@ function qzRender(){
   const sc=SCENES[key],n=Q.list.length,q=Q.list[Q.i],C=QCAT[q.cat],r=qzGet(q.id),m=r.m||q.m,st=sc.steps[q.s],[a,b]=qzRange(q),[ra,rb]=qzRecRange(q),
     on=x=>S.playing&&Q.act===x?' on':'',recd=!!S.recd,has=qzHas(ra,rb),A=qzAllLines(),L=getLines(),nm=Object.keys(r.mk||{}).length;
   const who=`<div class="qz-st qz-who">${Q.who?`<span class="${Q.who==='我'?'me':'ref'}">▶ 正在放：${Q.who}</span>`:`<span>${q.cat==='beat'?'輪流比＝原唱開口、妳開口，聽是不是同一刻':'輪流比＝原唱一句、妳一句；聽到不對的字，在右邊點它'}</span>`}</div>`;
-  const cmp=n0=>`<div class="qz-st"><b>${n0}</b><span>比一比</span><button data-q="alt" class="go${on('alt')}" ${has?'':'disabled'}>${on('alt')?'⏹ 停':'🔁 輪流比'}</button><button data-q="cmp" data-c="both" class="${on('both')}" ${has?'':'disabled'}>原唱＋我</button><button data-q="cmp" data-c="me" class="${on('me')}" ${has?'':'disabled'}>只聽我</button></div>${has&&!recd?`<div class="qz-st qz-adj"><span>錄音跟原唱對不齊？</span><button data-act="sadj" data-d="-1">◀ 早一點</button><button data-act="sadj" data-d="1">晚一點 ▶</button></div>`:''}${has&&!recd?(()=>{const c=qzCut(q);return `<div class="qz-st qz-cut"><span>重複某幾個字</span><button data-q="box" class="${Q.boxing?'on':''}">${Q.boxing?'✂️ 在下面波形上拖一段…':'✂️ 框選一段'}</button>${c?`<span>已框 ${mmss(c[0])}–${mmss(c[1])}，比一比會一直重複</span><button data-q="uncut">✕ 取消</button>`:''}</div>`})():''}${who}`;
+  const cmp=n0=>`<div class="qz-st"><b>${n0}</b><span>比一比</span><button data-q="alt" class="go${on('alt')}" ${has?'':'disabled'}>${on('alt')?'⏹ 停':'🔁 輪流比'}</button><button data-q="cmp" data-c="both" class="${on('both')}" ${has?'':'disabled'}>原唱＋我</button><button data-q="cmp" data-c="me" class="${on('me')}" ${has?'':'disabled'}>只聽我</button><button data-q="cmp" data-c="ref" class="${on('ref')}">只聽原唱</button></div>${has&&!recd?`<div class="qz-st qz-adj"><span>錄音跟原唱對不齊？</span><button data-act="sadj" data-d="-1">◀ 早一點</button><button data-act="sadj" data-d="1">晚一點 ▶</button></div>`:''}${has&&!recd?(()=>{const c=qzCut(q);return `<div class="qz-st qz-cut"><span>重複某幾個字</span><button data-q="box" class="${Q.boxing?'on':''}">${Q.boxing?'✂️ 在下面波形上拖一段…':'✂️ 框選一段'}</button>${c?`<span>已框 ${mmss(c[0])}–${mmss(c[1])}，下面四個鍵都只放這段、一直重複</span><button data-q="uncut">✕ 取消</button>`:''}</div>`})():''}${who}`;
   const recB=(n0,t)=>`<div class="qz-st"><b>${n0}</b><button data-q="rec" class="rec${recd?' on':''}">${recd?'⏹ 停止錄音':t}</button>${has&&!recd?'<span>✓ 錄好了</span><button data-q="del" class="qz-del">🗑 刪掉這次</button>':''}</div>`;
   let title=esc(st.sec),tip='',steps='',right='';
   if(q.cat==='pitch'){
@@ -299,7 +299,7 @@ app.addEventListener('click',e=>{
   else if(a==='listen'){const [x,y]=q.cat==='beat'?qzRange(q):qzRecRange(q);qzPlay('listen',q.cat==='lyr'?[qzRef()]:qzOrig(),q.cat==='beat'?x-2:x-1.5,y+.4)}
   else if(a==='mind')qzMind(q);
   else if(a==='alt'){qzAlt(q);if(qzCut(q)&&Q.act)Q.lastRun=()=>qzAlt(q)}
-  else if(a==='cmp'){const c=t.dataset.c,run=()=>{const [x,y]=qzCut(q)||qzRange(q),k=qzCut(q)?.05:.5;qzPlay(c,c==='both'?[qzRef(),'me']:['me'],x-k,y+(qzCut(q)?.05:.3))};run();if(qzCut(q)&&Q.act)Q.lastRun=run}
+  else if(a==='cmp'){const c=t.dataset.c,run=()=>{const [x,y]=qzCut(q)||qzRange(q),k=qzCut(q)?.05:.5;qzPlay(c,c==='both'?[qzRef(),'me']:c==='ref'?[qzRef()]:['me'],x-k,y+(qzCut(q)?.05:.3))};run();if(qzCut(q)&&Q.act)Q.lastRun=run}
   else if(a==='box'){sStop();Q.seq=null;Q.act='';Q.boxing=!Q.boxing;qzRender();if(Q.boxing)qzHint('在下面的波形上，手指從要重複的第一個字拖到最後一個字')}
   else if(a==='uncut'){Q.cut=null;Q.lastRun=null;sStop();Q.act='';sDraw();qzRender()}
   else if(a==='rec')qzRec(q);
