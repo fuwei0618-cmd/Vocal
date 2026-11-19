@@ -111,24 +111,56 @@ function qzOpen(cat){
   S.big=false;S.noBig=1;sBig();qzRender();setTimeout(sLayout,50);
 }
 function qzClose(){
-  if(!Q)return;if(S){if(S.recd)_qzRecStop(true);sStop();Q.prev.forEach(p=>{const l=S.lanes.find(x=>x.id===p.id);if(l){l.mute=p.mute;l.solo=p.solo}});sGains();S.stopAt=0}
+  if(!Q)return;qzSlowStop();if(S){if(S.recd)_qzRecStop(true);sStop();Q.prev.forEach(p=>{const l=S.lanes.find(x=>x.id===p.id);if(l){l.mute=p.mute;l.solo=p.solo}});sGains();S.stopAt=0}
   if(S)S.noBig=0;Q=null;const el=document.getElementById('s-quiz');if(el)el.remove();const d=document.getElementById('studio');if(d)d.classList.remove('quiz');if(S)setTimeout(sLayout,50);qzTdel();
 }
 function qzFocus(){const q=Q.list[Q.i];if(!q)return;S.sel=qzRecRange(q);{const [x,y]=S.sel,k=takes.slice().sort((u,v)=>v.at-u.at).find(k=>k.start<y&&k.end>x);S.selTake=k?k.id:null}S.loop=false;S.pos=S.sel[0];sView0();sDraw()}
 function qzGo(j){if(S&&S.recd)return;Q.seq=null;sStop();Q.i=Math.max(0,Math.min(Q.list.length-1,j));Q.sum=false;Q.act='';Q.rev=false;Q.k=-2;qzSaveLast();qzFocus();qzRender()}
+
+// ---------- 放慢（音高不變）：把那一小段先拉長（WSOLA），再自己播 ----------
+const qzSpeed=()=>{const v=+(qzLS('scene-pquiz-speed')||1);return v>0&&v<=1?v:1};
+function qzStretch(x,sr,f){ // x 單聲道，f＝速度（0.5＝慢一倍）→ 長度變 1/f 倍
+  if(f>=1)return x;const r=1/f,W=2*Math.round(1024*sr/44100),Hs=W/2,Ha=Hs/r,S2=Math.round(512*sr/44100),len=x.length;
+  if(len<W*2)return x;const frames=Math.floor((len-W)/Ha)+1,maxP=len-W,out=new Float32Array((frames-1)*Hs+W);
+  const win=new Float32Array(W);for(let i=0;i<W;i++)win[i]=.5-.5*Math.cos(2*Math.PI*i/W);let prev=0;
+  for(let k=0;k<frames;k++){let p=Math.min(maxP,Math.round(k*Ha));
+    if(k>0){const tgt=prev+Hs;if(tgt<=maxP){let best=p,bv=-Infinity;for(let q=Math.max(0,p-S2);q<=Math.min(maxP,p+S2);q+=2){let s=0;for(let i=0;i<Hs;i+=4)s+=x[q+i]*x[tgt+i];if(s>bv){bv=s;best=q}}p=best}}
+    prev=p;const o=k*Hs;for(let i=0;i<W;i++)out[o+i]+=x[p+i]*win[i]}
+  return out}
+const qzSlowCache=new Map();
+function qzSeg(id,from,until){ // 這條軌在 from–until 的聲音（單聲道）
+  if(id==='me'){const cs=sCover().filter(c=>c.b>from&&c.a<until);if(!cs.length)return null;const sr=S.bufs.get(cs[0].k.id).buf.sampleRate,n=Math.round((until-from)*sr),y=new Float32Array(n);
+    cs.forEach(c=>{const v=S.bufs.get(c.k.id);if(!v)return;const b=v.buf,ch=b.getChannelData(0);if(b.sampleRate!==sr)return;const a=Math.max(c.a,from),e=Math.min(c.b,until);
+      for(let t=Math.round((a-from)*sr),j=Math.round((a-c.o)*sr),te=Math.round((e-from)*sr);t<te;t++,j++)if(j>=0&&j<ch.length)y[t]=ch[j]});return {x:y,sr}}
+  const l=S.lanes.find(z=>z.id===id);if(!l||!l.buf)return null;const b=l.buf,sr=b.sampleRate,a=Math.max(0,Math.round(from*sr)),e=Math.min(b.length,Math.round(until*sr)),y=new Float32Array(Math.max(0,e-a));
+  for(let c=0;c<b.numberOfChannels;c++){const d=b.getChannelData(c);for(let i=0;i<y.length;i++)y[i]+=d[a+i]/b.numberOfChannels}return {x:y,sr}}
+function qzSlowStop(){if(Q&&Q.slow){Q.slow.srcs.forEach(s=>{try{s.stop()}catch(e){}});clearTimeout(Q.slow.t);Q.slow=null}}
+async function qzSlow(act,ids,from,until,who,done){
+  qzSlowStop();sStop();const f=qzSpeed();await sWake();const c=S.ctx,T=c.currentTime+.06,srcs=[];
+  for(const id of ids){const k=[id,from.toFixed(2),until.toFixed(2),f,id==='me'?takes.map(t=>t.id+':'+(t.adj||0)).join(','):''].join('|');
+    let v=qzSlowCache.get(k);if(!v){const sg=qzSeg(id,Math.max(0,from),until);if(!sg||!sg.x.length)continue;const y=qzStretch(sg.x,sg.sr,f),b=c.createBuffer(1,y.length,sg.sr);b.copyToChannel(y,0);v=b;if(qzSlowCache.size>40)qzSlowCache.clear();qzSlowCache.set(k,v)}
+    const l=S.lanes.find(z=>z.id===id),g=c.createGain();g.gain.value=l?(l.vol==null?1:l.vol):1;g.connect(c.destination);const s=c.createBufferSource();s.buffer=v;s.connect(g);s.start(T);srcs.push(s)}
+  const dur=(until-from)/f;Q.act=act;Q.who=who||'';Q.slow={srcs,t:setTimeout(()=>{if(!Q||!Q.slow||Q.slow.srcs!==srcs)return;Q.slow=null;done?done():qzSlowEnd()},dur*1000+120)};qzRender()}
+function qzSlowEnd(){if(!Q)return;if(Q.seq&&Q.seq.length&&Q.act){setTimeout(()=>{if(Q&&Q.seq)qzNext()},350);return}
+  if(Q.lastRun){const fn=Q.lastRun;Q.seq=null;setTimeout(()=>{if(Q&&Q.lastRun===fn){fn();Q.lastRun=fn}},400);return}
+  Q.seq=null;Q.act='';Q.who='';qzRender()}
 function qzPlay(act,ids,from,until,mute){
-  Q.seq=null;Q.lastRun=null;Q.who='';if(S.playing&&Q.act===act){sStop();Q.act='';Q.mute=null;qzRender();return}
+  Q.seq=null;Q.lastRun=null;Q.who='';
+  if(Q.slow){const same=Q.act===act;qzSlowStop();Q.act='';if(same){qzRender();return}}
+  if(qzSpeed()<1&&!mute){qzSlow(act,ids,from,until);return}
+  if(S.playing&&Q.act===act){sStop();Q.act='';Q.mute=null;qzRender();return}
   sStop();qzHear(ids);S.loop=false;S.stopAt=until;Q.act=act;Q.mute=mute||null;Q.inn=false;sPlay(Math.max(0,from));qzRender()}
 // 輪流比：原唱一句 → 我一句 → 下一句…
-function qzSeq(act,items){Q.lastRun=null;if(S.playing&&Q.act===act){Q.seq=null;sStop();Q.act='';Q.who='';qzRender();return}sStop();Q.seq=items.slice();Q.act=act;Q.mute=null;qzNext()}
+function qzSeq(act,items){Q.lastRun=null;if(Q.slow){const same=Q.act===act;qzSlowStop();if(same){Q.seq=null;Q.act='';Q.who='';qzRender();return}}if(S.playing&&Q.act===act){Q.seq=null;sStop();Q.act='';Q.who='';qzRender();return}sStop();Q.seq=items.slice();Q.act=act;Q.mute=null;qzNext()}
 function qzNext(){if(!Q||!S)return;const it=Q.seq&&Q.seq.shift();if(!it){Q.seq=null;Q.act='';Q.who='';qzRender();return}
+  if(qzSpeed()<1){qzSlow(Q.act,it.ids,Math.max(0,it.r[0]-.15),it.r[1]+.1,it.who);return}
   qzHear(it.ids);S.loop=false;S.stopAt=it.r[1]+.1;Q.who=it.who;sPlay(Math.max(0,it.r[0]-.15));qzRender()}
 function qzAlt(q){const its=[];qzRanges(q).forEach(r=>{its.push({ids:[qzRef()],r,who:'原唱'});its.push({ids:['me'],r,who:'我'})});qzSeq('alt',its)}
 function qzMind(q){const L=getLines();
   if(q.l!=null){const [a,b]=qzLineRange(q.l),pv=L[q.l-1],from=Math.max(0,Math.min(pv!=null&&pv<a&&a-pv<12?pv-.2:a,a-5));qzPlay('mind',qzOrig(),from,b+2.5,[a-.05,b-.1]);return}
   const [a,b]=secRange(q.s),off=lineOff(q.s),n=qzLines(q.s).length,t=[];for(let i=0;i<n;i++)t.push(L[off+i]);
   const w=n>=3&&t[1]!=null&&t[n-1]!=null&&t[n-1]>t[1]?[t[1]-.1,t[n-1]-.15]:[a+(b-a)*.3,a+(b-a)*.75];qzPlay('mind',qzOrig(),a-1.5,b+.4,w)}
-function qzRec(q){if(S.recd){sRecStop();return}const [x,y]=qzRecRange(q);sStop();Q.seq=null;// 接唱：前奏放原唱（有人聲）帶妳進來，輪到妳就只剩伴奏；句首音題只放伴奏，練自己找音
+function qzRec(q){qzSlowStop();if(S.recd){sRecStop();return}const [x,y]=qzRecRange(q);sStop();Q.seq=null;// 接唱：前奏放原唱（有人聲）帶妳進來，輪到妳就只剩伴奏；句首音題只放伴奏，練自己找音
   const sw=q.t!=='f'&&q.cat!=='beat'&&qLane('inst')&&qLane('orig');qzHear([sw?'orig':qzBack()]);Q.swAt=sw?x:0;S.sel=[x,y];S.loop=true;S.stopAt=0;S.pos=x;Q.act='';
   // 一定唱到題目結尾就自動停（不靠段落長度判斷）
   Q.recR=[x,y];S.pre=4;sRecStart().then(()=>{S.pre=0;const r=S&&S.recd;if(!r)return qzRender();r.until=Math.min(S.dur,y+.5);
@@ -238,14 +270,15 @@ function qzRender(){
   if(Q.home){el.innerHTML=qzHomeHtml();return}
   if(Q.sum){el.innerHTML=qzSumHtml();return}
   const sc=SCENES[key],n=Q.list.length,q=Q.list[Q.i],C=QCAT[q.cat],r=qzGet(q.id),m=r.m||q.m,st=sc.steps[q.s],[a,b]=qzRange(q),[ra,rb]=qzRecRange(q),
-    on=x=>S.playing&&Q.act===x?' on':'',recd=!!S.recd,has=qzHas(ra,rb),A=qzAllLines(),L=getLines(),nm=Object.keys(r.mk||{}).length;
+    on=x=>(S.playing||Q.slow)&&Q.act===x?' on':'',recd=!!S.recd,has=qzHas(ra,rb),A=qzAllLines(),L=getLines(),nm=Object.keys(r.mk||{}).length;
   const who=`<div class="qz-st qz-who">${Q.who?`<span class="${Q.who==='我'?'me':'ref'}">▶ 正在放：${Q.who}</span>`:`<span>${q.cat==='beat'?'輪流比＝原唱開口、妳開口，聽是不是同一刻':'輪流比＝原唱一句、妳一句；聽到不對的字，在右邊點它'}</span>`}</div>`;
   const cmp=n0=>`<div class="qz-st qz-cmp"><b>${n0}</b><span>比一比</span><div class="qz-seg"><button data-q="alt" class="${on('alt')}" ${has?'':'disabled'}>${on('alt')?'⏹ 停':'輪流比'}</button><button data-q="cmp" data-c="both" class="${on('both')}" ${has?'':'disabled'}>${on('both')?'⏹ 停':'原唱＋我'}</button><button data-q="cmp" data-c="me" class="${on('me')}" ${has?'':'disabled'}>${on('me')?'⏹ 停':'只聽我'}</button><button data-q="cmp" data-c="ref" class="${on('ref')}">${on('ref')?'⏹ 停':'只聽原唱'}</button></div></div>${Q.who?who:''}`;
   // 右下角工具：對齊、框選（只有錄好之後才出現）
   const cutC=qzCut(q),tools=!recd&&(q.cat==='pitch'||q.cat==='beat')?`<div class="qz-tools">
+    <div class="qz-tr"><span class="qz-tl">速度</span><div class="qz-seg qz-spd">${[[1,'原速'],[.75,'0.75'],[.5,'0.5 慢']].map(([v,t])=>`<button data-q="spd" data-v="${v}" class="${qzSpeed()===v?'on':''}">${t}</button>`).join('')}</div><span class="qz-tg">音高不變</span></div>
     ${has?`<div class="qz-tr"><span class="qz-tl">錄音對不齊</span><button data-act="sadj" data-d="-1">◀ 早一點</button><button data-act="sadj" data-d="1">晚一點 ▶</button></div>`:''}
     <div class="qz-tr"><span class="qz-tl">重複某幾個字</span><button data-q="box" class="${Q.boxing?'on':''}">${Q.boxing?'在下面波形上拖一段…':'✂️ 框選一段'}</button>${cutC?`<button data-q="uncut">✕ 取消框選</button>`:''}</div>
-    ${cutC?`<div class="qz-tr"><span class="qz-tl">調整範圍</span><span class="qz-tg">開頭</span><button data-q="cutn" data-e="0" data-d="-1">◀</button><button data-q="cutn" data-e="0" data-d="1">▶</button><span class="qz-tg">結尾</span><button data-q="cutn" data-e="1" data-d="-1">◀</button><button data-q="cutn" data-e="1" data-d="1">▶</button><span class="qz-tg">${cutC[0].toFixed(1)}–${cutC[1].toFixed(1)} 秒</span></div><p class="qz-th">也可以直接拖藍框的左右邊。「先聽原曲」和比一比的鍵都只放這段，會一直重複。</p>`:''}</div>`:'';
+    ${cutC?`<div class="qz-tr"><span class="qz-tl">調整範圍</span><span class="qz-tg">開頭</span><button data-q="cutn" data-e="0" data-d="-1">◀</button><button data-q="cutn" data-e="0" data-d="1">▶</button><span class="qz-tg">結尾</span><button data-q="cutn" data-e="1" data-d="-1">◀</button><button data-q="cutn" data-e="1" data-d="1">▶</button><span class="qz-tg">${cutC[0].toFixed(1)}–${cutC[1].toFixed(1)} 秒・可直接拖藍框邊</span></div>`:''}</div>`:'';
   const recB=(n0,t)=>`<div class="qz-st"><b>${n0}</b><button data-q="rec" class="rec${recd?' on':''}">${recd?'⏹ 停止錄音':t}</button>${has&&!recd?'<span>✓ 錄好了</span><button data-q="del" class="qz-del">🗑 刪掉這次</button>':''}</div>`;
   let title=esc(st.sec),tip='',steps='',right='';
   if(q.cat==='pitch'){
@@ -311,6 +344,7 @@ app.addEventListener('click',e=>{
   else if(a==='alt'){qzAlt(q);if(qzCut(q)&&Q.act)Q.lastRun=()=>qzAlt(q)}
   else if(a==='cmp'){const c=t.dataset.c,run=()=>{const [x,y]=qzCut(q)||qzRange(q),k=qzCut(q)?.05:.5;qzPlay(c,c==='both'?[qzRef(),'me']:c==='ref'?[qzRef()]:['me'],x-k,y+(qzCut(q)?.05:.3))};run();if(qzCut(q)&&Q.act)Q.lastRun=run}
   else if(a==='box'){sStop();Q.seq=null;Q.act='';Q.boxing=!Q.boxing;qzRender();if(Q.boxing)qzHint('在下面的波形上，手指從要重複的第一個字拖到最後一個字')}
+  else if(a==='spd'){qzSlowStop();sStop();Q.act='';Q.seq=null;Q.lastRun=null;qzLS('scene-pquiz-speed',t.dataset.v);qzRender();qzHint(+t.dataset.v<1?`放慢到 ${t.dataset.v} 倍：先聽原曲、比一比都會慢放（音高不變）`:'回到原速')}
   else if(a==='cutn'){const c=qzCut(q);if(!c)return;const e2=+t.dataset.e,d=+t.dataset.d*.1,n=c.slice();n[e2]=Math.max(0,Math.min(S.dur,n[e2]+d));if(n[1]-n[0]<.15)return;Q.cut=n;sDraw();qzRender()}
   else if(a==='uncut'){Q.cut=null;Q.lastRun=null;sStop();Q.act='';sDraw();qzRender()}
   else if(a==='rec')qzRec(q);
