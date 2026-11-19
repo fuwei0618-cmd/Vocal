@@ -480,8 +480,8 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=137;
-fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER)location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(()=>{});
+const VER=138;
+fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER){const dq=new URLSearchParams(location.search).get('do');location.replace(location.pathname+'?v='+m[1]+(dq?'&do='+encodeURIComponent(dq):'')+location.hash)}}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const app=document.getElementById('app');
@@ -1280,7 +1280,12 @@ function opFit(){const sub=document.getElementById('sub'),g=sub&&sub.querySelect
   const fit=on=>{let f=17;g.style.fontSize=f+'px';opAlign(g,on);while(f>10&&sub.scrollHeight>sub.clientHeight+1){f-=.5;g.style.fontSize=f+'px';opAlign(g,on)}return f};
   const fn=fit(false),fa=fit(true);if(fa<fn-1)fit(false)}
 // 從「今天練什麼」帶過來：?do=map|lyr|beat|pitch|sing|hum|studio|nat，打開對應的東西並給一句提示
-setTimeout(()=>{let d='';try{d=new URLSearchParams(location.search).get('do')||''}catch(e){}if(!d||typeof key==='undefined')return;
+// App 剛好更新版本會重新載入：先把要做的事記在 sessionStorage，新版本接著做
+setTimeout(()=>{let d='';try{d=new URLSearchParams(location.search).get('do')||''}catch(e){}
+  try{if(d)sessionStorage.setItem('scene-do',JSON.stringify({d,k:location.hash,t:Date.now()}));else{const o=JSON.parse(sessionStorage.getItem('scene-do')||'null');sessionStorage.removeItem('scene-do');if(o&&o.k===location.hash&&Date.now()-o.t<30000)d=o.d}}catch(e){}
+  const doneDo=()=>{try{sessionStorage.removeItem('scene-do')}catch(e){}};
+  if(!d||typeof key==='undefined')return;
+  if(!/^quiz/.test(d))doneDo();
   try{history.replaceState(null,'',location.pathname+location.hash)}catch(e){}
   const tip=t=>{hint(t);clearTimeout(hintT);hintT=setTimeout(()=>hint(''),7000)},to=w=>{try{if(track!==w&&have[w])switchTrack()}catch(e){}};
   if(d==='map'){mapRecall=true;mapShown=0;openMap()}
@@ -1290,7 +1295,7 @@ setTimeout(()=>{let d='';try{d=new URLSearchParams(location.search).get('do')||'
   else if(d==='sing'){to('orig');tip('原曲：跟著唱 3 遍，先不管好不好；再按「靜音」腦內聽一遍')}
   else if(d==='hum'){to('orig');tip('原曲：跟原唱一起哼（不唱詞），對準每個音')}
   else if(d==='studio'){try{openStudio()}catch(e){}}
-  else if(/^quiz/.test(d)){window.qzWant=d.split('-')[1]||1;let n=0;const t=setInterval(()=>{if(au||++n>20){clearInterval(t);if(au)openStudio();else tip('先在右上「⋯」放原曲或伴奏，才能做音準題組')}},300)}
+  else if(/^quiz/.test(d)){window.qzWant=d.split('-')[1]||1;let n=0;tip('音樂載入中，好了會直接進題組…');const t=setInterval(()=>{if(au||++n>150){clearInterval(t);doneDo();if(au)openStudio();else tip('先在右上「⋯」放原曲或伴奏，才能做音準題組')}},300)}
   else if(d==='nat'){openNat()}},1200);
 addEventListener('resize',()=>{if(document.body.classList.contains('op'))setTimeout(()=>show(cur,false),100)});
 addEventListener('resize',()=>{if(document.getElementById('arcf'))arcFit()});
