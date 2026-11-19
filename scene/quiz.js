@@ -174,7 +174,7 @@ addEventListener('pointermove',e=>{if(!qzBx||e.pointerId!==qzBx.id)return;e.stop
   if(qzBx.edge!=null){const c=Q.cut.slice();c[qzBx.edge]=qzBx.edge?Math.max(c[0]+.15,Math.min(S.dur,t)):Math.max(0,Math.min(c[1]-.15,t));Q.cut=c;sDraw();return}Q.cut=[Math.max(0,Math.min(qzBx.t0,t)),Math.min(S.dur,Math.max(qzBx.t0,t))];sDraw()},true);
 ['pointerup','pointercancel'].forEach(n=>addEventListener(n,e=>{if(!qzBx||e.pointerId!==qzBx.id)return;e.stopImmediatePropagation();if(qzBx.edge!=null){qzBx=null;qzRender();return}qzBx=null;Q.boxing=false;
   if(!Q.cut||Q.cut[1]-Q.cut[0]<.25){Q.cut=null;qzHint('範圍太短，再拖長一點');sDraw();qzRender();return}
-  sDraw();qzRender();const b=document.querySelector('#s-quiz [data-q=alt]');if(b&&!b.disabled)b.click();qzHint('框好了：原唱、妳輪流放這一段，會一直重複；按「⏹ 停」停下來')},true));
+  sDraw();qzRender();const b=document.querySelector('#s-quiz [data-q=alt]');if(b&&!b.disabled){b.click();qzHint('框好了：原唱、妳輪流放這一段，會一直重複；按「⏹ 停」停下來')}else{const r=document.querySelector('#s-quiz [data-q=cmp][data-c=ref]');if(r)r.click();qzHint('框好了：原唱這一段會一直重複；按「⏹ 停」停下來')}},true));
 function qzUndo(){const u=tkUndo.pop();if(!u||!S)return;sStop();
   if(u.t==='move'){const k=takes.find(x=>x.id===u.id);if(k){k.adj=u.adj;S.selTake=k.id}}
   else if(u.t==='del'){takes.push(u.k);S.selTake=u.k.id;S.bufs.delete(u.k.id);takeBuf(u.k).then(()=>{sDraw();qzRender()})}
@@ -242,10 +242,10 @@ function qzRender(){
   const who=`<div class="qz-st qz-who">${Q.who?`<span class="${Q.who==='我'?'me':'ref'}">▶ 正在放：${Q.who}</span>`:`<span>${q.cat==='beat'?'輪流比＝原唱開口、妳開口，聽是不是同一刻':'輪流比＝原唱一句、妳一句；聽到不對的字，在右邊點它'}</span>`}</div>`;
   const cmp=n0=>`<div class="qz-st qz-cmp"><b>${n0}</b><span>比一比</span><div class="qz-seg"><button data-q="alt" class="${on('alt')}" ${has?'':'disabled'}>${on('alt')?'⏹ 停':'輪流比'}</button><button data-q="cmp" data-c="both" class="${on('both')}" ${has?'':'disabled'}>${on('both')?'⏹ 停':'原唱＋我'}</button><button data-q="cmp" data-c="me" class="${on('me')}" ${has?'':'disabled'}>${on('me')?'⏹ 停':'只聽我'}</button><button data-q="cmp" data-c="ref" class="${on('ref')}">${on('ref')?'⏹ 停':'只聽原唱'}</button></div></div>${Q.who?who:''}`;
   // 右下角工具：對齊、框選（只有錄好之後才出現）
-  const cutC=qzCut(q),tools=has&&!recd&&(q.cat==='pitch'||q.cat==='beat')?`<div class="qz-tools">
-    <div class="qz-tr"><span class="qz-tl">錄音對不齊</span><button data-act="sadj" data-d="-1">◀ 早一點</button><button data-act="sadj" data-d="1">晚一點 ▶</button></div>
+  const cutC=qzCut(q),tools=!recd&&(q.cat==='pitch'||q.cat==='beat')?`<div class="qz-tools">
+    ${has?`<div class="qz-tr"><span class="qz-tl">錄音對不齊</span><button data-act="sadj" data-d="-1">◀ 早一點</button><button data-act="sadj" data-d="1">晚一點 ▶</button></div>`:''}
     <div class="qz-tr"><span class="qz-tl">重複某幾個字</span><button data-q="box" class="${Q.boxing?'on':''}">${Q.boxing?'在下面波形上拖一段…':'✂️ 框選一段'}</button>${cutC?`<button data-q="uncut">✕ 取消框選</button>`:''}</div>
-    ${cutC?`<div class="qz-tr"><span class="qz-tl">調整範圍</span><span class="qz-tg">開頭</span><button data-q="cutn" data-e="0" data-d="-1">◀</button><button data-q="cutn" data-e="0" data-d="1">▶</button><span class="qz-tg">結尾</span><button data-q="cutn" data-e="1" data-d="-1">◀</button><button data-q="cutn" data-e="1" data-d="1">▶</button><span class="qz-tg">${cutC[0].toFixed(1)}–${cutC[1].toFixed(1)} 秒</span></div><p class="qz-th">也可以直接拖藍框的左右邊。比一比的四個鍵都只放這段，會一直重複。</p>`:''}</div>`:'';
+    ${cutC?`<div class="qz-tr"><span class="qz-tl">調整範圍</span><span class="qz-tg">開頭</span><button data-q="cutn" data-e="0" data-d="-1">◀</button><button data-q="cutn" data-e="0" data-d="1">▶</button><span class="qz-tg">結尾</span><button data-q="cutn" data-e="1" data-d="-1">◀</button><button data-q="cutn" data-e="1" data-d="1">▶</button><span class="qz-tg">${cutC[0].toFixed(1)}–${cutC[1].toFixed(1)} 秒</span></div><p class="qz-th">也可以直接拖藍框的左右邊。「先聽原曲」和比一比的鍵都只放這段，會一直重複。</p>`:''}</div>`:'';
   const recB=(n0,t)=>`<div class="qz-st"><b>${n0}</b><button data-q="rec" class="rec${recd?' on':''}">${recd?'⏹ 停止錄音':t}</button>${has&&!recd?'<span>✓ 錄好了</span><button data-q="del" class="qz-del">🗑 刪掉這次</button>':''}</div>`;
   let title=esc(st.sec),tip='',steps='',right='';
   if(q.cat==='pitch'){
@@ -306,7 +306,7 @@ app.addEventListener('click',e=>{
   if(a==='go'){qzGo(+t.dataset.j);return}
   if(!q)return;
   if(a==='mode'){if(S.recd)return;sStop();qzSet(q.id,{m:t.dataset.m});Q.act='';qzRender()}
-  else if(a==='listen'){const [x,y]=q.cat==='beat'?qzRange(q):qzRecRange(q);qzPlay('listen',q.cat==='lyr'?[qzRef()]:qzOrig(),q.cat==='beat'?x-2:x-1.5,y+.4)}
+  else if(a==='listen'){const c=qzCut(q);if(c){const run=()=>qzPlay('listen',qzOrig(),c[0]-.05,c[1]+.05);run();if(Q.act)Q.lastRun=run;return}const [x,y]=q.cat==='beat'?qzRange(q):qzRecRange(q);qzPlay('listen',q.cat==='lyr'?[qzRef()]:qzOrig(),q.cat==='beat'?x-2:x-1.5,y+.4)}
   else if(a==='mind')qzMind(q);
   else if(a==='alt'){qzAlt(q);if(qzCut(q)&&Q.act)Q.lastRun=()=>qzAlt(q)}
   else if(a==='cmp'){const c=t.dataset.c,run=()=>{const [x,y]=qzCut(q)||qzRange(q),k=qzCut(q)?.05:.5;qzPlay(c,c==='both'?[qzRef(),'me']:c==='ref'?[qzRef()]:['me'],x-k,y+(qzCut(q)?.05:.3))};run();if(qzCut(q)&&Q.act)Q.lastRun=run}
