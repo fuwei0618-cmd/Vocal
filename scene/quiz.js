@@ -175,7 +175,7 @@ function qzUndo(){const u=tkUndo.pop();if(!u||!S)return;sStop();
   else if(u.t==='del'){takes.push(u.k);S.selTake=u.k.id;S.bufs.delete(u.k.id);takeBuf(u.k).then(()=>{sDraw();qzRender()})}
   saveTakes();sDraw();qzRender();qzHint(u.t==='move'?'已經移回原本的位置':'錄音救回來了')}
 function qzTdel(){qzCutDraw();{const d=document.getElementById('studio');let u=document.getElementById('qz-undo');
-  if(d&&!u){u=document.createElement('button');u.id='qz-undo';u.textContent='↶ 復原';u.onclick=qzUndo;d.appendChild(u)}
+  if(d&&!u){u=document.createElement('button');u.id='qz-undo';u.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>復原';u.onclick=qzUndo;d.appendChild(u)}
   if(u){const ln=d&&d.querySelector('.s-lane.me');if(ln){const r=ln.getBoundingClientRect();u.style.top=(r.top+52)+'px'}u.hidden=!(Q&&S&&!S.recd&&tkUndo.length)}}const d=document.getElementById('studio');if(!d)return;let b=document.getElementById('qz-tdel');
   const k=Q&&S&&!S.recd&&S.selTake&&takes.find(x=>x.id===S.selTake);
   if(!k){if(b)b.hidden=true;return}
@@ -315,7 +315,7 @@ app.addEventListener('click',e=>{
 },true);
 app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!Q.list[Q.i])return;qzSet(Q.list[Q.i].id,{n:t.value})});
 (()=>{const s=document.createElement('style');s.textContent=`
-#studio.quiz{grid-template-rows:auto minmax(0,1fr) auto minmax(84px,19vh) 0 0}#qz-tdel{position:fixed;right:20px;z-index:60;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,138,128,.6);background:rgba(40,20,18,.92);color:#ffb3ab;font-size:14px}#qz-tdel[hidden]{display:none}#qz-undo{position:fixed;right:20px;z-index:60;padding:6px 12px;border-radius:999px;border:1px solid rgba(242,194,123,.6);background:rgba(40,30,18,.92);color:#f2c27b;font-size:14px}#qz-undo[hidden]{display:none}#studio.quiz>.s-take,#studio.quiz>.s-bot{display:none}#studio.quiz .s-lane:not(.me):not([data-l=vocal]){display:none}#studio.quiz .s-pic{margin-bottom:12px}
+#studio.quiz{grid-template-rows:auto minmax(0,1fr) auto minmax(84px,19vh) 0 0}#qz-tdel{position:fixed;right:20px;z-index:60;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,138,128,.6);background:rgba(40,20,18,.92);color:#ffb3ab;font-size:14px}#qz-tdel[hidden]{display:none}#qz-undo{display:inline-flex;align-items:center;gap:6px;position:fixed;right:20px;z-index:60;padding:6px 12px;border-radius:999px;border:1px solid rgba(242,194,123,.6);background:rgba(40,30,18,.92);color:#f2c27b;font-size:14px}#qz-undo[hidden]{display:none}#studio.quiz>.s-take,#studio.quiz>.s-bot{display:none}#studio.quiz .s-lane:not(.me):not([data-l=vocal]){display:none}#studio.quiz .s-pic{margin-bottom:12px}
 .qz-tipbar{position:sticky;bottom:0;margin-top:auto;align-self:center;background:var(--glow);color:#1a130c;border-radius:99px;padding:8px 18px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.5)}.qz-tipbar[hidden]{display:none}.qz-adj span{font-size:12px!important}#studio .qz-adj button{padding:4px 10px;font-size:12px}
 #studio.quiz .s-lane:not(.me){flex:0 0 32px!important}#studio.quiz .s-lyr{display:none}#studio.quiz .s-pic::before{display:none}
 #studio .qz-open{margin-left:auto}#studio.quiz .qz-open{background:rgba(242,194,123,.22);border-color:var(--glow);color:var(--glow)}
