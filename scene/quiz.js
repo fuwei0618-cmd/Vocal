@@ -164,10 +164,15 @@ function qzCutDraw(){const q=Q&&Q.list&&Q.list[Q.i],c=q&&qzCut(q);if(!c||!S)retu
   document.querySelectorAll('#studio canvas[data-l]').forEach(cv=>{const g=cv.getContext('2d'),w=cv.width,h=cv.height,x=sX(c[0],w),x2=sX(c[1],w);
     g.fillStyle='rgba(120,200,255,.18)';g.fillRect(x,0,x2-x,h);g.fillStyle='rgba(120,200,255,.9)';g.fillRect(x,0,2,h);g.fillRect(x2-2,0,2,h)})}
 let qzBx=null;
+addEventListener('pointerdown',e=>{if(!Q||!S||Q.boxing||!e.target.closest||!e.target.closest('#studio canvas'))return;const q=Q.list&&Q.list[Q.i],c=q&&qzCut(q);if(!c||S.recd)return;
+  const r=e.target.getBoundingClientRect(),x=e.clientX-r.left,xa=sX(c[0],r.width),xb=sX(c[1],r.width),near=Math.max(18,(xb-xa)/4);
+  let edge=Math.abs(x-xa)<=near&&Math.abs(x-xa)<=Math.abs(x-xb)?0:Math.abs(x-xb)<=near?1:-1;if(edge<0)return;
+  e.stopImmediatePropagation();e.preventDefault();qzBx={r,edge,id:e.pointerId}},true);
 addEventListener('pointerdown',e=>{if(!Q||!Q.boxing||!S||!e.target.closest||!e.target.closest('#studio canvas'))return;e.stopImmediatePropagation();e.preventDefault();
   const r=e.target.getBoundingClientRect(),t=sT(e.clientX-r.left,r.width);qzBx={r,t0:t,id:e.pointerId};Q.cut=[t,t];Q.cutQ=Q.list[Q.i].id;sDraw()},true);
-addEventListener('pointermove',e=>{if(!qzBx||e.pointerId!==qzBx.id)return;e.stopImmediatePropagation();e.preventDefault();const t=sT(e.clientX-qzBx.r.left,qzBx.r.width);Q.cut=[Math.max(0,Math.min(qzBx.t0,t)),Math.min(S.dur,Math.max(qzBx.t0,t))];sDraw()},true);
-['pointerup','pointercancel'].forEach(n=>addEventListener(n,e=>{if(!qzBx||e.pointerId!==qzBx.id)return;e.stopImmediatePropagation();qzBx=null;Q.boxing=false;
+addEventListener('pointermove',e=>{if(!qzBx||e.pointerId!==qzBx.id)return;e.stopImmediatePropagation();e.preventDefault();const t=sT(e.clientX-qzBx.r.left,qzBx.r.width);
+  if(qzBx.edge!=null){const c=Q.cut.slice();c[qzBx.edge]=qzBx.edge?Math.max(c[0]+.15,Math.min(S.dur,t)):Math.max(0,Math.min(c[1]-.15,t));Q.cut=c;sDraw();return}Q.cut=[Math.max(0,Math.min(qzBx.t0,t)),Math.min(S.dur,Math.max(qzBx.t0,t))];sDraw()},true);
+['pointerup','pointercancel'].forEach(n=>addEventListener(n,e=>{if(!qzBx||e.pointerId!==qzBx.id)return;e.stopImmediatePropagation();if(qzBx.edge!=null){qzBx=null;qzRender();return}qzBx=null;Q.boxing=false;
   if(!Q.cut||Q.cut[1]-Q.cut[0]<.25){Q.cut=null;qzHint('範圍太短，再拖長一點');sDraw();qzRender();return}
   sDraw();qzRender();const b=document.querySelector('#s-quiz [data-q=alt]');if(b&&!b.disabled)b.click();qzHint('框好了：原唱、妳輪流放這一段，會一直重複；按「⏹ 停」停下來')},true));
 function qzUndo(){const u=tkUndo.pop();if(!u||!S)return;sStop();
@@ -235,7 +240,7 @@ function qzRender(){
   const sc=SCENES[key],n=Q.list.length,q=Q.list[Q.i],C=QCAT[q.cat],r=qzGet(q.id),m=r.m||q.m,st=sc.steps[q.s],[a,b]=qzRange(q),[ra,rb]=qzRecRange(q),
     on=x=>S.playing&&Q.act===x?' on':'',recd=!!S.recd,has=qzHas(ra,rb),A=qzAllLines(),L=getLines(),nm=Object.keys(r.mk||{}).length;
   const who=`<div class="qz-st qz-who">${Q.who?`<span class="${Q.who==='我'?'me':'ref'}">▶ 正在放：${Q.who}</span>`:`<span>${q.cat==='beat'?'輪流比＝原唱開口、妳開口，聽是不是同一刻':'輪流比＝原唱一句、妳一句；聽到不對的字，在右邊點它'}</span>`}</div>`;
-  const cmp=n0=>`<div class="qz-st"><b>${n0}</b><span>比一比</span><button data-q="alt" class="go${on('alt')}" ${has?'':'disabled'}>${on('alt')?'⏹ 停':'🔁 輪流比'}</button><button data-q="cmp" data-c="both" class="${on('both')}" ${has?'':'disabled'}>原唱＋我</button><button data-q="cmp" data-c="me" class="${on('me')}" ${has?'':'disabled'}>只聽我</button><button data-q="cmp" data-c="ref" class="${on('ref')}">只聽原唱</button></div>${has&&!recd?`<div class="qz-st qz-adj"><span>錄音跟原唱對不齊？</span><button data-act="sadj" data-d="-1">◀ 早一點</button><button data-act="sadj" data-d="1">晚一點 ▶</button></div>`:''}${has&&!recd?(()=>{const c=qzCut(q);return `<div class="qz-st qz-cut"><span>重複某幾個字</span><button data-q="box" class="${Q.boxing?'on':''}">${Q.boxing?'✂️ 在下面波形上拖一段…':'✂️ 框選一段'}</button>${c?`<span>已框 ${mmss(c[0])}–${mmss(c[1])}，下面四個鍵都只放這段、一直重複</span><button data-q="uncut">✕ 取消</button>`:''}</div>`})():''}${who}`;
+  const cmp=n0=>`<div class="qz-st"><b>${n0}</b><span>比一比</span><button data-q="alt" class="go${on('alt')}" ${has?'':'disabled'}>${on('alt')?'⏹ 停':'🔁 輪流比'}</button><button data-q="cmp" data-c="both" class="${on('both')}" ${has?'':'disabled'}>原唱＋我</button><button data-q="cmp" data-c="me" class="${on('me')}" ${has?'':'disabled'}>只聽我</button><button data-q="cmp" data-c="ref" class="${on('ref')}">只聽原唱</button></div>${has&&!recd?`<div class="qz-st qz-adj"><span>錄音跟原唱對不齊？</span><button data-act="sadj" data-d="-1">◀ 早一點</button><button data-act="sadj" data-d="1">晚一點 ▶</button></div>`:''}${has&&!recd?(()=>{const c=qzCut(q);return `<div class="qz-st qz-cut"><span>重複某幾個字</span><button data-q="box" class="${Q.boxing?'on':''}">${Q.boxing?'✂️ 在下面波形上拖一段…':'✂️ 框選一段'}</button>${c?`<button data-q="uncut">✕ 取消</button></div><div class="qz-st qz-cut"><span>開頭</span><button data-q="cutn" data-e="0" data-d="-1">◀</button><button data-q="cutn" data-e="0" data-d="1">▶</button><span>結尾</span><button data-q="cutn" data-e="1" data-d="-1">◀</button><button data-q="cutn" data-e="1" data-d="1">▶</button><span>${c[0].toFixed(1)}–${c[1].toFixed(1)} 秒・也可以直接拖藍框的邊</span>`:''}</div>`})():''}${who}`;
   const recB=(n0,t)=>`<div class="qz-st"><b>${n0}</b><button data-q="rec" class="rec${recd?' on':''}">${recd?'⏹ 停止錄音':t}</button>${has&&!recd?'<span>✓ 錄好了</span><button data-q="del" class="qz-del">🗑 刪掉這次</button>':''}</div>`;
   let title=esc(st.sec),tip='',steps='',right='';
   if(q.cat==='pitch'){
@@ -301,6 +306,7 @@ app.addEventListener('click',e=>{
   else if(a==='alt'){qzAlt(q);if(qzCut(q)&&Q.act)Q.lastRun=()=>qzAlt(q)}
   else if(a==='cmp'){const c=t.dataset.c,run=()=>{const [x,y]=qzCut(q)||qzRange(q),k=qzCut(q)?.05:.5;qzPlay(c,c==='both'?[qzRef(),'me']:c==='ref'?[qzRef()]:['me'],x-k,y+(qzCut(q)?.05:.3))};run();if(qzCut(q)&&Q.act)Q.lastRun=run}
   else if(a==='box'){sStop();Q.seq=null;Q.act='';Q.boxing=!Q.boxing;qzRender();if(Q.boxing)qzHint('在下面的波形上，手指從要重複的第一個字拖到最後一個字')}
+  else if(a==='cutn'){const c=qzCut(q);if(!c)return;const e2=+t.dataset.e,d=+t.dataset.d*.1,n=c.slice();n[e2]=Math.max(0,Math.min(S.dur,n[e2]+d));if(n[1]-n[0]<.15)return;Q.cut=n;sDraw();qzRender()}
   else if(a==='uncut'){Q.cut=null;Q.lastRun=null;sStop();Q.act='';sDraw();qzRender()}
   else if(a==='rec')qzRec(q);
   else if(a==='del'){const [x,y]=qzRecRange(q),k=takes.find(t=>t.id===S.selTake)||takes.slice().sort((u,v)=>v.at-u.at).find(k=>k.start<y&&k.end>x);if(!k||!confirm('刪掉這題最新的這次錄音？'))return;sStop();tkUndo.push({t:'del',k});takes=takes.filter(t=>t!==k);if(S.selTake===k.id)S.selTake=null;S.bufs.delete(k.id);saveTakes();qzSet(q.id,{rec:0});sDraw();qzRender();qzHint('刪掉了，按紅色的鍵再錄一次')}
