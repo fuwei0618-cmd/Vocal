@@ -4,6 +4,8 @@ const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=
 // 手勢見下面「手勢」那段
 const LATKEY='scene-lat-v1',STKEY='scene-studio-v1';
 let S=null;
+// 復原：拖錯位置、刪錯錄音都可以退回（存在這次打開的頁面裡）
+const tkUndo=[];
 const sGet=()=>{try{return +localStorage.getItem(LATKEY)||0}catch(e){return 0}};
 function stPrefs(){let o={};try{o=JSON.parse(localStorage.getItem(STKEY)||'{}')||{}}catch(e){}return Object.assign({mute:{},vol:{},h:{}},o)}
 function stSave(){if(!S)return;const o={mute:{},vol:{},h:{}};S.lanes.forEach(l=>{o.mute[l.id]=l.mute;o.vol[l.id]=l.vol;o.h[l.id]=l.h});try{localStorage.setItem(STKEY,JSON.stringify(o))}catch(e){}}
@@ -347,7 +349,7 @@ app.addEventListener('pointermove',e=>{if(!S||!pts.has(e.pointerId)||!g0)return;
   if(g0&&g0.mode==='tap'&&t==='pointerup'&&!S.recd){const c=g0.target,r=c.getBoundingClientRect(),x=Math.max(0,Math.min(S.dur,sT(e.clientX-r.left,r.width)));
     if(c.dataset.l==='me'){const hit=sCover().find(({a,b})=>x>=a&&x<=b);S.selTake=hit?hit.k.id:null;if(hit)sHint('選好這次錄音了：按住它左右拖可以對齊')}
     const was=S.playing;S.pos=x;if(was)sPlay(x);else sHead();sDraw()}
-  if(g0&&g0.mode==='move'){saveTakes();const v=g0.take.k.adj||0;if(Math.abs(v)<=ADJ_MAX)lsSet(adjKey(),String(v));if(S.playing)sPlay(sNow())}
+  if(g0&&g0.mode==='move'){if((g0.take.k.adj||0)!==g0.take.adj0)tkUndo.push({t:'move',id:g0.take.k.id,adj:g0.take.adj0});saveTakes();sDraw();const v=g0.take.k.adj||0;if(Math.abs(v)<=ADJ_MAX)lsSet(adjKey(),String(v));if(S.playing)sPlay(sNow())}
   // 順勢滑一下
   if(g0&&g0.mode==='pan'&&t==='pointerup'&&performance.now()-g0.lt<80&&Math.abs(g0.v)>.25){let v=g0.v,last=performance.now();const w=g0.w;
     const step=now=>{if(!S)return;const dt=now-last;last=now;const [v0,v1]=S.view,sp=v1-v0;sClampView(v0-v*dt/w*sp,sp);sDraw();v*=Math.pow(.94,dt/16);if(Math.abs(v)>.02)fling=requestAnimationFrame(step)};
