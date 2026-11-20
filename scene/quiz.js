@@ -40,6 +40,9 @@ function qzTrimEnd(a,b){const l=qLane('vocal');if(!l||b-a<1.5)return b;const k=k
   let last=null;for(let i=Math.min(d.length-W,Math.round(b*sr)-W);i>Math.round((a+.5)*sr);i-=W){if(en(i)>=th){last=(i+W)/sr;break}}
   const nb=last==null?b:Math.min(b,last+.6),r=b-nb>.8?nb:b;qzTrimC.set(k,r);return r}
 function qzLineAuto(g){const [a,b]=qzLineRange0(g);return [a,qzTrimEnd(a,b)]}
+function qzWholeAuto(sec){const L=getLines(),[sa,sb]=secRange(sec),f=L[lineOff(sec)],a=f!=null&&f>=sa&&f<sb?f:sa;return [a,qzTrimEnd(a,sb)]}
+function qzWholeRange(sec){const o=(qzRngAll()[key]||{})['S'+sec];if(o&&o.length===2&&o[1]>o[0])return o;return qzWholeAuto(sec)}
+const qzRk=q=>q.l!=null?q.l:'S'+q.s,qzRAuto=q=>q.l!=null?qzLineAuto(q.l):qzWholeAuto(q.s),qzRCur=q=>q.l!=null?qzLineRange(q.l):qzWholeRange(q.s);
 function qzLineRange(g){const o=(qzRngAll()[key]||{})[g];if(o&&o.length===2&&o[1]>o[0])return o;return qzLineAuto(g)}
 // 每段開頭、或前面空很久的句子＝要自己進拍的地方
 function qzEntries(){const L=getLines();return qzPool().filter(g=>g===0||L[g-1]==null||secOfLine(g)!==secOfLine(g-1)||L[g]-qzLineRange(g-1)[0]>6)}
@@ -98,15 +101,15 @@ function qzBegin(cat,part,ord,ids,i){const list=ids?ids.map(id=>qzQ(id)).filter(
 function qzText(q){return q.l!=null?[qzAllLines()[q.l]||'']:q.cat==='map'?[]:qzLines(q.s)}
 function qzGl(q,li){return q.l!=null?q.l:(blocks?lineOff(q.s):0)+li}
 // 這題要比的範圍
-function qzRange(q){if(q.cat==='map'||q.l==null)return secRange(q.s);const [a,b]=qzLineRange(q.l);
+function qzRange(q){if(q.t==='s')return qzWholeRange(q.s);if(q.cat==='map'||q.l==null)return secRange(q.s);const [a,b]=qzLineRange(q.l);
   if(q.cat==='beat')return [Math.max(0,a-1),a+2.5];
   if(q.cat!=='pitch')return [a,b];
   if(q.t==='f')return [a,Math.min(b,a+1.5)];
   return [a,b]}
 // 這題要錄的範圍
-function qzRecRange(q){if(q.l==null)return secRange(q.s);const [a,b]=qzLineRange(q.l);if(q.cat==='beat')return [Math.max(0,a-2),a+2.5];if(q.t==='f')return [a,Math.min(b,a+1.5)];return [a,b]}
+function qzRecRange(q){if(q.t==='s')return qzWholeRange(q.s);if(q.l==null)return secRange(q.s);const [a,b]=qzLineRange(q.l);if(q.cat==='beat')return [Math.max(0,a-2),a+2.5];if(q.t==='f')return [a,Math.min(b,a+1.5)];return [a,b]}
 const qzCut=q=>Q&&Q.cut&&Q.cutQ===q.id?Q.cut:null;
-function qzRanges(q){if(qzCut(q))return [qzCut(q)];if(q.l!=null||q.cat==='beat')return [qzRange(q)];const L=getLines(),n=qzText(q).length,out=[];for(let li=0;li<n;li++){const g=qzGl(q,li);if(L[g]!=null)out.push(qzLineRange(g))}return out.length?out:[qzRange(q)]}
+function qzRanges(q){if(qzCut(q))return [qzCut(q)];if(q.l!=null||q.cat==='beat'||q.t==='s')return [qzRange(q)];const L=getLines(),n=qzText(q).length,out=[];for(let li=0;li<n;li++){const g=qzGl(q,li);if(L[g]!=null)out.push(qzLineRange(g))}return out.length?out:[qzRange(q)]}
 const qLane=id=>S&&S.lanes.find(l=>l.id===id&&(id==='me'||l.buf));
 const qzRef=()=>qLane('vocal')?'vocal':qLane('orig')?'orig':'inst';
 const qzBack=()=>qLane('inst')?'inst':'orig';
@@ -340,7 +343,7 @@ function qzRender(){
   // 右下角工具：對齊、框選（只有錄好之後才出現）
   const cutC=qzCut(q),tools=!recd&&(q.cat==='pitch'||q.cat==='beat')?`<div class="qz-tools">
     ${qzToneRow(q)}
-    ${q.l!=null&&q.cat==='pitch'?(()=>{const [ra,rb]=qzLineRange(q.l),own=!!(qzRngAll()[key]||{})[q.l];return `<div class="qz-tr"><span class="qz-tl">這題範圍</span><span class="qz-tg">開頭</span><button data-q="qrng" data-e="0" data-d="-1">◀</button><button data-q="qrng" data-e="0" data-d="1">▶</button><span class="qz-tg">結尾</span><button data-q="qrng" data-e="1" data-d="-1">◀</button><button data-q="qrng" data-e="1" data-d="1">▶</button><span class="qz-tg">${mmss(ra)}.${Math.floor(ra*10)%10}–${mmss(rb)}.${Math.floor(rb*10)%10}</span>${own?'<button data-q="qrng0" class="qz-sr">還原</button>':''}</div>`})():''}
+    ${(q.l!=null||q.t==='s')&&q.cat==='pitch'?(()=>{const [ra,rb]=qzRCur(q),own=!!(qzRngAll()[key]||{})[qzRk(q)];return `<div class="qz-tr"><span class="qz-tl">${q.t==='s'?'這段範圍':'這題範圍'}</span><span class="qz-tg">開頭</span><button data-q="qrng" data-e="0" data-d="-1">◀</button><button data-q="qrng" data-e="0" data-d="1">▶</button><span class="qz-tg">結尾</span><button data-q="qrng" data-e="1" data-d="-1">◀</button><button data-q="qrng" data-e="1" data-d="1">▶</button><span class="qz-tg">${mmss(ra)}.${Math.floor(ra*10)%10}–${mmss(rb)}.${Math.floor(rb*10)%10}</span>${own?'<button data-q="qrng0" class="qz-sr">還原</button>':''}</div>`})():''}
     <div class="qz-tr"><span class="qz-tl">速度</span><div class="qz-seg qz-spd">${[-.1,-.05].map(d=>`<button data-q="spd" data-d="${d}" ${qzSpeed()+d<.299?'disabled':''}>${d}</button>`).join('')}<b class="qz-sv">${qzSpeed()===1?'原速':qzSpeed().toFixed(2)+'×'}</b>${[.05,.1].map(d=>`<button data-q="spd" data-d="${d}" ${qzSpeed()+d>1.001?'disabled':''}>+${d}</button>`).join('')}</div>${qzSpeed()<1?'<button data-q="spd" data-d="9" class="qz-sr">原速</button>':''}<span class="qz-tg">音高不變</span></div>
     ${has?`<div class="qz-tr"><span class="qz-tl">錄音對不齊</span><button data-act="sadj" data-d="-1">◀ 早一點</button><button data-act="sadj" data-d="1">晚一點 ▶</button></div>`:''}
     <div class="qz-tr"><span class="qz-tl">重複某幾個字</span><button data-q="box" class="${Q.boxing?'on':''}">${Q.boxing?'在下面波形上拖一段…':'✂️ 框選一段'}</button>${cutC?`<button data-q="uncut">✕ 取消框選</button>`:''}</div>
@@ -436,8 +439,8 @@ app.addEventListener('click',e=>{
     const lg=document.querySelector('#s-quiz .qz-leg');if(lg){const n=Object.keys(mk).length;lg.lastChild.nodeType===3&&/已標/.test(lg.lastChild.textContent)&&lg.lastChild.remove();if(n)lg.insertAdjacentText('beforeend',`　・已標 ${n} 個字`)}}
   else if(a==='tskip'){document.getElementById('qz-tover')?.remove();if(S.recd)return;const C=QCAT[q.cat]||{};if(Q.qt)Q.qt.show=false;const bad=q.cat==='beat'?null:'bad';if(bad&&!qzGet(q.id).res)qzSet(q.id,{res:bad});if(Q.i<Q.list.length-1)qzGo(Q.i+1);else{Q.sum=true;sStop();qzRender()}return}
   else if(a==='tmore'){document.getElementById('qz-tover')?.remove();if(Q.qt){Q.qt.lim=Q.qt.acc+120;Q.qt.warned=false;Q.qt.show=false}return}
-  else if(a==='qrng'){const A=qzRngAll(),B=A[key]=A[key]||{},r=(B[q.l]||qzLineAuto(q.l)).slice(),e=+t.dataset.e;r[e]=Math.round((r[e]+ +t.dataset.d*.2)*100)/100;if(r[1]-r[0]<.5)return;B[q.l]=r;qzLS('scene-qrng',JSON.stringify(A));qzSlowStop();sStop();Q.act='';qzFocus();qzRender();qzHint(`這句改成 ${r[0].toFixed(1)}–${r[1].toFixed(1)} 秒（每按一下 0.2 秒），先聽原曲、錄音、比一比都會照這個`);return}
-  else if(a==='qrng0'){const A=qzRngAll();if(A[key])delete A[key][q.l];qzLS('scene-qrng',JSON.stringify(A));qzFocus();qzRender();return}
+  else if(a==='qrng'){const A=qzRngAll(),B=A[key]=A[key]||{},rk=qzRk(q),r=(B[rk]||qzRAuto(q)).slice(),e=+t.dataset.e;r[e]=Math.round((r[e]+ +t.dataset.d*.2)*100)/100;if(r[1]-r[0]<.5)return;B[rk]=r;qzLS('scene-qrng',JSON.stringify(A));qzSlowStop();sStop();Q.act='';qzFocus();qzRender();qzHint(`範圍改成 ${r[0].toFixed(1)}–${r[1].toFixed(1)} 秒（每按一下 0.2 秒），先聽原曲、錄音、比一比都會照這個`);return}
+  else if(a==='qrng0'){const A=qzRngAll();if(A[key])delete A[key][qzRk(q)];qzLS('scene-qrng',JSON.stringify(A));qzFocus();qzRender();return}
   else if(a==='res'){const v=t.dataset.v;qzSet(q.id,{res:qzGet(q.id).res===v?null:v});qzRender()}
 },true);
 app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!Q.list[Q.i])return;qzSet(Q.list[Q.i].id,{n:t.value})});
