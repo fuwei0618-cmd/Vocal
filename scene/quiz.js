@@ -50,7 +50,7 @@ function qzAnalyze(){const c=window._qzPA||(window._qzPA={});if(c[key])return c[
 // ---------- 題庫（像考照 App）：整首每一句都出題；每份卷可以照順序或隨機，Part 照段落分 ----------
 const QRE={pitch:/^L(\d+)([ftjh]?)$/,lyr:/^Y(\d+)$/,beat:/^B(\d+)$/};
 const QCATS=['pitch','lyr','beat','map'];
-const QPAPER={all:{n:'🔀 全部混合'},map:{n:'🗺 架構'},lyr:{n:'📝 歌詞'},beat:{n:'🥁 進拍'},pitch:{n:'🎯 音準'},wrong:{n:'❌ 錯題本'}}; // 跟「今天練什麼」健檢同順序
+const QPAPER={all:{n:'🔀 全部混合'},pitch:{n:'🎯 音準'},lyr:{n:'📝 歌詞'},beat:{n:'🥁 進拍'},map:{n:'🗺 架構'},wrong:{n:'❌ 錯題本'}}; // 「今天練什麼」健檢跟這個同順序
 function qzQ(id,j){let m;
   if((m=id.match(QRE.pitch))){const l=+m[1],t=m[2]||'';return {id,cat:'pitch',l,s:secOfLine(l),t,m:t?(t==='f'||t==='t'?'sing':'hum'):['hum','sing','mind'][l%3]}}
   if((m=id.match(QRE.lyr)))return {id,cat:'lyr',l:+m[1],s:secOfLine(+m[1])};

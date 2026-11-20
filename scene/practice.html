@@ -69,25 +69,25 @@ button,a.b{font:inherit;color:inherit;cursor:pointer}
 </style>
 </head>
 <body>
-<div class="bar"><a href="javascript:history.length>1?history.back():location.href='../#songs'">← 返回</a><h1>今天練什麼</h1><span class="by">・v3</span></div>
+<div class="bar"><a href="javascript:history.length>1?history.back():location.href='../#songs'">← 返回</a><h1>今天練什麼</h1><span class="by">・v4</span></div>
 <div class="wrap" id="app"></div>
 <script>
 const SONGS=[['jiayi','甲乙丙丁'],['summer','盛夏的果實'],['darwin','達爾文'],['hug','大大的擁抱'],['houlai','後來'],['hands','小手拉大手'],['prank','惡作劇'],['zhizu','知足']];
 const TTL=Object.fromEntries(SONGS);
-// 健檢：照順序一題一題測（架構 → 歌詞 → 進拍 → 音準）；第一個卡住的＝今天的功課，後面今天先不用測
+// 健檢：照順序一題一題測（音準 → 歌詞 → 進拍 → 架構，跟題組首頁同順序）；第一個卡住的＝今天的功課，後面今天先不用測
 const CK=[
-  {id:'c1',n:'架構',q:'架構題組：聽上一段的結尾，說得出下一段嗎？',do:'quiz-map',
-   how:['按「去測」，會打開錄音室的「🗺 架構」題組。','每題先聽上一段的結尾，說出下一段是什麼、第一句怎麼唱。','按「對答案」，選結果。'],pass:'整首說完，錯不超過 1 段。',
-   rx:'架構表回想',why:'不知道下一段是什麼，唱的時候就會一直慌。',rxd:['打開架構表的「回想」。','一段一段說出下一段，說不出就點開看一眼，再蓋起來。','從頭到尾順順說完 2 次。'],rdo:'map'},
+  {id:'c4',n:'音準',q:'做一次音準題組：每一段跟原唱比，對得上嗎？',do:'quiz-pitch',
+   how:['按「去測」，會打開錄音室的「🎯 音準題組」。','每題照指定的方式（哼／唱／腦內）錄一次，按「原唱＋我」一起聽。','聽到打架的字就點它，做完看成績單。'],pass:'每一題不準的字都不超過 2 個。',
+   rx:'只練成績單上的字',why:'音高還沒記牢，先用哼的把旋律刻進去。',rxd:['打開題組的成績單，看「要練的字」。','點字回到那一題，先慢慢哼、再跟原唱對準那個音。','重錄一次，再比一次。'],rdo:'quiz-pitch'},
   {id:'c2',n:'歌詞',q:'歌詞題組：詞遮起來，唱得出這一句嗎？',do:'quiz-lyr',
    how:['按「去測」，會打開「📝 歌詞」題組，抽 10 句。','伴奏從上一句開始放，輪到時不看詞唱出來。','對答案，卡住的字點起來。'],pass:'10 題裡卡住的不超過 2 題。',
    rx:'跟唱，再腦內聽',why:'詞還沒進到身體裡，要先靠原唱帶著走。',rxd:['跟著原曲唱 3 遍，先不管好不好。','按「靜音」，在腦中把整首聽一遍。','只練標起來的那幾句，各唱 3 次。'],rdo:'sing'},
   {id:'c3',n:'進拍',q:'進拍題組：每段開頭，自己準時進得來嗎？',do:'quiz-beat',
    how:['按「去測」，會打開「🥁 進拍」題組。','跟伴奏錄，在對的那一拍自己開口。','「輪流比」聽原唱和妳是不是同一刻開口。'],pass:'每一題都準時。',
    rx:'🔁 重複＋拍手找重音',why:'進拍不穩，通常是不知道重音落在哪個字。',rxd:['選進不準的那一段，按 🔁 重複。','跟著拍子拍手，看哪些字撞到「強的那一下」：那就是重音。','把重音字標起來，唱到時腰帶「彈一下」。'],rdo:'beat'},
-  {id:'c4',n:'音準',q:'做一次音準題組：每一段跟原唱比，對得上嗎？',do:'quiz-pitch',
-   how:['按「去測」，會打開錄音室的「🎯 音準題組」。','每題照指定的方式（哼／唱／腦內）錄一次，按「原唱＋我」一起聽。','聽到打架的字就點它，做完看成績單。'],pass:'每一題不準的字都不超過 2 個。',
-   rx:'只練成績單上的字',why:'音高還沒記牢，先用哼的把旋律刻進去。',rxd:['打開題組的成績單，看「要練的字」。','點字回到那一題，先慢慢哼、再跟原唱對準那個音。','重錄一次，再比一次。'],rdo:'quiz-pitch'}];
+  {id:'c1',n:'架構',q:'架構題組：聽上一段的結尾，說得出下一段嗎？',do:'quiz-map',
+   how:['按「去測」，會打開錄音室的「🗺 架構」題組。','每題先聽上一段的結尾，說出下一段是什麼、第一句怎麼唱。','按「對答案」，選結果。'],pass:'整首說完，錯不超過 1 段。',
+   rx:'架構表回想',why:'不知道下一段是什麼，唱的時候就會一直慌。',rxd:['打開架構表的「回想」。','一段一段說出下一段，說不出就點開看一眼，再蓋起來。','從頭到尾順順說完 2 次。'],rdo:'map'}];
 const PK='practice-v1',today=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})();
 let D={};try{D=JSON.parse(localStorage.getItem(PK)||'{}')||{}}catch(e){}
 const save=()=>{try{localStorage.setItem(PK,JSON.stringify(D))}catch(e){}};
@@ -118,7 +118,7 @@ function card(k,r,st){const bad=CK.find(c=>r[c.id]===0),allOk=CK.every(c=>r[c.id
   if(c){const i=CK.indexOf(c),v=r[c.id];return `<div class="cardx"><div class="eb">健檢 ${i+1} / 4・${c.n}</div><h2>${c.q}</h2>
     <div class="cols"><div><h4>怎麼測</h4><ol>${c.how.map(t=>`<li>${t}</li>`).join('')}<li>回來選結果。</li></ol></div><div><h4>過關標準</h4><p class="std">${c.pass}</p></div></div>
     <div class="acts"><a class="pill" href="${go(k,c.do)}">去測 ↗</a><span class="sp"></span><button class="yn y${v===1?' on':''}" data-act="yn" data-c="${c.id}" data-v="1">✓ 過關</button><button class="yn n${v===0?' on':''}" data-act="yn" data-c="${c.id}" data-v="0">✗ 卡住</button></div></div>`}
-  if(st==='rx'){if(!bad&&!allOk)return `<div class="cardx"><div class="eb">今天的功課</div><h2>先把健檢做完</h2><p class="muted">從 ① 架構開始，遇到第一個卡住的，就是今天要練的。</p><div class="acts"><button class="pill go" data-act="view" data-v="">回到健檢 →</button></div></div>`;
+  if(st==='rx'){if(!bad&&!allOk)return `<div class="cardx"><div class="eb">今天的功課</div><h2>先把健檢做完</h2><p class="muted">從 ① 音準開始，遇到第一個卡住的，就是今天要練的。</p><div class="acts"><button class="pill go" data-act="view" data-v="">回到健檢 →</button></div></div>`;
     const t=bad?{h:`${NUM[CK.indexOf(bad)]} ${bad.n}卡住 → ${bad.rx}`,why:bad.why,s:bad.rxd,d:bad.rdo,done:`練完再測一次 ${NUM[CK.indexOf(bad)]}，過了就往下一關。`}
       :{h:'四關都過了 🎉 → 錄一段完整的',why:'熟了，現在練的是「唱給別人聽」的狀態。',s:['打開錄音室，從頭錄一次。','用 KTV 聽朋友的耳朵聽自己：先找一個喜歡的地方。'],d:'studio',done:'錄完、聽完一次就算完成。'};
     return `<div class="cardx rx"><div class="eb">今天的功課</div><h2>${t.h}</h2><p class="why">${t.why}</p><ol>${t.s.map(x=>`<li>${x}</li>`).join('')}</ol><p class="std">完成：${t.done}</p>
