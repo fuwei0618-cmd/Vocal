@@ -50,7 +50,7 @@ function qzAnalyze(){const c=window._qzPA||(window._qzPA={});if(c[key])return c[
 // ---------- 題庫（像考照 App）：整首每一句都出題；每份卷可以照順序或隨機，Part 照段落分 ----------
 const QRE={pitch:/^L(\d+)([ftjh]?)$/,lyr:/^Y(\d+)$/,beat:/^B(\d+)$/};
 const QCATS=['pitch','lyr','beat','map'];
-const QPAPER={all:{n:'🔀 全部混合'},pitch:{n:'🎯 音準'},lyr:{n:'📝 歌詞'},beat:{n:'🥁 進拍'},map:{n:'🗺 架構'},wrong:{n:'❌ 錯題本'}};
+const QPAPER={all:{n:'🔀 全部混合'},map:{n:'🗺 架構'},lyr:{n:'📝 歌詞'},beat:{n:'🥁 進拍'},pitch:{n:'🎯 音準'},wrong:{n:'❌ 錯題本'}}; // 跟「今天練什麼」健檢同順序
 function qzQ(id,j){let m;
   if((m=id.match(QRE.pitch))){const l=+m[1],t=m[2]||'';return {id,cat:'pitch',l,s:secOfLine(l),t,m:t?(t==='f'||t==='t'?'sing':'hum'):['hum','sing','mind'][l%3]}}
   if((m=id.match(QRE.lyr)))return {id,cat:'lyr',l:+m[1],s:secOfLine(+m[1])};
@@ -74,6 +74,7 @@ function qzLatest(){const T=qzAll()[key]||{},o={};Object.keys(T).sort().forEach(
 const qzBase=id=>id.replace(/^(L\d+)[ftjh]$/,'$1');
 function qzPaperList(cat,part){const bank=Q.bank||(Q.bank=qzBank()),lt=qzLatest();
   return bank.filter(q=>(cat==='all'||cat==='wrong'||q.cat===cat)&&(cat!=='wrong'||lt[qzBase(q.id)]==='some'||lt[qzBase(q.id)]==='bad')&&(part==='all'||q.s===+part))}
+function qzDoneN(list){const lt=qzLatest();return list.filter(q=>lt[qzBase(q.id)]).length}
 function qzPct(list){const lt=qzLatest();if(!list.length)return 0;return Math.round(list.filter(q=>lt[qzBase(q.id)]==='ok').length/list.length*100)}
 function qzShuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 const qzLastAll=()=>{try{return JSON.parse(qzLS('scene-pquiz-last')||'{}')||{}}catch(e){return {}}};
@@ -279,11 +280,11 @@ function qzHead(){const n=Q.list.length,w=7,lo=Math.max(0,Math.min(Q.i-w,n-2*w-1
   ${Q.sum?'':`<div class="qz-h2"><span class="qz-n">第 ${Q.i+1} / ${n} 題</span><span id="qz-timer" class="qz-timer"></span><div class="qz-bar"><i style="width:${Math.round(Q.list.filter(x=>qzGet(x.id).res).length/n*100)}%"></i></div><div class="qz-dots">${lo?'<span class="qz-more">…</span>':''}${Q.list.slice(lo,hi).map((x,k)=>{const j=lo+k;return `<button data-q="go" data-j="${j}" class="qd ${j===Q.i?'cur ':''}${qzGet(x.id).res||''}">${j+1}</button>`}).join('')}${hi<n?'<span class="qz-more">…</span>':''}</div></div>`}`}
 // 題組首頁：左邊每份卷（⭐ 答對率），右邊這份卷的 Part（照段落分），每個都可以照順序或隨機
 function qzHomeHtml(){const sc=SCENES[key],bank=Q.bank||(Q.bank=qzBank()),last=qzLastAll()[key],hc=Q.hc;
-  const rows=Object.keys(QPAPER).map(k=>{const l=qzPaperList(k,'all');return `<button data-q="hc" data-cat="${k}" class="qz-cr${k===hc?' on':''}${k==='wrong'?' wr':''}"><span>${QPAPER[k].n}</span><small>${l.length} 題</small><em>⭐ ${qzPct(l)}%</em></button>`}).join('');
+  const rows=Object.keys(QPAPER).map(k=>{const l=qzPaperList(k,'all');return `<button data-q="hc" data-cat="${k}" class="qz-cr${k===hc?' on':''}${k==='wrong'?' wr':''}"><span>${QPAPER[k].n}</span><small>${qzDoneN(l)?`做過 ${qzDoneN(l)}/${l.length}`:`${l.length} 題`}</small><em>⭐ ${qzPct(l)}%</em></button>`}).join('');
   const all=qzPaperList(hc,'all'),parts=[...new Set(all.map(q=>q.s))].sort((x,y)=>x-y);
   const btns=(part,n)=>n?`<button data-q="begin" data-cat="${hc}" data-part="${part}" data-ord="seq">照順序</button><button data-q="begin" data-cat="${hc}" data-part="${part}" data-ord="rand">隨機</button>`:'';
-  const prow=(part,label,l)=>`<div class="qz-pr"><span>${label}<small>${l.length} 題</small></span><em>⭐ ${qzPct(l)}%</em>${btns(part,l.length)}</div>`;
-  return `<div class="qz-h"><b>🎯 題組</b><span class="qz-n">${esc(sc.title)}・⭐＝每題最近一次答對的比例</span><span class="sp"></span><button data-q="x">✕ 結束</button></div>
+  const prow=(part,label,l)=>`<div class="qz-pr"><span>${label}<small>${qzDoneN(l)?`做過 ${qzDoneN(l)}/${l.length}`:`${l.length} 題`}</small></span><em>⭐ ${qzPct(l)}%</em>${btns(part,l.length)}</div>`;
+  return `<div class="qz-h"><b>🎯 題組</b><span class="qz-n">${esc(sc.title)}・做過＝有選「這題的結果」・⭐＝選了「準」的比例</span><span class="sp"></span><button data-q="x">✕ 結束</button></div>
   <div class="qz-home"><div class="qz-left"><div class="qz-crs">${rows}</div>
       ${last&&last.ids&&last.ids.length?`<button class="qz-cont" data-q="cont">繼續測驗<small>${esc(qzPaperName(last))}・第 ${last.i+1} / ${last.ids.length} 題</small></button>`:''}</div>
     <div class="qz-parts"><h4>${QPAPER[hc].n}${hc==='wrong'?'：只考最近一次沒過的題目':hc==='all'?'：四種題目混在一起':''}</h4>
@@ -388,7 +389,7 @@ app.addEventListener('click',e=>{
   if(a==='sum'){if(S.recd)return;Q.seq=null;sStop();Q.sum=true;qzRender();return}
   if(a==='back'){Q.sum=false;if(Q.list.length)qzFocus();qzRender();return}
   if(Q.home)return;
-  if(a==='go'){qzGo(+t.dataset.j);return}
+  if(a==='go'){const cq=!Q.sum&&Q.list[Q.i],miss=cq&&!qzGet(cq.id).res&&+t.dataset.j>Q.i;qzGo(+t.dataset.j);if(miss)qzHint(`上一題還沒選「這題的結果」，進度和 ⭐ 不會算到它；可以按「← 上一題」回去選`);return}
   if(!q)return;
   if(a==='mode'){if(S.recd)return;sStop();qzSet(q.id,{m:t.dataset.m});Q.act='';qzRender()}
   else if(a==='listen'){const c=qzCut(q);if(c){const run=()=>qzPlay('listen',qzOrig(),c[0]-.05,c[1]+.05);run();if(Q.act)Q.lastRun=run;return}const [x,y]=q.cat==='beat'?qzRange(q):qzRecRange(q);qzPlay('listen',q.cat==='lyr'?[qzRef()]:qzOrig(),q.cat==='beat'?x-2:x-1.5,y+.4)}
