@@ -480,7 +480,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=166;
+const VER=167;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER){const dq=new URLSearchParams(location.search).get('do');location.replace(location.pathname+'?v='+m[1]+(dq?'&do='+encodeURIComponent(dq):'')+location.hash)}}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -849,7 +849,7 @@ const natLv=n=>n>=5?3:n>=2?2:n?1:0;
 function natTap(k,id){const a=pgAll(),m=a[k]||(a[k]={}),t=pgToday();let d=natDays(m,id).slice();d=d.includes(t)?d.filter(x=>x!==t):d.concat(t);if(d.length)m[id]=d;else delete m[id];try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}return d.includes(t)}
 function pgAll(){try{return JSON.parse(localStorage.getItem('scene-prog-v1'))||{}}catch(e){return {}}}
 function pgToggle(k,id){const a=pgAll(),m=a[k]||(a[k]={});if(m[id])delete m[id];else{const d=new Date();m[id]=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}try{localStorage.setItem('scene-prog-v1',JSON.stringify(a))}catch(e){}}
-function pgPills(k){arcMig(k);return `<button class="pgpill today" data-act="today">🎯 今天練什麼</button><button class="pgpill" data-act="natopen">進度</button>`}
+function pgPills(k){arcMig(k);return `<button class="pgpill today" data-act="quiz">🎯 題組</button><button class="pgpill" data-act="natopen">進度</button>`}
 function pgPillsOld(k){arcMig(k);const m=pgAll()[k]||{};return `<button class="pgpill" data-act="mind" title="開練前：唱歌心態">🛝 心態</button><button class="pgpill" data-act="natopen">自然 ${PGN.filter(([id])=>Object.keys(m).some(x=>(x===id||x.startsWith(id+'@'))&&natDays(m,x).length)).length}/${PGN.length}</button><button class="pgpill" data-act="arcopen">架構 ${arcSteps().filter(x=>m[x.id]).length}/${arcSteps().length}</button><button class="pgpill" data-act="pg">場合 ${PG.filter(([id])=>m[id]).length}/${PG.length}</button>`}
 function pgRefresh(){const b=document.querySelector('.bar .pgpills');if(b)b.innerHTML=pgPills(key)}
 // 自然養成＝學歌地圖，用 iframe 疊在情境頁上：頁面沒換，音樂照放
