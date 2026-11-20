@@ -15,7 +15,7 @@ const QCAT={
 const QTYPE={
   '':{n:'整句',t:''},
   f:{n:'句首音',t:'不先聽原唱：伴奏放到這句前，直接唱出第一個字。考的是「起音」記不記得。比的時候只比開頭。'},
-  t:{n:'句尾長音',t:'這句最後的長音：撐住、不往下掉、不抖。比的時候只比句尾。'},
+  t:{n:'句尾長音',t:'這句最後的長音：撐住、不往下掉、不抖。想只聽句尾，用右邊「框選一段」。'},
   h:{n:'高音句',t:'這句是整首最高的幾句之一（從原唱人聲聽出來的）：注意有沒有真的唱上去。'},
   j:{n:'大跳音',t:''}};
 const QMARKS={pitch:[['d','↑','再高'],['u','↓','再低'],['w','〰','不穩']],lyr:[['x','✗','卡住／唱錯']]};
@@ -99,7 +99,6 @@ function qzRange(q){if(q.cat==='map'||q.l==null)return secRange(q.s);const [a,b]
   if(q.cat==='beat')return [Math.max(0,a-1),a+2.5];
   if(q.cat!=='pitch')return [a,b];
   if(q.t==='f')return [a,Math.min(b,a+1.5)];
-  if(q.t==='t')return [Math.max(a,b-2.4),b];
   return [a,b]}
 // 這題要錄的範圍
 function qzRecRange(q){if(q.l==null)return secRange(q.s);const [a,b]=qzLineRange(q.l);if(q.cat==='beat')return [Math.max(0,a-2),a+2.5];if(q.t==='f')return [a,Math.min(b,a+1.5)];return [a,b]}
