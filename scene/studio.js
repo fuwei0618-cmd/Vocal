@@ -331,6 +331,8 @@ function laneAt(y){return [...document.querySelectorAll('#studio .s-lane')].find
 // 挪錄音：先點一下那次錄音選起來（變亮），再按住它左右拖。沒選起來的錄音不會被拖到
 let fling=0;
 const sClampView=(a,sp)=>{sp=Math.max(2,Math.min(S.dur,sp));a=Math.max(0,Math.min(S.dur-sp,a));S.view=[a,a+sp]};
+// iPad 從螢幕底邊往上滑（切換 App）時，手指會先碰到音軌：最底下一條不接觸控
+addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'&&e.target.closest&&e.target.closest('#studio canvas')&&e.clientY>innerHeight-36)e.stopImmediatePropagation()},true);
 app.addEventListener('pointerdown',e=>{if(!S||!e.target.closest('#studio canvas'))return;e.preventDefault();try{e.target.setPointerCapture(e.pointerId)}catch(_){}
   cancelAnimationFrame(fling);
   pts.set(e.pointerId,{x:e.clientX,y:e.clientY});

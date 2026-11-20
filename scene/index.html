@@ -245,7 +245,7 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
   .hint,.sub{bottom:calc(env(safe-area-inset-bottom,0px) + 168px)!important}}
 /* 錄音室 */
 #qz-load{position:fixed;inset:0;z-index:60;background:#14110d;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:20px}#qz-load span{font-size:14px;opacity:.7}#qz-load i{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.15);border-top-color:#f5c451;animation:qzspin .8s linear infinite}@keyframes qzspin{to{transform:rotate(360deg)}}
-#studio{position:fixed;inset:0;z-index:40;background:#14110d;display:grid;grid-template-rows:auto minmax(150px,1.3fr) auto minmax(0,2fr) auto auto;transition:grid-template-rows .3s ease;color:var(--ink);padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);user-select:none;-webkit-user-select:none}
+#studio{position:fixed;inset:0;z-index:40;background:#14110d;display:grid;grid-template-rows:auto minmax(150px,1.3fr) auto minmax(0,2fr) auto auto;transition:grid-template-rows .3s ease;color:var(--ink);padding:env(safe-area-inset-top,0px) 0 calc(env(safe-area-inset-bottom,0px) + 12px);user-select:none;-webkit-user-select:none}
 body.studio{overflow:hidden}
 #studio button{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--ink);border-radius:99px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer}
 #studio .s-bot button{white-space:nowrap}.s-r .s-tip{min-width:0}
@@ -481,7 +481,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=172;
+const VER=173;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER){const dq=new URLSearchParams(location.search).get('do');location.replace(location.pathname+'?v='+m[1]+(dq?'&do='+encodeURIComponent(dq):'')+location.hash)}}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1447,7 +1447,7 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=169"></script>
-<script src="quiz.js?v=172"></script>
+<script src="studio.js?v=173"></script>
+<script src="quiz.js?v=173"></script>
 </body>
 </html>
