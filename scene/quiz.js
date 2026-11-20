@@ -89,7 +89,6 @@ function qzRange(q){if(q.cat==='map'||q.l==null)return secRange(q.s);const [a,b]
   if(q.cat!=='pitch')return [a,b];
   if(q.t==='f')return [a,Math.min(b,a+1.5)];
   if(q.t==='t')return [Math.max(a,b-2.4),b];
-  if(q.t==='j'){const pa=qzAnalyze(),J=pa&&pa.jump[q.l];if(J)return [Math.max(a,J.t-1.3),Math.min(b,J.t+1.3)]}
   return [a,b]}
 // 這題要錄的範圍
 function qzRecRange(q){if(q.l==null)return secRange(q.s);const [a,b]=qzLineRange(q.l);if(q.cat==='beat')return [Math.max(0,a-2),a+2.5];if(q.t==='f')return [a,Math.min(b,a+1.5)];return [a,b]}
@@ -337,7 +336,7 @@ function qzRender(){
   if(q.cat==='pitch'){
     const J=q.t==='j'&&qzAnalyze()&&qzAnalyze().jump[q.l];
     title+=q.l!=null?`<small>・${q.t?QTYPE[q.t].n:'一句'}</small>`:'';
-    tip=q.t==='j'?(J?`這句有一個大跳：${J.st>0?'往上':'往下'}跳 ${Math.abs(J.st)} 個半音。注意跳的那一下有沒有到位。比的時候只比跳的那附近。`:'這句有一個大跳，注意跳的那一下有沒有到位。'):q.t?QTYPE[q.t].t:QMODE[m].t;
+    tip=q.t==='j'?(J?`這句有一個大跳：${J.st>0?'往上':'往下'}跳 ${Math.abs(J.st)} 個半音。注意跳的那一下有沒有到位。想只聽跳的那幾個字，用右邊「框選一段」。`:'這句有一個大跳，注意跳的那一下有沒有到位。'):q.t?QTYPE[q.t].t:QMODE[m].t;
     if(q.t)tip+=`<br>這題用${QMODE[m].v}的。`;
     steps=m==='mind'?`<div class="qz-st"><b>1</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':q.l!=null?'▶ 先聽原曲這句':'▶ 先聽原曲這段'}</button></div>
       <div class="qz-st"><b>2</b><button data-q="mind" class="go${on('mind')}">${on('mind')?'⏹ 停':'▶ 開始'}（${q.l!=null?'這一句會消音':'中間會消音'}）</button></div>
