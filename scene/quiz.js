@@ -19,7 +19,8 @@ const QTYPE={
   h:{n:'高音句',t:'這句是整首最高的幾句之一（從原唱人聲聽出來的）：注意有沒有真的唱上去。'},
   j:{n:'大跳音',t:''},
   s:{n:'整段連唱',t:'這個 Part 一句一句考完了，最後整段連起來唱一次：換句、換氣的地方音有沒有跑掉。'}};
-const QMARKS={pitch:[['d','↑','再高'],['u','↓','再低'],['w','〰','不穩']],lyr:[['x','✗','卡住／唱錯']]};
+const qzBrush=()=>qzLS('scene-qbrush')||'d';
+const QMARKS={pitch:[['d','↑','再高'],['u','↓','再低'],['w','〰','不穩'],['r','♫','轉音']],lyr:[['x','✗','卡住／唱錯']]};
 const qzDay=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 function qzAll(){try{return JSON.parse(localStorage.getItem(QZK)||'{}')||{}}catch(e){return {}}}
 function qzDayRec(){return (qzAll()[key]||{})[qzDay()]||{}}
@@ -383,7 +384,7 @@ function qzRender(){
      :q.t==='f'?`${recB(1,'⏺ 跟伴奏錄：前奏後直接唱第一個字')}${cmp(2)}<div class="qz-st"><b>3</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':'▶ 再聽一次原唱的開頭'}</button></div>`
      :`<div class="qz-st"><b>1</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':q.l!=null?'▶ 先聽原曲這句':'▶ 先聽原曲這段'}</button></div>${recB(2,`⏺ 跟伴奏${QMODE[m].v}一次`)}${cmp(3)}`;
     right=`<div class="qz-lyr${q.l!=null?' one':''}">${A.length?qzChars(q,r):`<p class="qz-tip">（這首還沒貼歌詞，就用提示：${esc(st.cue)}）</p>`}</div>
-      <p class="qz-leg">點字標記：<span class="d">↑ 再高</span> → <span class="u">↓ 再低</span> → <span class="w">〰 不穩</span> → 取消${nm?`　・已標 ${nm} 個字`:''}</p>`;
+      <p class="qz-leg qz-brush">先選筆、再點字：${QMARKS.pitch.map(([k,i,n])=>`<button data-q="brush" data-b="${k}" class="${k}${qzBrush()===k?' on':''}">${i} ${n}</button>`).join('')}<button data-q="brush" data-b="e" class="e${qzBrush()==='e'?' on':''}">⌫ 擦掉</button>${nm?`　・已標 ${nm} 個字`:''}</p>`;
   }else if(q.cat==='lyr'){
     const pv=q.l>0?A[q.l-1]:'',len=[...A[q.l]].filter(c=>!/\s/.test(c)).length;
     title+='<small>・歌詞填空</small>';tip='詞遮起來了。伴奏從上一句開始放，輪到這句時，不看詞唱出來。唱完再對答案，卡住或唱錯的字點起來。';
@@ -467,7 +468,8 @@ app.addEventListener('click',e=>{
   else if(a==='rev'){Q.rev=!Q.rev;qzRender()}
   else if(a==='mprev'){const [x]=secRange(q.s);qzPlay('mprev',qzOrig(),q.s?x-6:0,x+.05)}
   else if(a==='mplay'){const [x,y]=secRange(q.s);qzPlay('mplay',qzOrig(),x-.3,Math.min(y,x+8))}
-  else if(a==='mk'){const MK=QMARKS[q.cat];if(!MK)return;const r=qzGet(q.id),mk=Object.assign({},r.mk||{}),k=t.dataset.k,o=['',...MK.map(x=>x[0])],nx=o[(o.indexOf(mk[k]||'')+1)%o.length];if(nx)mk[k]=nx;else delete mk[k];qzSet(q.id,{mk});
+  else if(a==='brush'){qzLS('scene-qbrush',t.dataset.b);document.querySelectorAll('#s-quiz [data-q=brush]').forEach(b=>b.classList.toggle('on',b.dataset.b===t.dataset.b));return}
+  else if(a==='mk'){const MK=QMARKS[q.cat];if(!MK)return;const r=qzGet(q.id),mk=Object.assign({},r.mk||{}),k=t.dataset.k,o=['',...MK.map(x=>x[0])],br=MK.length>1?qzBrush():'',nx=br==='e'?'':br?(mk[k]===br?'':br):o[(o.indexOf(mk[k]||'')+1)%o.length];if(nx)mk[k]=nx;else delete mk[k];qzSet(q.id,{mk});
     const M=MK.find(x=>x[0]===nx);t.className=(nx||'')+(t.classList.contains('focus')?' focus':'');const i=t.querySelector('i');if(i)i.remove();if(M)t.insertAdjacentHTML('beforeend',`<i>${M[1]}</i>`);
     const lg=document.querySelector('#s-quiz .qz-leg');if(lg){const n=Object.keys(mk).length;lg.lastChild.nodeType===3&&/已標/.test(lg.lastChild.textContent)&&lg.lastChild.remove();if(n)lg.insertAdjacentText('beforeend',`　・已標 ${n} 個字`)}}
   else if(a==='tskip'){document.getElementById('qz-tover')?.remove();if(S.recd)return;const C=QCAT[q.cat]||{};if(Q.qt)Q.qt.show=false;const bad=q.cat==='beat'?null:'bad';if(bad&&!qzGet(q.id).res)qzSet(q.id,{res:bad});if(Q.i<Q.list.length-1)qzGo(Q.i+1);else{Q.sum=true;sStop();qzRender()}return}
@@ -505,7 +507,8 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 .qz-lyr{border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:rgba(255,255,255,.03)}
 .qz-lyr p{margin:0;padding:1px 6px;font-size:21px;line-height:1.6;letter-spacing:.05em;border-radius:8px}.qz-lyr p.on{background:rgba(242,194,123,.14)}
 .qz-lyr span,.qz-leg span{position:relative;padding:1px 2px;border-radius:5px;cursor:pointer}
-.qz-lyr span.u,.qz-leg .u,.qz-words .u{background:rgba(232,128,111,.38)}.qz-lyr span.d,.qz-leg .d,.qz-words .d{background:rgba(120,165,255,.38)}.qz-lyr span.w,.qz-leg .w,.qz-words .w{background:rgba(242,194,123,.38)}
+.qz-lyr span.u,.qz-leg .u,.qz-words .u{background:rgba(232,128,111,.38)}.qz-lyr span.d,.qz-leg .d,.qz-words .d{background:rgba(120,165,255,.38)}.qz-lyr span.w,.qz-leg .w,.qz-words .w{background:rgba(242,194,123,.38)}.qz-lyr span.r,.qz-lm .r,.qz-rw .r,.qz-leg .r,.qz-words .r{background:rgba(176,140,240,.4)}
+.qz-brush{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.qz-brush button{font-size:13px;padding:5px 11px;border-radius:999px;border:1.5px solid transparent!important;margin:0!important;color:var(--ink)}.qz-brush button.d{background:rgba(120,165,255,.38)!important}.qz-brush button.u{background:rgba(232,128,111,.38)!important}.qz-brush button.w{background:rgba(242,194,123,.38)!important}.qz-brush button.r{background:rgba(176,140,240,.4)!important}.qz-brush button.e{background:rgba(255,255,255,.08)!important}.qz-brush button.on{border-color:#f5c451!important;box-shadow:0 0 0 2px rgba(245,196,81,.35);font-weight:600}
 .qz-lyr span i{position:absolute;top:-11px;right:-5px;font-style:normal;font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000}
 .qz-leg{margin:6px 0;font-size:12px;color:var(--muted)}.qz-leg span{cursor:default}
 .qz-in{width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;color:var(--ink);font:inherit;font-size:14px;padding:8px 10px;-webkit-user-select:text;user-select:text}
