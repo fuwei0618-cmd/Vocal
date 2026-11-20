@@ -18,7 +18,7 @@ const QTYPE={
   t:{n:'句尾長音',t:'這句最後的長音：撐住、不往下掉、不抖。比的時候只比句尾。'},
   h:{n:'高音句',t:'這句是整首最高的幾句之一（從原唱人聲聽出來的）：注意有沒有真的唱上去。'},
   j:{n:'大跳音',t:''}};
-const QMARKS={pitch:[['u','↑','偏高'],['d','↓','偏低'],['w','〰','不穩']],lyr:[['x','✗','卡住／唱錯']]};
+const QMARKS={pitch:[['d','↑','要再高'],['u','↓','要再低'],['w','〰','不穩']],lyr:[['x','✗','卡住／唱錯']]};
 const qzDay=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 function qzAll(){try{return JSON.parse(localStorage.getItem(QZK)||'{}')||{}}catch(e){return {}}}
 function qzDayRec(){return (qzAll()[key]||{})[qzDay()]||{}}
@@ -344,7 +344,7 @@ function qzRender(){
      :q.t==='f'?`${recB(1,'⏺ 跟伴奏錄：前奏後直接唱第一個字')}${cmp(2)}<div class="qz-st"><b>3</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':'▶ 再聽一次原唱的開頭'}</button></div>`
      :`<div class="qz-st"><b>1</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':q.l!=null?'▶ 先聽原曲這句':'▶ 先聽原曲這段'}</button></div>${recB(2,`⏺ 跟伴奏${QMODE[m].v}一次`)}${cmp(3)}`;
     right=`<div class="qz-lyr${q.l!=null?' one':''}">${A.length?qzChars(q,r):`<p class="qz-tip">（這首還沒貼歌詞，就用提示：${esc(st.cue)}）</p>`}</div>
-      <p class="qz-leg">點字標記：<span class="u">↑ 偏高</span> → <span class="d">↓ 偏低</span> → <span class="w">〰 不穩</span> → 取消${nm?`　・已標 ${nm} 個字`:''}</p>`;
+      <p class="qz-leg">點字標記：<span class="d">↑ 要再高</span> → <span class="u">↓ 要再低</span> → <span class="w">〰 不穩</span> → 取消${nm?`　・已標 ${nm} 個字`:''}</p>`;
   }else if(q.cat==='lyr'){
     const pv=q.l>0?A[q.l-1]:'',len=[...A[q.l]].filter(c=>!/\s/.test(c)).length;
     title+='<small>・歌詞填空</small>';tip='詞遮起來了。伴奏從上一句開始放，輪到這句時，不看詞唱出來。唱完再對答案，卡住或唱錯的字點起來。';
