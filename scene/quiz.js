@@ -17,7 +17,8 @@ const QTYPE={
   f:{n:'句首音',t:'不先聽原唱：伴奏放到這句前，直接唱出第一個字。考的是「起音」記不記得。比的時候只比開頭。'},
   t:{n:'句尾長音',t:'這句最後的長音：撐住、不往下掉、不抖。想只聽句尾，用右邊「框選一段」。'},
   h:{n:'高音句',t:'這句是整首最高的幾句之一（從原唱人聲聽出來的）：注意有沒有真的唱上去。'},
-  j:{n:'大跳音',t:''}};
+  j:{n:'大跳音',t:''},
+  s:{n:'整段連唱',t:'這個 Part 一句一句考完了，最後整段連起來唱一次：換句、換氣的地方音有沒有跑掉。'}};
 const QMARKS={pitch:[['d','↑','再高'],['u','↓','再低'],['w','〰','不穩']],lyr:[['x','✗','卡住／唱錯']]};
 const qzDay=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 function qzAll(){try{return JSON.parse(localStorage.getItem(QZK)||'{}')||{}}catch(e){return {}}}
@@ -58,11 +59,12 @@ function qzAnalyze(){const c=window._qzPA||(window._qzPA={});if(c[key])return c[
     if(Math.abs(bj)>=5)jump[g]={st:Math.round(bj),t:+bt.toFixed(2)}});
   return c[key]={hi,jump}}
 // ---------- 題庫（像考照 App）：整首每一句都出題；每份卷可以照順序或隨機，Part 照段落分 ----------
-const QRE={pitch:/^L(\d+)([ftjh]?)$/,lyr:/^Y(\d+)$/,beat:/^B(\d+)$/};
+const QRE={whole:/^P(\d+)$/,pitch:/^L(\d+)([ftjh]?)$/,lyr:/^Y(\d+)$/,beat:/^B(\d+)$/};
 const QCATS=['pitch','lyr','beat','map'];
 const QPAPER={all:{n:'🔀 全部混合'},pitch:{n:'🎯 音準'},lyr:{n:'📝 歌詞'},beat:{n:'🥁 進拍'},map:{n:'🗺 架構'},wrong:{n:'❌ 錯題本'}}; // 「今天練什麼」健檢跟這個同順序
 function qzQ(id,j){let m;
   if((m=id.match(QRE.pitch))){const l=+m[1],t=m[2]||'';return {id,cat:'pitch',l,s:secOfLine(l),t,m:'sing'}/* 每題都先唱 */}
+  if((m=id.match(QRE.whole)))return {id,cat:'pitch',l:null,s:+m[1],t:'s',m:'sing'}; // 整段連唱：這個 Part 每句考完，最後整段唱一次
   if((m=id.match(QRE.lyr)))return {id,cat:'lyr',l:+m[1],s:secOfLine(+m[1])};
   if((m=id.match(QRE.beat)))return {id,cat:'beat',l:+m[1],s:secOfLine(+m[1])};
   if((m=id.match(/^M(\d+)$/)))return {id,cat:'map',s:+m[1]};
@@ -76,7 +78,8 @@ function qzBank(){const pool=qzPool(),pa=qzAnalyze(),out=[],L=getLines(),ent=new
     for(let k=sec+1;k<=s;k++)out.push(qzQ('M'+k));sec=Math.max(sec,s);
     if(ent.has(g))out.push(qzQ('B'+g));
     out.push(qzQ('Y'+g));
-    const t=pa&&pa.jump[g]?'j':H.includes(g)?'h':firstOf(g)?'f':lastOf(g)?'t':'';out.push(qzQ('L'+g+t))});
+    const t=pa&&pa.jump[g]?'j':H.includes(g)?'h':firstOf(g)?'f':lastOf(g)?'t':'';out.push(qzQ('L'+g+t));
+    if(lastOf(g)&&qzLines(s).length>=2)out.push(qzQ('P'+s))});
   for(let k=sec+1;k<SCENES[key].steps.length;k++)out.push(qzQ('M'+k));
   return out}
 // 每一題最近一次的作答（今天的優先）
@@ -263,8 +266,8 @@ function qzUndo(){const u=tkUndo.pop();if(!u||!S)return;sStop();
   saveTakes();sDraw();qzRender();qzHint(u.t==='move'?'已經移回原本的位置':'錄音救回來了')}
 function qzTdel(){qzCutDraw();{const d=document.getElementById('studio');let u=document.getElementById('qz-undo');
   if(d&&!u){u=document.createElement('button');u.id='qz-undo';u.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>復原';u.onclick=qzUndo;d.appendChild(u)}
-  if(u){const ln=d&&d.querySelector('.s-lane.me');if(ln){const r=ln.getBoundingClientRect();u.style.top=(r.top+52)+'px'}u.hidden=!(Q&&S&&!S.recd&&tkUndo.length)}}const d=document.getElementById('studio');if(!d)return;let b=document.getElementById('qz-tdel');
-  const k=Q&&S&&!S.recd&&S.selTake&&takes.find(x=>x.id===S.selTake);
+  if(u){const ln=d&&d.querySelector('.s-lane.me');if(ln){const r=ln.getBoundingClientRect();u.style.top=(r.top+52)+'px'}u.hidden=!(Q&&!Q.home&&!Q.sum&&S&&!S.recd&&tkUndo.length)}}const d=document.getElementById('studio');if(!d)return;let b=document.getElementById('qz-tdel');
+  const k=Q&&!Q.home&&!Q.sum&&S&&!S.recd&&S.selTake&&takes.find(x=>x.id===S.selTake);
   if(!k){if(b)b.hidden=true;return}
   if(!b){b=document.createElement('button');b.id='qz-tdel';b.textContent='🗑 刪掉選到的錄音';d.appendChild(b);
     b.onclick=()=>{const k=takes.find(x=>x.id===S.selTake);if(!k||!confirm('刪掉選到的這段錄音？'))return;sStop();tkUndo.push({t:'del',k});takes=takes.filter(t=>t!==k);S.bufs.delete(k.id);S.selTake=null;saveTakes();sDraw();qzRender();qzHint('刪掉了')}}
@@ -292,7 +295,7 @@ function qzHomeHtml(){const sc=SCENES[key],bank=Q.bank||(Q.bank=qzBank()),last=q
   const rows=Object.keys(QPAPER).map(k=>{const l=qzPaperList(k,'all');return `<button data-q="hc" data-cat="${k}" class="qz-cr${k===hc?' on':''}${k==='wrong'?' wr':''}"><span>${QPAPER[k].n}</span><small>${qzDoneN(l)?`做過 ${qzDoneN(l)}/${l.length}`:`${l.length} 題`}</small><em>⭐ ${qzPct(l)}%</em></button>`}).join('');
   const all=qzPaperList(hc,'all'),parts=[...new Set(all.map(q=>q.s))].sort((x,y)=>x-y);
   const btns=(part,n)=>n?`<button data-q="begin" data-cat="${hc}" data-part="${part}" data-ord="seq">照順序</button><button data-q="begin" data-cat="${hc}" data-part="${part}" data-ord="rand">隨機</button>`:'';
-  const prow=(part,label,l)=>`<div class="qz-pr"><span>${label}<small>${qzDoneN(l)?`做過 ${qzDoneN(l)}/${l.length}`:`${l.length} 題`}</small></span><em>⭐ ${qzPct(l)}%</em>${btns(part,l.length)}</div>`;
+  const prow=(part,label,l)=>`<div class="qz-pr"><span data-q="psum" data-part="${part}" class="qz-psum">${label}<small>${qzDoneN(l)?`做過 ${qzDoneN(l)}/${l.length}`:`${l.length} 題`}</small></span><em data-q="psum" data-part="${part}" class="qz-psum">⭐ ${qzPct(l)}% ›</em>${btns(part,l.length)}</div>`;
   return `<div class="qz-h"><b>🎯 題組</b><span class="qz-n">${esc(sc.title)}・做過＝有選「這題的結果」・⭐＝選了「準」的比例</span><span class="sp"></span><button data-q="x">✕ 結束</button></div>
   <div class="qz-home"><div class="qz-left"><div class="qz-crs">${rows}</div>
       ${last&&last.ids&&last.ids.length?`<button class="qz-cont" data-q="cont">繼續測驗<small>${esc(qzPaperName(last))}・第 ${last.i+1} / ${last.ids.length} 題</small></button>`:''}</div>
@@ -393,6 +396,7 @@ app.addEventListener('click',e=>{
   if(a==='x'){qzClose();return}
   if(a==='home'){if(S.recd)return;Q.seq=null;sStop();Q.home=true;Q.bank=null;qzRender();return}
   if(a==='hc'){Q.hc=t.dataset.cat;qzLS('scene-pquiz-hc',Q.hc);qzRender();return}
+  if(a==='psum'){const hc=Q.hc||'pitch',part=t.dataset.part,list=qzPaperList(hc,part);if(!list.length)return;Q.paper={cat:hc,part,ord:'seq'};Q.list=list;Q.i=0;Q.home=false;Q.sum=true;Q.act='';sStop();qzRender();return}
   if(a==='begin'){Q.bank=null;qzBegin(t.dataset.cat,t.dataset.part,t.dataset.ord);return}
   if(a==='cont'){const l=qzLastAll()[key];if(l)qzBegin(l.cat,l.part,l.ord,l.ids,l.i);return}
   if(a==='redo'){const ids=Q.list.filter(x=>{const r=qzGet(x.id).res;return r&&r!=='ok'}).map(x=>x.id);if(ids.length)qzBegin('wrong','all','seq',ids,0);return}
@@ -439,7 +443,7 @@ app.addEventListener('click',e=>{
 app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!Q.list[Q.i])return;qzSet(Q.list[Q.i].id,{n:t.value})});
 (()=>{const s=document.createElement('style');s.textContent=`
 #studio.quiz{grid-template-rows:auto minmax(0,1fr) auto minmax(84px,19vh) 0 0}#qz-tdel{position:fixed;right:20px;z-index:60;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,138,128,.6);background:rgba(40,20,18,.92);color:#ffb3ab;font-size:14px}#qz-tdel[hidden]{display:none}#qz-undo{display:inline-flex;align-items:center;gap:6px;position:fixed;right:20px;z-index:60;padding:6px 12px;border-radius:999px;border:1px solid rgba(242,194,123,.6);background:rgba(40,30,18,.92);color:#f2c27b;font-size:14px}#qz-undo[hidden]{display:none}#studio.quiz>.s-take,#studio.quiz>.s-bot{display:none}#studio.quiz .s-lane:not(.me):not([data-l=vocal]){display:none}#studio.quiz .s-pic{margin-bottom:12px}
-.qz-tw{align-items:flex-start}.qz-chips{display:flex;flex-wrap:wrap;gap:5px;flex:1}.qz-nt.bad{background:rgba(232,90,80,.35)!important;border-color:#e8806f!important}.qz-nt.on{background:rgba(242,194,123,.25)!important;border-color:#e8c27a!important}.qz-nt{display:inline-flex;flex-direction:column;align-items:center;line-height:1.1;padding:4px 10px!important}.qz-nt b{font-size:16px}.qz-nt small{font-size:14px;opacity:.85;font-weight:600}.qz-sv{display:inline-flex;align-items:center;justify-content:center;min-width:58px;padding:0 6px;font-size:14px;color:var(--gold,#e8c27a);border-left:1px solid var(--line);border-right:1px solid var(--line)}.qz-sr{margin-left:6px;padding:6px 10px;font-size:12px}.qz-seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}.qz-seg button{border:0!important;border-radius:0!important;padding:7px 12px;font-size:13px;background:transparent}.qz-seg button+button{border-left:1px solid var(--line)!important}#s-quiz .qz-seg button.on{background:var(--glow);color:#1a130c;font-weight:600}.qz-tools{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:rgba(255,255,255,.03);display:grid;gap:6px}.qz-tr{display:flex;align-items:center;gap:6px;flex-wrap:wrap}#s-quiz .qz-tr button{padding:3px 10px;font-size:12px;min-height:0;line-height:1.5}.qz-tl{width:84px;font-size:13px;color:var(--muted);flex:none}.qz-tg{font-size:12px;color:var(--muted)}.qz-th{margin:0;font-size:12px;color:var(--muted)}#s-quiz .qz-tools button.on{background:rgba(120,200,255,.2);border-color:rgba(120,200,255,.8);color:#bfe3ff}.qz-tipbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(19vh + 24px);z-index:5;max-width:90vw;background:var(--glow);color:#1a130c;border-radius:99px;padding:8px 18px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.5)}.qz-tipbar[hidden]{display:none}.qz-adj span{font-size:12px!important}#studio .qz-adj button{padding:4px 10px;font-size:12px}
+.qz-tw{align-items:flex-start}.qz-chips{display:flex;flex-wrap:wrap;gap:5px;flex:1}.qz-nt.bad{background:rgba(232,90,80,.35)!important;border-color:#e8806f!important}.qz-nt.on{background:rgba(242,194,123,.25)!important;border-color:#e8c27a!important}.qz-nt{display:inline-flex;flex-direction:column;align-items:center;line-height:1.1;padding:4px 10px!important}.qz-nt b{font-size:16px}.qz-nt small{font-size:14px;opacity:.85;font-weight:600}.qz-psum{cursor:pointer}.qz-psum:hover{color:#f2c27b}.qz-sv{display:inline-flex;align-items:center;justify-content:center;min-width:58px;padding:0 6px;font-size:14px;color:var(--gold,#e8c27a);border-left:1px solid var(--line);border-right:1px solid var(--line)}.qz-sr{margin-left:6px;padding:6px 10px;font-size:12px}.qz-seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}.qz-seg button{border:0!important;border-radius:0!important;padding:7px 12px;font-size:13px;background:transparent}.qz-seg button+button{border-left:1px solid var(--line)!important}#s-quiz .qz-seg button.on{background:var(--glow);color:#1a130c;font-weight:600}.qz-tools{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:rgba(255,255,255,.03);display:grid;gap:6px}.qz-tr{display:flex;align-items:center;gap:6px;flex-wrap:wrap}#s-quiz .qz-tr button{padding:3px 10px;font-size:12px;min-height:0;line-height:1.5}.qz-tl{width:84px;font-size:13px;color:var(--muted);flex:none}.qz-tg{font-size:12px;color:var(--muted)}.qz-th{margin:0;font-size:12px;color:var(--muted)}#s-quiz .qz-tools button.on{background:rgba(120,200,255,.2);border-color:rgba(120,200,255,.8);color:#bfe3ff}.qz-tipbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(19vh + 24px);z-index:5;max-width:90vw;background:var(--glow);color:#1a130c;border-radius:99px;padding:8px 18px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.5)}.qz-tipbar[hidden]{display:none}.qz-adj span{font-size:12px!important}#studio .qz-adj button{padding:4px 10px;font-size:12px}
 #studio.quiz .s-lane:not(.me){flex:0 0 32px!important}#studio.quiz .s-lyr{display:none}#studio.quiz .s-pic::before{display:none}
 #studio .qz-open{margin-left:auto}#studio.quiz .qz-open{background:rgba(242,194,123,.22);border-color:var(--glow);color:var(--glow)}
 #qz-tover{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;width:min(440px,90%);background:#2a231a;border:1px solid #e8c27a;border-radius:16px;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:10px}#qz-tover b{font-size:18px;color:#f2c27b}#qz-tover span{font-size:14px;line-height:1.6;opacity:.9}#qz-tover div{display:flex;gap:8px;justify-content:flex-end}.qz-timer{font-size:13px;opacity:.75;margin-left:8px;font-variant-numeric:tabular-nums}.qz-timer.over{color:#e8806f;opacity:1;font-weight:600}
