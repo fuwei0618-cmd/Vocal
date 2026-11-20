@@ -43,8 +43,9 @@ async function openStudio(){
     await sLoadLanes();
     // 外面正在播：錄音室接著同一個時間點播下去，外面的播放器在同一刻停（不會斷）
     if(wasPl&&!au.paused&&S){const p=au.currentTime+.08;S.pos=p;sPlay(p);au.handoff(S.T)}else if(!au.paused)au.pause();
-    for(const k of takes)await takeBuf(k);
   }catch(e){sMsg('這首的音檔讀不出來');return}
+  // 錄過的 take 在背景慢慢解開（新的先），不擋住畫面
+  (async()=>{for(const k of takes.slice().reverse()){if(!S)return;await takeBuf(k);if(S)sDraw()}if(window.qzRender&&typeof Q!=='undefined'&&Q)try{qzRender()}catch(e){}})();
   if(!S.view)sView0();sMsg('');sLayout();addEventListener('resize',sLayout);
 }
 async function sLoadLanes(){

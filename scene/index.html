@@ -244,6 +244,7 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 @media (max-width:640px){.ctl{grid-template-columns:1fr 1fr;grid-template-areas:"c c" "l r";row-gap:2px}.ctl .c{grid-area:c;justify-content:center}.ctl .l{grid-area:l}.ctl .r{grid-area:r}
   .hint,.sub{bottom:calc(env(safe-area-inset-bottom,0px) + 168px)!important}}
 /* 錄音室 */
+#qz-load{position:fixed;inset:0;z-index:60;background:#14110d;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:20px}#qz-load span{font-size:14px;opacity:.7}#qz-load i{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.15);border-top-color:#f5c451;animation:qzspin .8s linear infinite}@keyframes qzspin{to{transform:rotate(360deg)}}
 #studio{position:fixed;inset:0;z-index:40;background:#14110d;display:grid;grid-template-rows:auto minmax(150px,1.3fr) auto minmax(0,2fr) auto auto;transition:grid-template-rows .3s ease;color:var(--ink);padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);user-select:none;-webkit-user-select:none}
 body.studio{overflow:hidden}
 #studio button{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--ink);border-radius:99px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer}
@@ -480,7 +481,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=168;
+const VER=169;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER){const dq=new URLSearchParams(location.search).get('do');location.replace(location.pathname+'?v='+m[1]+(dq?'&do='+encodeURIComponent(dq):'')+location.hash)}}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1281,6 +1282,9 @@ function opFit(){const sub=document.getElementById('sub'),g=sub&&sub.querySelect
   const fn=fit(false),fa=fit(true);if(fa<fn-1)fit(false)}
 // 從「今天練什麼」帶過來：?do=map|lyr|beat|pitch|sing|hum|studio|nat，打開對應的東西並給一句提示
 // App 剛好更新版本會重新載入：先把要做的事記在 sessionStorage，新版本接著做
+// 從歌單「繼續測驗」進來：先蓋一層「題組準備中」，不讓歌詞頁閃一下；錄音室開好就拿掉
+(()=>{let q=/[?&]do=quiz/.test(location.search);if(!q)try{const o=JSON.parse(sessionStorage.getItem('scene-do')||'null');q=!!(o&&/^quiz/.test(o.d)&&Date.now()-o.t<30000)}catch(e){}
+  if(q){const L=document.createElement('div');L.id='qz-load';L.innerHTML='<i></i><b>🎯 題組</b><span>正在讀這首歌的音樂…</span>';document.body.appendChild(L);setTimeout(()=>L.remove(),50000)}})();
 setTimeout(()=>{let d='';try{d=new URLSearchParams(location.search).get('do')||''}catch(e){}
   try{if(d)sessionStorage.setItem('scene-do',JSON.stringify({d,k:location.hash,t:Date.now()}));else{const o=JSON.parse(sessionStorage.getItem('scene-do')||'null');sessionStorage.removeItem('scene-do');if(o&&o.k===location.hash&&Date.now()-o.t<30000)d=o.d}}catch(e){}
   const doneDo=()=>{try{sessionStorage.removeItem('scene-do')}catch(e){}};
@@ -1295,8 +1299,8 @@ setTimeout(()=>{let d='';try{d=new URLSearchParams(location.search).get('do')||'
   else if(d==='sing'){to('orig');tip('原曲：跟著唱 3 遍，先不管好不好；再按「靜音」腦內聽一遍')}
   else if(d==='hum'){to('orig');tip('原曲：跟原唱一起哼（不唱詞），對準每個音')}
   else if(d==='studio'){try{openStudio()}catch(e){}}
-  else if(/^quiz/.test(d)){window.qzWant=d.split('-')[1]||1;let n=0;tip('音樂載入中，好了會直接進題組…');const t=setInterval(()=>{if(au||++n>150){clearInterval(t);doneDo();if(au)openStudio();else tip('先在右上「⋯」放原曲或伴奏，才能做音準題組')}},300)}
-  else if(d==='nat'){openNat()}},1200);
+  else if(/^quiz/.test(d)){window.qzWant=d.split('-')[1]||1;let n=0;tip('音樂載入中，好了會直接進題組…');const t=setInterval(()=>{if(au||++n>450){clearInterval(t);doneDo();if(au)openStudio();else{document.getElementById('qz-load')?.remove();tip('先在右上「⋯」放原曲或伴奏，才能做音準題組')}}},100)}
+  else if(d==='nat'){openNat()}},/^quiz/.test(new URLSearchParams(location.search).get('do')||'')?60:1200);
 addEventListener('resize',()=>{if(document.body.classList.contains('op'))setTimeout(()=>show(cur,false),100)});
 addEventListener('resize',()=>{if(document.getElementById('arcf'))arcFit()});
 const onePage=()=>{let v=null;try{v=localStorage.getItem('scene-op-v1')}catch(e){}return v?v==='1':innerWidth>=700};
@@ -1443,7 +1447,7 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=130"></script>
-<script src="quiz.js?v=41"></script>
+<script src="studio.js?v=169"></script>
+<script src="quiz.js?v=169"></script>
 </body>
 </html>

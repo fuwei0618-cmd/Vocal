@@ -178,7 +178,7 @@ function qzStretch(x,sr,f){ // x 單聲道，f＝速度（0.5＝慢一倍）→ 
   return out}
 const qzSlowCache=new Map();
 function qzSeg(id,from,until){ // 這條軌在 from–until 的聲音（單聲道）
-  if(id==='me'){const cs=sCover().filter(c=>c.b>from&&c.a<until);if(!cs.length)return null;const sr=S.bufs.get(cs[0].k.id).buf.sampleRate,n=Math.round((until-from)*sr),y=new Float32Array(n);
+  if(id==='me'){const cs=sCover().filter(c=>c.b>from&&c.a<until);if(!cs.length)return null;const v0=S.bufs.get(cs[0].k.id);if(!v0)return null;const sr=v0.buf.sampleRate,n=Math.round((until-from)*sr),y=new Float32Array(n);
     cs.forEach(c=>{const v=S.bufs.get(c.k.id);if(!v)return;const b=v.buf,ch=b.getChannelData(0);if(b.sampleRate!==sr)return;const a=Math.max(c.a,from),e=Math.min(c.b,until);
       for(let t=Math.round((a-from)*sr),j=Math.round((a-c.o)*sr),te=Math.round((e-from)*sr);t<te;t++,j++)if(j>=0&&j<ch.length)y[t]=ch[j]});return {x:y,sr}}
   const l=S.lanes.find(z=>z.id===id);if(!l||!l.buf)return null;const b=l.buf,sr=b.sampleRate,a=Math.max(0,Math.round(from*sr)),e=Math.min(b.length,Math.round(until*sr)),y=new Float32Array(Math.max(0,e-a));
@@ -243,7 +243,7 @@ closeStudio=function(){qzClose();_qzClose()};
 const _qzOpenStudio=openStudio;
 openStudio=async function(){await _qzOpenStudio();const top=document.querySelector('#studio .s-top');
   if(top&&!top.querySelector('.qz-open')){const b=document.createElement('button');b.className='qz-open';b.dataset.q='open';b.textContent='🎯 題組';top.insertBefore(b,document.getElementById('s-time'))}
-  if(window.qzWant){const c=window.qzWant;window.qzWant=0;if(c==='cont'){qzOpen('');const l=qzLastAll()[key];if(l&&l.ids&&Q)qzBegin(l.cat,l.part,l.ord,l.ids,l.i)}else qzOpen(typeof c==='string'?c:'')}};
+  if(window.qzWant){const c=window.qzWant;window.qzWant=0;if(c==='cont'){qzOpen('');const l=qzLastAll()[key];if(l&&l.ids&&Q)qzBegin(l.cat,l.part,l.ord,l.ids,l.i)}else qzOpen(typeof c==='string'?c:'')}document.getElementById('qz-load')?.remove()};
 
 // 錄音軌上點一段錄音（選到）→ 右上角出現刪除鍵，不管是不是這一題的
 const _qzDraw=sDraw;
@@ -290,8 +290,12 @@ function qzMarksTxt(q,r){const L=qzText(q),MK=QMARKS[q.cat]||[],out=[];Object.ke
   const [li,ci]=k.split(':').map(Number),ch=[...(L[li]||'')][ci],M=MK.find(m=>m[0]===r.mk[k]);if(ch&&M)out.push({li,ci,ch,M})});return out}
 function qzLabel(q){const sc=SCENES[key],A=qzAllLines();if(q.cat==='map')return `第 ${q.s+1} 段・${sc.steps[q.s].sec}`;if(q.l!=null)return A[q.l]||'';return sc.steps[q.s].sec}
 function qzTag(q,r){if(q.cat==='pitch')return (q.t?QTYPE[q.t].n+'・':'')+QMODE[r.m||q.m].v;return ''}
+// 三頁共用的頂列：左邊固定三個分頁（題組首頁｜題目｜成績單，現在在哪頁就亮哪個），中間標題，最右邊 ✕ 結束
+function qzNav(cur,title){const last=qzLastAll()[key],hasQ=!!(Q.list&&Q.list.length)||!!(last&&last.ids&&last.ids.length);
+  const tb=(id,a,l)=>`<button data-q="${cur===id?'':a}" class="${cur===id?'on':''}"${cur!==id&&id!=='home'&&!hasQ?' disabled':''}>${l}</button>`;
+  return `<div class="qz-h"><div class="qz-tabs">${tb('home','home','🏠 題組首頁')}${tb('q','tabq','✏️ 題目')}${tb('sum','tabs','📋 成績單')}</div><b class="qz-tt">${title}</b><span class="sp"></span><button data-q="x">✕ 結束</button></div>`}
 function qzHead(){const n=Q.list.length,w=7,lo=Math.max(0,Math.min(Q.i-w,n-2*w-1)),hi=Math.min(n,lo+2*w+1);
-  return `<div class="qz-h"><button data-q="home">← 題組首頁</button><b>${qzPaperName(Q.paper)}</b><span class="sp"></span>${Q.sum?'<button data-q="back">回到題目</button>':'<button data-q="sum">成績單</button>'}<button data-q="x">✕ 結束</button></div>
+  return `${qzNav(Q.sum?'sum':'q',qzPaperName(Q.paper))}
   ${Q.sum?'':`<div class="qz-h2"><span class="qz-n">第 ${Q.i+1} / ${n} 題</span><span id="qz-timer" class="qz-timer"></span><div class="qz-bar"><i style="width:${Math.round(Q.list.filter(x=>qzGet(x.id).res).length/n*100)}%"></i></div><div class="qz-dots">${lo?'<span class="qz-more">…</span>':''}${Q.list.slice(lo,hi).map((x,k)=>{const j=lo+k;return `<button data-q="go" data-j="${j}" class="qd ${j===Q.i?'cur ':''}${qzGet(x.id).res||''}">${j+1}</button>`}).join('')}${hi<n?'<span class="qz-more">…</span>':''}</div></div>`}`}
 // 題組首頁：左邊每份卷（⭐ 答對率），右邊這份卷的 Part（照段落分），每個都可以照順序或隨機
 function qzHomeHtml(){const sc=SCENES[key],bank=Q.bank||(Q.bank=qzBank()),last=qzLastAll()[key],hc=Q.hc;
@@ -299,7 +303,7 @@ function qzHomeHtml(){const sc=SCENES[key],bank=Q.bank||(Q.bank=qzBank()),last=q
   const all=qzPaperList(hc,'all'),parts=[...new Set(all.map(q=>q.s))].sort((x,y)=>x-y);
   const btns=(part,n)=>n?`<button data-q="begin" data-cat="${hc}" data-part="${part}" data-ord="seq">照順序</button><button data-q="begin" data-cat="${hc}" data-part="${part}" data-ord="rand">隨機</button>`:'';
   const prow=(part,label,l)=>`<div class="qz-pr"><span data-q="psum" data-part="${part}" class="qz-psum">${label}<small>${qzDoneN(l)?`做過 ${qzDoneN(l)}/${l.length}`:`${l.length} 題`}</small></span><em data-q="psum" data-part="${part}" class="qz-psum">⭐ ${qzPct(l)}% ›</em>${btns(part,l.length)}</div>`;
-  return `<div class="qz-h"><b>🎯 題組</b><span class="qz-n">${esc(sc.title)}・做過＝有選「這題的結果」・⭐＝選了「準」的比例</span><span class="sp"></span><button data-q="x">✕ 結束</button></div>
+  return `${qzNav('home','🎯 '+esc(sc.title))}<div class="qz-h2"><span class="qz-n">選左邊的卷、右邊的 Part 開始考・做過＝有選「這題的結果」・⭐＝選了「準」的比例・點 ⭐ 看那份成績單</span></div>
   <div class="qz-home"><div class="qz-left"><div class="qz-crs">${rows}</div>
       ${last&&last.ids&&last.ids.length?`<button class="qz-cont" data-q="cont">繼續測驗<small>${esc(qzPaperName(last))}・第 ${last.i+1} / ${last.ids.length} 題</small></button>`:''}</div>
     <div class="qz-parts"><h4>${QPAPER[hc].n}${hc==='wrong'?'：只考最近一次沒過的題目':hc==='all'?'：四種題目混在一起':''}</h4>
@@ -325,12 +329,14 @@ function qzChars(q,r,cls){const mk=r.mk||{},MK=QMARKS[q.cat]||[],L=qzText(q);
     return `<span data-q="mk" data-k="${li}:${ci}" class="${c||''}${f}">${esc(ch)}${M?`<i>${M[1]}</i>`:''}</span>`}).join('')}</p>`).join('')}
 // ---------- 每題自動計時：進到題目就開始算，離開 App 會暫停；5 分鐘到提醒先跳下一題 ----------
 const QZ_LIMIT=300;
-setInterval(()=>{if(!Q||Q.home||Q.sum||!Q.list||!Q.list.length||document.hidden)return;const q=Q.list[Q.i];if(!q)return;
-  if(!Q.qt||Q.qt.id!==q.id){const r=qzGet(q.id);Q.qt={id:q.id,acc:r.day===qzDay()&&r.sec||0,lim:QZ_LIMIT,warned:false,saved:0};document.getElementById('qz-tover')?.remove()}
-  const t=Q.qt;t.acc++;if(t.acc-t.saved>=10){t.saved=t.acc;qzSet(q.id,{sec:t.acc,day:qzDay()})}
+// 每題計時：每次進來從 0 開始（不累計）；按了播放或錄音才開始算，只是點進來看看不算
+setInterval(()=>{if(!Q)return;if(Q.home||Q.sum||!Q.list||!Q.list.length){Q.qt=null;document.getElementById('qz-tover')?.remove();return}
+  if(document.hidden)return;const q=Q.list[Q.i];if(!q)return;
+  if(!Q.qt||Q.qt.id!==q.id){Q.qt={id:q.id,acc:0,lim:QZ_LIMIT,warned:false,on:false};document.getElementById('qz-tover')?.remove()}
+  const t=Q.qt;if(!t.on&&S&&(S.playing||S.recd))t.on=true;if(t.on)t.acc++;
   const el=document.getElementById('qz-timer'),mm=x=>Math.floor(x/60)+':'+String(x%60).padStart(2,'0');
-  if(el){el.textContent='⏱ '+mm(t.acc)+' / '+mm(t.lim);el.classList.toggle('over',t.acc>=t.lim)}
-  if(t.acc>=t.lim&&!t.warned){t.warned=true;t.show=true}
+  if(el){el.textContent=t.on?'⏱ '+mm(t.acc)+' / '+mm(t.lim):'⏱ 播放後開始計時';el.classList.toggle('idle',!t.on);el.classList.toggle('over',t.acc>=t.lim)}
+  if(t.on&&t.acc>=t.lim&&!t.warned){t.warned=true;t.show=true}
   if(t.show&&!document.getElementById('qz-tover')){const box=document.getElementById('s-quiz');if(!box)return;const d=document.createElement('div');d.id='qz-tover';
     d.innerHTML=`<b>這題已經練 ${Math.round(t.acc/60)} 分鐘了</b><span>耳朵會累、越聽越分不出來。${q.cat==='beat'?'先跳下一題':'先記成沒過、跳下一題'}，它會進錯題本，明天再考。</span><div><button data-q="tskip" class="go">先跳下一題</button><button data-q="tmore">再練 2 分鐘</button></div>`;box.appendChild(d)}
 },1000);
@@ -406,6 +412,8 @@ app.addEventListener('click',e=>{
   if(a==='begin'){Q.bank=null;qzBegin(t.dataset.cat,t.dataset.part,t.dataset.ord);return}
   if(a==='cont'){const l=qzLastAll()[key];if(l)qzBegin(l.cat,l.part,l.ord,l.ids,l.i);return}
   if(a==='redo'){const ids=Q.list.filter(x=>{const r=qzGet(x.id).res;return r&&r!=='ok'}).map(x=>x.id);if(ids.length)qzBegin('wrong','all','seq',ids,0);return}
+  if(a==='tabq'){if(S.recd)return;if(Q.list&&Q.list.length){Q.home=false;Q.sum=false;qzFocus();qzRender()}else{const l=qzLastAll()[key];if(l&&l.ids)qzBegin(l.cat,l.part,l.ord,l.ids,l.i)}return}
+  if(a==='tabs'){if(S.recd)return;if(!(Q.list&&Q.list.length)){const l=qzLastAll()[key];if(!(l&&l.ids))return;qzBegin(l.cat,l.part,l.ord,l.ids,l.i)}Q.seq=null;sStop();Q.home=false;Q.sum=true;qzRender();return}
   if(a==='sum'){if(S.recd)return;Q.seq=null;sStop();Q.sum=true;qzRender();return}
   if(a==='back'){Q.sum=false;if(Q.list.length)qzFocus();qzRender();return}
   if(Q.home)return;
@@ -452,7 +460,8 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 .qz-tw{align-items:flex-start}.qz-chips{display:flex;flex-wrap:wrap;gap:5px;flex:1}.qz-nt.bad{background:rgba(232,90,80,.35)!important;border-color:#e8806f!important}.qz-nt.on{background:rgba(242,194,123,.25)!important;border-color:#e8c27a!important}.qz-nt{display:inline-flex;flex-direction:column;align-items:center;line-height:1.1;padding:4px 10px!important}.qz-nt b{font-size:16px}.qz-nt small{font-size:14px;opacity:.85;font-weight:600}.qz-psum{cursor:pointer}.qz-psum:hover{color:#f2c27b}.qz-rw{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}.qz-rw b{font-weight:500;font-size:16px;padding:1px 7px;border-radius:7px;background:rgba(255,255,255,.06)}.qz-rw b i{font-style:normal;font-size:12px;margin-left:2px}.qz-rw .u{background:rgba(232,128,111,.38)}.qz-rw .d{background:rgba(120,165,255,.38)}.qz-rw .w{background:rgba(242,194,123,.38)}.qz-lm b{position:relative;font-weight:inherit;padding:0 2px;border-radius:5px}.qz-lm b i{position:absolute;top:-.85em;right:-.15em;font-style:normal;font-size:12px}.qz-lm .u{background:rgba(232,128,111,.38)}.qz-lm .d{background:rgba(120,165,255,.38)}.qz-lm .w{background:rgba(242,194,123,.38)}.qz-sv{display:inline-flex;align-items:center;justify-content:center;min-width:58px;padding:0 6px;font-size:14px;color:var(--gold,#e8c27a);border-left:1px solid var(--line);border-right:1px solid var(--line)}.qz-sr{margin-left:6px;padding:6px 10px;font-size:12px}.qz-seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}.qz-seg button{border:0!important;border-radius:0!important;padding:7px 12px;font-size:13px;background:transparent}.qz-seg button+button{border-left:1px solid var(--line)!important}#s-quiz .qz-seg button.on{background:var(--glow);color:#1a130c;font-weight:600}.qz-tools{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:rgba(255,255,255,.03);display:grid;gap:6px}.qz-tr{display:flex;align-items:center;gap:6px;flex-wrap:wrap}#s-quiz .qz-tr button{padding:3px 10px;font-size:12px;min-height:0;line-height:1.5}.qz-tl{width:84px;font-size:13px;color:var(--muted);flex:none}.qz-tg{font-size:12px;color:var(--muted)}.qz-th{margin:0;font-size:12px;color:var(--muted)}#s-quiz .qz-tools button.on{background:rgba(120,200,255,.2);border-color:rgba(120,200,255,.8);color:#bfe3ff}.qz-tipbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(19vh + 24px);z-index:5;max-width:90vw;background:var(--glow);color:#1a130c;border-radius:99px;padding:8px 18px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.5)}.qz-tipbar[hidden]{display:none}.qz-adj span{font-size:12px!important}#studio .qz-adj button{padding:4px 10px;font-size:12px}
 #studio.quiz .s-lane:not(.me){flex:0 0 32px!important}#studio.quiz .s-lyr{display:none}#studio.quiz .s-pic::before{display:none}
 #studio .qz-open{margin-left:auto}#studio.quiz .qz-open{background:rgba(242,194,123,.22);border-color:var(--glow);color:var(--glow)}
-#qz-tover{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;width:min(440px,90%);background:#2a231a;border:1px solid #e8c27a;border-radius:16px;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:10px}#qz-tover b{font-size:18px;color:#f2c27b}#qz-tover span{font-size:14px;line-height:1.6;opacity:.9}#qz-tover div{display:flex;gap:8px;justify-content:flex-end}.qz-timer{font-size:13px;opacity:.75;margin-left:8px;font-variant-numeric:tabular-nums}.qz-timer.over{color:#e8806f;opacity:1;font-weight:600}
+#qz-tover{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;width:min(440px,90%);background:#2a231a;border:1px solid #e8c27a;border-radius:16px;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:10px}#qz-tover b{font-size:18px;color:#f2c27b}#qz-tover span{font-size:14px;line-height:1.6;opacity:.9}#qz-tover div{display:flex;gap:8px;justify-content:flex-end}.qz-timer{font-size:13px;opacity:.75;margin-left:8px;font-variant-numeric:tabular-nums}.qz-tabs{display:flex;border:1px solid rgba(255,255,255,.16);border-radius:999px;overflow:hidden;flex:none}.qz-tabs button{border:0!important;border-radius:0!important;background:transparent;padding:7px 13px;margin:0!important;font-size:14px}.qz-tabs button+button{border-left:1px solid rgba(255,255,255,.16)!important}.qz-tabs button.on{background:rgba(232,194,122,.22);color:#f5c451;font-weight:600}.qz-tabs button:disabled{opacity:.35}.qz-tt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.qz-timer.idle{opacity:.45;font-size:12px}.qz-timer.over{color:#e8806f;opacity:1;font-weight:600}
 #s-quiz{position:absolute;inset:0;background:rgba(18,15,11,.95);overflow:auto;padding:12px 18px 16px;display:flex;flex-direction:column;gap:8px;-webkit-user-select:none;user-select:none}
 #s-quiz .sp{flex:1}
 .qz-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.qz-h>b{color:var(--glow);font-size:15px}.qz-n{color:var(--muted);font-size:13px}
