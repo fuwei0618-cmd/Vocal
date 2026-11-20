@@ -159,7 +159,11 @@ function sTake(){
 // 所以錄音時把太大聲的音檔壓到同一個音量（只會變小、不會變大）
 function laneRms(b){if(b._rms)return b._rms;const d=b.getChannelData(0),st=Math.max(1,Math.floor(d.length/200000));let sum=0,n=0;for(let i=0;i<d.length;i+=st){sum+=d[i]*d[i];n++}return b._rms=Math.sqrt(sum/Math.max(1,n))||1e-4}
 const REC_RMS=.1;
-function sGains(){S.lanes.forEach(l=>{const g=S.gains[l.id];if(!g)return;let v=audible(l)?l.vol:0;if(v&&S.recd&&S.recd.raw&&l.id!=='me'&&l.buf)v*=Math.min(1,REC_RMS/laneRms(l.buf));g.gain.value=v})}
+// 測驗時各音軌響度對齊：原唱人聲、伴奏、原曲本身大小聲不同，切換模式時聽起來忽大忽小 → 都對齊到原曲（只算有聲音的地方）
+function laneLoud(b){if(b._loud)return b._loud;const d=b.getChannelData(0),d1=b.numberOfChannels>1?b.getChannelData(1):d,st=Math.max(1,Math.floor(d.length/300000));let sum=0,n=0;
+  for(let i=0;i<d.length;i+=st){const x=(d[i]+d1[i])/2;if(Math.abs(x)>.01){sum+=x*x;n++}}return b._loud=n>50?Math.sqrt(sum/n):laneRms(b)}
+function laneNorm(l){if(typeof Q==='undefined'||!Q||!l||l.id==='me'||!l.buf)return 1;const r=S.lanes.find(z=>z.id==='orig'&&z.buf)||S.lanes.find(z=>z.id==='inst'&&z.buf);if(!r)return 1;return Math.max(.4,Math.min(3,laneLoud(r.buf)/laneLoud(l.buf)))}
+function sGains(){S.lanes.forEach(l=>{const g=S.gains[l.id];if(!g)return;let v=audible(l)?l.vol*laneNorm(l):0;if(v&&S.recd&&S.recd.raw&&l.id!=='me'&&l.buf)v*=Math.min(1,REC_RMS/laneRms(l.buf));g.gain.value=v})}
 // 切去別的 App（例如 IG 放音樂）再回來，iPad 的聲音引擎會卡住：先叫醒，叫不醒就換一個新的
 async function sWake(){if(ctxStale&&!S.playing&&!S.recd){S.ctx=audioCtx()}let c=S.ctx;if(c.state==='running')return;
   try{await Promise.race([c.resume(),new Promise(r=>setTimeout(r,400))])}catch(e){}

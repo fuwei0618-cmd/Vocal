@@ -140,7 +140,7 @@ async function qzMix(q){ // 鋼琴音疊在原唱上，用這句的開頭到結�
   qzSlowStop();sStop();Q.seq=null;Q.lastRun=null;const f=qzSpeed();await sWake();const c=S.ctx,[from,until]=qzRange(q),id=qzRef();
   const k=[id,from.toFixed(2),until.toFixed(2),f].join('|');let v=qzSlowCache.get(k);
   if(!v){const sg=qzSeg(id,Math.max(0,from),until);if(!sg||!sg.x.length)return;const y=qzStretch(sg.x,sg.sr,f),bf=c.createBuffer(1,y.length,sg.sr);bf.copyToChannel(y,0);v=bf;qzSlowCache.set(k,v)}
-  const T=c.currentTime+.08,s=c.createBufferSource(),g=c.createGain();g.gain.value=.9;g.connect(c.destination);s.buffer=v;s.connect(g);s.start(T);
+  const T=c.currentTime+.08,s=c.createBufferSource(),g=c.createGain();g.gain.value=.9*laneNorm(S.lanes.find(z=>z.id===id));g.connect(c.destination);s.buffer=v;s.connect(g);s.start(T);
   const tot=N.w.reduce((a,x)=>a+x[2],0),sec=(until-from)/f/tot,L=[];N.w.forEach(([ch,ns,b])=>{const a=qzNs(ns);a.forEach(n=>L.push([n,b*sec/a.length]))});
   const r=qzToneAt(c,L,N.base,T,.3),srcs=[s,...r.nodes];Q.act='mix';Q.who='';
   Q.slow={srcs,t:setTimeout(()=>{if(!Q||!Q.slow||Q.slow.srcs!==srcs)return;Q.slow=null;Q.act='';qzRender()},(until-from)/f*1000+150)};qzRender()}
@@ -173,7 +173,7 @@ async function qzSlow(act,ids,from,until,who,done){
   qzSlowStop();sStop();const f=qzSpeed();await sWake();const c=S.ctx,T=c.currentTime+.06,srcs=[];
   for(const id of ids){const k=[id,from.toFixed(2),until.toFixed(2),f,id==='me'?takes.map(t=>t.id+':'+(t.adj||0)).join(','):''].join('|');
     let v=qzSlowCache.get(k);if(!v){const sg=qzSeg(id,Math.max(0,from),until);if(!sg||!sg.x.length)continue;const y=qzStretch(sg.x,sg.sr,f),b=c.createBuffer(1,y.length,sg.sr);b.copyToChannel(y,0);v=b;if(qzSlowCache.size>40)qzSlowCache.clear();qzSlowCache.set(k,v)}
-    const l=S.lanes.find(z=>z.id===id),g=c.createGain();g.gain.value=l?(l.vol==null?1:l.vol):1;g.connect(c.destination);const s=c.createBufferSource();s.buffer=v;s.connect(g);s.start(T);srcs.push(s)}
+    const l=S.lanes.find(z=>z.id===id),g=c.createGain();g.gain.value=l?(l.vol==null?1:l.vol)*laneNorm(l):1;g.connect(c.destination);const s=c.createBufferSource();s.buffer=v;s.connect(g);s.start(T);srcs.push(s)}
   const dur=(until-from)/f;Q.act=act;Q.who=who||'';Q.slow={srcs,t:setTimeout(()=>{if(!Q||!Q.slow||Q.slow.srcs!==srcs)return;Q.slow=null;done?done():qzSlowEnd()},dur*1000+120)};qzRender()}
 function qzSlowEnd(){if(!Q)return;if(Q.seq&&Q.seq.length&&Q.act){setTimeout(()=>{if(Q&&Q.seq)qzNext()},350);return}
   if(Q.lastRun){const fn=Q.lastRun;Q.seq=null;setTimeout(()=>{if(Q&&Q.lastRun===fn){fn();Q.lastRun=fn}},400);return}
@@ -259,7 +259,7 @@ function qzTick(p){
   if(!Q||Q.sum)return;const el=document.getElementById('s-quiz');if(!el)return;
   if(p<0){el.classList.remove('hush');Q.mute=null;if(Q.seq&&Q.seq.length&&Q.act){setTimeout(()=>{if(Q&&Q.seq)qzNext()},350);return}
     if(Q.lastRun){const f=Q.lastRun;Q.seq=null;setTimeout(()=>{if(Q&&Q.lastRun===f){f();Q.lastRun=f}},400);return}Q.seq=null;Q.act='';Q.who='';qzRender();return}
-  if(Q.mute){const inn=p>=Q.mute[0]&&p<Q.mute[1];if(inn!==Q.inn){Q.inn=inn;if(inn)S.lanes.forEach(l=>{const g=S.gains[l.id];if(g)g.gain.value=l.id==='inst'&&l.buf?(l.vol||1):0});else sGains();el.classList.toggle('hush',inn)}}
+  if(Q.mute){const inn=p>=Q.mute[0]&&p<Q.mute[1];if(inn!==Q.inn){Q.inn=inn;if(inn)S.lanes.forEach(l=>{const g=S.gains[l.id];if(g)g.gain.value=l.id==='inst'&&l.buf?(l.vol||1)*laneNorm(l):0});else sGains();el.classList.toggle('hush',inn)}}
   const q=Q.list[Q.i];if(!q)return;const L=getLines();let k=-1;qzText(q).forEach((_,li)=>{const t=L[qzGl(q,li)];if(t!=null&&p>=t-.3)k=li});
   if(k!==Q.k){Q.k=k;el.querySelectorAll('.qz-lyr p').forEach(x=>x.classList.toggle('on',+x.dataset.li===k))}
 }
