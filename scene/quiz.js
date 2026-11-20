@@ -41,8 +41,11 @@ function qzTrimEnd(a,b){const l=qLane('vocal');if(!l||b-a<1.5)return b;const k=k
   const nb=last==null?b:Math.min(b,last+.6),r=b-nb>.8?nb:b;qzTrimC.set(k,r);return r}
 function qzLineAuto(g){const [a,b]=qzLineRange0(g);return [a,qzTrimEnd(a,b)]}
 function qzWholeAuto(sec){const L=getLines(),[sa,sb]=secRange(sec),f=L[lineOff(sec)],a=f!=null&&f>=sa&&f<sb?f:sa;return [a,qzTrimEnd(a,sb)]}
-function qzWholeRange(sec){const o=(qzRngAll()[key]||{})['S'+sec];if(o&&o.length===2&&o[1]>o[0])return o;return qzWholeAuto(sec)}
-const qzRk=q=>q.l!=null?q.l:'S'+q.s,qzRAuto=q=>q.l!=null?qzLineAuto(q.l):qzWholeAuto(q.s),qzRCur=q=>q.l!=null?qzLineRange(q.l):qzWholeRange(q.s);
+// 幾句一組連唱（她自己選的，例如第 1–3 句）：從第一句開頭到最後一句結束
+function qzGrpAuto(q){const L=getLines(),[,sb]=secRange(q.s),o=lineOff(q.s),g0=o+q.a-1,g1=o+q.b-1,a=L[g0];if(a==null)return qzWholeAuto(q.s);
+  let e=L[g1+1];if(e==null||e<=a||secOfLine(g1+1)!==q.s)e=sb;return [a,qzTrimEnd(a,e)]}
+function qzWholeRange(sec,q){const o=(qzRngAll()[key]||{})[q&&q.a?qzRk(q):'S'+sec];if(o&&o.length===2&&o[1]>o[0])return o;return q&&q.a?qzGrpAuto(q):qzWholeAuto(sec)}
+const qzRk=q=>q.l!=null?q.l:q.a?'S'+q.s+'.'+q.a+'-'+q.b:'S'+q.s,qzRAuto=q=>q.l!=null?qzLineAuto(q.l):q.a?qzGrpAuto(q):qzWholeAuto(q.s),qzRCur=q=>q.l!=null?qzLineRange(q.l):qzWholeRange(q.s,q);
 function qzLineRange(g){const o=(qzRngAll()[key]||{})[g];if(o&&o.length===2&&o[1]>o[0])return o;return qzLineAuto(g)}
 // 每段開頭、或前面空很久的句子＝要自己進拍的地方
 function qzEntries(){const L=getLines();return qzPool().filter(g=>g===0||L[g-1]==null||secOfLine(g)!==secOfLine(g-1)||L[g]-qzLineRange(g-1)[0]>6)}
@@ -62,17 +65,26 @@ function qzAnalyze(){const c=window._qzPA||(window._qzPA={});if(c[key])return c[
     if(Math.abs(bj)>=5)jump[g]={st:Math.round(bj),t:+bt.toFixed(2)}});
   return c[key]={hi,jump}}
 // ---------- 題庫（像考照 App）：整首每一句都出題；每份卷可以照順序或隨機，Part 照段落分 ----------
-const QRE={whole:/^P(\d+)$/,pitch:/^L(\d+)([ftjh]?)$/,lyr:/^Y(\d+)$/,beat:/^B(\d+)$/};
+const QRE={whole:/^P(\d+)(?:\.(\d+)-(\d+))?$/,pitch:/^L(\d+)([ftjh]?)$/,lyr:/^Y(\d+)$/,beat:/^B(\d+)$/};
 const QCATS=['pitch','lyr','beat','map'];
 const QPAPER={all:{n:'🔀 全部混合'},pitch:{n:'🎯 音準'},lyr:{n:'📝 歌詞'},beat:{n:'🥁 進拍'},map:{n:'🗺 架構'},wrong:{n:'❌ 錯題本'}}; // 「今天練什麼」健檢跟這個同順序
 function qzQ(id,j){let m;
   if((m=id.match(QRE.pitch))){const l=+m[1],t=m[2]||'';return {id,cat:'pitch',l,s:secOfLine(l),t,m:'sing'}/* 每題都先唱 */}
-  if((m=id.match(QRE.whole)))return {id,cat:'pitch',l:null,s:+m[1],t:'s',m:'sing'}; // 整段連唱：這個 Part 每句考完，最後整段唱一次
+  if((m=id.match(QRE.whole)))return m[2]?{id,cat:'pitch',l:null,s:+m[1],t:'s',m:'sing',a:+m[2],b:+m[3]}:{id,cat:'pitch',l:null,s:+m[1],t:'s',m:'sing'}; // 整段連唱：這個 Part 每句考完，最後整段唱一次
   if((m=id.match(QRE.lyr)))return {id,cat:'lyr',l:+m[1],s:secOfLine(+m[1])};
   if((m=id.match(QRE.beat)))return {id,cat:'beat',l:+m[1],s:secOfLine(+m[1])};
   if((m=id.match(/^M(\d+)$/)))return {id,cat:'map',s:+m[1]};
   return null}
 // 音準題的題型：大跳音、高音句（有原唱人聲才分析得出來）＞每段第一句＝句首音＞每段最後一句＝句尾長音＞其他整句
+const qzGrpAll=()=>{try{return JSON.parse(qzLS('scene-qgrp')||'{}')||{}}catch(e){return {}}};
+function qzGrps(s){return ((qzGrpAll()[key]||{})[s]||[]).filter(g=>g[1]<=qzLines(s).length).sort((x,y)=>x[0]-y[0]||x[1]-y[1])}
+function qzGrpSave(s,f){const A=qzGrpAll(),B=A[key]=A[key]||{};B[s]=f(B[s]||[]);qzLS('scene-qgrp',JSON.stringify(A))}
+// 幾句一組：點第一句、再點最後一句，就多一題「第 a–b 句連唱」（放在這個 Part 的整段連唱前面）
+function qzGrpRow(q){const n=qzLines(q.s).length,gs=qzGrps(q.s),sel=Q.gsel;
+  return `<div class="qz-tr qz-grp"><span class="qz-tl">幾句一組</span>${Array.from({length:n},(_,i)=>i+1).map(k=>`<button data-q="grp" data-n="${k}" class="${sel===k?'on':q.a&&k>=q.a&&k<=q.b?'in':''}">${k}</button>`).join('')}<span class="qz-tg">${sel?`再點最後一句（從第 ${sel} 句）`:'點第一句、再點最後一句'}</span></div>
+  ${gs.length||q.a?`<div class="qz-tr qz-grp"><span class="qz-tl">已經組好</span>${gs.map(([a,b])=>{const id=`P${q.s}.${a}-${b}`;return `<span class="qz-gc${q.id===id?' cur':''}"><button data-q="grpgo" data-id="${id}">${a}–${b}</button><button data-q="grpdel" data-id="${id}" aria-label="刪掉這組">✕</button></span>`}).join('')}<button data-q="grpgo" data-id="P${q.s}" class="${q.a?'':'cur'}">整段</button></div>`:''}`}
+function qzGoId(id){let i=Q.list.findIndex(x=>x.id===id);if(i<0){const nq=qzQ(id);if(!nq)return;const w=Q.list.findIndex(x=>x.id==='P'+nq.s);i=w<0?Q.i+1:w;Q.list.splice(i,0,nq)}
+  sStop();Q.seq=null;Q.act='';Q.i=i;qzSaveLast();qzFocus();qzRender()}
 function qzBank(){const pool=qzPool(),pa=qzAnalyze(),out=[],L=getLines(),ent=new Set(qzEntries());
   const H=pa?Object.keys(pa.hi).map(Number).sort((x,y)=>pa.hi[y]-pa.hi[x]).slice(0,Math.max(4,Math.round(pool.length/6))):[];
   const lastOf=g=>secOfLine(g+1)!==secOfLine(g)||g===qzAllLines().length-1,firstOf=g=>g===0||secOfLine(g-1)!==secOfLine(g);
@@ -82,7 +94,7 @@ function qzBank(){const pool=qzPool(),pa=qzAnalyze(),out=[],L=getLines(),ent=new
     if(ent.has(g))out.push(qzQ('B'+g));
     out.push(qzQ('Y'+g));
     const t=pa&&pa.jump[g]?'j':H.includes(g)?'h':firstOf(g)?'f':lastOf(g)?'t':'';out.push(qzQ('L'+g+t));
-    if(lastOf(g)&&qzLines(s).length>=2)out.push(qzQ('P'+s))});
+    if(lastOf(g)&&qzLines(s).length>=2){qzGrps(s).forEach(([a,b])=>out.push(qzQ(`P${s}.${a}-${b}`)));out.push(qzQ('P'+s))}});
   for(let k=sec+1;k<SCENES[key].steps.length;k++)out.push(qzQ('M'+k));
   return out}
 // 每一題最近一次的作答（今天的優先）
@@ -98,16 +110,16 @@ function qzSaveLast(){if(!Q||!Q.paper)return;const A=qzLastAll();A[key]=Object.a
 function qzPaperName(p){const sc=SCENES[key];return QPAPER[p.cat].n+(p.part==='all'?'':`・Part ${+p.part+1} ${sc.steps[+p.part].sec}`)+(p.ord==='rand'?'・隨機':'・照順序')}
 function qzBegin(cat,part,ord,ids,i){const list=ids?ids.map(id=>qzQ(id)).filter(Boolean):qzPaperList(cat,part);if(!list.length){qzHint('這份卷現在沒有題目');return}
   Q.paper={cat,part,ord};Q.list=ord==='rand'&&!ids?qzShuffle(list):list;Q.home=false;Q.sum=false;Q.i=Math.min(i||0,Q.list.length-1);Q.act='';Q.rev=false;Q.seq=null;Q.k=-2;qzSaveLast();qzFocus();qzRender()}
-function qzText(q){return q.l!=null?[qzAllLines()[q.l]||'']:q.cat==='map'?[]:qzLines(q.s)}
-function qzGl(q,li){return q.l!=null?q.l:(blocks?lineOff(q.s):0)+li}
+function qzText(q){return q.l!=null?[qzAllLines()[q.l]||'']:q.cat==='map'?[]:q.a?qzLines(q.s).slice(q.a-1,q.b):qzLines(q.s)}
+function qzGl(q,li){return q.l!=null?q.l:(blocks?lineOff(q.s):0)+(q.a?q.a-1:0)+li}
 // 這題要比的範圍
-function qzRange(q){if(q.t==='s')return qzWholeRange(q.s);if(q.cat==='map'||q.l==null)return secRange(q.s);const [a,b]=qzLineRange(q.l);
+function qzRange(q){if(q.t==='s')return qzWholeRange(q.s,q);if(q.cat==='map'||q.l==null)return secRange(q.s);const [a,b]=qzLineRange(q.l);
   if(q.cat==='beat')return [Math.max(0,a-1),a+2.5];
   if(q.cat!=='pitch')return [a,b];
   if(q.t==='f')return [a,Math.min(b,a+1.5)];
   return [a,b]}
 // 這題要錄的範圍
-function qzRecRange(q){if(q.t==='s')return qzWholeRange(q.s);if(q.l==null)return secRange(q.s);const [a,b]=qzLineRange(q.l);if(q.cat==='beat')return [Math.max(0,a-2),a+2.5];if(q.t==='f')return [a,Math.min(b,a+1.5)];return [a,b]}
+function qzRecRange(q){if(q.t==='s')return qzWholeRange(q.s,q);if(q.l==null)return secRange(q.s);const [a,b]=qzLineRange(q.l);if(q.cat==='beat')return [Math.max(0,a-2),a+2.5];if(q.t==='f')return [a,Math.min(b,a+1.5)];return [a,b]}
 const qzCut=q=>Q&&Q.cut&&Q.cutQ===q.id?Q.cut:null;
 function qzRanges(q){if(qzCut(q))return [qzCut(q)];if(q.l!=null||q.cat==='beat'||q.t==='s')return [qzRange(q)];const L=getLines(),n=qzText(q).length,out=[];for(let li=0;li<n;li++){const g=qzGl(q,li);if(L[g]!=null)out.push(qzLineRange(g))}return out.length?out:[qzRange(q)]}
 const qLane=id=>S&&S.lanes.find(l=>l.id===id&&(id==='me'||l.buf));
@@ -288,8 +300,8 @@ function qzTick(p){
 // ---------- 畫面 ----------
 function qzMarksTxt(q,r){const L=qzText(q),MK=QMARKS[q.cat]||[],out=[];Object.keys(r.mk||{}).sort((x,y)=>{const [a,b]=x.split(':').map(Number),[c,d]=y.split(':').map(Number);return a-c||b-d}).forEach(k=>{
   const [li,ci]=k.split(':').map(Number),ch=[...(L[li]||'')][ci],M=MK.find(m=>m[0]===r.mk[k]);if(ch&&M)out.push({li,ci,ch,M})});return out}
-function qzLabel(q){const sc=SCENES[key],A=qzAllLines();if(q.cat==='map')return `第 ${q.s+1} 段・${sc.steps[q.s].sec}`;if(q.l!=null)return A[q.l]||'';return sc.steps[q.s].sec}
-function qzTag(q,r){if(q.cat==='pitch')return (q.t?QTYPE[q.t].n+'・':'')+QMODE[r.m||q.m].v;return ''}
+function qzLabel(q){const sc=SCENES[key],A=qzAllLines();if(q.cat==='map')return `第 ${q.s+1} 段・${sc.steps[q.s].sec}`;if(q.l!=null)return A[q.l]||'';return sc.steps[q.s].sec+(q.a?`・第 ${q.a}–${q.b} 句`:'')}
+function qzTag(q,r){if(q.cat==='pitch')return (q.a?'幾句連唱・':q.t?QTYPE[q.t].n+'・':'')+QMODE[r.m||q.m].v;return ''}
 // 三頁共用的頂列：左邊固定三個分頁（題組首頁｜題目｜成績單，現在在哪頁就亮哪個），中間標題，最右邊 ✕ 結束
 function qzNav(cur,title){const last=qzLastAll()[key],hasQ=!!(Q.list&&Q.list.length)||!!(last&&last.ids&&last.ids.length);
   const tb=(id,a,l)=>`<button data-q="${cur===id?'':a}" class="${cur===id?'on':''}"${cur!==id&&id!=='home'&&!hasQ?' disabled':''}>${l}</button>`;
@@ -351,6 +363,7 @@ function qzRender(){
   const cmp=n0=>`<div class="qz-st qz-cmp"><b>${n0}</b><span>比一比</span><div class="qz-seg"><button data-q="alt" class="${on('alt')}" ${has?'':'disabled'}>${on('alt')?'⏹ 停':'輪流比'}</button><button data-q="cmp" data-c="both" class="${on('both')}" ${has?'':'disabled'}>${on('both')?'⏹ 停':'原唱＋我'}</button><button data-q="cmp" data-c="me" class="${on('me')}" ${has?'':'disabled'}>${on('me')?'⏹ 停':'只聽我'}</button><button data-q="cmp" data-c="ref" class="${on('ref')}">${on('ref')?'⏹ 停':'只聽原唱'}</button></div></div>${Q.who?who:''}`;
   // 右下角工具：對齊、框選（只有錄好之後才出現）
   const cutC=qzCut(q),tools=!recd&&(q.cat==='pitch'||q.cat==='beat')?`<div class="qz-tools">
+    ${q.t==='s'?qzGrpRow(q):''}
     ${qzToneRow(q)}
     ${(q.l!=null||q.t==='s')&&q.cat==='pitch'?(()=>{const [ra,rb]=qzRCur(q),own=!!(qzRngAll()[key]||{})[qzRk(q)];return `<div class="qz-tr"><span class="qz-tl">${q.t==='s'?'這段範圍':'這題範圍'}</span><span class="qz-tg">開頭</span><button data-q="qrng" data-e="0" data-d="-1">◀</button><button data-q="qrng" data-e="0" data-d="1">▶</button><span class="qz-tg">結尾</span><button data-q="qrng" data-e="1" data-d="-1">◀</button><button data-q="qrng" data-e="1" data-d="1">▶</button><span class="qz-tg">${mmss(ra)}.${Math.floor(ra*10)%10}–${mmss(rb)}.${Math.floor(rb*10)%10}</span>${own?'<button data-q="qrng0" class="qz-sr">還原</button>':''}</div>`})():''}
     <div class="qz-tr"><span class="qz-tl">速度</span><div class="qz-seg qz-spd">${[-.1,-.05].map(d=>`<button data-q="spd" data-d="${d}" ${qzSpeed()+d<.299?'disabled':''}>${d}</button>`).join('')}<b class="qz-sv">${qzSpeed()===1?'原速':qzSpeed().toFixed(2)+'×'}</b>${[.05,.1].map(d=>`<button data-q="spd" data-d="${d}" ${qzSpeed()+d>1.001?'disabled':''}>+${d}</button>`).join('')}</div>${qzSpeed()<1?'<button data-q="spd" data-d="9" class="qz-sr">原速</button>':''}<span class="qz-tg">音高不變</span></div>
@@ -361,7 +374,7 @@ function qzRender(){
   let title=esc(st.sec),tip='',steps='',right='';
   if(q.cat==='pitch'){
     const J=q.t==='j'&&qzAnalyze()&&qzAnalyze().jump[q.l];
-    title+=q.l!=null?`<small>・${q.t?QTYPE[q.t].n:'一句'}</small>`:'';
+    title+=q.l!=null?`<small>・${q.t?QTYPE[q.t].n:'一句'}</small>`:q.t==='s'?`<small>・${q.a?`第 ${q.a}–${q.b} 句連唱`:'整段連唱'}</small>`:'';
     tip=q.t==='j'?(J?`這句有一個大跳：${J.st>0?'往上':'往下'}跳 ${Math.abs(J.st)} 個半音。注意跳的那一下有沒有到位。想只聽跳的那幾個字，用右邊「框選一段」。`:'這句有一個大跳，注意跳的那一下有沒有到位。'):q.t?QTYPE[q.t].t:QMODE[m].t;
     if(q.t)tip+=`<br>這題用${QMODE[m].v}的。`;
     steps=m==='mind'?`<div class="qz-st"><b>1</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':q.l!=null?'▶ 先聽原曲這句':'▶ 先聽原曲這段'}</button></div>
@@ -412,6 +425,15 @@ app.addEventListener('click',e=>{
   if(a==='begin'){Q.bank=null;qzBegin(t.dataset.cat,t.dataset.part,t.dataset.ord);return}
   if(a==='cont'){const l=qzLastAll()[key];if(l)qzBegin(l.cat,l.part,l.ord,l.ids,l.i);return}
   if(a==='redo'){const ids=Q.list.filter(x=>{const r=qzGet(x.id).res;return r&&r!=='ok'}).map(x=>x.id);if(ids.length)qzBegin('wrong','all','seq',ids,0);return}
+  if(a==='grp'){if(S.recd)return;const k=+t.dataset.n;if(!Q.gsel){Q.gsel=k;qzRender();return}
+    const x=Math.min(Q.gsel,k),y=Math.max(Q.gsel,k),n=qzLines(q.s).length;Q.gsel=0;
+    if(x===y){qzHint('一組至少兩句：點第一句、再點最後一句');qzRender();return}
+    if(x===1&&y===n){qzGoId('P'+q.s);return}
+    qzGrpSave(q.s,l=>l.some(g=>g[0]===x&&g[1]===y)?l:l.concat([[x,y]]));Q.bank=null;qzGoId(`P${q.s}.${x}-${y}`);qzHint(`多了一題：第 ${x}–${y} 句連唱`);return}
+  if(a==='grpgo'){if(S.recd)return;Q.gsel=0;qzGoId(t.dataset.id);return}
+  if(a==='grpdel'){if(S.recd)return;const nq=qzQ(t.dataset.id);if(!nq||!nq.a)return;qzGrpSave(nq.s,l=>l.filter(g=>!(g[0]===nq.a&&g[1]===nq.b)));Q.bank=null;
+    const cur=Q.list[Q.i]&&Q.list[Q.i].id===nq.id,j=Q.list.findIndex(x=>x.id===nq.id);if(j>=0){Q.list.splice(j,1);if(j<Q.i)Q.i--}
+    if(cur)qzGoId('P'+nq.s);else{qzSaveLast();qzRender()}return}
   if(a==='tabq'){if(S.recd)return;if(Q.list&&Q.list.length){Q.home=false;Q.sum=false;qzFocus();qzRender()}else{const l=qzLastAll()[key];if(l&&l.ids)qzBegin(l.cat,l.part,l.ord,l.ids,l.i)}return}
   if(a==='tabs'){if(S.recd)return;if(!(Q.list&&Q.list.length)){const l=qzLastAll()[key];if(!(l&&l.ids))return;qzBegin(l.cat,l.part,l.ord,l.ids,l.i)}Q.seq=null;sStop();Q.home=false;Q.sum=true;qzRender();return}
   if(a==='sum'){if(S.recd)return;Q.seq=null;sStop();Q.sum=true;qzRender();return}
@@ -461,6 +483,7 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 #studio.quiz .s-lane:not(.me){flex:0 0 32px!important}#studio.quiz .s-lyr{display:none}#studio.quiz .s-pic::before{display:none}
 #studio .qz-open{margin-left:auto}#studio.quiz .qz-open{background:rgba(242,194,123,.22);border-color:var(--glow);color:var(--glow)}
 #qz-tover{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;width:min(440px,90%);background:#2a231a;border:1px solid #e8c27a;border-radius:16px;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:10px}#qz-tover b{font-size:18px;color:#f2c27b}#qz-tover span{font-size:14px;line-height:1.6;opacity:.9}#qz-tover div{display:flex;gap:8px;justify-content:flex-end}.qz-timer{font-size:13px;opacity:.75;margin-left:8px;font-variant-numeric:tabular-nums}.qz-tabs{display:flex;border:1px solid rgba(255,255,255,.16);border-radius:999px;overflow:hidden;flex:none}.qz-tabs button{border:0!important;border-radius:0!important;background:transparent;padding:7px 13px;margin:0!important;font-size:14px}.qz-tabs button+button{border-left:1px solid rgba(255,255,255,.16)!important}.qz-tabs button.on{background:rgba(232,194,122,.22);color:#f5c451;font-weight:600}.qz-tabs button:disabled{opacity:.35}.qz-tt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.qz-grp button{min-width:34px}.qz-grp button.on{background:#f5c451!important;color:#1a1408!important}.qz-grp button.in{background:rgba(232,194,122,.3)!important;border-color:#e8c27a!important}.qz-gc{display:inline-flex;border:1px solid rgba(255,255,255,.18);border-radius:999px;overflow:hidden}.qz-gc button{border:0!important;border-radius:0!important;margin:0!important}.qz-gc.cur,.qz-grp button.cur{background:rgba(232,194,122,.25)}
 .qz-timer.idle{opacity:.45;font-size:12px}.qz-timer.over{color:#e8806f;opacity:1;font-weight:600}
 #s-quiz{position:absolute;inset:0;background:rgba(18,15,11,.95);overflow:auto;padding:12px 18px 16px;display:flex;flex-direction:column;gap:8px;-webkit-user-select:none;user-select:none}
 #s-quiz .sp{flex:1}
