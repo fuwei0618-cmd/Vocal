@@ -270,7 +270,7 @@ function qzLabel(q){const sc=SCENES[key],A=qzAllLines();if(q.cat==='map')return 
 function qzTag(q,r){if(q.cat==='pitch')return (q.t?QTYPE[q.t].n+'・':'')+QMODE[r.m||q.m].v;return ''}
 function qzHead(){const n=Q.list.length,w=7,lo=Math.max(0,Math.min(Q.i-w,n-2*w-1)),hi=Math.min(n,lo+2*w+1);
   return `<div class="qz-h"><button data-q="home">← 題組首頁</button><b>${qzPaperName(Q.paper)}</b><span class="sp"></span>${Q.sum?'<button data-q="back">回到題目</button>':'<button data-q="sum">成績單</button>'}<button data-q="x">✕ 結束</button></div>
-  ${Q.sum?'':`<div class="qz-h2"><span class="qz-n">第 ${Q.i+1} / ${n} 題</span><div class="qz-bar"><i style="width:${Math.round(Q.list.filter(x=>qzGet(x.id).res).length/n*100)}%"></i></div><div class="qz-dots">${lo?'<span class="qz-more">…</span>':''}${Q.list.slice(lo,hi).map((x,k)=>{const j=lo+k;return `<button data-q="go" data-j="${j}" class="qd ${j===Q.i?'cur ':''}${qzGet(x.id).res||''}">${j+1}</button>`}).join('')}${hi<n?'<span class="qz-more">…</span>':''}</div></div>`}`}
+  ${Q.sum?'':`<div class="qz-h2"><span class="qz-n">第 ${Q.i+1} / ${n} 題</span><span id="qz-timer" class="qz-timer"></span><div class="qz-bar"><i style="width:${Math.round(Q.list.filter(x=>qzGet(x.id).res).length/n*100)}%"></i></div><div class="qz-dots">${lo?'<span class="qz-more">…</span>':''}${Q.list.slice(lo,hi).map((x,k)=>{const j=lo+k;return `<button data-q="go" data-j="${j}" class="qd ${j===Q.i?'cur ':''}${qzGet(x.id).res||''}">${j+1}</button>`}).join('')}${hi<n?'<span class="qz-more">…</span>':''}</div></div>`}`}
 // 題組首頁：左邊每份卷（⭐ 答對率），右邊這份卷的 Part（照段落分），每個都可以照順序或隨機
 function qzHomeHtml(){const sc=SCENES[key],bank=Q.bank||(Q.bank=qzBank()),last=qzLastAll()[key],hc=Q.hc;
   const rows=Object.keys(QPAPER).map(k=>{const l=qzPaperList(k,'all');return `<button data-q="hc" data-cat="${k}" class="qz-cr${k===hc?' on':''}${k==='wrong'?' wr':''}"><span>${QPAPER[k].n}</span><small>${l.length} 題</small><em>⭐ ${qzPct(l)}%</em></button>`}).join('');
@@ -298,6 +298,17 @@ function qzChars(q,r,cls){const mk=r.mk||{},MK=QMARKS[q.cat]||[],L=qzText(q);
   return L.map((ln,li)=>`<p data-li="${li}">${[...ln].map((ch,ci,all)=>{if(/\s/.test(ch))return ' ';const c=mk[li+':'+ci],M=MK.find(x=>x[0]===c);
     const f=q.t==='f'&&ci===all.findIndex(z=>!/\s/.test(z))||q.t==='t'&&ci>=all.length-3?' focus':'';
     return `<span data-q="mk" data-k="${li}:${ci}" class="${c||''}${f}">${esc(ch)}${M?`<i>${M[1]}</i>`:''}</span>`}).join('')}</p>`).join('')}
+// ---------- 每題自動計時：進到題目就開始算，離開 App 會暫停；5 分鐘到提醒先跳下一題 ----------
+const QZ_LIMIT=300;
+setInterval(()=>{if(!Q||Q.home||Q.sum||!Q.list||!Q.list.length||document.hidden)return;const q=Q.list[Q.i];if(!q)return;
+  if(!Q.qt||Q.qt.id!==q.id){const r=qzGet(q.id);Q.qt={id:q.id,acc:r.day===qzDay()&&r.sec||0,lim:QZ_LIMIT,warned:false,saved:0};document.getElementById('qz-tover')?.remove()}
+  const t=Q.qt;t.acc++;if(t.acc-t.saved>=10){t.saved=t.acc;qzSet(q.id,{sec:t.acc,day:qzDay()})}
+  const el=document.getElementById('qz-timer'),mm=x=>Math.floor(x/60)+':'+String(x%60).padStart(2,'0');
+  if(el){el.textContent='⏱ '+mm(t.acc)+' / '+mm(t.lim);el.classList.toggle('over',t.acc>=t.lim)}
+  if(t.acc>=t.lim&&!t.warned){t.warned=true;t.show=true}
+  if(t.show&&!document.getElementById('qz-tover')){const box=document.getElementById('s-quiz');if(!box)return;const d=document.createElement('div');d.id='qz-tover';
+    d.innerHTML=`<b>這題已經練 ${Math.round(t.acc/60)} 分鐘了</b><span>耳朵會累、越聽越分不出來。${q.cat==='beat'?'先跳下一題':'先記成沒過、跳下一題'}，它會進錯題本，明天再考。</span><div><button data-q="tskip" class="go">先跳下一題</button><button data-q="tmore">再練 2 分鐘</button></div>`;box.appendChild(d)}
+},1000);
 function qzRender(){
   const d=document.getElementById('studio');if(!d||!Q||!S)return;let el=document.getElementById('s-quiz');
   if(!el){el=document.createElement('div');el.id='s-quiz';d.querySelector('.s-pic').appendChild(el)}d.classList.add('quiz');
@@ -402,6 +413,8 @@ app.addEventListener('click',e=>{
   else if(a==='mk'){const MK=QMARKS[q.cat];if(!MK)return;const r=qzGet(q.id),mk=Object.assign({},r.mk||{}),k=t.dataset.k,o=['',...MK.map(x=>x[0])],nx=o[(o.indexOf(mk[k]||'')+1)%o.length];if(nx)mk[k]=nx;else delete mk[k];qzSet(q.id,{mk});
     const M=MK.find(x=>x[0]===nx);t.className=(nx||'')+(t.classList.contains('focus')?' focus':'');const i=t.querySelector('i');if(i)i.remove();if(M)t.insertAdjacentHTML('beforeend',`<i>${M[1]}</i>`);
     const lg=document.querySelector('#s-quiz .qz-leg');if(lg){const n=Object.keys(mk).length;lg.lastChild.nodeType===3&&/已標/.test(lg.lastChild.textContent)&&lg.lastChild.remove();if(n)lg.insertAdjacentText('beforeend',`　・已標 ${n} 個字`)}}
+  else if(a==='tskip'){document.getElementById('qz-tover')?.remove();if(S.recd)return;const C=QCAT[q.cat]||{};if(Q.qt)Q.qt.show=false;const bad=q.cat==='beat'?null:'bad';if(bad&&!qzGet(q.id).res)qzSet(q.id,{res:bad});if(Q.i<Q.list.length-1)qzGo(Q.i+1);else{Q.sum=true;sStop();qzRender()}return}
+  else if(a==='tmore'){document.getElementById('qz-tover')?.remove();if(Q.qt){Q.qt.lim=Q.qt.acc+120;Q.qt.warned=false;Q.qt.show=false}return}
   else if(a==='res'){const v=t.dataset.v;qzSet(q.id,{res:qzGet(q.id).res===v?null:v});qzRender()}
 },true);
 app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!Q.list[Q.i])return;qzSet(Q.list[Q.i].id,{n:t.value})});
@@ -410,6 +423,7 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 .qz-tw{align-items:flex-start}.qz-chips{display:flex;flex-wrap:wrap;gap:5px;flex:1}.qz-nt.bad{background:rgba(232,90,80,.35)!important;border-color:#e8806f!important}.qz-nt.on{background:rgba(242,194,123,.25)!important;border-color:#e8c27a!important}.qz-nt{display:inline-flex;flex-direction:column;align-items:center;line-height:1.1;padding:4px 10px!important}.qz-nt b{font-size:16px}.qz-nt small{font-size:14px;opacity:.85;font-weight:600}.qz-sv{display:inline-flex;align-items:center;justify-content:center;min-width:58px;padding:0 6px;font-size:14px;color:var(--gold,#e8c27a);border-left:1px solid var(--line);border-right:1px solid var(--line)}.qz-sr{margin-left:6px;padding:6px 10px;font-size:12px}.qz-seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}.qz-seg button{border:0!important;border-radius:0!important;padding:7px 12px;font-size:13px;background:transparent}.qz-seg button+button{border-left:1px solid var(--line)!important}#s-quiz .qz-seg button.on{background:var(--glow);color:#1a130c;font-weight:600}.qz-tools{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:rgba(255,255,255,.03);display:grid;gap:6px}.qz-tr{display:flex;align-items:center;gap:6px;flex-wrap:wrap}#s-quiz .qz-tr button{padding:3px 10px;font-size:12px;min-height:0;line-height:1.5}.qz-tl{width:84px;font-size:13px;color:var(--muted);flex:none}.qz-tg{font-size:12px;color:var(--muted)}.qz-th{margin:0;font-size:12px;color:var(--muted)}#s-quiz .qz-tools button.on{background:rgba(120,200,255,.2);border-color:rgba(120,200,255,.8);color:#bfe3ff}.qz-tipbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(19vh + 24px);z-index:5;max-width:90vw;background:var(--glow);color:#1a130c;border-radius:99px;padding:8px 18px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.5)}.qz-tipbar[hidden]{display:none}.qz-adj span{font-size:12px!important}#studio .qz-adj button{padding:4px 10px;font-size:12px}
 #studio.quiz .s-lane:not(.me){flex:0 0 32px!important}#studio.quiz .s-lyr{display:none}#studio.quiz .s-pic::before{display:none}
 #studio .qz-open{margin-left:auto}#studio.quiz .qz-open{background:rgba(242,194,123,.22);border-color:var(--glow);color:var(--glow)}
+#qz-tover{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;width:min(440px,90%);background:#2a231a;border:1px solid #e8c27a;border-radius:16px;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:10px}#qz-tover b{font-size:18px;color:#f2c27b}#qz-tover span{font-size:14px;line-height:1.6;opacity:.9}#qz-tover div{display:flex;gap:8px;justify-content:flex-end}.qz-timer{font-size:13px;opacity:.75;margin-left:8px;font-variant-numeric:tabular-nums}.qz-timer.over{color:#e8806f;opacity:1;font-weight:600}
 #s-quiz{position:absolute;inset:0;background:rgba(18,15,11,.95);overflow:auto;padding:12px 18px 16px;display:flex;flex-direction:column;gap:8px;-webkit-user-select:none;user-select:none}
 #s-quiz .sp{flex:1}
 .qz-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.qz-h>b{color:var(--glow);font-size:15px}.qz-n{color:var(--muted);font-size:13px}
