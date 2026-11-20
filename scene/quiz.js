@@ -217,7 +217,7 @@ function qzMind(q){const L=getLines();
   const [a,b]=secRange(q.s),off=lineOff(q.s),n=qzLines(q.s).length,t=[];for(let i=0;i<n;i++)t.push(L[off+i]);
   const w=n>=3&&t[1]!=null&&t[n-1]!=null&&t[n-1]>t[1]?[t[1]-.1,t[n-1]-.15]:[a+(b-a)*.3,a+(b-a)*.75];qzPlay('mind',qzOrig(),a-1.5,b+.4,w)}
 function qzRec(q){qzSlowStop();if(S.recd){sRecStop();return}const [x,y]=qzRecRange(q);sStop();Q.seq=null;// 接唱：前奏放原唱（有人聲）帶妳進來，輪到妳就只剩伴奏；句首音題只放伴奏，練自己找音
-  const sw=q.t!=='f'&&q.cat!=='beat'&&qLane('inst')&&qLane('orig');qzHear([sw?'orig':qzBack()]);Q.swAt=sw?Math.min(x,qzOnset(q.l!=null?qzLineRange(q.l)[0]:x)):0;S.sel=[x,y];S.loop=true;S.stopAt=0;S.pos=x;Q.act='';
+  const sw=q.t!=='f'&&q.cat!=='beat'&&qLane('inst')&&qLane('orig');qzHear([sw?'orig':qzBack()]);Q.swAt=sw?Math.max(0,Math.min(x,qzOnset(q.l!=null?qzLineRange(q.l)[0]:x))):null;S.sel=[x,y];S.loop=true;S.stopAt=0;S.pos=x;Q.act='';
   // 一定唱到題目結尾就自動停（不靠段落長度判斷）
   Q.recR=[x,y];S.pre=4;sRecStart().then(()=>{S.pre=0;const r=S&&S.recd;if(!r)return qzRender();r.until=Math.min(S.dur,y+.5);
     // 保險：畫面時間沒在走（iPad 背景/省電）也照真實秒數停
@@ -277,7 +277,7 @@ function qzTdel(){qzCutDraw();{const d=document.getElementById('studio');let u=d
   const ln=d.querySelector('.s-lane.me');if(ln){const r=ln.getBoundingClientRect();b.style.top=(r.top+8)+'px'}b.hidden=false}
 // 錄音室每一格畫面會叫這個：腦內唱的消音、亮目前這一句；p<0＝播完了
 function qzTick(p){
-  if(Q&&Q.swAt&&S.recd&&p>=Q.swAt-.05){Q.swAt=0;qzHear(['inst'])}
+  if(Q&&Q.swAt!=null&&S.recd&&p>=Q.swAt-.05){Q.swAt=null;qzHear(['inst'])}
   if(!Q||Q.sum)return;const el=document.getElementById('s-quiz');if(!el)return;
   if(p<0){el.classList.remove('hush');Q.mute=null;if(Q.seq&&Q.seq.length&&Q.act){setTimeout(()=>{if(Q&&Q.seq)qzNext()},350);return}
     if(Q.lastRun){const f=Q.lastRun;Q.seq=null;setTimeout(()=>{if(Q&&Q.lastRun===f){f();Q.lastRun=f}},400);return}Q.seq=null;Q.act='';Q.who='';qzRender();return}
