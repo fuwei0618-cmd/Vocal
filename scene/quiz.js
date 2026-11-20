@@ -190,12 +190,19 @@ function qzNext(){if(!Q||!S)return;const it=Q.seq&&Q.seq.shift();if(!it){Q.seq=n
   if(qzSpeed()<1){qzSlow(Q.act,it.ids,Math.max(0,it.r[0]-.15),it.r[1]+.1,it.who);return}
   qzHear(it.ids);S.loop=false;S.stopAt=it.r[1]+.1;Q.who=it.who;sPlay(Math.max(0,it.r[0]-.15));qzRender()}
 function qzAlt(q){const its=[];qzRanges(q).forEach(r=>{its.push({ids:[qzRef()],r,who:'原唱'});its.push({ids:['me'],r,who:'我'})});qzSeq('alt',its)}
+// 拍歌詞時常點在重拍（例：「後來」點在「來」），但「後」是前一小節的弱起拍、早就開始唱了。
+// 用原唱人聲檔往前找：t 那時候如果已經在唱，就往回找到這口氣真正開口的地方（最多 1.5 秒）
+function qzOnset(t){const l=qLane('vocal');if(!l)return t-.3;const b=l.buf,sr=b.sampleRate,d=b.getChannelData(0),d1=b.numberOfChannels>1?b.getChannelData(1):d,W=Math.round(sr*.02);
+  const en=i=>{let s2=0;for(let k=i;k<i+W&&k<d.length;k++){const x=(d[k]+d1[k])/2;s2+=x*x}return Math.sqrt(s2/W)};const th=laneLoud(b)*.22;
+  let i=Math.round(t*sr)-W,quiet=0,lastLoud=t;if(i<0||en(i)<th&&en(i-W)<th)return t;
+  for(let n=0;n<75&&i>0;n++,i-=W){if(en(i)<th){quiet++;if(quiet>=6)break}else{quiet=0;lastLoud=i/sr}}
+  return Math.max(t-1.5,lastLoud-.03)}
 function qzMind(q){const L=getLines();
-  if(q.l!=null){const [a,b]=qzLineRange(q.l),pv=L[q.l-1],from=Math.max(0,Math.min(pv!=null&&pv<a&&a-pv<12?pv-.2:a,a-5));qzPlay('mind',qzOrig(),from,b+2.5,[a-.05,b-.1]);return}
+  if(q.l!=null){const [a,b]=qzLineRange(q.l),pv=L[q.l-1],from=Math.max(0,Math.min(pv!=null&&pv<a&&a-pv<12?pv-.2:a,a-5));qzPlay('mind',qzOrig(),Math.min(from,qzOnset(a)-1),b+2.5,[Math.min(a-.05,qzOnset(a)),b-.1]);return}
   const [a,b]=secRange(q.s),off=lineOff(q.s),n=qzLines(q.s).length,t=[];for(let i=0;i<n;i++)t.push(L[off+i]);
   const w=n>=3&&t[1]!=null&&t[n-1]!=null&&t[n-1]>t[1]?[t[1]-.1,t[n-1]-.15]:[a+(b-a)*.3,a+(b-a)*.75];qzPlay('mind',qzOrig(),a-1.5,b+.4,w)}
 function qzRec(q){qzSlowStop();if(S.recd){sRecStop();return}const [x,y]=qzRecRange(q);sStop();Q.seq=null;// 接唱：前奏放原唱（有人聲）帶妳進來，輪到妳就只剩伴奏；句首音題只放伴奏，練自己找音
-  const sw=q.t!=='f'&&q.cat!=='beat'&&qLane('inst')&&qLane('orig');qzHear([sw?'orig':qzBack()]);Q.swAt=sw?x:0;S.sel=[x,y];S.loop=true;S.stopAt=0;S.pos=x;Q.act='';
+  const sw=q.t!=='f'&&q.cat!=='beat'&&qLane('inst')&&qLane('orig');qzHear([sw?'orig':qzBack()]);Q.swAt=sw?Math.min(x,qzOnset(q.l!=null?qzLineRange(q.l)[0]:x)):0;S.sel=[x,y];S.loop=true;S.stopAt=0;S.pos=x;Q.act='';
   // 一定唱到題目結尾就自動停（不靠段落長度判斷）
   Q.recR=[x,y];S.pre=4;sRecStart().then(()=>{S.pre=0;const r=S&&S.recd;if(!r)return qzRender();r.until=Math.min(S.dur,y+.5);
     // 保險：畫面時間沒在走（iPad 背景/省電）也照真實秒數停
