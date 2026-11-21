@@ -239,7 +239,7 @@ function qzMind(q){const L=getLines();
   if(q.l!=null){const [a,b]=qzLineRange(q.l),pv=L[q.l-1],from=Math.max(0,Math.min(pv!=null&&pv<a&&a-pv<12?pv-.2:a,a-5));qzPlay('mind',qzOrig(),Math.min(from,qzOnset(a)-1),b+2.5,[Math.min(a-.05,qzOnset(a)),b-.1]);return}
   const [a,b]=secRange(q.s),off=lineOff(q.s),n=qzLines(q.s).length,t=[];for(let i=0;i<n;i++)t.push(L[off+i]);
   const w=n>=3&&t[1]!=null&&t[n-1]!=null&&t[n-1]>t[1]?[t[1]-.1,t[n-1]-.15]:[a+(b-a)*.3,a+(b-a)*.75];qzPlay('mind',qzOrig(),a-1.5,b+.4,w)}
-function qzRec(q){qzSlowStop();if(S.recd){sRecStop();return}const [x,y]=qzRecRange(q);sStop();Q.seq=null;// 接唱：前奏放原唱（有人聲）帶妳進來，輪到妳就只剩伴奏；句首音題只放伴奏，練自己找音
+function qzRec(q){qzSlowStop();if(S.recd){sRecStop();return}const [x,y]=qzCut(q)||qzRecRange(q);/* 有框選就只錄框起來那段 */sStop();Q.seq=null;// 接唱：前奏放原唱（有人聲）帶妳進來，輪到妳就只剩伴奏；句首音題只放伴奏，練自己找音
   const sw=q.t!=='f'&&q.cat!=='beat'&&qLane('inst')&&qLane('orig');qzHear([sw?'orig':qzBack()]);Q.swAt=sw?Math.max(0,Math.min(x,qzOnset(q.l!=null?qzLineRange(q.l)[0]:x))):null;S.sel=[x,y];S.loop=true;S.stopAt=0;S.pos=x;Q.act='';
   // 一定唱到題目結尾就自動停（不靠段落長度判斷）
   Q.recR=[x,y];S.pre=4;sRecStart().then(()=>{S.pre=0;const r=S&&S.recd;if(!r)return qzRender();r.until=Math.min(S.dur,y+.5);
@@ -494,7 +494,7 @@ app.addEventListener('click',e=>{
   else if(a==='cutn'){const c=qzCut(q);if(!c)return;const e2=+t.dataset.e,d=+t.dataset.d*.1,n=c.slice();n[e2]=Math.max(0,Math.min(S.dur,n[e2]+d));if(n[1]-n[0]<.15)return;Q.cut=n;sDraw();qzRender()}
   else if(a==='uncut'){Q.cut=null;Q.lastRun=null;sStop();Q.act='';sDraw();qzRender()}
   else if(a==='rec')qzRec(q);
-  else if(a==='del'){const [x,y]=qzRecRange(q),k=takes.find(t=>t.id===S.selTake)||takes.slice().sort((u,v)=>v.at-u.at).find(k=>k.start<y&&k.end>x);if(!k||!confirm('刪掉這題最新的這次錄音？'))return;sStop();tkUndo.push({t:'del',k});takes=takes.filter(t=>t!==k);if(S.selTake===k.id)S.selTake=null;S.bufs.delete(k.id);saveTakes();qzSet(q.id,{rec:0});sDraw();qzRender();qzHint('刪掉了，按紅色的鍵再錄一次')}
+  else if(a==='del'){const [x,y]=qzCut(q)||qzRecRange(q),k=takes.find(t=>t.id===S.selTake)||takes.slice().sort((u,v)=>v.at-u.at).find(k=>k.start<y&&k.end>x);if(!k||!confirm('刪掉這題最新的這次錄音？'))return;sStop();tkUndo.push({t:'del',k});takes=takes.filter(t=>t!==k);if(S.selTake===k.id)S.selTake=null;S.bufs.delete(k.id);saveTakes();qzSet(q.id,{rec:0});sDraw();qzRender();qzHint('刪掉了，按紅色的鍵再錄一次')}
   else if(a==='lplay'){const [x,y]=qzLineRange(q.l),pv=getLines()[q.l-1],from=pv!=null&&pv<x&&x-pv<12?pv-.3:x-4;qzPlay('lplay',[qzBack()],from,y+.5)}
   else if(a==='rev'){Q.rev=!Q.rev;qzRender()}
   else if(a==='mprev'){const [x]=secRange(q.s);qzPlay('mprev',qzOrig(),q.s?x-6:0,x+.05)}
