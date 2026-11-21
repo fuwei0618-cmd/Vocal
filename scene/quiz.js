@@ -320,7 +320,22 @@ function qzTick(p){
   if(k!==Q.k){Q.k=k;el.querySelectorAll('.qz-lyr p').forEach(x=>x.classList.toggle('on',+x.dataset.li===k))}
 }
 // ---------- 畫面 ----------
-function qzMarksTxt(q,r){const L=qzText(q),MK=QMARKS[q.cat]||[],out=[];Object.keys(r.mk||{}).sort((x,y)=>{const [a,b]=x.split(':').map(Number),[c,d]=y.split(':').map(Number);return a-c||b-d}).forEach(k=>{
+// ---------- 字的記號（再高/再低…/音高）：同一個字只有一份，單句、幾句一組、連唱都讀寫同一份 ----------
+// scene-qword {song:{cat:{mk:{'全曲第幾句:第幾個字':記號}, pn:{'句:字':1}}}}
+const QWK='scene-qword';
+function qzWAll(){try{return JSON.parse(qzLS(QWK)||'{}')||{}}catch(e){return {}}}
+function qzW(cat){qzWMig();const A=qzWAll(),B=A[key]=A[key]||{},c=B[cat]=B[cat]||{};c.mk=c.mk||{};c.pn=c.pn||{};return {A,c}}
+// 第一次：把以前各題分開存的記號搬過來（舊資料留著不刪）。先搬連唱/幾句一組，再搬單句，單句的蓋過去；同類新的蓋舊的
+function qzWMig(){const A=qzWAll();if(A[key]&&A[key]._mig)return;const B=A[key]=A[key]||{};const T=qzAll()[key]||{},days=Object.keys(T).sort();
+  const put=(id,r)=>{const q=qzQ(id);if(!q||!QMARKS[q.cat]||(!r.mk&&!r.pn))return;const c=B[q.cat]=B[q.cat]||{mk:{},pn:{}};
+    Object.entries(r.mk||{}).forEach(([k,v])=>{const [li,ci]=k.split(':').map(Number);c.mk[qzGl(q,li)+':'+ci]=v});Object.keys(r.pn||{}).forEach(k=>{const [li,ci]=k.split(':').map(Number);c.pn[qzGl(q,li)+':'+ci]=1})};
+  try{[false,true].forEach(single=>days.forEach(d=>Object.entries(T[d]).forEach(([id,r])=>{const q=qzQ(id);if(q&&(q.l!=null)===single)put(id,r)})))}catch(e){}
+  B._mig=1;qzLS(QWK,JSON.stringify(A))}
+// 這題看到的記號（key 換成題目裡的「第幾行:第幾個字」）
+function qzMkOf(q){const {c}=qzW(q.cat),mk={},pn={};qzText(q).forEach((ln,li)=>{const g=qzGl(q,li);[...ln].forEach((_,ci)=>{const k=g+':'+ci;if(c.mk[k])mk[li+':'+ci]=c.mk[k];if(c.pn[k])pn[li+':'+ci]=1})});return {mk,pn}}
+function qzMkPut(q,lk,f){const [li,ci]=lk.split(':').map(Number),{A,c}=qzW(q.cat);f(c,qzGl(q,li)+':'+ci);qzLS(QWK,JSON.stringify(A))}
+const qzLineHasMk=(cat,g)=>{const {c}=qzW(cat),pre=g+':';return Object.keys(c.mk).some(k=>k.startsWith(pre))||Object.keys(c.pn).some(k=>k.startsWith(pre))};
+function qzMarksTxt(q,r0){const r=qzMkOf(q),L=qzText(q),MK=QMARKS[q.cat]||[],out=[];Object.keys(r.mk||{}).sort((x,y)=>{const [a,b]=x.split(':').map(Number),[c,d]=y.split(':').map(Number);return a-c||b-d}).forEach(k=>{
   const [li,ci]=k.split(':').map(Number),ch=[...(L[li]||'')][ci],M=MK.find(m=>m[0]===r.mk[k]);if(ch&&M)out.push({li,ci,ch,M})});return out}
 function qzLabel(q){const sc=SCENES[key],A=qzAllLines();if(q.cat==='map')return `第 ${q.s+1} 段・${sc.steps[q.s].sec}`;if(q.l!=null)return A[q.l]||'';if(q.R)return `Part ${q.s0+1}–${q.s+1}`;return sc.steps[q.s].sec+(q.a?`・第 ${q.a}–${q.b} 句`:'')}
 function qzTag(q,r){if(q.cat==='pitch')return (q.R?'幾段連唱・':q.a?'幾句連唱・':q.t?QTYPE[q.t].n+'・':'')+QMODE[r.m||q.m].v;return ''}
@@ -341,8 +356,8 @@ function qzMultiHtml(){const sc=SCENES[key],ks=sc.steps.map((_,k)=>k).filter(k=>
     <div class="qz-mlist">${ms.map(([a,b],i)=>{const id=`R${a}-${b}`,res=lt[id];return `<div class="qz-pr sm qz-drag" data-id="${id}"><i class="qz-grip" aria-label="拖曳排順序">⠿</i><span>Part ${a+1}–${b+1} 連唱<small>${res?'做過':''}</small></span><em>${res==='ok'?'⭐ 準':res==='some'?'△ 低空飛過':res==='bad'?'✗ 不及格':''}</em><button data-q="mbeg" data-id="${id}">開始</button><button data-q="mdel" data-id="${id}" aria-label="刪掉這組">✕</button></div>`}).join('')}</div></div>`}
 // 連唱題：把一句一句練的時候標的記號和筆記收在一個可以打開的摺疊頁
 function qzLineMk(g){const T=qzAll()[key]||{},re=new RegExp('^L'+g+'[ftjh]?$');for(const d of Object.keys(T).sort().reverse()){const D=T[d];for(const id in D)if(re.test(id)){const r=D[id];if((r.mk&&Object.keys(r.mk).length)||(r.pn&&Object.keys(r.pn).length)||r.n)return r}}return null}
-function qzFoldHtml(q){const n=qzText(q).filter((_,li)=>qzLineMk(qzGl(q,li))).length+(Object.keys(qzGet(q.id).pn||{}).length?1:0);
-  return `<div class="qz-lyt"><button data-q="fold" class="qz-mkt${Q.fold?' on':''}"${n?'':' disabled'}>📌 練句記號＋音高${n?`（${n} 句）`:'：還沒有'}・${Q.fold?'顯示':'不顯示'}</button></div>`}
+function qzFoldHtml(q){const n=qzText(q).filter((_,li)=>qzLineHasMk(q.cat,qzGl(q,li))||(qzLineMk(qzGl(q,li))||{}).n).length;
+  return `<div class="qz-lyt"><button data-q="fold" class="qz-mkt${Q.fold?' on':''}"${n?'':' disabled'}>📌 記號＋音高${n?`（${n} 句）`:'：還沒有'}・${Q.fold?'顯示':'不顯示'}</button></div>`}
 function qzHomeHtml(){const sc=SCENES[key],bank=Q.bank||(Q.bank=qzBank()),last=qzLastAll()[key],hc=Q.hc;
   const rows=Object.keys(QPAPER).map(k=>{const l=qzPaperList(k,'all');return `<button data-q="hc" data-cat="${k}" class="qz-cr${k===hc?' on':''}${k==='wrong'?' wr':''}"><span>${QPAPER[k].n}</span><small>${qzDoneN(l)?`做過 ${qzDoneN(l)}/${l.length}`:`${l.length} 題`}</small><em>⭐ ${qzPct(l)}%</em></button>`}).join('');
   const all=qzPaperList(hc,'all'),parts=[...new Set(all.map(q=>q.s))].sort((x,y)=>x-y);
@@ -357,7 +372,7 @@ function qzPartCols(parts,cell){const sc=SCENES[key];let pos=null;try{pos=typeof
   const cols=[];parts.forEach(p=>{const c=pos&&pos[p]?pos[p].c:0;(cols[c]=cols[c]||[]).push(p)});const cs=cols.filter(Boolean);
   return `<div class="qz-pcols" style="grid-template-columns:repeat(${cs.length},1fr)">${cols.map((l,c)=>l?`<div class="qz-pcol">${sc.rounds&&sc.rounds[c]&&cs.length>1?`<h5>${esc(sc.rounds[c].t)}</h5>`:''}${l.map(cell).join('')}</div>`:'').join('')}</div>`}
 // 成績單上的題目名稱：標過的字直接在字上亮顏色＋箭頭（跟題目頁一樣），不另外列
-function qzLabelMk(q,r){const mk=r.mk||{},MK=QMARKS[q.cat]||[];if(q.l==null||q.t==='s'||!Object.keys(mk).length)return esc(qzLabel(q));
+function qzLabelMk(q,r){const mk=qzMkOf(q).mk,MK=QMARKS[q.cat]||[];if(q.l==null||q.t==='s'||!Object.keys(mk).length)return esc(qzLabel(q));
   return `<span class="qz-lm">${[...(qzText(q)[0]||'')].map((ch,ci)=>{const M=MK.find(x=>x[0]===mk['0:'+ci]);return M?`<b class="${M[0]}">${esc(ch)}<i>${M[1]}</i></b>`:esc(ch)}).join('')}</span>`}
 function qzSumHtml(){
   const sc=SCENES[key],pc=Q.paper.cat,C=QCAT[pc]||{sc:['過關','差一點','沒過'],res:null},rows=Q.list.map((q,j)=>({q,j,r:qzGet(q.id)})),cnt=k=>rows.filter(x=>x.r.res===k).length,todo=rows.filter(x=>!x.r.res).length;
@@ -371,11 +386,11 @@ function qzSumHtml(){
     <div>${pc!=='beat'&&pc!=='map'&&!words.length?'<p class="qz-tip">還沒有標記的字。聽到不對，就點那個字，它會出現在左邊那題的卡片上。</p>':''}
     ${rows.filter(x=>x.r.n).map(({j,r})=>`<p class="qz-note"><b>${j+1}</b>${esc(r.n)}</p>`).join('')}
     <p class="qz-tip">怎麼練：${how}</p></div></div>`}
-function qzChars(q,r,cls){const mk=r.mk||{},pn=r.pn||{},MK=QMARKS[q.cat]||[],L=qzText(q),gh=q.t==='s'&&Q.fold,PN=q.cat==='pitch'?qzNotes(q):null;let pk=0;
-  return L.map((ln,li)=>{const lm=gh?qzLineMk(qzGl(q,li)):null,gm=lm&&lm.mk||{},gp=lm&&lm.pn||{},hasP=[...ln].some((_,ci)=>(pn[li+':'+ci]&&(q.t!=='s'||Q.fold))||gp['0:'+ci]);return `<p data-li="${li}"${hasP?' class="pn"':''}>${L.length>1&&q.cat==='pitch'?`<b class="qz-lno${Q.lsel===li?' on':''}" data-q="lsel" data-li="${li}">${li+1}</b>`:''}${[...ln].map((ch,ci,all)=>{if(/\s/.test(ch))return ' ';const own=mk[li+':'+ci],c=own||gm['0:'+ci],M=MK.find(x=>x[0]===c);
+function qzChars(q,r,cls){const W=qzMkOf(q),hide=q.t==='s'&&!Q.fold,mk=hide?{}:W.mk,pn=hide?{}:W.pn,MK=QMARKS[q.cat]||[],L=qzText(q),PN=q.cat==='pitch'?qzNotes(q):null;let pk=0;
+  return L.map((ln,li)=>{const lm=q.t==='s'&&Q.fold?qzLineMk(qzGl(q,li)):null,hasP=[...ln].some((_,ci)=>pn[li+':'+ci]);return `<p data-li="${li}"${hasP?' class="pn"':''}>${L.length>1&&q.cat==='pitch'?`<b class="qz-lno${Q.lsel===li?' on':''}" data-q="lsel" data-li="${li}">${li+1}</b>`:''}${[...ln].map((ch,ci,all)=>{if(/\s/.test(ch))return ' ';const c=mk[li+':'+ci],M=MK.find(x=>x[0]===c);
     const f=q.t==='f'&&ci===all.findIndex(z=>!/\s/.test(z))||q.t==='t'&&ci>=all.length-3?' focus':'';
-    const pw0=PN&&qzNorm(ch)?PN.w[pk++]:null,pw=pw0&&((pn[li+':'+ci]&&(q.t!=='s'||Q.fold))||gp['0:'+ci])?pw0:null;
-    return `<span data-q="mk" data-k="${li}:${ci}" class="${c||''}${f}${!own&&c?' gh':''}">${esc(ch)}${M?`<i>${M[1]}</i>`:''}${pw?`<em class="qn">${qzNs(pw[1]).map(qzSol).join('<s>→</s>')}</em>`:''}</span>`}).join('')}${lm&&lm.n?`<small class="qz-ln">📝 ${esc(lm.n)}</small>`:''}</p>`}).join('')}
+    const pw0=PN&&qzNorm(ch)?PN.w[pk++]:null,pw=pw0&&pn[li+':'+ci]?pw0:null;
+    return `<span data-q="mk" data-k="${li}:${ci}" class="${c||''}${f}">${esc(ch)}${M?`<i>${M[1]}</i>`:''}${pw?`<em class="qn">${qzNs(pw[1]).map(qzSol).join('<s>→</s>')}</em>`:''}</span>`}).join('')}${lm&&lm.n?`<small class="qz-ln">📝 ${esc(lm.n)}</small>`:''}</p>`}).join('')}
 // ---------- 每題自動計時：進到題目就開始算，離開 App 會暫停；5 分鐘到提醒先跳下一題 ----------
 const QZ_LIMIT=300;
 // 每題計時：每次進來從 0 開始（不累計）；按了播放或錄音才開始算，只是點進來看看不算
@@ -395,7 +410,7 @@ function qzRender(){
   if(Q.home){el.innerHTML=qzHomeHtml();return}
   if(Q.sum){el.innerHTML=qzSumHtml();return}
   const sc=SCENES[key],n=Q.list.length,q=Q.list[Q.i],C=QCAT[q.cat],r=qzGet(q.id),m=r.m||q.m,st=sc.steps[q.s],[a,b]=qzRange(q),[ra,rb]=qzRecRange(q),
-    on=x=>(S.playing||Q.slow)&&Q.act===x?' on':'',recd=!!S.recd,has=qzHas(ra,rb),A=qzAllLines(),L=getLines(),nm=Object.keys(r.mk||{}).length;
+    on=x=>(S.playing||Q.slow)&&Q.act===x?' on':'',recd=!!S.recd,has=qzHas(ra,rb),A=qzAllLines(),L=getLines(),nm=Object.keys(qzMkOf(q).mk).length;
   const who=`<div class="qz-st qz-who">${Q.who?`<span class="${Q.who==='我'?'me':'ref'}">▶ 正在放：${Q.who}</span>`:`<span>${q.cat==='beat'?'輪流比＝原唱開口、妳開口，聽是不是同一刻':'輪流比＝原唱一句、妳一句；聽到不對的字，在右邊點它'}</span>`}</div>`;
   const cmp=n0=>`<div class="qz-st qz-cmp"><b>${n0}</b><span>比一比</span><div class="qz-seg"><button data-q="alt" class="${on('alt')}" ${has?'':'disabled'}>${on('alt')?'⏹ 停':'輪流比'}</button><button data-q="cmp" data-c="both" class="${on('both')}" ${has?'':'disabled'}>${on('both')?'⏹ 停':'原唱＋我'}</button><button data-q="cmp" data-c="me" class="${on('me')}" ${has?'':'disabled'}>${on('me')?'⏹ 停':'只聽我'}</button><button data-q="cmp" data-c="ref" class="${on('ref')}">${on('ref')?'⏹ 停':'只聽原唱'}</button></div></div>${Q.who?who:''}`;
   // 右下角工具：對齊、框選（只有錄好之後才出現）
@@ -513,12 +528,12 @@ app.addEventListener('click',e=>{
   else if(a==='mprev'){const [x]=secRange(q.s);qzPlay('mprev',qzOrig(),q.s?x-6:0,x+.05)}
   else if(a==='mplay'){const [x,y]=secRange(q.s);qzPlay('mplay',qzOrig(),x-.3,Math.min(y,x+8))}
   else if(a==='brush'){qzLS('scene-qbrush',t.dataset.b);document.querySelectorAll('#s-quiz [data-q=brush]').forEach(b=>b.classList.toggle('on',b.dataset.b===t.dataset.b));return}
-  else if(a==='mk'&&q.cat==='pitch'&&(qzBrush()==='p'||qzBrush()==='e')&&(qzBrush()==='p'||(qzGet(q.id).pn||{})[t.dataset.k])){const r=qzGet(q.id),pn=Object.assign({},r.pn||{}),k=t.dataset.k;
-    if(qzBrush()==='p'&&!qzNotes(q)){qzHint('這句還沒有簡譜音可以顯示');return}if(q.t==='s'&&qzBrush()==='p')Q.fold=true;
-    if(pn[k])delete pn[k];else pn[k]=1;qzSet(q.id,qzBrush()==='p'?{pn,hint:1}:{pn});if(qzBrush()==='e'){const mk=Object.assign({},r.mk||{});delete mk[k];qzSet(q.id,{mk})}qzRender();return}
-  else if(a==='mk'){const MK=QMARKS[q.cat];if(!MK)return;const r=qzGet(q.id),mk=Object.assign({},r.mk||{}),k=t.dataset.k,o=['',...MK.map(x=>x[0])],br=MK.length>1?qzBrush():'',nx=br==='e'?'':br?(mk[k]===br?'':br):o[(o.indexOf(mk[k]||'')+1)%o.length];if(nx)mk[k]=nx;else delete mk[k];qzSet(q.id,{mk});
+  else if(a==='mk'&&q.cat==='pitch'&&(qzBrush()==='p'||qzBrush()==='e')&&(qzBrush()==='p'||qzMkOf(q).pn[t.dataset.k])){const k=t.dataset.k;
+    if(qzBrush()==='p'&&!qzNotes(q)){qzHint('這句還沒有簡譜音可以顯示');return}if(q.t==='s')Q.fold=true;
+    qzMkPut(q,k,(c,gk)=>{if(qzBrush()==='e'){delete c.pn[gk];delete c.mk[gk]}else if(c.pn[gk])delete c.pn[gk];else c.pn[gk]=1});if(qzBrush()==='p')qzSet(q.id,{hint:1});qzRender();return}
+  else if(a==='mk'){const MK=QMARKS[q.cat];if(!MK)return;const mk=qzMkOf(q).mk,k=t.dataset.k,o=['',...MK.map(x=>x[0])],br=MK.length>1?qzBrush():'',nx=br==='e'?'':br?(mk[k]===br?'':br):o[(o.indexOf(mk[k]||'')+1)%o.length];qzMkPut(q,k,(c,gk)=>{if(nx)c.mk[gk]=nx;else delete c.mk[gk]});if(q.t==='s'&&!Q.fold){Q.fold=true;qzRender();return}
     const M=MK.find(x=>x[0]===nx);t.className=(nx||'')+(t.classList.contains('focus')?' focus':'');const i=t.querySelector('i');if(i)i.remove();if(M)t.insertAdjacentHTML('beforeend',`<i>${M[1]}</i>`);
-    const lg=document.querySelector('#s-quiz .qz-leg');if(lg){const n=Object.keys(mk).length;lg.lastChild.nodeType===3&&/已標/.test(lg.lastChild.textContent)&&lg.lastChild.remove();if(n)lg.insertAdjacentText('beforeend',`　・已標 ${n} 個字`)}}
+    const lg=document.querySelector('#s-quiz .qz-leg');if(lg){const n=Object.keys(qzMkOf(q).mk).length;lg.lastChild.nodeType===3&&/已標/.test(lg.lastChild.textContent)&&lg.lastChild.remove();if(n)lg.insertAdjacentText('beforeend',`　・已標 ${n} 個字`)}}
   else if(a==='tskip'){document.getElementById('qz-tover')?.remove();if(S.recd)return;const C=QCAT[q.cat]||{};if(Q.qt)Q.qt.show=false;const bad=q.cat==='beat'?null:'bad';if(bad&&!qzGet(q.id).res)qzSet(q.id,{res:bad});if(Q.i<Q.list.length-1)qzGo(Q.i+1);else{Q.sum=true;sStop();qzRender()}return}
   else if(a==='tmore'){document.getElementById('qz-tover')?.remove();if(Q.qt){Q.qt.lim=Q.qt.acc+120;Q.qt.warned=false;Q.qt.show=false}return}
   else if(a==='qrng'){const A=qzRngAll(),B=A[key]=A[key]||{},rk=qzRk(q),r=(B[rk]||qzRAuto(q)).slice(),e=+t.dataset.e;r[e]=Math.round((r[e]+ +t.dataset.d*.2)*100)/100;if(r[1]-r[0]<.5)return;B[rk]=r;qzLS('scene-qrng',JSON.stringify(A));qzSlowStop();sStop();Q.act='';qzFocus();qzRender();qzHint(`範圍改成 ${r[0].toFixed(1)}–${r[1].toFixed(1)} 秒（每按一下 0.2 秒），先聽原曲、錄音、比一比都會照這個`);return}
