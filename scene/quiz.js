@@ -179,7 +179,7 @@ async function qzMix(q){ // 鋼琴音疊在原唱上，用這句的開頭到結�
   qzSlowStop();sStop();Q.seq=null;Q.lastRun=null;const f=qzSpeed();await sWake();const c=S.ctx,[from,until]=qzRange(q),id=qzRef();
   const k=[id,from.toFixed(2),until.toFixed(2),f].join('|');let v=qzSlowCache.get(k);
   if(!v){const sg=qzSeg(id,Math.max(0,from),until);if(!sg||!sg.x.length)return;const y=qzStretch(sg.x,sg.sr,f),bf=c.createBuffer(1,y.length,sg.sr);bf.copyToChannel(y,0);v=bf;qzSlowCache.set(k,v)}
-  const T=c.currentTime+.08,s=c.createBufferSource(),g=c.createGain();g.gain.value=.9*laneNorm(S.lanes.find(z=>z.id===id));g.connect(c.destination);s.buffer=v;s.connect(g);s.start(T);
+  const T=c.currentTime+.08,s=c.createBufferSource(),g=c.createGain();g.gain.value=.9*laneNorm(S.lanes.find(z=>z.id===id));g.connect(id==='me'?meOut(c,c.destination):c.destination);s.buffer=v;s.connect(g);s.start(T);
   const tot=N.w.reduce((a,x)=>a+x[2],0),sec=(until-from)/f/tot,L=[];N.w.forEach(([ch,ns,b])=>{const a=qzNs(ns);a.forEach(n=>L.push([n,b*sec/a.length]))});
   const r=qzToneAt(c,L,N.base,T,.3),srcs=[s,...r.nodes];Q.act='mix';Q.who='';
   Q.slow={srcs,t:setTimeout(()=>{if(!Q||!Q.slow||Q.slow.srcs!==srcs)return;Q.slow=null;Q.act='';qzRender()},(until-from)/f*1000+150)};qzRender()}
@@ -211,7 +211,7 @@ async function qzSlow(act,ids,from,until,who,done){
   qzSlowStop();sStop();const f=qzSpeed();await sWake();const c=S.ctx,T=c.currentTime+.06,srcs=[];
   for(const id of ids){const k=[id,from.toFixed(2),until.toFixed(2),f,id==='me'?takes.map(t=>t.id+':'+(t.adj||0)).join(','):''].join('|');
     let v=qzSlowCache.get(k);if(!v){const sg=qzSeg(id,Math.max(0,from),until);if(!sg||!sg.x.length)continue;const y=qzStretch(sg.x,sg.sr,f),b=c.createBuffer(1,y.length,sg.sr);b.copyToChannel(y,0);v=b;if(qzSlowCache.size>40)qzSlowCache.clear();qzSlowCache.set(k,v)}
-    const l=S.lanes.find(z=>z.id===id),g=c.createGain();g.gain.value=l?(l.vol==null?1:l.vol)*laneNorm(l):1;g.connect(c.destination);const s=c.createBufferSource();s.buffer=v;s.connect(g);s.start(T);srcs.push(s)}
+    const l=S.lanes.find(z=>z.id===id),g=c.createGain();g.gain.value=l?(l.vol==null?1:l.vol)*laneNorm(l):1;g.connect(id==='me'?meOut(c,c.destination):c.destination);const s=c.createBufferSource();s.buffer=v;s.connect(g);s.start(T);srcs.push(s)}
   const dur=(until-from)/f;Q.act=act;Q.who=who||'';Q.slow={srcs,t:setTimeout(()=>{if(!Q||!Q.slow||Q.slow.srcs!==srcs)return;Q.slow=null;done?done():qzSlowEnd()},dur*1000+120)};qzRender()}
 function qzSlowEnd(){if(!Q)return;if(Q.seq&&Q.seq.length&&Q.act){setTimeout(()=>{if(Q&&Q.seq)qzNext()},350);return}
   if(Q.lastRun){const fn=Q.lastRun;Q.seq=null;setTimeout(()=>{if(Q&&Q.lastRun===fn){fn();Q.lastRun=fn}},400);return}

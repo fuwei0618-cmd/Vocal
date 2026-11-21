@@ -170,7 +170,10 @@ const REC_RMS=.1;
 // 測驗時各音軌響度對齊：原唱人聲、伴奏、原曲本身大小聲不同，切換模式時聽起來忽大忽小 → 都對齊到原曲（只算有聲音的地方）
 function laneLoud(b){if(b._loud)return b._loud;const d=b.getChannelData(0),d1=b.numberOfChannels>1?b.getChannelData(1):d,st=Math.max(1,Math.floor(d.length/300000));let sum=0,n=0;
   for(let i=0;i<d.length;i+=st){const x=(d[i]+d1[i])/2;if(Math.abs(x)>.01){sum+=x*x;n++}}return b._loud=n>50?Math.sqrt(sum/n):laneRms(b)}
-function laneNorm(l){if(typeof Q==='undefined'||!Q||!l||l.id==='me'||!l.buf)return 1;const r=S.lanes.find(z=>z.id==='orig'&&z.buf)||S.lanes.find(z=>z.id==='inst'&&z.buf);if(!r)return 1;return Math.max(.4,Math.min(3,laneLoud(r.buf)/laneLoud(l.buf)))}
+// 測驗時「我的聲音」也對齊到原曲響度（哼唱錄起來常常很小聲），最多放大 8 倍，後面接限幅器防爆音
+function meNorm(){const r=S.lanes.find(z=>z.id==='orig'&&z.buf)||S.lanes.find(z=>z.id==='inst'&&z.buf);if(!r)return 1;let m=0;sCover().forEach(c=>{const v=S.bufs.get(c.k.id);if(v&&v.buf)m=Math.max(m,laneLoud(v.buf))});return m?Math.max(1,Math.min(8,laneLoud(r.buf)/m)):1}
+function meOut(c,dest){if(typeof Q==='undefined'||!Q)return dest;const cp=c.createDynamicsCompressor();cp.threshold.value=-6;cp.knee.value=4;cp.ratio.value=20;cp.attack.value=.002;cp.release.value=.15;cp.connect(dest);return cp}
+function laneNorm(l){if(typeof Q==='undefined'||!Q||!l||(l.id==='me'?false:!l.buf))return 1;if(l.id==='me')return meNorm();const r=S.lanes.find(z=>z.id==='orig'&&z.buf)||S.lanes.find(z=>z.id==='inst'&&z.buf);if(!r)return 1;return Math.max(.4,Math.min(3,laneLoud(r.buf)/laneLoud(l.buf)))}
 function sGains(){S.lanes.forEach(l=>{const g=S.gains[l.id];if(!g)return;let v=audible(l)?l.vol*laneNorm(l):0;if(v&&S.recd&&S.recd.raw&&l.id!=='me'&&l.buf)v*=Math.min(1,REC_RMS/laneRms(l.buf));g.gain.value=v})}
 // 切去別的 App（例如 IG 放音樂）再回來，iPad 的聲音引擎會卡住：先叫醒，叫不醒就換一個新的
 async function sWake(){if(ctxStale&&!S.playing&&!S.recd){S.ctx=audioCtx()}let c=S.ctx;if(c.state==='running')return;
@@ -184,7 +187,7 @@ function sPlay(from,again){
   // 錄音時 iPad 會把喇叭壓小聲：錄音時整體放大 3 倍，再用壓縮器防爆音
   let out=c.destination;if(S.recd&&!S.recd.raw){const cp=c.createDynamicsCompressor();cp.threshold.value=-10;cp.knee.value=6;cp.ratio.value=12;cp.attack.value=.003;cp.release.value=.2;
     const mg=c.createGain();mg.gain.value=3;mg.connect(cp);cp.connect(c.destination);out=mg;S.gains._m=mg;S.gains._c=cp}
-  S.lanes.forEach(l=>{const g=c.createGain();g.connect(out);S.gains[l.id]=g;
+  S.lanes.forEach(l=>{const g=c.createGain();g.connect(l.id==='me'?meOut(c,out):out);S.gains[l.id]=g;
     if(l.id!=='me'){if(l.buf&&from<l.buf.duration){const s=c.createBufferSource();s.buffer=l.buf;s.connect(g);s.start(T,from);S.srcs.push(s)}return}
     if(S.recd)return;  // 錄音時不放舊的錄音
     sCover().forEach(({k,a,b,o})=>{const v=S.bufs.get(k.id);if(!v||b<=from)return;const st=Math.max(a,from),off=st-o;if(off<0||off>=v.buf.duration)return;
