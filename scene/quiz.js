@@ -236,6 +236,8 @@ function qzOnset(t){const l=qLane('vocal');if(!l)return t-.3;const b=l.buf,sr=b.
   for(let n=0;n<75&&i>0;n++,i-=W){if(en(i)<th){quiet++;if(quiet>=6)break}else{quiet=0;lastLoud=i/sr}}
   return Math.max(t-1.5,lastLoud-.03)}
 function qzMind(q){const L=getLines();
+  const cu=qzCut(q);if(cu){/* 有框選：只考框起來那段；框裡有好幾句就消到最後一句前，聲音回來對對看；只有一句就消中間 */const [x,y]=cu,ts=L.filter(t=>t!=null&&t>x+.3&&t<y-.5);
+    const w=ts.length?[x-.05,ts[ts.length-1]-.15]:[x+(y-x)*.25,x+(y-x)*.75];qzPlay('mind',qzOrig(),Math.max(0,x-1.5),y+.4,w);return}
   if(q.l!=null){const [a,b]=qzLineRange(q.l),pv=L[q.l-1],from=Math.max(0,Math.min(pv!=null&&pv<a&&a-pv<12?pv-.2:a,a-5));qzPlay('mind',qzOrig(),Math.min(from,qzOnset(a)-1),b+2.5,[Math.min(a-.05,qzOnset(a)),b-.1]);return}
   const [a,b]=secRange(q.s),off=lineOff(q.s),n=qzLines(q.s).length,t=[];for(let i=0;i<n;i++)t.push(L[off+i]);
   const w=n>=3&&t[1]!=null&&t[n-1]!=null&&t[n-1]>t[1]?[t[1]-.1,t[n-1]-.15]:[a+(b-a)*.3,a+(b-a)*.75];qzPlay('mind',qzOrig(),a-1.5,b+.4,w)}
@@ -313,7 +315,7 @@ function qzTick(p){
   if(!Q||Q.sum)return;const el=document.getElementById('s-quiz');if(!el)return;
   if(p<0){el.classList.remove('hush');Q.mute=null;if(Q.seq&&Q.seq.length&&Q.act){setTimeout(()=>{if(Q&&Q.seq)qzNext()},350);return}
     if(Q.lastRun){const f=Q.lastRun;Q.seq=null;setTimeout(()=>{if(Q&&Q.lastRun===f){f();Q.lastRun=f}},400);return}Q.seq=null;Q.act='';Q.who='';qzRender();return}
-  if(Q.mute){const inn=p>=Q.mute[0]&&p<Q.mute[1];if(inn!==Q.inn){Q.inn=inn;if(inn)S.lanes.forEach(l=>{const g=S.gains[l.id];if(g)g.gain.value=l.id==='inst'&&l.buf?(l.vol||1)*laneNorm(l):0});else sGains();el.classList.toggle('hush',inn)}}
+  if(Q.mute){const inn=p>=Q.mute[0]&&p<Q.mute[1];if(inn!==Q.inn){Q.inn=inn;if(inn)S.lanes.forEach(l=>{const g=S.gains[l.id];if(g)g.gain.value=l.id==='inst'&&l.buf?(l.vol||1)*laneNorm(l):0});else sGains();el.classList.toggle('hush',inn);if(!inn&&p<Q.mute[1]+1)qzHint('🎧 聲音回來了：妳還在音上嗎？')}}
   const q=Q.list[Q.i];if(!q)return;const L=getLines();let k=-1;qzText(q).forEach((_,li)=>{const t=L[qzGl(q,li)];if(t!=null&&p>=t-.3)k=li});
   if(k!==Q.k){Q.k=k;el.querySelectorAll('.qz-lyr p').forEach(x=>x.classList.toggle('on',+x.dataset.li===k))}
 }
