@@ -275,8 +275,8 @@ sDraw=function(){_qzDraw.apply(this,arguments);qzTdel()};
 function qzLineSpan(q,li){const L=getLines(),g=qzGl(q,li),n=qzText(q).length,a=L[g];if(a==null)return null;let b=li<n-1?L[g+1]:null;if(b==null||b<=a)b=qzRange(q)[1];return [a,b]}
 function qzCutLyr(q,c){const ly=document.querySelector('#s-quiz .qz-lyr');if(ly)ly.classList.toggle('cutting',!!c);if(ly&&c&&!qzBx)setTimeout(()=>{const f=ly.querySelector('p.incut');if(f&&ly.scrollHeight>ly.clientHeight+4){const t=f.offsetTop-ly.offsetTop-30;if(t<ly.scrollTop||t>ly.scrollTop+ly.clientHeight-40)ly.scrollTop=t}},0);document.querySelectorAll('#s-quiz .qz-lyr p[data-li]').forEach(p=>{const sp=c&&qzLineSpan(q,+p.dataset.li);p.classList.toggle('incut',!!(sp&&Math.min(sp[1],c[1])-Math.max(sp[0],c[0])>Math.min(.6,(sp[1]-sp[0])*.4)))})}
 // 歌詞框撐滿右邊剩下的高度；放不下才捲動
-function qzFitLyr(){const box=document.getElementById('s-quiz'),ly=box&&box.querySelector('.qz-lyr.many');if(!ly)return;ly.style.maxHeight='none';ly.classList.remove('two');
-  let over=box.scrollHeight-box.clientHeight;if(over>0&&ly.clientWidth>420){ly.classList.add('two');over=box.scrollHeight-box.clientHeight}  // 放不下：分兩欄
+function qzFitLyr(){const box=document.getElementById('s-quiz'),ly=box&&box.querySelector('.qz-lyr.many');if(!ly)return;ly.style.maxHeight='none';ly.style.removeProperty('--lf');
+  let over=box.scrollHeight-box.clientHeight,f=17;while(over>0&&f>13){f-=.5;ly.style.setProperty('--lf',f+'px');over=box.scrollHeight-box.clientHeight}  // 放不下：字縮小一點（最小 13px），還是不夠才捲
   if(over>0)ly.style.maxHeight=Math.max(120,ly.offsetHeight-over-4)+'px'}
 addEventListener('resize',()=>{if(typeof Q!=='undefined'&&Q&&!Q.home&&!Q.sum)setTimeout(qzFitLyr,150)});
 function qzCutGo(){sDraw();qzRender();const b=document.querySelector('#s-quiz [data-q=alt]');if(b&&!b.disabled){b.click();qzHint('框好了：原唱、妳輪流放這一段，會一直重複；按「⏹ 停」停下來')}else{const r=document.querySelector('#s-quiz [data-q=cmp][data-c=ref]');if(r)r.click();qzHint('框好了：原唱這一段會一直重複；按「⏹ 停」停下來')}}
@@ -336,9 +336,9 @@ function qzMultiHtml(){const sc=SCENES[key],ks=sc.steps.map((_,k)=>k).filter(k=>
     <div class="qz-grp">${ks.map(k=>`<button data-q="msel" data-n="${k}" class="${sel===k?'on':''}">${k+1}</button>`).join('')}</div>
     ${ms.map(([a,b])=>{const id=`R${a}-${b}`,res=lt[id];return `<div class="qz-pr"><span>Part ${a+1}–${b+1} 連唱<small>${res?'做過':'1 題'}</small></span><em>${res==='ok'?'⭐ 準':res==='some'?'△ 幾個字':res==='bad'?'✗ 很多':''}</em><button data-q="mbeg" data-id="${id}">開始</button><button data-q="mdel" data-id="${id}" aria-label="刪掉這組">✕</button></div>`}).join('')}</div>`}
 // 連唱題：把一句一句練的時候標的記號和筆記收在一個可以打開的摺疊頁
-function qzLineMk(g){const T=qzAll()[key]||{},re=new RegExp('^L'+g+'[ftjh]?$');for(const d of Object.keys(T).sort().reverse()){const D=T[d];for(const id in D)if(re.test(id)){const r=D[id];if((r.mk&&Object.keys(r.mk).length)||r.n)return r}}return null}
-function qzFoldHtml(q){const n=qzText(q).filter((_,li)=>qzLineMk(qzGl(q,li))).length,hasN=!!qzNotes(q);
-  return `<div class="qz-lyt">${hasN?`<button data-q="pnon" class="qz-mkt${Q.pnOn?' on':''}">🎵 音高${Q.pnOn?(qzCut(q)?'・只顯示框選的句子':'・顯示'):'・不顯示'}</button>`:''}<button data-q="fold" class="qz-mkt${Q.fold?' on':''}"${n?'':' disabled'}>📌 練句記號${n?`（${n} 句）`:'：還沒有'}・${Q.fold?'顯示':'不顯示'}</button></div>`}
+function qzLineMk(g){const T=qzAll()[key]||{},re=new RegExp('^L'+g+'[ftjh]?$');for(const d of Object.keys(T).sort().reverse()){const D=T[d];for(const id in D)if(re.test(id)){const r=D[id];if((r.mk&&Object.keys(r.mk).length)||(r.pn&&Object.keys(r.pn).length)||r.n)return r}}return null}
+function qzFoldHtml(q){const n=qzText(q).filter((_,li)=>qzLineMk(qzGl(q,li))).length;
+  return `<div class="qz-lyt"><button data-q="fold" class="qz-mkt${Q.fold?' on':''}"${n?'':' disabled'}>📌 練句記號＋音高${n?`（${n} 句）`:'：還沒有'}・${Q.fold?'顯示':'不顯示'}</button></div>`}
 function qzHomeHtml(){const sc=SCENES[key],bank=Q.bank||(Q.bank=qzBank()),last=qzLastAll()[key],hc=Q.hc;
   const rows=Object.keys(QPAPER).map(k=>{const l=qzPaperList(k,'all');return `<button data-q="hc" data-cat="${k}" class="qz-cr${k===hc?' on':''}${k==='wrong'?' wr':''}"><span>${QPAPER[k].n}</span><small>${qzDoneN(l)?`做過 ${qzDoneN(l)}/${l.length}`:`${l.length} 題`}</small><em>⭐ ${qzPct(l)}%</em></button>`}).join('');
   const all=qzPaperList(hc,'all'),parts=[...new Set(all.map(q=>q.s))].sort((x,y)=>x-y);
@@ -364,10 +364,10 @@ function qzSumHtml(){
     <div>${pc!=='beat'&&pc!=='map'&&!words.length?'<p class="qz-tip">還沒有標記的字。聽到不對，就點那個字，它會出現在左邊那題的卡片上。</p>':''}
     ${rows.filter(x=>x.r.n).map(({j,r})=>`<p class="qz-note"><b>${j+1}</b>${esc(r.n)}</p>`).join('')}
     <p class="qz-tip">怎麼練：${how}</p></div></div>`}
-function qzChars(q,r,cls){const mk=r.mk||{},MK=QMARKS[q.cat]||[],L=qzText(q),gh=q.t==='s'&&Q.fold,PN=q.t==='s'&&Q.pnOn?qzNotes(q):null;let pk=0;
-  return (PN?'':'')+L.map((ln,li)=>{const lm=gh?qzLineMk(qzGl(q,li)):null,gm=lm&&lm.mk||{};return `<p data-li="${li}">${L.length>1&&q.cat==='pitch'?`<b class="qz-lno${Q.lsel===li?' on':''}" data-q="lsel" data-li="${li}">${li+1}</b>`:''}${[...ln].map((ch,ci,all)=>{if(/\s/.test(ch))return ' ';const own=mk[li+':'+ci],c=own||gm['0:'+ci],M=MK.find(x=>x[0]===c);
+function qzChars(q,r,cls){const mk=r.mk||{},pn=r.pn||{},MK=QMARKS[q.cat]||[],L=qzText(q),gh=q.t==='s'&&Q.fold,PN=q.cat==='pitch'?qzNotes(q):null;let pk=0;
+  return L.map((ln,li)=>{const lm=gh?qzLineMk(qzGl(q,li)):null,gm=lm&&lm.mk||{},gp=lm&&lm.pn||{},hasP=[...ln].some((_,ci)=>pn[li+':'+ci]||gp['0:'+ci]);return `<p data-li="${li}"${hasP?' class="pn"':''}>${L.length>1&&q.cat==='pitch'?`<b class="qz-lno${Q.lsel===li?' on':''}" data-q="lsel" data-li="${li}">${li+1}</b>`:''}${[...ln].map((ch,ci,all)=>{if(/\s/.test(ch))return ' ';const own=mk[li+':'+ci],c=own||gm['0:'+ci],M=MK.find(x=>x[0]===c);
     const f=q.t==='f'&&ci===all.findIndex(z=>!/\s/.test(z))||q.t==='t'&&ci>=all.length-3?' focus':'';
-    const pw=PN&&qzNorm(ch)?PN.w[pk++]:null;
+    const pw0=PN&&qzNorm(ch)?PN.w[pk++]:null,pw=pw0&&(pn[li+':'+ci]||gp['0:'+ci])?pw0:null;
     return `<span data-q="mk" data-k="${li}:${ci}" class="${c||''}${f}${!own&&c?' gh':''}">${esc(ch)}${M?`<i>${M[1]}</i>`:''}${pw?`<em class="qn">${qzNs(pw[1]).map(qzSol).join('<s>→</s>')}</em>`:''}</span>`}).join('')}${lm&&lm.n?`<small class="qz-ln">📝 ${esc(lm.n)}</small>`:''}</p>`}).join('')}
 // ---------- 每題自動計時：進到題目就開始算，離開 App 會暫停；5 分鐘到提醒先跳下一題 ----------
 const QZ_LIMIT=300;
@@ -411,8 +411,8 @@ function qzRender(){
       <div class="qz-st"><b>3</b><span>消音時在心裡繼續唱；聲音回來那一刻，妳還在音上嗎？對不上的字在右邊點它</span></div>`
      :q.t==='f'?`${recB(1,'⏺ 跟伴奏錄：直接唱第一個字')}${cmp(2)}<div class="qz-st"><b>3</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':'▶ 再聽一次原唱的開頭'}</button></div>`
      :`<div class="qz-st"><b>1</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':q.l!=null?'▶ 先聽原曲這句':'▶ 先聽原曲這段'}</button></div>${recB(2,`⏺ 跟伴奏${QMODE[m].v}一次`)}${cmp(3)}`;
-    right=`<div class="qz-lyr${q.l!=null?' one':''}${q.t==='s'?' many':''}${Q.pnOn&&q.t==='s'?' pn':''}">${q.t==='s'?qzFoldHtml(q):''}${A.length?(q.t==='s'?`<div class="qz-lp">${qzChars(q,r)}</div>`:qzChars(q,r)):`<p class="qz-tip">（這首還沒貼歌詞，就用提示：${esc(st.cue)}）</p>`}</div>
-      <p class="qz-leg qz-brush">先選筆、再點字：${QMARKS.pitch.map(([k,i,n])=>`<button data-q="brush" data-b="${k}" class="${k}${qzBrush()===k?' on':''}">${i} ${n}</button>`).join('')}<button data-q="brush" data-b="e" class="e${qzBrush()==='e'?' on':''}">⌫ 擦掉</button>${nm?`　・已標 ${nm} 個字`:''}</p>`;
+    right=`<div class="qz-lyr${q.l!=null?' one':''}${q.t==='s'?' many':''}">${q.t==='s'?qzFoldHtml(q):''}${A.length?(q.t==='s'?`<div class="qz-lp">${qzChars(q,r)}</div>`:qzChars(q,r)):`<p class="qz-tip">（這首還沒貼歌詞，就用提示：${esc(st.cue)}）</p>`}</div>
+      <p class="qz-leg qz-brush">先選筆、再點字：${QMARKS.pitch.map(([k,i,n])=>`<button data-q="brush" data-b="${k}" class="${k}${qzBrush()===k?' on':''}">${i} ${n}</button>`).join('')}<button data-q="brush" data-b="p" class="p${qzBrush()==='p'?' on':''}">🎵 音高</button><button data-q="brush" data-b="e" class="e${qzBrush()==='e'?' on':''}">⌫ 擦掉</button>${nm?`　・已標 ${nm} 個字`:''}</p>`;
   }else if(q.cat==='lyr'){
     const pv=q.l>0?A[q.l-1]:'',len=[...A[q.l]].filter(c=>!/\s/.test(c)).length;
     title+='<small>・歌詞填空</small>';tip='詞遮起來了。伴奏從上一句開始放，輪到這句時，不看詞唱出來。唱完再對答案，卡住或唱錯的字點起來。';
@@ -456,7 +456,6 @@ app.addEventListener('click',e=>{
   if(a==='lsel'){if(S.recd)return;const li=+t.dataset.li;if(Q.lsel==null){Q.lsel=li;document.querySelectorAll('#s-quiz .qz-lno').forEach(x=>x.classList.toggle('on',+x.dataset.li===li));qzHint(`從第 ${li+1} 句：再點最後一句的號碼（同一句再點一次＝只練這句）`);return}
     const x=Math.min(Q.lsel,li),y=Math.max(Q.lsel,li);Q.lsel=null;const A=qzLineSpan(q,x),B=qzLineSpan(q,y);if(!A||!B){qzRender();return}
     sStop();Q.act='';Q.cut=[Math.max(0,A[0]-.15),B[1]];Q.cutQ=q.id;Q.boxing=false;qzCutGo();return}
-  if(a==='pnon'){Q.pnOn=!Q.pnOn;if(Q.pnOn)qzSet(q.id,{hint:1});qzRender();return}
   if(a==='fold'){Q.fold=!Q.fold;qzRender();return}
   if(a==='msel'){const k=+t.dataset.n;if(Q.hsel==null){Q.hsel=k;qzRender();return}
     const x=Math.min(Q.hsel,k),y=Math.max(Q.hsel,k);Q.hsel=null;if(x===y){qzHint('至少兩個 Part：點第一個、再點最後一個');qzRender();return}
@@ -506,6 +505,9 @@ app.addEventListener('click',e=>{
   else if(a==='mprev'){const [x]=secRange(q.s);qzPlay('mprev',qzOrig(),q.s?x-6:0,x+.05)}
   else if(a==='mplay'){const [x,y]=secRange(q.s);qzPlay('mplay',qzOrig(),x-.3,Math.min(y,x+8))}
   else if(a==='brush'){qzLS('scene-qbrush',t.dataset.b);document.querySelectorAll('#s-quiz [data-q=brush]').forEach(b=>b.classList.toggle('on',b.dataset.b===t.dataset.b));return}
+  else if(a==='mk'&&q.cat==='pitch'&&(qzBrush()==='p'||qzBrush()==='e')&&(qzBrush()==='p'||(qzGet(q.id).pn||{})[t.dataset.k])){const r=qzGet(q.id),pn=Object.assign({},r.pn||{}),k=t.dataset.k;
+    if(qzBrush()==='p'&&!qzNotes(q)){qzHint('這句還沒有簡譜音可以顯示');return}
+    if(pn[k])delete pn[k];else pn[k]=1;qzSet(q.id,qzBrush()==='p'?{pn,hint:1}:{pn});if(qzBrush()==='e'){const mk=Object.assign({},r.mk||{});delete mk[k];qzSet(q.id,{mk})}qzRender();return}
   else if(a==='mk'){const MK=QMARKS[q.cat];if(!MK)return;const r=qzGet(q.id),mk=Object.assign({},r.mk||{}),k=t.dataset.k,o=['',...MK.map(x=>x[0])],br=MK.length>1?qzBrush():'',nx=br==='e'?'':br?(mk[k]===br?'':br):o[(o.indexOf(mk[k]||'')+1)%o.length];if(nx)mk[k]=nx;else delete mk[k];qzSet(q.id,{mk});
     const M=MK.find(x=>x[0]===nx);t.className=(nx||'')+(t.classList.contains('focus')?' focus':'');const i=t.querySelector('i');if(i)i.remove();if(M)t.insertAdjacentHTML('beforeend',`<i>${M[1]}</i>`);
     const lg=document.querySelector('#s-quiz .qz-leg');if(lg){const n=Object.keys(mk).length;lg.lastChild.nodeType===3&&/已標/.test(lg.lastChild.textContent)&&lg.lastChild.remove();if(n)lg.insertAdjacentText('beforeend',`　・已標 ${n} 個字`)}}
@@ -538,7 +540,7 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 .qz-lyr{position:relative}#studio .qz-mkt{position:absolute;top:6px;right:8px;font-size:12px;padding:3px 10px;background:rgba(0,0,0,.35);border:1px solid rgba(232,194,122,.4);z-index:2}#studio .qz-mkt.on{background:rgba(232,194,122,.25);color:#f5c451}.qz-lyr span.gh{outline:1.5px dashed rgba(255,255,255,.45);outline-offset:-1px}.qz-ln{font-size:12px;color:var(--muted);margin-left:10px;letter-spacing:0}.qz-lyr.many .qz-mkt{position:sticky;float:right;top:0}.qz-r.fo .qz-lyr{max-height:66px;overflow:auto}.qz-r.fo .qz-lyr p{font-size:15px;line-height:1.45}#studio .qz-fold>button{width:100%;text-align:left;background:rgba(232,194,122,.1);border:1px solid rgba(232,194,122,.35);padding:5px 10px;font-size:13px}.qz-fl{max-height:min(120px,18vh);overflow:auto;margin-top:4px;padding:4px 8px;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.25)}.qz-fr{display:flex;align-items:baseline;gap:8px;padding:3px 0;font-size:16px;flex-wrap:wrap}.qz-fr>b{color:var(--muted);font-size:12px;width:16px}.qz-fr small{color:var(--muted);font-size:12px}.qz-fold0{margin:4px 0 0;font-size:12px;color:var(--muted)}
 .qz-lno{display:inline-block;min-width:20px;margin-right:8px;padding:0 5px;border-radius:6px;font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--line);text-align:center;cursor:pointer;vertical-align:middle;letter-spacing:0;line-height:1.6}.qz-lno.on{background:#78c8ff;color:#06202e;border-color:#78c8ff}.qz-lyr p.incut{background:rgba(120,200,255,.14);box-shadow:inset 3px 0 0 rgba(120,200,255,.9);border-radius:6px}
 .qz-lyt{position:sticky;top:-4px;z-index:2;display:flex;justify-content:flex-end;gap:6px;margin:0 -6px 2px;padding:2px 0;background:linear-gradient(rgba(26,22,17,.97),rgba(26,22,17,.85))}#studio .qz-lyt .qz-mkt{position:static}
-.qz-lyr.pn p{line-height:2.25!important}.qz-lyr.two .qz-lp{column-count:2;column-gap:18px}.qz-lyr.two .qz-lp p{break-inside:avoid;white-space:nowrap;letter-spacing:.06em;font-size:16px}.qz-lyr.many p{font-size:17px}.qz-lyr span{position:relative}.qz-lyr .qn{position:absolute;left:50%;transform:translateX(-50%);top:calc(100% - 1px);font-style:normal;font-size:11px;line-height:1;color:#9fd0ff;white-space:nowrap;letter-spacing:0;pointer-events:none}.qz-lyr .qn s{text-decoration:none;opacity:.6;font-size:9px}.qz-lyr.cutting p:not(.incut) .qn{visibility:hidden}
+.qz-lyr p.pn{line-height:2.2!important}.qz-lyr.many .qz-lp p{font-size:var(--lf,17px)}.qz-lyr.two .qz-lp{column-count:2;column-gap:18px}.qz-lyr.two .qz-lp p{break-inside:avoid;white-space:nowrap;letter-spacing:.06em;font-size:16px}.qz-lyr.many p{font-size:17px}.qz-lyr span{position:relative}.qz-lyr .qn{position:absolute;left:50%;transform:translateX(-50%);top:calc(100% - 1px);font-style:normal;font-size:11px;line-height:1;color:#9fd0ff;white-space:nowrap;letter-spacing:0;pointer-events:none}.qz-lyr .qn s{text-decoration:none;opacity:.6;font-size:9px}
 .qz-steps>.qz-t{margin-bottom:8px}.qz-b{grid-template-columns:minmax(300px,.8fr) minmax(0,1.2fr)}.qz-r{min-width:0}
 .qz-timer.idle{opacity:.45;font-size:12px}.qz-timer.over{color:#e8806f;opacity:1;font-weight:600}
 #s-quiz{position:absolute;inset:0;background:rgba(18,15,11,.95);overflow:auto;padding:12px 18px 16px;display:flex;flex-direction:column;gap:8px;-webkit-user-select:none;user-select:none}
@@ -562,7 +564,7 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 .qz-lyr p{margin:0;padding:1px 6px;font-size:21px;line-height:1.6;letter-spacing:.05em;border-radius:8px}.qz-lyr p.on{background:rgba(242,194,123,.14)}
 .qz-lyr span,.qz-leg span{position:relative;padding:1px 2px;border-radius:5px;cursor:pointer}
 .qz-lyr span.u,.qz-leg .u,.qz-words .u{background:rgba(232,128,111,.38)}.qz-lyr span.d,.qz-leg .d,.qz-words .d{background:rgba(120,165,255,.38)}.qz-lyr span.w,.qz-leg .w,.qz-words .w{background:rgba(242,194,123,.38)}.qz-lyr span.r,.qz-lm .r,.qz-rw .r,.qz-leg .r,.qz-words .r{background:rgba(176,140,240,.4)}
-.qz-brush{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.qz-brush button{font-size:13px;padding:5px 11px;border-radius:999px;border:1.5px solid transparent!important;margin:0!important;color:var(--ink)}.qz-brush button.d{background:rgba(120,165,255,.38)!important}.qz-brush button.u{background:rgba(232,128,111,.38)!important}.qz-brush button.w{background:rgba(242,194,123,.38)!important}.qz-brush button.r{background:rgba(176,140,240,.4)!important}.qz-brush button.e{background:rgba(255,255,255,.08)!important}.qz-brush button.on{border-color:#f5c451!important;box-shadow:0 0 0 2px rgba(245,196,81,.35);font-weight:600}
+.qz-brush{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.qz-brush button{font-size:13px;padding:5px 11px;border-radius:999px;border:1.5px solid transparent!important;margin:0!important;color:var(--ink)}.qz-brush button.d{background:rgba(120,165,255,.38)!important}.qz-brush button.u{background:rgba(232,128,111,.38)!important}.qz-brush button.w{background:rgba(242,194,123,.38)!important}.qz-brush button.r{background:rgba(176,140,240,.4)!important}.qz-brush button.p{background:rgba(159,208,255,.25)!important}.qz-brush button.e{background:rgba(255,255,255,.08)!important}.qz-brush button.on{border-color:#f5c451!important;box-shadow:0 0 0 2px rgba(245,196,81,.35);font-weight:600}
 .qz-lyr span i{position:absolute;top:-11px;right:-5px;font-style:normal;font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000}
 .qz-leg{margin:6px 0;font-size:12px;color:var(--muted)}.qz-leg span{cursor:default}
 .qz-in{width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;color:var(--ink);font:inherit;font-size:14px;padding:8px 10px;-webkit-user-select:text;user-select:text}
