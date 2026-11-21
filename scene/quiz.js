@@ -342,7 +342,7 @@ function qzTag(q,r){if(q.cat==='pitch')return (q.R?'幾段連唱・':q.a?'幾句
 // 三頁共用的頂列：左邊固定三個分頁（題組首頁｜題目｜成績單，現在在哪頁就亮哪個），中間標題，最右邊 ✕ 結束
 function qzNav(cur,title,right){qzXBtn();const last=qzLastAll()[key],hasQ=!!(Q.list&&Q.list.length)||!!(last&&last.ids&&last.ids.length);
   const tb=(id,a,l)=>`<button data-q="${cur===id?'':a}" class="${cur===id?'on':''}"${cur!==id&&id!=='home'&&!hasQ?' disabled':''}>${l}</button>`;
-  return `<div class="qz-h"><div class="qz-tabs">${tb('home','home','🏠 題組首頁')}${tb('q','tabq','✏️ 題目')}${tb('sum','tabs','📋 成績單')}</div><b class="qz-tt">${title}</b><span class="sp"></span>${right||''}</div>`}
+  return `<div class="qz-h"><div class="qz-tabs"><button data-q="songs">🎵 歌單</button>${tb('home','home','🏠 題組首頁')}${tb('q','tabq','✏️ 題目')}${tb('sum','tabs','📋 成績單')}</div><b class="qz-tt">${title}</b><span class="sp"></span>${right||''}</div>`}
 // ✕ 結束 放在最上面那條（時間旁邊），題組每一頁都在同一個位置
 function qzXBtn(){const top=document.querySelector('#studio .s-top');if(!top||top.querySelector('.qz-x'))return;const b=document.createElement('button');b.className='qz-x';b.dataset.q='x';b.textContent='✕ 結束題組';top.appendChild(b)}
 function qzH2(){const n=Q.list.length,w=3,lo=Math.max(0,Math.min(Q.i-w,n-2*w-1)),hi=Math.min(n,lo+2*w+1);
@@ -478,6 +478,7 @@ app.addEventListener('click',e=>{
   if(a==='lsel'){if(S.recd)return;const li=+t.dataset.li;if(Q.lsel==null){Q.lsel=li;document.querySelectorAll('#s-quiz .qz-lno').forEach(x=>x.classList.toggle('on',+x.dataset.li===li));qzHint(`從第 ${li+1} 句：再點最後一句的號碼（同一句再點一次＝只練這句）`);return}
     const x=Math.min(Q.lsel,li),y=Math.max(Q.lsel,li);Q.lsel=null;const A=qzLineSpan(q,x),B=qzLineSpan(q,y);if(!A||!B){qzRender();return}
     sStop();Q.act='';Q.cut=[Math.max(0,A[0]-.15),B[1]];Q.cutQ=q.id;Q.boxing=false;qzCutGo();return}
+  if(a==='songs'){sStop();location.href='../#songs';return}
   if(a==='fold'){Q.fold=!Q.fold;qzRender();return}
   if(a==='msel'){const k=+t.dataset.n;if(Q.hsel==null){Q.hsel=k;qzRender();return}
     const x=Math.min(Q.hsel,k),y=Math.max(Q.hsel,k);Q.hsel=null;if(x===y){qzHint('至少兩個 Part：點第一個、再點最後一個');qzRender();return}
