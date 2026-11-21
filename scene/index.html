@@ -244,7 +244,7 @@ body.drawing .foot,body.drawing .player,body.drawing .hint{display:none}
 @media (max-width:640px){.ctl{grid-template-columns:1fr 1fr;grid-template-areas:"c c" "l r";row-gap:2px}.ctl .c{grid-area:c;justify-content:center}.ctl .l{grid-area:l}.ctl .r{grid-area:r}
   .hint,.sub{bottom:calc(env(safe-area-inset-bottom,0px) + 168px)!important}}
 /* 錄音室 */
-#qz-load{position:fixed;inset:0;z-index:60;background:#14110d;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:20px}#qz-load span{font-size:14px;opacity:.7}#qz-load i{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.15);border-top-color:#f5c451;animation:qzspin .8s linear infinite}@keyframes qzspin{to{transform:rotate(360deg)}}
+#qz-load{position:fixed;inset:0;z-index:60;background:#14110d;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:20px}#qz-load span{font-size:14px;opacity:.7}#qz-load em{font-size:12px;opacity:.45;font-style:normal}#qz-load i{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.15);border-top-color:#f5c451;animation:qzspin .8s linear infinite}@keyframes qzspin{to{transform:rotate(360deg)}}
 #studio{position:fixed;inset:0;z-index:40;background:#14110d;display:grid;grid-template-rows:auto minmax(150px,1.3fr) auto minmax(0,2fr) auto auto;transition:grid-template-rows .3s ease;color:var(--ink);padding:env(safe-area-inset-top,0px) 0 calc(env(safe-area-inset-bottom,0px) + 12px);user-select:none;-webkit-user-select:none}
 body.studio{overflow:hidden}
 #studio button{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--ink);border-radius:99px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer}
@@ -481,7 +481,7 @@ const SCENES={
   }
 };
 // 版本號：每次改這頁就加 1。打開時會偷偷抓最新版比對，比較新就自動重新載入，避免 iPad 一直顯示舊的
-const VER=177;
+const VER=178;
 fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const VER=(\d+);/);if(m&&+m[1]>VER){const dq=new URLSearchParams(location.search).get('do');location.replace(location.pathname+'?v='+m[1]+(dq?'&do='+encodeURIComponent(dq):'')+location.hash)}}).catch(()=>{});
 const LKEY='scene-lyrics-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -718,7 +718,7 @@ async function loadAudio(want,at,play){
   if(au)au.pause();
   // 原曲、伴奏兩軌都解開，用同一個 Web Audio 時鐘一起播；換軌只是換哪一軌有聲音（跟錄音室一樣，沒有切點）
   const k0=key,bufs={};
-  for(const tr of ['inst','orig']){const f1=tr==='inst'?fi:fo;if(!f1)continue;
+  for(const tr of ['inst','orig']){const f1=tr==='inst'?fi:fo;if(!f1)continue;{const L=document.querySelector('#qz-load span');if(L)L.textContent='正在讀'+TRACK[tr]+'…'}
     try{bufs[tr]=await decodeHead(await playable(key+'|'+tr,f1,typeof S!=='undefined'&&S?sMsg:hint,gen))}catch(e){if(e==='stale')return}
     if(gen!==loadGen)return}
   if(key!==k0||gen!==loadGen)return;
@@ -1284,7 +1284,7 @@ function opFit(){const sub=document.getElementById('sub'),g=sub&&sub.querySelect
 // App 剛好更新版本會重新載入：先把要做的事記在 sessionStorage，新版本接著做
 // 從歌單「繼續測驗」進來：先蓋一層「題組準備中」，不讓歌詞頁閃一下；錄音室開好就拿掉
 (()=>{let q=/[?&]do=quiz/.test(location.search);if(!q)try{const o=JSON.parse(sessionStorage.getItem('scene-do')||'null');q=!!(o&&/^quiz/.test(o.d)&&Date.now()-o.t<30000)}catch(e){}
-  if(q){const L=document.createElement('div');L.id='qz-load';L.innerHTML='<i></i><b>🎯 題組</b><span>正在讀這首歌的音樂…</span>';document.body.appendChild(L);setTimeout(()=>L.remove(),50000)}})();
+  if(q){const L=document.createElement('div');L.id='qz-load';L.innerHTML='<i></i><b>🎯 題組</b><span>正在讀這首歌的音樂…</span><em>0 秒</em>';document.body.appendChild(L);const t0=Date.now(),tt=setInterval(()=>{if(!L.isConnected)return clearInterval(tt);L.querySelector('em').textContent=Math.round((Date.now()-t0)/1000)+' 秒'},500);setTimeout(()=>L.remove(),50000)}})();
 setTimeout(()=>{let d='';try{d=new URLSearchParams(location.search).get('do')||''}catch(e){}
   try{if(d)sessionStorage.setItem('scene-do',JSON.stringify({d,k:location.hash,t:Date.now()}));else{const o=JSON.parse(sessionStorage.getItem('scene-do')||'null');sessionStorage.removeItem('scene-do');if(o&&o.k===location.hash&&Date.now()-o.t<30000)d=o.d}}catch(e){}
   const doneDo=()=>{try{sessionStorage.removeItem('scene-do')}catch(e){}};
@@ -1447,7 +1447,7 @@ function stopDraw(){['pad','pentools'].forEach(id=>{const e=document.getElementB
 render();
 </script>
 <script src="../keyshift.js?v=60"></script>
-<script src="studio.js?v=173"></script>
-<script src="quiz.js?v=177"></script>
+<script src="studio.js?v=178"></script>
+<script src="quiz.js?v=178"></script>
 </body>
 </html>

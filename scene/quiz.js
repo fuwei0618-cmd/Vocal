@@ -52,7 +52,14 @@ function qzLineRange(g){const o=(qzRngAll()[key]||{})[g];if(o&&o.length===2&&o[1
 // 每段開頭、或前面空很久的句子＝要自己進拍的地方
 function qzEntries(){const L=getLines();return qzPool().filter(g=>g===0||L[g-1]==null||secOfLine(g)!==secOfLine(g-1)||L[g]-qzLineRange(g-1)[0]>6)}
 // ---------- 原唱音高分析（有「原唱人聲」那軌才做）：找高音句、大跳音 ----------
-function qzAnalyze(){const c=window._qzPA||(window._qzPA={});if(c[key])return c[key];const ln=qLane('vocal');if(!ln)return null;
+// 人聲分析（哪幾句最高、哪裡有大跳）很花時間：算好存起來，句子時間沒改就直接用
+const qzPASig=()=>qzPool().map(g=>qzLineRange0(g).map(x=>x.toFixed(1)).join('-')).join(',');
+function qzAnalyze(){const c=window._qzPA||(window._qzPA={});if(c[key])return c[key];
+  let sv;try{sv=(JSON.parse(localStorage.getItem('scene-qpa')||'{}')||{})[key]}catch(e){}const sig=qzPASig();if(sv&&sv.sig===sig)return c[key]={hi:sv.hi,jump:sv.jump};
+  const r=qzAnalyze0();if(r){try{const A=JSON.parse(localStorage.getItem('scene-qpa')||'{}')||{};A[key]={sig,hi:r.hi,jump:r.jump};localStorage.setItem('scene-qpa',JSON.stringify(A))}catch(e){}}return r}
+// 人聲軌晚一點才解好：題庫（高音句、大跳）重算一次
+function qzLaneReady(id){if(id!=='vocal'||!Q)return;window._qzPA&&delete window._qzPA[key];qzTrimC.clear&&qzTrimC.clear();Q.bank=null;if(Q.home)qzRender()}
+function qzAnalyze0(){const c=window._qzPA;const ln=qLane('vocal');if(!ln)return null;
   const b=ln.buf,sr0=b.sampleRate,ds=Math.max(1,Math.round(sr0/11025)),sr=sr0/ds,d0=b.getChannelData(0),hi={},jump={};
   const W=Math.round(sr*.04),hop=Math.round(sr*.03),minL=Math.floor(sr/900),maxL=Math.ceil(sr/80),K=Math.max(2,Math.round(.3/(hop/sr)));
   qzPool().forEach(g=>{const [a,e]=qzLineRange(g),n=Math.max(0,Math.floor((e-a)*sr)),o=Math.floor(a*sr0),x=new Float32Array(n);
