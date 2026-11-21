@@ -8,7 +8,7 @@ const QMODE={
   hum:{n:'🎵 哼',v:'哼',t:'用哼的（嗯～），不唱詞：只剩旋律，最容易聽出音高準不準。'},
   mind:{n:'🧠 腦內',v:'腦內唱',t:'原曲會在這裡消音，妳在心裡繼續唱；聲音回來那一刻，聽自己還在不在音上。'}};
 const QCAT={
-  pitch:{n:'🎯 音準',res:{ok:'✓ 準',some:'△ 幾個字不準',bad:'✗ 很多不準'},sc:['準','幾個字','很多不準'],pass:'不準的字不超過 2 個'},
+  pitch:{n:'🎯 音準',res:{ok:'✓ 準',some:'△ 低空飛過',bad:'✗ 不及格'},sc:['準','低空飛過','不及格'],pass:'不準的字不超過 2 個'},
   lyr:{n:'📝 歌詞',res:{ok:'✓ 全對',some:'△ 卡 1～2 個字',bad:'✗ 想不起來'},sc:['全對','卡幾個字','想不起來'],pass:'整句唱得出來，卡不超過 2 個字'},
   beat:{n:'🥁 進拍',res:{ok:'✓ 準時',some:'⏩ 搶太早',bad:'⏪ 慢半拍'},sc:['準時','搶太早','慢半拍'],pass:'跟原唱同一刻開口'},
   map:{n:'🗺 架構',res:{ok:'✓ 說對',some:'△ 說對一半',bad:'✗ 想不起來'},sc:['說對','一半','想不起來'],pass:'段落和第一句都說得出來'}};
@@ -338,7 +338,7 @@ function qzHead(extra){return qzNav(Q.sum?'sum':'q',qzPaperName(Q.paper),extra)}
 function qzMultiHtml(){const sc=SCENES[key],ks=sc.steps.map((_,k)=>k).filter(k=>qzLines(k).length),sel=Q.hsel,lt=qzLatest(),ms=qzMultis();
   return `<div class="qz-multi"><h4>幾個 Part 一起連唱<small>${sel!=null?`再點最後一個 Part（從 Part ${sel+1}）`:'點第一個 Part、再點最後一個，就多一題'}</small></h4>
     <div class="qz-grp">${ks.map(k=>`<button data-q="msel" data-n="${k}" class="${sel===k?'on':''}">${k+1}</button>`).join('')}</div>
-    ${ms.map(([a,b])=>{const id=`R${a}-${b}`,res=lt[id];return `<div class="qz-pr"><span>Part ${a+1}–${b+1} 連唱<small>${res?'做過':'1 題'}</small></span><em>${res==='ok'?'⭐ 準':res==='some'?'△ 幾個字':res==='bad'?'✗ 很多':''}</em><button data-q="mbeg" data-id="${id}">開始</button><button data-q="mdel" data-id="${id}" aria-label="刪掉這組">✕</button></div>`}).join('')}</div>`}
+    ${ms.map(([a,b])=>{const id=`R${a}-${b}`,res=lt[id];return `<div class="qz-pr"><span>Part ${a+1}–${b+1} 連唱<small>${res?'做過':'1 題'}</small></span><em>${res==='ok'?'⭐ 準':res==='some'?'△ 低空飛過':res==='bad'?'✗ 不及格':''}</em><button data-q="mbeg" data-id="${id}">開始</button><button data-q="mdel" data-id="${id}" aria-label="刪掉這組">✕</button></div>`}).join('')}</div>`}
 // 連唱題：把一句一句練的時候標的記號和筆記收在一個可以打開的摺疊頁
 function qzLineMk(g){const T=qzAll()[key]||{},re=new RegExp('^L'+g+'[ftjh]?$');for(const d of Object.keys(T).sort().reverse()){const D=T[d];for(const id in D)if(re.test(id)){const r=D[id];if((r.mk&&Object.keys(r.mk).length)||(r.pn&&Object.keys(r.pn).length)||r.n)return r}}return null}
 function qzFoldHtml(q){const n=qzText(q).filter((_,li)=>qzLineMk(qzGl(q,li))).length+(Object.keys(qzGet(q.id).pn||{}).length?1:0);
