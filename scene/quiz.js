@@ -20,7 +20,7 @@ const QTYPE={
   j:{n:'大跳音',t:''},
   s:{n:'整段連唱',t:'這個 Part 一句一句考完了，最後整段連起來唱一次：換句、換氣的地方音有沒有跑掉。'}};
 const qzBrush=()=>qzLS('scene-qbrush')||'d';
-const QMARKS={pitch:[['d','↑','再高'],['u','↓','再低'],['w','〰','不穩'],['r','♫','轉音']],lyr:[['x','✗','卡住／唱錯']]};
+const QMARKS={pitch:[['d','↑','再高'],['u','↓','再低'],['w','〰','不穩'],['r','♫','轉音'],['a','⚠','注意']],lyr:[['x','✗','卡住／唱錯'],['a','⚠','注意']]};
 const qzDay=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 function qzAll(){try{return JSON.parse(localStorage.getItem(QZK)||'{}')||{}}catch(e){return {}}}
 function qzDayRec(){return (qzAll()[key]||{})[qzDay()]||{}}
@@ -576,8 +576,8 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 .qz-lyr{border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:rgba(255,255,255,.03)}
 .qz-lyr p{margin:0;padding:1px 6px;font-size:21px;line-height:1.6;letter-spacing:.05em;border-radius:8px}.qz-lyr p.on{background:rgba(242,194,123,.14)}
 .qz-lyr span,.qz-leg span{position:relative;padding:1px 2px;border-radius:5px;cursor:pointer}
-.qz-lyr span.u,.qz-leg .u,.qz-words .u{background:rgba(232,128,111,.38)}.qz-lyr span.d,.qz-leg .d,.qz-words .d{background:rgba(120,165,255,.38)}.qz-lyr span.w,.qz-leg .w,.qz-words .w{background:rgba(242,194,123,.38)}.qz-lyr span.r,.qz-lm .r,.qz-rw .r,.qz-leg .r,.qz-words .r{background:rgba(176,140,240,.4)}
-.qz-brush{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.qz-brush button{font-size:13px;padding:5px 11px;border-radius:999px;border:1.5px solid transparent!important;margin:0!important;color:var(--ink)}.qz-brush button.d{background:rgba(120,165,255,.38)!important}.qz-brush button.u{background:rgba(232,128,111,.38)!important}.qz-brush button.w{background:rgba(242,194,123,.38)!important}.qz-brush button.r{background:rgba(176,140,240,.4)!important}.qz-brush button.p{background:rgba(159,208,255,.25)!important}.qz-brush button.e{background:rgba(255,255,255,.08)!important}.qz-brush button.on{border-color:#f5c451!important;box-shadow:0 0 0 2px rgba(245,196,81,.35);font-weight:600}
+.qz-lyr span.u,.qz-leg .u,.qz-words .u{background:rgba(232,128,111,.38)}.qz-lyr span.d,.qz-leg .d,.qz-words .d{background:rgba(120,165,255,.38)}.qz-lyr span.w,.qz-leg .w,.qz-words .w{background:rgba(242,194,123,.38)}.qz-lyr span.r,.qz-lm .r,.qz-rw .r,.qz-leg .r,.qz-words .r{background:rgba(176,140,240,.4)}.qz-lyr span.a,.qz-lm .a,.qz-rw .a,.qz-leg .a,.qz-words .a{background:rgba(110,200,150,.38)}
+.qz-brush{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.qz-brush button{font-size:13px;padding:5px 11px;border-radius:999px;border:1.5px solid transparent!important;margin:0!important;color:var(--ink)}.qz-brush button.d{background:rgba(120,165,255,.38)!important}.qz-brush button.u{background:rgba(232,128,111,.38)!important}.qz-brush button.w{background:rgba(242,194,123,.38)!important}.qz-brush button.r{background:rgba(176,140,240,.4)!important}.qz-brush button.a{background:rgba(110,200,150,.38)!important}.qz-brush button.p{background:rgba(159,208,255,.25)!important}.qz-brush button.e{background:rgba(255,255,255,.08)!important}.qz-brush button.on{border-color:#f5c451!important;box-shadow:0 0 0 2px rgba(245,196,81,.35);font-weight:600}
 .qz-lyr span i{position:absolute;top:-11px;right:-5px;font-style:normal;font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000}
 .qz-leg{margin:6px 0;font-size:12px;color:var(--muted)}.qz-leg span{cursor:default}
 .qz-in{width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;color:var(--ink);font:inherit;font-size:14px;padding:8px 10px;-webkit-user-select:text;user-select:text}
