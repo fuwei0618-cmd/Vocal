@@ -20,7 +20,7 @@ const QTYPE={
   j:{n:'大跳音',t:''},
   s:{n:'整段連唱',t:'這個 Part 一句一句考完了，最後整段連起來唱一次：換句、換氣的地方音有沒有跑掉。'}};
 const qzBrush=()=>qzLS('scene-qbrush')||'d';
-const QMARKS={pitch:[['d','↑','再高'],['u','↓','再低'],['w','〰','不穩'],['r','♫','轉音'],['a','⚠','注意']],lyr:[['x','✗','卡住／唱錯'],['a','⚠','注意']]};
+const QMARKS={pitch:[['d','↑','再高'],['u','↓','再低'],['w','〰','穩定'],['r','♫','轉音'],['k','口','咬字'],['a','⚠','注意']],lyr:[['x','✗','卡住／唱錯'],['k','口','咬字'],['a','⚠','注意']]};
 const qzDay=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 function qzAll(){try{return JSON.parse(localStorage.getItem(QZK)||'{}')||{}}catch(e){return {}}}
 function qzDayRec(){return (qzAll()[key]||{})[qzDay()]||{}}
@@ -416,7 +416,7 @@ function qzRender(){
      :q.t==='f'?`${recB(1,'⏺ 跟伴奏錄：直接唱第一個字')}${cmp(2)}<div class="qz-st"><b>3</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':'▶ 再聽一次原唱的開頭'}</button></div>`
      :`<div class="qz-st"><b>1</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':q.l!=null?'▶ 先聽原曲這句':'▶ 先聽原曲這段'}</button></div>${recB(2,`⏺ 跟伴奏${QMODE[m].v}一次`)}${cmp(3)}`;
     right=`<div class="qz-lyr${q.l!=null?' one':''}${q.t==='s'?' many':''}">${q.t==='s'?qzFoldHtml(q):''}${A.length?(q.t==='s'?`<div class="qz-lp">${qzChars(q,r)}</div>`:qzChars(q,r)):`<p class="qz-tip">（這首還沒貼歌詞，就用提示：${esc(st.cue)}）</p>`}</div>
-      <p class="qz-leg qz-brush">先選筆、再點字：${QMARKS.pitch.map(([k,i,n])=>`<button data-q="brush" data-b="${k}" class="${k}${qzBrush()===k?' on':''}">${i} ${n}</button>`).join('')}<button data-q="brush" data-b="p" class="p${qzBrush()==='p'?' on':''}">🎵 音高</button><button data-q="brush" data-b="e" class="e${qzBrush()==='e'?' on':''}">⌫ 擦掉</button>${nm?`　・已標 ${nm} 個字`:''}</p>`;
+      <p class="qz-leg qz-brush" title="先選筆、再點字">${QMARKS.pitch.map(([k,i,n])=>`<button data-q="brush" data-b="${k}" class="${k}${qzBrush()===k?' on':''}">${i} ${n}</button>`).join('')}<button data-q="brush" data-b="p" class="p${qzBrush()==='p'?' on':''}">🎵 音高</button><button data-q="brush" data-b="e" class="e${qzBrush()==='e'?' on':''}">⌫ 擦掉</button>${nm?`　・已標 ${nm} 個字`:''}</p>`;
   }else if(q.cat==='lyr'){
     const pv=q.l>0?A[q.l-1]:'',len=[...A[q.l]].filter(c=>!/\s/.test(c)).length;
     title+='<small>・歌詞填空</small>';tip='詞遮起來了。伴奏從上一句開始放，輪到這句時，不看詞唱出來。唱完再對答案，卡住或唱錯的字點起來。';
@@ -532,7 +532,7 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 #studio #s-quiz{gap:6px;padding-bottom:8px}.qz-t{row-gap:2px}.qz-t .qz-tip{flex-basis:100%;font-size:12.5px;line-height:1.45}.qz-sec{font-size:19px}
 .qz-lyr.one p{font-size:26px;line-height:1.35;padding:4px 8px}.qz-res{margin-top:10px;padding-top:8px}.qz-nav{margin-top:10px}
 .qz-steps>.qz-in{margin-top:12px}.qz-adj{margin-top:8px}.qz-tools{margin-top:6px;padding:6px 10px;gap:4px}#studio .qz-tools button{padding:4px 10px;font-size:13px}
-#studio .qz-nt{padding:2px 7px!important}.qz-nt b{font-size:15px}.qz-nt small{font-size:12px}.qz-leg{margin:4px 0}#studio .qz-brush button{padding:4px 10px}
+#studio .qz-nt{padding:2px 7px!important}.qz-nt b{font-size:15px}.qz-nt small{font-size:12px}.qz-leg{margin:4px 0}#studio .qz-brush button{padding:4px 8px}
 .qz-tl{width:68px!important}.qz-boxb{margin-left:auto!important}.qz-h{margin-bottom:0}
 .qz-tact{display:inline-flex;gap:5px;align-items:center;flex-wrap:wrap}.qz-chips{align-items:center}
 .qz-st{margin:0 0 7px}.qz-adj .qz-tl{width:auto!important;margin-right:4px}.qz-res{margin-top:6px}.qz-res>span{margin-bottom:2px}
@@ -576,8 +576,8 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 .qz-lyr{border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:rgba(255,255,255,.03)}
 .qz-lyr p{margin:0;padding:1px 6px;font-size:21px;line-height:1.6;letter-spacing:.05em;border-radius:8px}.qz-lyr p.on{background:rgba(242,194,123,.14)}
 .qz-lyr span,.qz-leg span{position:relative;padding:1px 2px;border-radius:5px;cursor:pointer}
-.qz-lyr span.u,.qz-leg .u,.qz-words .u{background:rgba(232,128,111,.38)}.qz-lyr span.d,.qz-leg .d,.qz-words .d{background:rgba(120,165,255,.38)}.qz-lyr span.w,.qz-leg .w,.qz-words .w{background:rgba(242,194,123,.38)}.qz-lyr span.r,.qz-lm .r,.qz-rw .r,.qz-leg .r,.qz-words .r{background:rgba(176,140,240,.4)}.qz-lyr span.a,.qz-lm .a,.qz-rw .a,.qz-leg .a,.qz-words .a{background:rgba(110,200,150,.38)}
-.qz-brush{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.qz-brush button{font-size:13px;padding:5px 11px;border-radius:999px;border:1.5px solid transparent!important;margin:0!important;color:var(--ink)}.qz-brush button.d{background:rgba(120,165,255,.38)!important}.qz-brush button.u{background:rgba(232,128,111,.38)!important}.qz-brush button.w{background:rgba(242,194,123,.38)!important}.qz-brush button.r{background:rgba(176,140,240,.4)!important}.qz-brush button.a{background:rgba(110,200,150,.38)!important}.qz-brush button.p{background:rgba(159,208,255,.25)!important}.qz-brush button.e{background:rgba(255,255,255,.08)!important}.qz-brush button.on{border-color:#f5c451!important;box-shadow:0 0 0 2px rgba(245,196,81,.35);font-weight:600}
+.qz-lyr span.u,.qz-leg .u,.qz-words .u{background:rgba(232,128,111,.38)}.qz-lyr span.d,.qz-leg .d,.qz-words .d{background:rgba(120,165,255,.38)}.qz-lyr span.w,.qz-leg .w,.qz-words .w{background:rgba(242,194,123,.38)}.qz-lyr span.r,.qz-lm .r,.qz-rw .r,.qz-leg .r,.qz-words .r{background:rgba(176,140,240,.4)}.qz-lyr span.a,.qz-lm .a,.qz-rw .a,.qz-leg .a,.qz-words .a{background:rgba(110,200,150,.38)}.qz-lyr span.k,.qz-lm .k,.qz-rw .k,.qz-leg .k,.qz-words .k{background:rgba(240,140,190,.38)}
+.qz-brush{display:flex;flex-wrap:wrap;align-items:center;gap:5px}.qz-brush button{font-size:13px;padding:5px 7px;border-radius:999px;border:1.5px solid transparent!important;margin:0!important;color:var(--ink)}.qz-brush button.d{background:rgba(120,165,255,.38)!important}.qz-brush button.u{background:rgba(232,128,111,.38)!important}.qz-brush button.w{background:rgba(242,194,123,.38)!important}.qz-brush button.r{background:rgba(176,140,240,.4)!important}.qz-brush button.a{background:rgba(110,200,150,.38)!important}.qz-brush button.k{background:rgba(240,140,190,.38)!important}.qz-brush button.p{background:rgba(159,208,255,.25)!important}.qz-brush button.e{background:rgba(255,255,255,.08)!important}.qz-brush button.on{border-color:#f5c451!important;box-shadow:0 0 0 2px rgba(245,196,81,.35);font-weight:600}
 .qz-lyr span i{position:absolute;top:-11px;right:-5px;font-style:normal;font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000}
 .qz-leg{margin:6px 0;font-size:12px;color:var(--muted)}.qz-leg span{cursor:default}
 .qz-in{width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;color:var(--ink);font:inherit;font-size:14px;padding:8px 10px;-webkit-user-select:text;user-select:text}
