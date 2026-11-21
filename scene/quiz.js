@@ -240,7 +240,7 @@ function qzMind(q){const L=getLines();
     const w=ts.length?[x-.05,ts[ts.length-1]-.15]:[x+(y-x)*.25,x+(y-x)*.75];qzPlay('mind',qzOrig(),Math.max(0,x-1.5),y+.4,w);return}
   if(q.l!=null){const [a,b]=qzLineRange(q.l),pv=L[q.l-1],from=Math.max(0,Math.min(pv!=null&&pv<a&&a-pv<12?pv-.2:a,a-5));qzPlay('mind',qzOrig(),Math.min(from,qzOnset(a)-1),b+2.5,[Math.min(a-.05,qzOnset(a)),b-.1]);return}
   const [a,b]=secRange(q.s),off=lineOff(q.s),n=qzLines(q.s).length,t=[];for(let i=0;i<n;i++)t.push(L[off+i]);
-  const w=n>=3&&t[1]!=null&&t[n-1]!=null&&t[n-1]>t[1]?[t[1]-.1,t[n-1]-.15]:[a+(b-a)*.3,a+(b-a)*.75];qzPlay('mind',qzOrig(),a-1.5,b+.4,w)}
+  /* 第一句就開始消音（只剩伴奏），最後一句原唱回來對對看 */const t0=t[0]!=null?Math.min(t[0]-.05,qzOnset(t[0])):a,w=n>=2&&t[n-1]!=null&&t[n-1]>t0+1?[t0,t[n-1]-.15]:[a+(b-a)*.3,a+(b-a)*.75];qzPlay('mind',qzOrig(),a-1.5,b+.4,w)}
 function qzRec(q){qzSlowStop();if(S.recd){sRecStop();return}const [x,y]=qzCut(q)||qzRecRange(q);/* 有框選就只錄框起來那段 */sStop();Q.seq=null;// 接唱：前奏放原唱（有人聲）帶妳進來，輪到妳就只剩伴奏；句首音題只放伴奏，練自己找音
   const sw=q.t!=='f'&&q.cat!=='beat'&&qLane('inst')&&qLane('orig');qzHear([sw?'orig':qzBack()]);Q.swAt=sw?Math.max(0,Math.min(x,qzOnset(q.l!=null?qzLineRange(q.l)[0]:x))):null;S.sel=[x,y];S.loop=true;S.stopAt=0;S.pos=x;Q.act='';
   // 一定唱到題目結尾就自動停（不靠段落長度判斷）
