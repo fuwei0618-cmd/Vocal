@@ -11,6 +11,7 @@ function stPrefs(){let o={};try{o=JSON.parse(localStorage.getItem(STKEY)||'{}')|
 function stSave(){if(!S)return;const o={mute:{},vol:{},h:{}};S.lanes.forEach(l=>{o.mute[l.id]=l.mute;o.vol[l.id]=l.vol;o.h[l.id]=l.h});try{localStorage.setItem(STKEY,JSON.stringify(o))}catch(e){}}
 const LANE_NAME={orig:'原曲',inst:'伴奏',vocal:'原唱人聲',me:'我的聲音'};
 async function openStudio(){
+  if(typeof qzLog==='function')qzLog('打開錄音室');
   if(!au){hint('先在右上「⋯」放原曲或伴奏');hintT=setTimeout(()=>hint(''),2500);return}
   const wasPl=!au.paused;if(!wasPl)au.pause();closeMenu();if(rec)finishRec();
   const pf=stPrefs(),ids=[];
@@ -56,7 +57,7 @@ async function sLoadLanes(){
   sDraw();
   const S0=S,bg=(async()=>{for(const l of slow){
     const f=l.id==='inst'?await getFile(key+'|inst')||await getFile(key):await getFile(key+'|'+l.id);if(!f||S!==S0)continue;
-    let buf;try{buf=await decodeHead(await playable(key+'|'+l.id,f,sMsg))}catch(e){continue}if(S!==S0)return;
+    let buf;try{buf=await decodeHead(await playable(key+'|'+l.id,f,sMsg))}catch(e){continue}if(S!==S0)return;qzLog('（背景）'+(TRACK[l.id]||l.id)+'讀好了');
     if(l.id!==track&&buf.numberOfChannels>1)buf=toMono(buf);
     l.buf=buf;l.peaks=peaksOf(buf);S.dur=Math.max(S.dur,buf.duration);sDraw();
     if(typeof qzLaneReady==='function')try{qzLaneReady(l.id)}catch(e){}}})();
