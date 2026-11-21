@@ -237,10 +237,10 @@ function qzOnset(t){const l=qLane('vocal');if(!l)return t-.3;const b=l.buf,sr=b.
   return Math.max(t-1.5,lastLoud-.03)}
 function qzMind(q){const L=getLines();
   const cu=qzCut(q);if(cu){/* 有框選：只考框起來那段；框裡有好幾句就消到最後一句前，聲音回來對對看；只有一句就消中間 */const [x,y]=cu,ts=L.filter(t=>t!=null&&t>x+.3&&t<y-.5);
-    const w=ts.length?[x-.05,ts[ts.length-1]-.15]:[x+(y-x)*.25,x+(y-x)*.75];qzPlay('mind',qzOrig(),Math.max(0,x-1.5),y+.4,w);return}
+    const w=[x-.05,y];qzPlay('mind',qzOrig(),Math.max(0,x-1.5),y+2.5,w);return}
   if(q.l!=null){const [a,b]=qzLineRange(q.l),pv=L[q.l-1],from=Math.max(0,Math.min(pv!=null&&pv<a&&a-pv<12?pv-.2:a,a-5));qzPlay('mind',qzOrig(),Math.min(from,qzOnset(a)-1),b+2.5,[Math.min(a-.05,qzOnset(a)),b-.1]);return}
   const [a,b]=secRange(q.s),off=lineOff(q.s),n=qzLines(q.s).length,t=[];for(let i=0;i<n;i++)t.push(L[off+i]);
-  /* 第一句就開始消音（只剩伴奏），最後一句原唱回來對對看 */const t0=t[0]!=null?Math.min(t[0]-.05,qzOnset(t[0])):a,w=n>=2&&t[n-1]!=null&&t[n-1]>t0+1?[t0,t[n-1]-.15]:[a+(b-a)*.3,a+(b-a)*.75];qzPlay('mind',qzOrig(),a-1.5,b+.4,w)}
+  /* 整段都消音（只剩伴奏），唱完後原唱回來對對看 */const t0=t[0]!=null?Math.min(t[0]-.05,qzOnset(t[0])):a,w=[t0,b-.1];qzPlay('mind',qzOrig(),a-1.5,b+2.5,w)}
 function qzRec(q){qzSlowStop();if(S.recd){sRecStop();return}const [x,y]=qzCut(q)||qzRecRange(q);/* 有框選就只錄框起來那段 */sStop();Q.seq=null;// 接唱：前奏放原唱（有人聲）帶妳進來，輪到妳就只剩伴奏；句首音題只放伴奏，練自己找音
   const sw=q.t!=='f'&&q.cat!=='beat'&&qLane('inst')&&qLane('orig');qzHear([sw?'orig':qzBack()]);Q.swAt=sw?Math.max(0,Math.min(x,qzOnset(q.l!=null?qzLineRange(q.l)[0]:x))):null;S.sel=[x,y];S.loop=true;S.stopAt=0;S.pos=x;Q.act='';
   // 一定唱到題目結尾就自動停（不靠段落長度判斷）
@@ -411,7 +411,7 @@ function qzRender(){
     title+=q.l!=null?`<small>・${q.t?QTYPE[q.t].n:'一句'}</small>`:q.t==='s'?`<small>・${q.R?'幾段連唱':q.a?`第 ${q.a}–${q.b} 句連唱`:'整段連唱'}</small>`:'';
     tip=q.t==='j'?(J?`這句有一個大跳：${J.st>0?'往上':'往下'}跳 ${Math.abs(J.st)} 個半音。注意跳的那一下有沒有到位。想只聽跳的那幾個字，用右邊「✂️ 框選幾個字」。`:'這句有一個大跳，注意跳的那一下有沒有到位。'):q.R?'好幾個 Part 從頭連到尾唱一次：段落之間怎麼接、換氣的地方、後面有沒有累到掉音。':q.t?QTYPE[q.t].t:QMODE[m].t;
     steps=m==='mind'?`<div class="qz-st"><b>1</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':q.l!=null?'▶ 先聽原曲這句':'▶ 先聽原曲這段'}</button></div>
-      <div class="qz-st"><b>2</b><button data-q="mind" class="go${on('mind')}">${on('mind')?'⏹ 停':'▶ 開始'}（${q.l!=null?'這一句會消音':'中間會消音'}）</button></div>
+      <div class="qz-st"><b>2</b><button data-q="mind" class="go${on('mind')}">${on('mind')?'⏹ 停':'▶ 開始'}（${q.l!=null?'這一句會消音':'整段會消音'}）</button></div>
       <div class="qz-st"><b>3</b><span>消音時在心裡繼續唱；聲音回來那一刻，妳還在音上嗎？對不上的字在右邊點它</span></div>`
      :q.t==='f'?`${recB(1,'⏺ 跟伴奏錄：直接唱第一個字')}${cmp(2)}<div class="qz-st"><b>3</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':'▶ 再聽一次原唱的開頭'}</button></div>`
      :`<div class="qz-st"><b>1</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':q.l!=null?'▶ 先聽原曲這句':'▶ 先聽原曲這段'}</button></div>${recB(2,`⏺ 跟伴奏${QMODE[m].v}一次`)}${cmp(3)}`;
