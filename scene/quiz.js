@@ -137,7 +137,7 @@ function qzRanges(q){if(qzCut(q))return [qzCut(q)];if(q.l!=null||q.cat==='beat'|
 const qLane=id=>S&&S.lanes.find(l=>l.id===id&&(id==='me'||l.buf));
 const qzRef=()=>qLane('vocal')?'vocal':qLane('orig')?'orig':'inst';
 const qzBack=()=>qLane('inst')?'inst':'orig';
-const qzOrig=()=>qLane('orig')?['orig']:[qzBack(),qzRef()];
+const qzOrig=()=>qLane('orig')?(qLane('vocal')?['orig','vocal']:['orig']):[qzBack(),qzRef()];/* 原曲裡人聲常被伴奏蓋住：有人聲軌就疊上去 */
 function qzHear(ids){S.lanes.forEach(l=>{l.solo=false;l.mute=!ids.includes(l.id)});sGains();sDraw()}
 function qzHas(a,b){return sCover().some(c=>c.a<b-.2&&c.b>a+.2)}
 function qzHint(t){if(Q){Q.tip=t;const e=document.querySelector('#s-quiz .qz-tipbar');if(e){e.textContent=t;e.hidden=!t}clearTimeout(Q.tipT);Q.tipT=setTimeout(()=>{if(Q){Q.tip='';const e2=document.querySelector('#s-quiz .qz-tipbar');if(e2)e2.hidden=true}},6000)}else try{sHint(t)}catch(e){}}
