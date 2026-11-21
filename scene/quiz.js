@@ -264,7 +264,11 @@ openStudio=async function(){await _qzOpenStudio();const top=document.querySelect
 // 錄音軌上點一段錄音（選到）→ 右上角出現刪除鍵，不管是不是這一題的
 const _qzDraw=sDraw;
 sDraw=function(){_qzDraw.apply(this,arguments);qzTdel()};
-function qzCutDraw(){const q=Q&&Q.list&&Q.list[Q.i],c=q&&qzCut(q);if(!c||!S)return;
+// 框選⇄歌詞：每句的時間、框到哪幾句就讓那幾句亮起來
+function qzLineSpan(q,li){const L=getLines(),g=qzGl(q,li),n=qzText(q).length,a=L[g];if(a==null)return null;let b=li<n-1?L[g+1]:null;if(b==null||b<=a)b=qzRange(q)[1];return [a,b]}
+function qzCutLyr(q,c){document.querySelectorAll('#s-quiz .qz-lyr p[data-li]').forEach(p=>{const sp=c&&qzLineSpan(q,+p.dataset.li);p.classList.toggle('incut',!!(sp&&Math.min(sp[1],c[1])-Math.max(sp[0],c[0])>Math.min(.6,(sp[1]-sp[0])*.4)))})}
+function qzCutGo(){sDraw();qzRender();const b=document.querySelector('#s-quiz [data-q=alt]');if(b&&!b.disabled){b.click();qzHint('框好了：原唱、妳輪流放這一段，會一直重複；按「⏹ 停」停下來')}else{const r=document.querySelector('#s-quiz [data-q=cmp][data-c=ref]');if(r)r.click();qzHint('框好了：原唱這一段會一直重複；按「⏹ 停」停下來')}}
+function qzCutDraw(){const q=Q&&Q.list&&Q.list[Q.i],c=q&&qzCut(q);if(q)qzCutLyr(q,c);if(!c||!S)return;
   document.querySelectorAll('#studio canvas[data-l]').forEach(cv=>{const g=cv.getContext('2d'),w=cv.width,h=cv.height,x=sX(c[0],w),x2=sX(c[1],w);
     g.fillStyle='rgba(120,200,255,.18)';g.fillRect(x,0,x2-x,h);g.fillStyle='rgba(120,200,255,.9)';g.fillRect(x,0,2,h);g.fillRect(x2-2,0,2,h)})}
 let qzBx=null;
@@ -278,7 +282,7 @@ addEventListener('pointermove',e=>{if(!qzBx||e.pointerId!==qzBx.id)return;e.stop
   if(qzBx.edge!=null){const c=Q.cut.slice();c[qzBx.edge]=qzBx.edge?Math.max(c[0]+.15,Math.min(S.dur,t)):Math.max(0,Math.min(c[1]-.15,t));Q.cut=c;sDraw();return}Q.cut=[Math.max(0,Math.min(qzBx.t0,t)),Math.min(S.dur,Math.max(qzBx.t0,t))];sDraw()},true);
 ['pointerup','pointercancel'].forEach(n=>addEventListener(n,e=>{if(!qzBx||e.pointerId!==qzBx.id)return;e.stopImmediatePropagation();if(qzBx.edge!=null){qzBx=null;qzRender();return}qzBx=null;Q.boxing=false;
   if(!Q.cut||Q.cut[1]-Q.cut[0]<.25){Q.cut=null;qzHint('範圍太短，再拖長一點');sDraw();qzRender();return}
-  sDraw();qzRender();const b=document.querySelector('#s-quiz [data-q=alt]');if(b&&!b.disabled){b.click();qzHint('框好了：原唱、妳輪流放這一段，會一直重複；按「⏹ 停」停下來')}else{const r=document.querySelector('#s-quiz [data-q=cmp][data-c=ref]');if(r)r.click();qzHint('框好了：原唱這一段會一直重複；按「⏹ 停」停下來')}},true));
+  qzCutGo()},true));
 function qzUndo(){const u=tkUndo.pop();if(!u||!S)return;sStop();
   if(u.t==='move'){const k=takes.find(x=>x.id===u.id);if(k){k.adj=u.adj;S.selTake=k.id}}
   else if(u.t==='del'){takes.push(u.k);S.selTake=u.k.id;S.bufs.delete(u.k.id);takeBuf(u.k).then(()=>{sDraw();qzRender()})}
@@ -349,7 +353,7 @@ function qzSumHtml(){
     ${rows.filter(x=>x.r.n).map(({j,r})=>`<p class="qz-note"><b>${j+1}</b>${esc(r.n)}</p>`).join('')}
     <p class="qz-tip">怎麼練：${how}</p></div></div>`}
 function qzChars(q,r,cls){const mk=r.mk||{},MK=QMARKS[q.cat]||[],L=qzText(q),gh=q.t==='s'&&Q.fold;
-  return L.map((ln,li)=>{const lm=gh?qzLineMk(qzGl(q,li)):null,gm=lm&&lm.mk||{};return `<p data-li="${li}">${[...ln].map((ch,ci,all)=>{if(/\s/.test(ch))return ' ';const own=mk[li+':'+ci],c=own||gm['0:'+ci],M=MK.find(x=>x[0]===c);
+  return L.map((ln,li)=>{const lm=gh?qzLineMk(qzGl(q,li)):null,gm=lm&&lm.mk||{};return `<p data-li="${li}">${L.length>1&&q.cat==='pitch'?`<b class="qz-lno${Q.lsel===li?' on':''}" data-q="lsel" data-li="${li}">${li+1}</b>`:''}${[...ln].map((ch,ci,all)=>{if(/\s/.test(ch))return ' ';const own=mk[li+':'+ci],c=own||gm['0:'+ci],M=MK.find(x=>x[0]===c);
     const f=q.t==='f'&&ci===all.findIndex(z=>!/\s/.test(z))||q.t==='t'&&ci>=all.length-3?' focus':'';
     return `<span data-q="mk" data-k="${li}:${ci}" class="${c||''}${f}${!own&&c?' gh':''}">${esc(ch)}${M?`<i>${M[1]}</i>`:''}</span>`}).join('')}${lm&&lm.n?`<small class="qz-ln">📝 ${esc(lm.n)}</small>`:''}</p>`}).join('')}
 // ---------- 每題自動計時：進到題目就開始算，離開 App 會暫停；5 分鐘到提醒先跳下一題 ----------
@@ -378,7 +382,7 @@ function qzRender(){
   const cutC=qzCut(q),tools=!recd&&(q.cat==='pitch'||q.cat==='beat')?`<div class="qz-tools">
     ${q.t==='s'&&!q.R?qzGrpRow(q):''}
     ${qzToneRow(q)}
-    ${(q.l!=null||q.t==='s')&&q.cat==='pitch'?(()=>{const [ra,rb]=qzRCur(q),own=!!(qzRngAll()[key]||{})[qzRk(q)];return `<div class="qz-tr"><span class="qz-tl">${q.t==='s'?'這段範圍':'這題範圍'}</span><span class="qz-tg">開頭</span><button data-q="qrng" data-e="0" data-d="-1">◀</button><button data-q="qrng" data-e="0" data-d="1">▶</button><span class="qz-tg">結尾</span><button data-q="qrng" data-e="1" data-d="-1">◀</button><button data-q="qrng" data-e="1" data-d="1">▶</button><span class="qz-tg">${mmss(ra)}.${Math.floor(ra*10)%10}–${mmss(rb)}.${Math.floor(rb*10)%10}</span>${own?'<button data-q="qrng0" class="qz-sr">還原</button>':''}</div>`})():''}
+    ${(q.l!=null||q.t==='s')&&q.cat==='pitch'&&!cutC?(()=>{const [ra,rb]=qzRCur(q),own=!!(qzRngAll()[key]||{})[qzRk(q)];return `<div class="qz-tr"><span class="qz-tl">${q.t==='s'?'這段範圍':'這題範圍'}</span><span class="qz-tg">開頭</span><button data-q="qrng" data-e="0" data-d="-1">◀</button><button data-q="qrng" data-e="0" data-d="1">▶</button><span class="qz-tg">結尾</span><button data-q="qrng" data-e="1" data-d="-1">◀</button><button data-q="qrng" data-e="1" data-d="1">▶</button><span class="qz-tg">${mmss(ra)}.${Math.floor(ra*10)%10}–${mmss(rb)}.${Math.floor(rb*10)%10}</span>${own?'<button data-q="qrng0" class="qz-sr">還原</button>':''}</div>`})():''}
     <div class="qz-tr"><span class="qz-tl">速度</span><div class="qz-seg qz-spd">${[-.1,-.05].map(d=>`<button data-q="spd" data-d="${d}" ${qzSpeed()+d<.299?'disabled':''}>${d}</button>`).join('')}<b class="qz-sv">${qzSpeed()===1?'原速':qzSpeed().toFixed(2)+'×'}</b>${[.05,.1].map(d=>`<button data-q="spd" data-d="${d}" ${qzSpeed()+d>1.001?'disabled':''}>+${d}</button>`).join('')}</div>${qzSpeed()<1?'<button data-q="spd" data-d="9" class="qz-sr">原速</button>':''}<button data-q="box" class="qz-boxb${Q.boxing?' on':''}">${Q.boxing?'在下面波形上拖一段…':'✂️ 框選幾個字'}</button></div>
 
     ${cutC?`<div class="qz-tr"><span class="qz-tl">框選範圍</span><span class="qz-tg">開頭</span><button data-q="cutn" data-e="0" data-d="-1">◀</button><button data-q="cutn" data-e="0" data-d="1">▶</button><span class="qz-tg">結尾</span><button data-q="cutn" data-e="1" data-d="-1">◀</button><button data-q="cutn" data-e="1" data-d="1">▶</button><span class="qz-tg">${cutC[0].toFixed(1)}–${cutC[1].toFixed(1)} 秒</span><button data-q="uncut">✕ 取消框選</button></div>`:''}</div>`:'';
@@ -423,6 +427,7 @@ function qzRender(){
       <div class="qz-res"><span>這題的結果<small>過關＝${C.pass}</small></span>${Object.keys(C.res).map(k=>`<button data-q="res" data-v="${k}" class="${k}${r.res===k?' on':''}">${C.res[k]}</button>`).join('')}</div>
       <div class="qz-nav"><button data-q="go" data-j="${Q.i-1}" ${Q.i?'':'disabled'}>← 上一題</button><input class="qz-in" data-q="note" placeholder="筆記：例如「人海」的海掉下來" value="${esc(r.n||'')}">${Q.i<n-1?`<button data-q="go" data-j="${Q.i+1}" class="go">下一題 →</button>`:'<button data-q="sum" class="go">看成績單 →</button>'}</div>${qzAdjRow}</div>
     <div class="qz-r">${right}${tools}</div></div><div class="qz-tipbar"${Q.tip?'':' hidden'}>${esc(Q.tip||'')}</div>`;
+  qzCutLyr(q,qzCut(q));
   Q.k=-2;
 }
 app.addEventListener('click',e=>{
@@ -436,6 +441,9 @@ app.addEventListener('click',e=>{
   if(a==='begin'){Q.bank=null;qzBegin(t.dataset.cat,t.dataset.part,t.dataset.ord);return}
   if(a==='cont'){const l=qzLastAll()[key];if(l)qzBegin(l.cat,l.part,l.ord,l.ids,l.i);return}
   if(a==='redo'){const ids=Q.list.filter(x=>{const r=qzGet(x.id).res;return r&&r!=='ok'}).map(x=>x.id);if(ids.length)qzBegin('wrong','all','seq',ids,0);return}
+  if(a==='lsel'){if(S.recd)return;const li=+t.dataset.li;if(Q.lsel==null){Q.lsel=li;document.querySelectorAll('#s-quiz .qz-lno').forEach(x=>x.classList.toggle('on',+x.dataset.li===li));qzHint(`從第 ${li+1} 句：再點最後一句的號碼（同一句再點一次＝只練這句）`);return}
+    const x=Math.min(Q.lsel,li),y=Math.max(Q.lsel,li);Q.lsel=null;const A=qzLineSpan(q,x),B=qzLineSpan(q,y);if(!A||!B){qzRender();return}
+    sStop();Q.act='';Q.cut=[Math.max(0,A[0]-.15),B[1]];Q.cutQ=q.id;Q.boxing=false;qzCutGo();return}
   if(a==='fold'){Q.fold=!Q.fold;qzRender();return}
   if(a==='msel'){const k=+t.dataset.n;if(Q.hsel==null){Q.hsel=k;qzRender();return}
     const x=Math.min(Q.hsel,k),y=Math.max(Q.hsel,k);Q.hsel=null;if(x===y){qzHint('至少兩個 Part：點第一個、再點最後一個');qzRender();return}
@@ -515,6 +523,7 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 .qz-multi{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}.qz-multi h4 small{font-weight:400;font-size:12px;color:var(--muted);margin-left:8px}.qz-multi .qz-grp{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
 .qz-lyr.many{max-height:min(185px,27vh);overflow:auto}.qz-lyr.many p{font-size:16px;line-height:1.5;margin:0}
 .qz-lyr{position:relative}#studio .qz-mkt{position:absolute;top:6px;right:8px;font-size:12px;padding:3px 10px;background:rgba(0,0,0,.35);border:1px solid rgba(232,194,122,.4);z-index:2}#studio .qz-mkt.on{background:rgba(232,194,122,.25);color:#f5c451}.qz-lyr span.gh{outline:1.5px dashed rgba(255,255,255,.45);outline-offset:-1px}.qz-ln{font-size:12px;color:var(--muted);margin-left:10px;letter-spacing:0}.qz-lyr.many .qz-mkt{position:sticky;float:right;top:0}.qz-r.fo .qz-lyr{max-height:66px;overflow:auto}.qz-r.fo .qz-lyr p{font-size:15px;line-height:1.45}#studio .qz-fold>button{width:100%;text-align:left;background:rgba(232,194,122,.1);border:1px solid rgba(232,194,122,.35);padding:5px 10px;font-size:13px}.qz-fl{max-height:min(120px,18vh);overflow:auto;margin-top:4px;padding:4px 8px;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.25)}.qz-fr{display:flex;align-items:baseline;gap:8px;padding:3px 0;font-size:16px;flex-wrap:wrap}.qz-fr>b{color:var(--muted);font-size:12px;width:16px}.qz-fr small{color:var(--muted);font-size:12px}.qz-fold0{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.qz-lno{display:inline-block;min-width:20px;margin-right:8px;padding:0 5px;border-radius:6px;font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--line);text-align:center;cursor:pointer;vertical-align:middle;letter-spacing:0;line-height:1.6}.qz-lno.on{background:#78c8ff;color:#06202e;border-color:#78c8ff}.qz-lyr p.incut{background:rgba(120,200,255,.14);box-shadow:inset 3px 0 0 rgba(120,200,255,.9);border-radius:6px}
 .qz-timer.idle{opacity:.45;font-size:12px}.qz-timer.over{color:#e8806f;opacity:1;font-weight:600}
 #s-quiz{position:absolute;inset:0;background:rgba(18,15,11,.95);overflow:auto;padding:12px 18px 16px;display:flex;flex-direction:column;gap:8px;-webkit-user-select:none;user-select:none}
 #s-quiz .sp{flex:1}
