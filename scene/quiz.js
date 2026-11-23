@@ -328,7 +328,7 @@ function qzTick(p){
 // scene-qword {song:{cat:{mk:{'全曲第幾句:第幾個字':記號}, pn:{'句:字':1}}}}
 const QWK='scene-qword';
 function qzWAll(){try{return JSON.parse(qzLS(QWK)||'{}')||{}}catch(e){return {}}}
-function qzW(cat){qzWMig();const A=qzWAll(),B=A[key]=A[key]||{},c=B[cat]=B[cat]||{};c.mk=c.mk||{};c.pn=c.pn||{};return {A,c}}
+function qzW(cat){qzWMig();const A=qzWAll(),B=A[key]=A[key]||{},c=B[cat]=B[cat]||{};c.mk=c.mk||{};c.pn=c.pn||{};if(!c.kz){c.kz={};Object.keys(c.mk).forEach(k=>{if(c.mk[k]==='k'){c.kz[k]=1;delete c.mk[k]}})}/* 咬字是另外一層，可以跟其他記號疊在同一個字 */return {A,c}}
 // 第一次：把以前各題分開存的記號搬過來（舊資料留著不刪）。先搬連唱/幾句一組，再搬單句，單句的蓋過去；同類新的蓋舊的
 function qzWMig(){const A=qzWAll();if(A[key]&&A[key]._mig)return;const B=A[key]=A[key]||{};const T=qzAll()[key]||{},days=Object.keys(T).sort();
   const put=(id,r)=>{const q=qzQ(id);if(!q||!QMARKS[q.cat]||(!r.mk&&!r.pn))return;const c=B[q.cat]=B[q.cat]||{mk:{},pn:{}};
@@ -336,10 +336,10 @@ function qzWMig(){const A=qzWAll();if(A[key]&&A[key]._mig)return;const B=A[key]=
   try{[false,true].forEach(single=>days.forEach(d=>Object.entries(T[d]).forEach(([id,r])=>{const q=qzQ(id);if(q&&(q.l!=null)===single)put(id,r)})))}catch(e){}
   B._mig=1;qzLS(QWK,JSON.stringify(A))}
 // 這題看到的記號（key 換成題目裡的「第幾行:第幾個字」）
-function qzMkOf(q){const {c}=qzW(q.cat),mk={},pn={};qzText(q).forEach((ln,li)=>{const g=qzGl(q,li);[...ln].forEach((_,ci)=>{const k=g+':'+ci;if(c.mk[k])mk[li+':'+ci]=c.mk[k];if(c.pn[k])pn[li+':'+ci]=1})});return {mk,pn}}
+function qzMkOf(q){const {c}=qzW(q.cat),mk={},pn={},kz={};qzText(q).forEach((ln,li)=>{const g=qzGl(q,li);[...ln].forEach((_,ci)=>{const k=g+':'+ci;if(c.mk[k])mk[li+':'+ci]=c.mk[k];if(c.pn[k])pn[li+':'+ci]=1;if(c.kz[k])kz[li+':'+ci]=1})});return {mk,pn,kz}}
 function qzMkPut(q,lk,f){const [li,ci]=lk.split(':').map(Number),{A,c}=qzW(q.cat);f(c,qzGl(q,li)+':'+ci);qzLS(QWK,JSON.stringify(A))}
-const qzLineHasMk=(cat,g)=>{const {c}=qzW(cat),pre=g+':';return Object.keys(c.mk).some(k=>k.startsWith(pre))||Object.keys(c.pn).some(k=>k.startsWith(pre))};
-function qzMarksTxt(q,r0){const r=qzMkOf(q),L=qzText(q),MK=QMARKS[q.cat]||[],out=[];Object.keys(r.mk||{}).sort((x,y)=>{const [a,b]=x.split(':').map(Number),[c,d]=y.split(':').map(Number);return a-c||b-d}).forEach(k=>{
+const qzLineHasMk=(cat,g)=>{const {c}=qzW(cat),pre=g+':';return Object.keys(c.mk).some(k=>k.startsWith(pre))||Object.keys(c.kz||{}).some(k=>k.startsWith(pre))||Object.keys(c.pn).some(k=>k.startsWith(pre))};
+function qzMarksTxt(q,r0){const r0b=qzMkOf(q),r={mk:Object.assign({},r0b.mk)};Object.keys(r0b.kz).forEach(k=>{if(!r.mk[k])r.mk[k]='k'});const _u=0,L=qzText(q),MK=QMARKS[q.cat]||[],out=[];Object.keys(r.mk||{}).sort((x,y)=>{const [a,b]=x.split(':').map(Number),[c,d]=y.split(':').map(Number);return a-c||b-d}).forEach(k=>{
   const [li,ci]=k.split(':').map(Number),ch=[...(L[li]||'')][ci],M=MK.find(m=>m[0]===r.mk[k]);if(ch&&M)out.push({li,ci,ch,M})});return out}
 function qzLabel(q){const sc=SCENES[key],A=qzAllLines();if(q.cat==='map')return `第 ${q.s+1} 段・${sc.steps[q.s].sec}`;if(q.l!=null)return A[q.l]||'';if(q.R)return `Part ${q.s0+1}–${q.s+1}`;return sc.steps[q.s].sec+(q.a?`・第 ${q.a}–${q.b} 句`:'')}
 function qzTag(q,r){if(q.cat==='pitch')return (q.R?'幾段連唱・':q.a?'幾句連唱・':q.t?QTYPE[q.t].n+'・':'')+QMODE[r.m||q.m].v;return ''}
@@ -378,7 +378,7 @@ function qzPartCols(parts,cell){const sc=SCENES[key];let pos=null;try{pos=typeof
   const cols=[];parts.forEach(p=>{const c=pos&&pos[p]?pos[p].c:0;(cols[c]=cols[c]||[]).push(p)});const cs=cols.filter(Boolean);
   return `<div class="qz-pcols" style="grid-template-columns:repeat(${cs.length},1fr)">${cols.map((l,c)=>l?`<div class="qz-pcol">${sc.rounds&&sc.rounds[c]&&cs.length>1?`<h5>${esc(sc.rounds[c].t)}</h5>`:''}${l.map(cell).join('')}</div>`:'').join('')}</div>`}
 // 成績單上的題目名稱：標過的字直接在字上亮顏色＋箭頭（跟題目頁一樣），不另外列
-function qzLabelMk(q,r){const mk=qzMkOf(q).mk,MK=QMARKS[q.cat]||[];if(q.l==null||q.t==='s'||!Object.keys(mk).length)return esc(qzLabel(q));
+function qzLabelMk(q,r){const W=qzMkOf(q),mk=Object.assign({},W.mk);Object.keys(W.kz).forEach(k=>{if(!mk[k])mk[k]='k'});const _x=0,MK=QMARKS[q.cat]||[];if(q.l==null||q.t==='s'||!Object.keys(mk).length)return esc(qzLabel(q));
   return `<span class="qz-lm">${[...(qzText(q)[0]||'')].map((ch,ci)=>{const M=MK.find(x=>x[0]===mk['0:'+ci]);return M?`<b class="${M[0]}">${esc(ch)}<i>${M[1]}</i></b>`:esc(ch)}).join('')}</span>`}
 function qzSumHtml(){
   const sc=SCENES[key],pc=Q.paper.cat,C=QCAT[pc]||{sc:['過關','差一點','沒過'],res:null},rows=Q.list.map((q,j)=>({q,j,r:qzGet(q.id)})),cnt=k=>rows.filter(x=>x.r.res===k).length,todo=rows.filter(x=>!x.r.res).length;
@@ -392,11 +392,11 @@ function qzSumHtml(){
     <div>${pc!=='beat'&&pc!=='map'&&!words.length?'<p class="qz-tip">還沒有標記的字。聽到不對，就點那個字，它會出現在左邊那題的卡片上。</p>':''}
     ${rows.filter(x=>x.r.n).map(({j,r})=>`<p class="qz-note"><b>${j+1}</b>${esc(r.n)}</p>`).join('')}
     <p class="qz-tip">怎麼練：${how}</p></div></div>`}
-function qzChars(q,r,cls){const W=qzMkOf(q),hide=q.t==='s'&&!Q.fold,mk=hide?{}:W.mk,pn=hide?{}:W.pn,MK=QMARKS[q.cat]||[],L=qzText(q),PN=q.cat==='pitch'?qzNotes(q):null;let pk=0;
+function qzChars(q,r,cls){const W=qzMkOf(q),hide=q.t==='s'&&!Q.fold,mk=hide?{}:W.mk,pn=hide?{}:W.pn,kz=hide?{}:W.kz,MK=QMARKS[q.cat]||[],L=qzText(q),PN=q.cat==='pitch'?qzNotes(q):null;let pk=0;
   return L.map((ln,li)=>{const lm=q.t==='s'&&Q.fold?qzLineMk(qzGl(q,li)):null,hasP=[...ln].some((_,ci)=>pn[li+':'+ci]);return `<p data-li="${li}"${hasP?' class="pn"':''}>${L.length>1&&q.cat==='pitch'?`<b class="qz-lno${Q.lsel===li?' on':''}" data-q="lsel" data-li="${li}">${li+1}</b>`:''}${[...ln].map((ch,ci,all)=>{if(/\s/.test(ch))return ' ';const c=mk[li+':'+ci],M=MK.find(x=>x[0]===c);
     const f=q.t==='f'&&ci===all.findIndex(z=>!/\s/.test(z))||q.t==='t'&&ci>=all.length-3?' focus':'';
     const pw0=PN&&qzNorm(ch)?PN.w[pk++]:null,pw=pw0&&pn[li+':'+ci]?pw0:null;
-    return `<span data-q="mk" data-k="${li}:${ci}" class="${c||''}${f}">${esc(ch)}${M?`<i>${M[1]}</i>`:''}${pw?`<em class="qn">${qzNs(pw[1]).map(qzSol).join('<s>→</s>')}</em>`:''}</span>`}).join('')}${lm&&lm.n?`<small class="qz-ln">📝 ${esc(lm.n)}</small>`:''}</p>`}).join('')}
+    const z=kz[li+':'+ci];return `<span data-q="mk" data-k="${li}:${ci}" class="${c||(z?'k':'')}${z&&c?' kz':''}${f}">${esc(ch)}${M?`<i>${M[1]}</i>`:''}${z?'<i class="kzi">😬</i>':''}${pw?`<em class="qn">${qzNs(pw[1]).map(qzSol).join('<s>→</s>')}</em>`:''}</span>`}).join('')}${lm&&lm.n?`<small class="qz-ln">📝 ${esc(lm.n)}</small>`:''}</p>`}).join('')}
 // ---------- 每題自動計時：進到題目就開始算，離開 App 會暫停；5 分鐘到提醒先跳下一題 ----------
 const QZ_LIMIT=300;
 // 每題計時：每次進來從 0 開始（不累計）；按了播放或錄音才開始算，只是點進來看看不算
@@ -539,10 +539,11 @@ app.addEventListener('click',e=>{
   else if(a==='brush'){qzLS('scene-qbrush',t.dataset.b);document.querySelectorAll('#s-quiz [data-q=brush]').forEach(b=>b.classList.toggle('on',b.dataset.b===t.dataset.b));return}
   else if(a==='mk'&&q.cat==='pitch'&&(qzBrush()==='p'||qzBrush()==='e')&&(qzBrush()==='p'||qzMkOf(q).pn[t.dataset.k])){const k=t.dataset.k;
     if(qzBrush()==='p'&&!qzNotes(q)){qzHint('這句還沒有簡譜音可以顯示');return}if(q.t==='s')Q.fold=true;
-    qzMkPut(q,k,(c,gk)=>{if(qzBrush()==='e'){delete c.pn[gk];delete c.mk[gk]}else if(c.pn[gk])delete c.pn[gk];else c.pn[gk]=1});if(qzBrush()==='p')qzSet(q.id,{hint:1});qzRender();return}
-  else if(a==='mk'){const MK=QMARKS[q.cat];if(!MK)return;const mk=qzMkOf(q).mk,k=t.dataset.k,o=['',...MK.map(x=>x[0])],br=MK.length>1?qzBrush():'',nx=br==='e'?'':br?(mk[k]===br?'':br):o[(o.indexOf(mk[k]||'')+1)%o.length];qzMkPut(q,k,(c,gk)=>{if(nx)c.mk[gk]=nx;else delete c.mk[gk]});if(q.t==='s'&&!Q.fold){Q.fold=true;qzRender();return}
+    qzMkPut(q,k,(c,gk)=>{if(qzBrush()==='e'){delete c.pn[gk];delete c.mk[gk];delete c.kz[gk]}else if(c.pn[gk])delete c.pn[gk];else c.pn[gk]=1});if(qzBrush()==='p')qzSet(q.id,{hint:1});qzRender();return}
+  else if(a==='mk'&&qzBrush()==='k'&&QMARKS[q.cat]){qzMkPut(q,t.dataset.k,(c,gk)=>{if(c.kz[gk])delete c.kz[gk];else c.kz[gk]=1});if(q.t==='s')Q.fold=true;qzRender();return}
+  else if(a==='mk'){const MK=QMARKS[q.cat];if(!MK)return;const mk=qzMkOf(q).mk,k=t.dataset.k,o=['',...MK.map(x=>x[0])],br=MK.length>1?qzBrush():'',nx=br==='e'?'':br?(mk[k]===br?'':br):o[(o.indexOf(mk[k]||'')+1)%o.length];qzMkPut(q,k,(c,gk)=>{if(nx)c.mk[gk]=nx;else delete c.mk[gk];if(br==='e')delete c.kz[gk]});if(br==='e'){qzRender();return}if(q.t==='s'&&!Q.fold){Q.fold=true;qzRender();return}
     const M=MK.find(x=>x[0]===nx);t.className=(nx||'')+(t.classList.contains('focus')?' focus':'');const i=t.querySelector('i');if(i)i.remove();if(M)t.insertAdjacentHTML('beforeend',`<i>${M[1]}</i>`);
-    const lg=document.querySelector('#s-quiz .qz-leg');if(lg){const n=Object.keys(qzMkOf(q).mk).length;lg.lastChild.nodeType===3&&/已標/.test(lg.lastChild.textContent)&&lg.lastChild.remove();if(n)lg.insertAdjacentText('beforeend',`　・已標 ${n} 個字`)}}
+    const lg=document.querySelector('#s-quiz .qz-leg');if(lg){const W2=qzMkOf(q),n=new Set([...Object.keys(W2.mk),...Object.keys(W2.kz)]).size;lg.lastChild.nodeType===3&&/已標/.test(lg.lastChild.textContent)&&lg.lastChild.remove();if(n)lg.insertAdjacentText('beforeend',`　・已標 ${n} 個字`)}}
   else if(a==='tskip'){document.getElementById('qz-tover')?.remove();if(S.recd)return;const C=QCAT[q.cat]||{};if(Q.qt)Q.qt.show=false;const bad=q.cat==='beat'?null:'bad';if(bad&&!qzGet(q.id).res)qzSet(q.id,{res:bad});if(Q.i<Q.list.length-1)qzGo(Q.i+1);else{Q.sum=true;sStop();qzRender()}return}
   else if(a==='tmore'){document.getElementById('qz-tover')?.remove();if(Q.qt){Q.qt.lim=Q.qt.acc+120;Q.qt.warned=false;Q.qt.show=false}return}
   else if(a==='qrng'){const A=qzRngAll(),B=A[key]=A[key]||{},rk=qzRk(q),r=(B[rk]||qzRAuto(q)).slice(),e=+t.dataset.e;r[e]=Math.round((r[e]+ +t.dataset.d*.2)*100)/100;if(r[1]-r[0]<.5)return;B[rk]=r;qzLS('scene-qrng',JSON.stringify(A));qzSlowStop();sStop();Q.act='';qzFocus();qzRender();qzHint(`範圍改成 ${r[0].toFixed(1)}–${r[1].toFixed(1)} 秒（每按一下 0.2 秒），先聽原曲、錄音、比一比都會照這個`);return}
@@ -639,6 +640,7 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 #studio .qz-home2 .qz-cont{width:auto;margin:0;padding:8px 18px;font-size:16px}
 .qz-grip{font-style:normal;font-size:18px;color:var(--muted);padding:2px 8px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}.qz-drag.dragging{background:rgba(242,194,123,.14);border-radius:8px;position:relative;z-index:3;box-shadow:0 6px 18px rgba(0,0,0,.45)}
 .qz-wk{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 8px}.qz-wk .sep{width:1px;height:20px;background:var(--line);margin:0 4px}#studio .qz-wk button.wr.on{background:rgba(232,128,111,.22);border-color:#e8806f;color:#ffb3ab}.qz-parts .qz-n{margin:-2px 0 6px;font-size:12px;color:var(--muted)}#studio .qz-wk button{padding:5px 12px;font-size:13px;border-radius:999px}#studio .qz-wk button.on{background:rgba(242,194,123,.2);border-color:#f2c27b;color:#f2c27b}.qz-wk small{margin-left:5px;color:var(--muted);font-size:11px}
+.qz-lyr span i.kzi{top:auto;bottom:-9px;right:auto;left:-6px;font-size:11px;text-shadow:none}.qz-lyr span.kz{box-shadow:inset 0 -3px 0 rgba(240,140,190,.75)}
 .qz-pcols{display:grid;gap:14px;align-items:start}.qz-pcol h5{margin:6px 0 2px;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.1em}
 .qz-pcol .qz-pr.sm{gap:4px}
 @media (max-width:820px){.qz-home2{flex-direction:column}.qz-crs2{flex-wrap:wrap}.qz-pcols{grid-template-columns:1fr!important}}
