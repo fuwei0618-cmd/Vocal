@@ -659,7 +659,7 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 #qz-ex .xl{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 2px;padding:26px 6px 30px;font-size:34px;letter-spacing:.06em}
 #qz-ex .xc{position:relative;padding:2px 4px;border-radius:7px;cursor:pointer}#qz-ex .xc i{position:absolute;top:-14px;right:-4px;font-style:normal;font-size:13px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000}#qz-ex .xc i.kzi{top:auto;bottom:-10px;left:-6px;right:auto;font-size:12px}
 #qz-ex .xc.u{background:rgba(232,128,111,.38)}#qz-ex .xc.d{background:rgba(120,165,255,.38)}#qz-ex .xc.w{background:rgba(242,194,123,.38)}#qz-ex .xc.r{background:rgba(176,140,240,.4)}#qz-ex .xc.a{background:rgba(110,200,150,.38)}#qz-ex .xc.k{background:rgba(240,140,190,.38)}#qz-ex .xc.kz{box-shadow:inset 0 -3px 0 rgba(240,140,190,.75)}
-#qz-ex .xc.xhn{box-shadow:inset 0 -3px 0 #f2c27b;background:rgba(242,194,123,.14)}#qz-ex .xlv{display:inline-flex;gap:4px;margin-left:10px}#qz-ex .xlv button{padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--muted);font-size:12px}#qz-ex .xlv button.on{background:#f2c27b;color:#2a1c06;border-color:#f2c27b}#qz-ex .xc.xo{outline:2px solid #7fd08a}#qz-ex .xc.xm{outline:2px dashed #f2c27b}#qz-ex .xc.xw{outline:2px solid #e8806f}
+#qz-ex .xc.xhn{box-shadow:inset 0 -3px 0 #f2c27b;background:rgba(242,194,123,.14)}#qz-ex .xlv{display:inline-flex;gap:4px;margin-left:10px}#qz-ex .xlv button{white-space:nowrap;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--muted);font-size:12px}#qz-ex .xlv button.on{background:#f2c27b;color:#2a1c06;border-color:#f2c27b}#qz-ex .xc.xo{outline:2px solid #7fd08a}#qz-ex .xc.xm{outline:2px dashed #f2c27b}#qz-ex .xc.xw{outline:2px solid #e8806f}
 #qz-ex .xa{position:absolute;top:-30px;left:50%;transform:translateX(-50%);font-size:12px;color:#ffd58a;white-space:nowrap;font-weight:600}
 #qz-ex .xp{position:absolute;top:100%;left:50%;transform:translateX(-50%);font-style:normal;font-size:14px;line-height:1.2;color:#9fd0ff;border-bottom:1.5px solid #9fd0ff;min-width:22px;text-align:center;white-space:nowrap;padding:0 2px}#qz-ex .xp.on{background:rgba(159,208,255,.2);border-radius:4px}#qz-ex .xp s{text-decoration:none;opacity:.6}#qz-ex .xp u{display:block;text-decoration:none;color:#ffd58a;font-size:12px}
 #qz-ex .xk{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}#qz-ex .xk button{min-width:44px;padding:8px 10px;font-size:16px;border-radius:10px}
@@ -690,14 +690,14 @@ document.addEventListener('pointerdown',e=>{const g=e.target.closest&&e.target.c
 
 // ---------- ✍️ 記號筆試（試用版）：不用唱，憑記憶標出自己做過的記號、填出音高，再對答案 ----------
 function qzExData(q){const W=qzMkOf(q),L=qzText(q),PN=q.cat==='pitch'||q.cat==='exam'?qzNotes(q):null,pw={};let pk=0;
-  L.forEach((ln,li)=>[...ln].forEach((ch,ci)=>{if(/\s/.test(ch))return;const p=PN&&qzNorm(ch)?PN.w[pk++]:null;if(p&&W.pn[li+':'+ci])pw[li+':'+ci]=p[1]}));
+  L.forEach((ln,li)=>[...ln].forEach((ch,ci)=>{if(/\s/.test(ch))return;const p=PN&&qzNorm(ch)?PN.w[pk++]:null;if(p&&W.pn[li+':'+ci]&&qzExLv()==='pitch')pw[li+':'+ci]=p[1]}));
   const lines=L.map((ln,li)=>li).filter(li=>[...L[li]].some((_,ci)=>{const k=li+':'+ci;return W.mk[k]||W.kz[k]||pw[k]}));return {W,L,pw,lines}}
 function qzExBtn(q){const n=qzExData(q).lines.length;return `<button data-q="exam" class="qz-mkt qz-exb"${n?'':' disabled'}>✍️ 記號筆試${n?`（${n} 句）`:''}</button>`}
 function qzExOpen(q){const D=qzExData(q);if(!D.lines.length){qzHint('這題還沒有標記號或音高');return}sStop();
   Q.ex={q,D,i:0,br:'d',sel:null,ans:{},done:false,err:{}};qzExDraw()}
 function qzExClose(){Q.ex=null;document.getElementById('qz-ex')?.remove();if(Q&&!Q.home&&!Q.sum)qzRender()}
 const qzExKey=(li,ci)=>li+':'+ci;
-const qzExLv=()=>qzLS('scene-qexlv')==='hard'?'hard':'easy';
+const qzExLv=()=>{const v=qzLS('scene-qexlv');return v==='pitch'?'pitch':v==='hard'||v==='mid'?'mid':'easy'};
 // 下一題：考卷裡下一個有記號可考的題目
 function qzExNext(){if(!Q.list)return -1;for(let j=Q.i+1;j<Q.list.length;j++){const q=Q.list[j];if(q&&(q.cat==='exam'||q.cat==='pitch')&&qzExData(q).lines.length)return j}return -1}
 function qzExDraw(){const E=Q.ex;if(!E)return;let el=document.getElementById('qz-ex');if(!el){el=document.createElement('div');el.id='qz-ex';document.body.appendChild(el);el.addEventListener('click',qzExClick)}
@@ -711,13 +711,13 @@ function qzExDraw(){const E=Q.ex;if(!E)return;let el=document.getElementById('qz
     return `<span class="xc ${am||(az?'k':'')}${az&&am?' kz':''}${st}${hn}" data-x="ch" data-ci="${ci}">${esc(ch)}${M?`<i>${M[1]}</i>`:''}${az?'<i class="kzi">😬</i>':''}${tip}${blank}</span>`}).join('');
   const brushes=MK.map(([k,ic,n])=>`<button data-x="br" data-b="${k}" class="${k}${E.br===k?' on':''}">${ic} ${n}</button>`).join('')+`<button data-x="br" data-b="e" class="e${E.br==='e'?' on':''}">⌫ 擦掉</button>`;
   const pad=E.sel!=null&&!E.done?`<div class="xk">${[1,2,3,4,5,6,7].map(n=>`<button data-x="kd" data-v="${n}">${n}</button>`).join('')}<button data-x="ko" data-v="'">高音 ̇</button><button data-x="ko" data-v=".">低音 ̣</button><button data-x="kf">♭</button><button data-x="kn">＋下一個音</button><button data-x="kb">⌫</button><button data-x="kx">好</button></div>`:'';
-  E.lastErr=err;const res=E.done?(err===0?'<p class="xr ok">✓ 全對！</p>':`<p class="xr ${err<=2?'mid':'bad'}">${err<=2?'△':'✗'} 錯 ${err} 個字　綠＝對、黃＝漏掉、紅＝標錯，小字是正確答案</p>`):`<p class="xr">${qzExLv()==='easy'?'黃底線的字要標記號，':''}先選筆、再點字；有「＿」的字要填音高（點它會跳出數字鍵）</p>`;
-  el.innerHTML=`<div class="xbox"><div class="xh"><b>✍️ 記號筆試</b><span>第 ${i+1} / ${D.lines.length} 句</span><span class="xlv">${[['easy','初階：提示哪個字'],['hard','進階']].map(([k,n])=>`<button data-x="lv" data-v="${k}" class="${qzExLv()===k?'on':''}">${n}</button>`).join('')}</span><button data-x="close">✕ 關閉</button></div>
+  E.lastErr=err;const res=E.done?(err===0?'<p class="xr ok">✓ 全對！</p>':`<p class="xr ${err<=2?'mid':'bad'}">${err<=2?'△':'✗'} 錯 ${err} 個字　綠＝對、黃＝漏掉、紅＝標錯，小字是正確答案</p>`):`<p class="xr">${qzExLv()==='easy'?'黃底線的字要標記號，':''}先選筆、再點字${qzExLv()==='pitch'?'；有「＿」的字要填音高（點它會跳出數字鍵）':''}</p>`;
+  el.innerHTML=`<div class="xbox"><div class="xh"><b>✍️ 記號筆試</b><span>第 ${i+1} / ${D.lines.length} 句</span><span class="xlv">${[['easy','初階・提示字'],['mid','中階'],['pitch','高階＋音高']].map(([k,n])=>`<button data-x="lv" data-v="${k}" class="${qzExLv()===k?'on':''}">${n}</button>`).join('')}</span><button data-x="close">✕ 關閉</button></div>
     <div class="xl">${chars}</div>${E.done?'':`<div class="xb qz-brush">${brushes}</div>`}${pad}${res}
     <div class="xn">${E.done?`<button data-x="again">再考一次這句</button>${i<D.lines.length-1?'<button data-x="next" class="go">下一句 →</button>':(qzExNext()>=0?'<button data-x="close">回題目頁</button><button data-x="nextq" class="go">下一題 →</button>':'<button data-x="close" class="go">考完了</button>')}`:'<button data-x="check" class="go">對答案</button>'}</div></div>`}
 function qzExClick(e){const t=e.target.closest('[data-x]');const E=Q&&Q.ex;if(!t||!E)return;const x=t.dataset.x,li=E.D.lines[E.i],A=E.ans[li];
   if(x==='close'){qzExClose();return}
-  if(x==='lv'){qzLS('scene-qexlv',t.dataset.v);qzExDraw();return}
+  if(x==='lv'){qzLS('scene-qexlv',t.dataset.v);const q=E.q;if(!qzExData(q).lines.length){qzExClose();qzRender();qzHint('這題在這個難度沒有要考的（只有音高）');return}qzExOpen(q);qzRender();return}
   if(x==='nextq'){const j=qzExNext();if(j<0)return;qzExClose();qzGo(j);const q=Q.list[Q.i];if(q&&q.cat!=='exam')setTimeout(()=>qzExOpen(Q.list[Q.i]),60);return}
   if(x==='br'){E.br=t.dataset.b;qzExDraw();return}
   if(x==='pn'){if(E.done)return;E.sel=+t.dataset.ci;qzExDraw();return}
