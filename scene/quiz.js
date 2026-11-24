@@ -77,7 +77,7 @@ function qzAnalyze0(){const c=window._qzPA;const ln=qLane('vocal');if(!ln)return
 // ---------- 題庫（像考照 App）：整首每一句都出題；每份卷可以照順序或隨機，Part 照段落分 ----------
 const QRE={whole:/^P(\d+)(?:\.(\d+)-(\d+))?$/,multi:/^R(\d+)-(\d+)$/,pitch:/^L(\d+)([ftjh]?)$/,lyr:/^Y(\d+)$/,exam:/^X(\d+)$/,beat:/^B(\d+)$/};
 const QCATS=['pitch','lyr','beat','map'];
-const QPAPER={all:{n:'🔀 全部混合'},pitch:{n:'🎯 音準'},lyr:{n:'📝 歌詞'},beat:{n:'🥁 進拍'},map:{n:'🗺 架構'},exam:{n:'✍️ 筆試'},wrong:{n:'❌ 錯題本'}}; // 「今天練什麼」健檢跟這個同順序
+const QPAPER={all:{n:'🔀 全部混合'},pitch:{n:'🎯 音準'},lyr:{n:'📝 歌詞'},beat:{n:'🥁 進拍'},map:{n:'🗺 架構'},wrong:{n:'❌ 錯題本'}}; // 「今天練什麼」健檢跟這個同順序
 function qzQ(id,j){let m;
   if((m=id.match(QRE.pitch))){const l=+m[1],t=m[2]||'';return {id,cat:'pitch',l,s:secOfLine(l),t,m:'sing'}/* 每題都先唱 */}
   if((m=id.match(QRE.multi)))return {id,cat:'pitch',l:null,s:+m[2],s0:+m[1],R:1,t:'s',m:'sing'}; // 好幾個 Part 一起連唱
@@ -105,7 +105,7 @@ function qzBank(){const pool=qzPool(),pa=qzAnalyze(),out=[],L=getLines(),ent=new
     for(let k=sec+1;k<=s;k++)out.push(qzQ('M'+k));sec=Math.max(sec,s);
     if(ent.has(g))out.push(qzQ('B'+g));
     out.push(qzQ('Y'+g));
-    const t=pa&&pa.jump[g]?'j':H.includes(g)?'h':firstOf(g)?'f':lastOf(g)?'t':'';out.push(qzQ('L'+g+t));if(qzLineHasMk('pitch',g))out.push(qzQ('X'+g));
+    const t=pa&&pa.jump[g]?'j':H.includes(g)?'h':firstOf(g)?'f':lastOf(g)?'t':'';out.push(qzQ('L'+g+t));
     if(lastOf(g)&&qzLines(s).length>=2){qzGrps(s).forEach(([a,b])=>out.push(qzQ(`P${s}.${a}-${b}`)));out.push(qzQ('P'+s))}});
   for(let k=sec+1;k<SCENES[key].steps.length;k++)out.push(qzQ('M'+k));
   qzMultis().forEach(([a,b])=>{const q=qzQ(`R${a}-${b}`);let i=-1;out.forEach((x,j)=>{if(x.cat==='pitch'&&x.s<=b)i=j});out.splice(i+1,0,q)});
@@ -151,7 +151,7 @@ function qzHint(t){if(Q){Q.tip=t;const e=document.querySelector('#s-quiz .qz-tip
 function qzOpen(cat){
   if(!S)return;if(getTimes().length<2){qzHint('這首還沒對拍：先在歌詞表對拍，題組才知道每一段在哪裡');return}
   if(S.recd)return;sStop();
-  Q={prev:S.lanes.map(l=>({id:l.id,mute:l.mute,solo:l.solo})),act:'',mute:null,k:-2,home:true,hc:QPAPER[cat]?cat:(qzLS('scene-pquiz-hc')||'pitch'),list:[],i:0};
+  Q={prev:S.lanes.map(l=>({id:l.id,mute:l.mute,solo:l.solo})),act:'',mute:null,k:-2,home:true,hc:QPAPER[cat]?cat:(QPAPER[qzLS('scene-pquiz-hc')]?qzLS('scene-pquiz-hc'):'pitch'),list:[],i:0};
   if(!QPAPER[Q.hc])Q.hc='pitch';Q.wo=qzLS('scene-pquiz-wo')==='1';if(Q.hc==='wrong'){Q.hc='all';Q.wo=true}
   S.big=false;S.noBig=1;sBig();qzRender();setTimeout(sLayout,50);
 }
