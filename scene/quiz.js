@@ -698,6 +698,8 @@ function qzExOpen(q){const D=qzExData(q);if(!D.lines.length){qzHint('這題還�
 function qzExClose(){Q.ex=null;document.getElementById('qz-ex')?.remove();if(Q&&!Q.home&&!Q.sum)qzRender()}
 const qzExKey=(li,ci)=>li+':'+ci;
 const qzExLv=()=>qzLS('scene-qexlv')==='hard'?'hard':'easy';
+// 下一題：考卷裡下一個有記號可考的題目
+function qzExNext(){if(!Q.list)return -1;for(let j=Q.i+1;j<Q.list.length;j++){const q=Q.list[j];if(q&&(q.cat==='exam'||q.cat==='pitch')&&qzExData(q).lines.length)return j}return -1}
 function qzExDraw(){const E=Q.ex;if(!E)return;let el=document.getElementById('qz-ex');if(!el){el=document.createElement('div');el.id='qz-ex';document.body.appendChild(el);el.addEventListener('click',qzExClick)}
   const {D,i}=E,li=D.lines[i],ln=[...D.L[li]],A=E.ans[li]=E.ans[li]||{mk:{},kz:{},pn:{}},MK=QMARKS.pitch;let err=0;
   const chars=ln.map((ch,ci)=>{if(/\s/.test(ch))return '<span class="sp"> </span>';const k=qzExKey(li,ci),em=D.W.mk[k]||'',ez=!!D.W.kz[k],ep=D.pw[k],am=A.mk[ci]||'',az=!!A.kz[ci],ap=A.pn[ci];
@@ -712,11 +714,11 @@ function qzExDraw(){const E=Q.ex;if(!E)return;let el=document.getElementById('qz
   E.lastErr=err;const res=E.done?(err===0?'<p class="xr ok">✓ 全對！</p>':`<p class="xr ${err<=2?'mid':'bad'}">${err<=2?'△':'✗'} 錯 ${err} 個字　綠＝對、黃＝漏掉、紅＝標錯，小字是正確答案</p>`):`<p class="xr">${qzExLv()==='easy'?'黃底線的字要標記號，':''}先選筆、再點字；有「＿」的字要填音高（點它會跳出數字鍵）</p>`;
   el.innerHTML=`<div class="xbox"><div class="xh"><b>✍️ 記號筆試</b><span>第 ${i+1} / ${D.lines.length} 句</span><span class="xlv">${[['easy','初階：提示哪個字'],['hard','進階']].map(([k,n])=>`<button data-x="lv" data-v="${k}" class="${qzExLv()===k?'on':''}">${n}</button>`).join('')}</span><button data-x="close">✕ 關閉</button></div>
     <div class="xl">${chars}</div>${E.done?'':`<div class="xb qz-brush">${brushes}</div>`}${pad}${res}
-    <div class="xn">${E.done?`<button data-x="again">再考一次這句</button>${i<D.lines.length-1?'<button data-x="next" class="go">下一句 →</button>':(E.q.cat==='exam'&&Q.i<Q.list.length-1?'<button data-x="close">回題目頁</button><button data-x="nextq" class="go">下一題 →</button>':'<button data-x="close" class="go">考完了</button>')}`:'<button data-x="check" class="go">對答案</button>'}</div></div>`}
+    <div class="xn">${E.done?`<button data-x="again">再考一次這句</button>${i<D.lines.length-1?'<button data-x="next" class="go">下一句 →</button>':(qzExNext()>=0?'<button data-x="close">回題目頁</button><button data-x="nextq" class="go">下一題 →</button>':'<button data-x="close" class="go">考完了</button>')}`:'<button data-x="check" class="go">對答案</button>'}</div></div>`}
 function qzExClick(e){const t=e.target.closest('[data-x]');const E=Q&&Q.ex;if(!t||!E)return;const x=t.dataset.x,li=E.D.lines[E.i],A=E.ans[li];
   if(x==='close'){qzExClose();return}
   if(x==='lv'){qzLS('scene-qexlv',t.dataset.v);qzExDraw();return}
-  if(x==='nextq'){qzExClose();qzGo(Q.i+1);return}
+  if(x==='nextq'){const j=qzExNext();if(j<0)return;qzExClose();qzGo(j);const q=Q.list[Q.i];if(q&&q.cat!=='exam')setTimeout(()=>qzExOpen(Q.list[Q.i]),60);return}
   if(x==='br'){E.br=t.dataset.b;qzExDraw();return}
   if(x==='pn'){if(E.done)return;E.sel=+t.dataset.ci;qzExDraw();return}
   if(x==='ch'){if(E.done)return;const ci=+t.dataset.ci;if(E.br==='e'){delete A.mk[ci];delete A.kz[ci];delete A.pn[ci]}else if(E.br==='k'){if(A.kz[ci])delete A.kz[ci];else A.kz[ci]=1}else{if(A.mk[ci]===E.br)delete A.mk[ci];else A.mk[ci]=E.br}qzExDraw();return}
