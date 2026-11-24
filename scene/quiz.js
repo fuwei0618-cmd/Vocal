@@ -183,7 +183,7 @@ async function qzMix(q){ // 鋼琴音疊在原唱上，用這句的開頭到結�
   qzSlowStop();sStop();Q.seq=null;Q.lastRun=null;const f=qzSpeed();await sWake();const c=S.ctx,[from,until]=qzRange(q),id=qzRef();
   const k=[id,from.toFixed(2),until.toFixed(2),f].join('|');let v=qzSlowCache.get(k);
   if(!v){const sg=qzSeg(id,Math.max(0,from),until);if(!sg||!sg.x.length)return;const y=qzStretch(sg.x,sg.sr,f),bf=c.createBuffer(1,y.length,sg.sr);bf.copyToChannel(y,0);v=bf;qzSlowCache.set(k,v)}
-  const T=c.currentTime+.08,s=c.createBufferSource(),g=c.createGain();g.gain.value=.9*laneNorm(S.lanes.find(z=>z.id===id));g.connect(id==='me'?meOut(c,c.destination):c.destination);s.buffer=v;s.connect(g);s.start(T);
+  const T=c.currentTime+.08,s=c.createBufferSource(),g=c.createGain();g.gain.value=.9*laneNorm(S.lanes.find(z=>z.id===id));g.connect(id==='me'?meOut(c,qzMaster(c)):c.destination);s.buffer=v;s.connect(g);s.start(T);
   const tot=N.w.reduce((a,x)=>a+x[2],0),sec=(until-from)/f/tot,L=[];N.w.forEach(([ch,ns,b])=>{const a=qzNs(ns);a.forEach(n=>L.push([n,b*sec/a.length]))});
   const r=qzToneAt(c,L,N.base,T,.3),srcs=[s,...r.nodes];Q.act='mix';Q.who='';
   Q.slow={srcs,t:setTimeout(()=>{if(!Q||!Q.slow||Q.slow.srcs!==srcs)return;Q.slow=null;Q.act='';qzRender()},(until-from)/f*1000+150)};qzRender()}
@@ -215,7 +215,7 @@ async function qzSlow(act,ids,from,until,who,done){
   qzSlowStop();sStop();const f=qzSpeed();await sWake();const c=S.ctx,T=c.currentTime+.06,srcs=[];
   for(const id of ids){const k=[id,from.toFixed(2),until.toFixed(2),f,id==='me'?takes.map(t=>t.id+':'+(t.adj||0)).join(','):''].join('|');
     let v=qzSlowCache.get(k);if(!v){const sg=qzSeg(id,Math.max(0,from),until);if(!sg||!sg.x.length)continue;const y=qzStretch(sg.x,sg.sr,f),b=c.createBuffer(1,y.length,sg.sr);b.copyToChannel(y,0);v=b;if(qzSlowCache.size>40)qzSlowCache.clear();qzSlowCache.set(k,v)}
-    const l=S.lanes.find(z=>z.id===id),g=c.createGain();g.gain.value=l?(l.vol==null?1:l.vol)*laneNorm(l):1;g.connect(id==='me'?meOut(c,c.destination):c.destination);const s=c.createBufferSource();s.buffer=v;s.connect(g);s.start(T);srcs.push(s)}
+    const l=S.lanes.find(z=>z.id===id),g=c.createGain();g.gain.value=l?(l.vol==null?1:l.vol)*laneNorm(l):1;g.connect(id==='me'?meOut(c,qzMaster(c)):qzMaster(c));const s=c.createBufferSource();s.buffer=v;s.connect(g);s.start(T);srcs.push(s)}
   const dur=(until-from)/f;Q.act=act;Q.who=who||'';Q.slow={srcs,t:setTimeout(()=>{if(!Q||!Q.slow||Q.slow.srcs!==srcs)return;Q.slow=null;done?done():qzSlowEnd()},dur*1000+120)};qzRender()}
 function qzSlowEnd(){if(!Q)return;if(Q.seq&&Q.seq.length&&Q.act){setTimeout(()=>{if(Q&&Q.seq)qzNext()},350);return}
   if(Q.lastRun){const fn=Q.lastRun;Q.seq=null;setTimeout(()=>{if(Q&&Q.lastRun===fn){fn();Q.lastRun=fn}},400);return}
@@ -428,7 +428,7 @@ function qzRender(){
 
     ${cutC?`<div class="qz-tr"><span class="qz-tl">框選範圍</span><span class="qz-tg">開頭</span><button data-q="cutn" data-e="0" data-d="-1">◀</button><button data-q="cutn" data-e="0" data-d="1">▶</button><span class="qz-tg">結尾</span><button data-q="cutn" data-e="1" data-d="-1">◀</button><button data-q="cutn" data-e="1" data-d="1">▶</button><span class="qz-tg">${cutC[0].toFixed(1)}–${cutC[1].toFixed(1)} 秒</span><button data-q="uncut">✕ 取消框選</button></div>`:''}</div>`:'';
   const recB=(n0,t)=>`<div class="qz-st"><b>${n0}</b><button data-q="rec" class="rec${recd?' on':''}">${recd?'⏹ 停止錄音':t}</button>${has&&!recd?'<span>✓ 錄好了</span><button data-q="del" class="qz-del">🗑 刪掉</button>':''}</div>`;
-  const qzAdjRow=has&&!recd&&(q.cat==='pitch'||q.cat==='beat')?`<div class="qz-tr qz-adj"><span class="qz-tl">錄音對不齊</span><button data-act="sadj" data-d="-1">◀ 早一點</button><button data-act="sadj" data-d="1">晚一點 ▶</button></div>`:'';
+  const qzAdjRow=has&&!recd&&(q.cat==='pitch'||q.cat==='beat')?`<div class="qz-tr qz-adj"><span class="qz-tl">錄音對不齊</span><button data-act="sadj" data-d="-1">◀ 早一點</button><button data-act="sadj" data-d="1">晚一點 ▶</button>${(()=>{const l=S.lanes.find(z=>z.id===qzRef());return l?`<label class="qz-rv">🔊 原唱<input type="range" min=".2" max="2" step=".05" value="${l.vol}" data-act="svol" data-l="${l.id}"></label>`:''})()}</div>`:'';
   let title=q.R?`Part ${q.s0+1}–${q.s+1}`:esc(st.sec),tip='',steps='',right='';
   if(q.cat==='pitch'){
     const J=q.t==='j'&&qzAnalyze()&&qzAnalyze().jump[q.l];
@@ -641,6 +641,7 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 .qz-grip{font-style:normal;font-size:18px;color:var(--muted);padding:2px 8px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}.qz-drag.dragging{background:rgba(242,194,123,.14);border-radius:8px;position:relative;z-index:3;box-shadow:0 6px 18px rgba(0,0,0,.45)}
 .qz-wk{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 8px}.qz-wk .sep{width:1px;height:20px;background:var(--line);margin:0 4px}#studio .qz-wk button.wr.on{background:rgba(232,128,111,.22);border-color:#e8806f;color:#ffb3ab}.qz-parts .qz-n{margin:-2px 0 6px;font-size:12px;color:var(--muted)}#studio .qz-wk button{padding:5px 12px;font-size:13px;border-radius:999px}#studio .qz-wk button.on{background:rgba(242,194,123,.2);border-color:#f2c27b;color:#f2c27b}.qz-wk small{margin-left:5px;color:var(--muted);font-size:11px}
 .qz-lyr span i.kzi{top:auto;bottom:-9px;right:auto;left:-6px;font-size:11px;text-shadow:none}.qz-lyr span.kz{box-shadow:inset 0 -3px 0 rgba(240,140,190,.75)}
+.qz-rv{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);margin-left:auto;padding-left:6px;white-space:nowrap;flex:none}.qz-rv input{width:72px;accent-color:#f2c27b}
 .qz-pcols{display:grid;gap:14px;align-items:start}.qz-pcol h5{margin:6px 0 2px;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.1em}
 .qz-pcol .qz-pr.sm{gap:4px}
 @media (max-width:820px){.qz-home2{flex-direction:column}.qz-crs2{flex-wrap:wrap}.qz-pcols{grid-template-columns:1fr!important}}
