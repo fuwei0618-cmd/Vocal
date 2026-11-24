@@ -513,7 +513,7 @@ app.addEventListener('click',e=>{
   if(a==='mode'){if(S.recd)return;sStop();qzSet(q.id,{m:t.dataset.m});Q.act='';qzRender()}
   else if(a==='listen'){const c=qzCut(q);if(c){const run=()=>qzPlay('listen',qzOrig(),c[0]-.05,c[1]+.05);run();if(Q.act)Q.lastRun=run;return}const [x,y]=q.cat==='beat'?qzRange(q):qzRecRange(q);qzPlay('listen',q.cat==='lyr'?[qzRef()]:qzOrig(),q.cat==='beat'?x-2:x-1.5,y+.4)}
   else if(a==='mind')qzMind(q);
-  else if(a==='alt'){qzAlt(q);if(qzCut(q)&&Q.act)Q.lastRun=()=>qzAlt(q)}
+  else if(a==='alt'){qzAlt(q);if(Q.act)Q.lastRun=()=>qzAlt(q)}/* 輪流比一直循環，按「⏹ 停」才停 */
   else if(a==='cmp'){const c=t.dataset.c,run=()=>{const [x,y]=qzCut(q)||qzRange(q),k=qzCut(q)?.05:.5;qzPlay(c,c==='both'?[qzRef(),'me']:c==='ref'?[qzRef()]:['me'],x-k,y+(qzCut(q)?.05:.3))};run();if(qzCut(q)&&Q.act)Q.lastRun=run}
   else if(a==='box'){sStop();Q.seq=null;Q.act='';Q.boxing=!Q.boxing;qzRender();if(Q.boxing)qzHint('在下面的波形上，手指從要重複的第一個字拖到最後一個字')}
   else if(a==='topen'){Q.toneOpen=q.id;qzSet(q.id,{hint:1});qzRender();qzHint('點字聽那個音；對準了就收起來，回去跟原唱比')}
