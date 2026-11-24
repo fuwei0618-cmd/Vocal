@@ -471,7 +471,7 @@ function qzRender(){
   }
   el.innerHTML=`<div class="qz-hush">🤫 在心裡繼續唱…</div>${qzHead(q.cat==='pitch'?`<span class="qz-modes">${Object.keys(QMODE).filter(k=>q.t!=='f'||k!=='mind').map(k=>`<button data-q="mode" data-m="${k}" class="${k===m?'on':''}">${QMODE[k].n}</button>`).join('')}</span>`:'')}
   <div class="qz-b"><div class="qz-steps">${qzH2()}<div class="qz-t">${Q.paper&&(Q.paper.cat==='all'||Q.paper.cat==='wrong')?`<span class="qz-catb">${C.n}</span>`:''}<span class="qz-sec">${title}</span><span class="qz-time">${mmss(a)}–${mmss(b)}</span><span id="qz-timer" class="qz-timer"></span><p class="qz-tip">${tip}</p></div>${steps}
-      <div class="qz-res"><span>這題的結果<small>過關＝${C.pass}</small></span>${Object.keys(C.res).map(k=>`<button data-q="res" data-v="${k}" class="${k}${r.res===k?' on':''}">${C.res[k]}</button>`).join('')}</div>
+      <div class="qz-res"><span>這題的結果<small>過關＝${C.pass}</small></span>${Object.keys(C.res).map(k=>`<button data-q="res" data-v="${k}" class="${k}${r.res===k?' on':''}">${C.res[k]}</button>`).join('')}</div>${qzLresRow(q)}
       <div class="qz-nav"><button data-q="go" data-j="${Q.i-1}" ${Q.i?'':'disabled'}>← 上一題</button><input class="qz-in" data-q="note" placeholder="筆記：例如「人海」的海掉下來" value="${esc(r.n||'')}">${Q.i<n-1?`<button data-q="go" data-j="${Q.i+1}" class="go">下一題 →</button>`:'<button data-q="sum" class="go">看成績單 →</button>'}</div>${qzAdjRow}</div>
     <div class="qz-r">${right}${tools}</div></div><div class="qz-tipbar"${Q.tip?'':' hidden'}>${esc(Q.tip||'')}</div>`;
   qzCutLyr(q,qzCut(q));qzFitLyr();qzWatch(el);
@@ -488,8 +488,8 @@ app.addEventListener('click',e=>{
   if(a==='begin'){Q.bank=null;qzBegin(t.dataset.cat,t.dataset.part,t.dataset.ord);return}
   if(a==='cont'){const l=qzLastAll()[key];if(l)qzBegin(l.cat,l.part,l.ord,l.ids,l.i);return}
   if(a==='redo'){const ids=Q.list.filter(x=>{const r=qzGet(x.id).res;return r&&r!=='ok'}).map(x=>x.id);if(ids.length)qzBegin('wrong','all','seq',ids,0);return}
-  if(a==='lsel'){if(S.recd)return;const li=+t.dataset.li;if(Q.lsel==null){Q.lsel=li;document.querySelectorAll('#s-quiz .qz-lno').forEach(x=>x.classList.toggle('on',+x.dataset.li===li));qzHint(`從第 ${li+1} 句：再點最後一句的號碼（同一句再點一次＝只練這句）`);return}
-    const x=Math.min(Q.lsel,li),y=Math.max(Q.lsel,li);Q.lsel=null;const A=qzLineSpan(q,x),B=qzLineSpan(q,y);if(!A||!B){qzRender();return}
+  if(a==='lsel'){if(S.recd)return;const li=+t.dataset.li;if(Q.lsel==null){Q.lsel=li;Q.lpick={id:q.id,li};qzRender();qzHint(`從第 ${li+1} 句：再點最後一句的號碼（同一句再點一次＝只練這句）`);return}
+    const x=Math.min(Q.lsel,li),y=Math.max(Q.lsel,li);Q.lsel=null;Q.lpick=x===y?{id:q.id,li:x}:null;const A=qzLineSpan(q,x),B=qzLineSpan(q,y);if(!A||!B){qzRender();return}
     sStop();Q.act='';Q.cut=[Math.max(0,A[0]-.15),B[1]];Q.cutQ=q.id;Q.boxing=false;qzCutGo();return}
   if(a==='exam'){qzExOpen(q);return}
   if(a==='wk'){Q.wk=t.dataset.k;qzRender();return}
@@ -537,6 +537,7 @@ app.addEventListener('click',e=>{
     Q.act='';Q.lastRun=null;qzTone(Ls,N.base);qzRender();qzHint(ws.map(x=>x[0]+' '+qzNs(x[1]).map(qzSol).join('→')).join('　'))}
   else if(a==='spd'){const fn=Q.lastRun,v=+t.dataset.d===9?1:Math.max(.3,Math.min(1,Math.round((qzSpeed()+ +t.dataset.d)*100)/100));qzSlowStop();sStop();Q.act='';Q.seq=null;Q.lastRun=null;qzLS('scene-pquiz-speed',String(v));qzRender();qzHint(v<1?`速度 ${v.toFixed(2)} 倍（音高不變）`:'回到原速');if(fn){fn();if(Q.act)Q.lastRun=fn}}
   else if(a==='cutn'){const c=qzCut(q);if(!c)return;const e2=+t.dataset.e,d=+t.dataset.d*.1,n=c.slice();n[e2]=Math.max(0,Math.min(S.dur,n[e2]+d));if(n[1]-n[0]<.15)return;Q.cut=n;sDraw();qzRender()}
+  else if(a==='lpx'){Q.lpick=null;Q.lsel=null;qzRender()}
   else if(a==='uncut'){Q.cut=null;Q.lastRun=null;sStop();Q.act='';sDraw();qzRender()}
   else if(a==='rec')qzRec(q);
   else if(a==='del'){const [x,y]=qzCut(q)||qzRecRange(q),k=takes.find(t=>t.id===S.selTake)||takes.slice().sort((u,v)=>v.at-u.at).find(k=>k.start<y&&k.end>x);if(!k||!confirm('刪掉這題最新的這次錄音？'))return;sStop();tkUndo.push({t:'del',k});takes=takes.filter(t=>t!==k);if(S.selTake===k.id)S.selTake=null;S.bufs.delete(k.id);saveTakes();qzSet(q.id,{rec:0});sDraw();qzRender();qzHint('刪掉了，按紅色的鍵再錄一次')}
@@ -556,6 +557,7 @@ app.addEventListener('click',e=>{
   else if(a==='tmore'){document.getElementById('qz-tover')?.remove();if(Q.qt){Q.qt.lim=Q.qt.acc+120;Q.qt.warned=false;Q.qt.show=false}return}
   else if(a==='qrng'){const A=qzRngAll(),B=A[key]=A[key]||{},rk=qzRk(q),r=(B[rk]||qzRAuto(q)).slice(),e=+t.dataset.e;r[e]=Math.round((r[e]+ +t.dataset.d*.2)*100)/100;if(r[1]-r[0]<.5)return;B[rk]=r;qzLS('scene-qrng',JSON.stringify(A));qzSlowStop();sStop();Q.act='';qzFocus();qzRender();qzHint(`範圍改成 ${r[0].toFixed(1)}–${r[1].toFixed(1)} 秒（每按一下 0.2 秒），先聽原曲、錄音、比一比都會照這個`);return}
   else if(a==='qrng0'){const A=qzRngAll();if(A[key])delete A[key][qzRk(q)];qzLS('scene-qrng',JSON.stringify(A));qzFocus();qzRender();return}
+  else if(a==='lres'){const P=Q.lpick;if(!P||P.id!==q.id)return;const g=qzGl(q,P.li),cur=qzLatest()['L'+g]||null,v=cur===t.dataset.v?null:t.dataset.v;qzLresSet(g,v);qzRender();qzHint(`第 ${P.li+1} 句的單句結果${v?'改成 '+QCAT.pitch.res[v]:'清掉了'}（單句那題和「只考錯題」都會跟著變）`)}
   else if(a==='res'){const v=t.dataset.v;qzSet(q.id,{res:qzGet(q.id).res===v?null:v});qzRender()}
 },true);
 app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!Q.list[Q.i])return;qzSet(Q.list[Q.i].id,{n:t.value})});
@@ -579,7 +581,7 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 .qz-multi{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}.qz-multi h4 small{font-weight:400;font-size:12px;color:var(--muted);margin-left:8px}.qz-multi .qz-grp{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
 .qz-lyr.many{overflow:auto}.qz-lyr.many p{font-size:16px;line-height:1.5;margin:0}
 .qz-lyr{position:relative}#studio .qz-mkt{position:absolute;top:6px;right:8px;font-size:12px;padding:3px 10px;background:rgba(0,0,0,.35);border:1px solid rgba(232,194,122,.4);z-index:2}#studio .qz-mkt.on{background:rgba(232,194,122,.25);color:#f5c451}.qz-lyr span.gh{outline:1.5px dashed rgba(255,255,255,.45);outline-offset:-1px}.qz-ln{font-size:12px;color:var(--muted);margin-left:10px;letter-spacing:0}.qz-lyr.many .qz-mkt{position:sticky;float:right;top:0}.qz-r.fo .qz-lyr{max-height:66px;overflow:auto}.qz-r.fo .qz-lyr p{font-size:15px;line-height:1.45}#studio .qz-fold>button{width:100%;text-align:left;background:rgba(232,194,122,.1);border:1px solid rgba(232,194,122,.35);padding:5px 10px;font-size:13px}.qz-fl{max-height:min(120px,18vh);overflow:auto;margin-top:4px;padding:4px 8px;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.25)}.qz-fr{display:flex;align-items:baseline;gap:8px;padding:3px 0;font-size:16px;flex-wrap:wrap}.qz-fr>b{color:var(--muted);font-size:12px;width:16px}.qz-fr small{color:var(--muted);font-size:12px}.qz-fold0{margin:4px 0 0;font-size:12px;color:var(--muted)}
-.qz-lno{display:inline-block;min-width:20px;margin-right:8px;padding:0 5px;border-radius:6px;font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--line);text-align:center;cursor:pointer;vertical-align:middle;letter-spacing:0;line-height:1.6}.qz-lno.on{background:#78c8ff;color:#06202e;border-color:#78c8ff}.qz-lyr p.incut{background:rgba(120,200,255,.14);box-shadow:inset 3px 0 0 rgba(120,200,255,.9);border-radius:6px}
+.qz-lres{margin-top:4px}.qz-lres>span{color:#78c8ff}.qz-lpx{padding:2px 8px!important;opacity:.7}.qz-lno{display:inline-block;min-width:20px;margin-right:8px;padding:0 5px;border-radius:6px;font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--line);text-align:center;cursor:pointer;vertical-align:middle;letter-spacing:0;line-height:1.6}.qz-lno.on{background:#78c8ff;color:#06202e;border-color:#78c8ff}.qz-lyr p.incut{background:rgba(120,200,255,.14);box-shadow:inset 3px 0 0 rgba(120,200,255,.9);border-radius:6px}
 .qz-lyt{position:sticky;top:-4px;z-index:2;display:flex;justify-content:flex-end;gap:6px;margin:0 -6px 2px;padding:2px 0;background:linear-gradient(rgba(26,22,17,.97),rgba(26,22,17,.85))}#studio .qz-lyt .qz-mkt{position:static}
 .qz-lyr p.pn{line-height:2.2!important}#studio .qz-lyr.many p,#studio .qz-lyr.many p.pn{line-height:1.75!important;padding-top:0;padding-bottom:0;white-space:nowrap;overflow:visible}#studio .qz-lyr.many .qz-ln{display:inline-block;max-width:45%;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}#studio .qz-lyr.many .qn{top:calc(100% - 4px);font-size:10px}#studio .qz-lyr.many .qz-lno{line-height:1.3;font-size:11px;padding:0 4px;min-width:18px}.qz-lyr.many .qz-lp p{font-size:var(--lf,17px)}.qz-lyr.two .qz-lp{column-count:2;column-gap:18px}.qz-lyr.two .qz-lp p{break-inside:avoid;white-space:nowrap;letter-spacing:.06em;font-size:16px}.qz-lyr.many p{font-size:17px}.qz-lyr span{position:relative}.qz-lyr .qn{position:absolute;left:50%;transform:translateX(-50%);top:calc(100% - 1px);font-style:normal;font-size:11px;line-height:1;color:#9fd0ff;white-space:nowrap;letter-spacing:0;pointer-events:none}.qz-lyr .qn s{text-decoration:none;opacity:.6;font-size:9px}
 .qz-steps>.qz-t{margin-bottom:8px}.qz-b{grid-template-columns:minmax(300px,.8fr) minmax(0,1.2fr)}.qz-r{min-width:0}
@@ -726,3 +728,10 @@ function qzExClick(e){const t=e.target.closest('[data-x]');const E=Q&&Q.ex;if(!t
   if(x==='check'){Object.keys(A.pn).forEach(k=>{A.pn[k]=A.pn[k].replace(/-$/,'')});E.sel=null;E.done=true;qzExDraw();const n=E.lastErr||0,g=qzGl(E.q,li);qzSet('X'+g,{res:n===0?'ok':n<=2?'some':'bad'});return}
   if(x==='again'){E.ans[li]={mk:{},kz:{},pn:{}};E.done=false;E.sel=null;qzExDraw();return}
   if(x==='next'){E.i++;E.done=false;E.sel=null;qzExDraw();return}}
+
+// ---------- 連唱頁：點句號選一句，直接改它的「單句」結果（和單句題同步） ----------
+function qzLresRow(q){const P=Q.lpick;if(q.cat!=='pitch'||!P||P.id!==q.id||qzText(q).length<2)return '';const g=qzGl(q,P.li),cur=qzLatest()['L'+g],R=QCAT.pitch.res;
+  return `<div class="qz-res qz-lres"><span>第 ${P.li+1} 句（單句）<small>點了就同步到那句的單句題</small></span>${Object.keys(R).map(k=>`<button data-q="lres" data-v="${k}" class="${k}${cur===k?' on':''}">${R[k]}</button>`).join('')}<button data-q="lpx" class="qz-lpx" title="不選這句">✕</button></div>`}
+function qzLresSet(g,v){const A=qzAll(),T=A[key]=A[key]||{},D=T[qzDay()]=T[qzDay()]||{},re=new RegExp('^L'+g+'[ftjh]?$');
+  const bq=(Q.bank||(Q.bank=qzBank())).find(x=>x.cat==='pitch'&&x.l===g&&/^L/.test(x.id)),ids=new Set(Object.keys(D).filter(k=>re.test(k)));if(bq)ids.add(bq.id);if(!ids.size)ids.add('L'+g);
+  ids.forEach(id=>{D[id]=Object.assign(D[id]||{},{res:v})});try{localStorage.setItem(QZK,JSON.stringify(A))}catch(e){}}
