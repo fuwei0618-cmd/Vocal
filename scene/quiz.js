@@ -11,6 +11,7 @@ const QCAT={
   pitch:{n:'🎯 音準',res:{ok:'✓ 準',some:'△ 低空飛過',bad:'✗ 不及格'},sc:['準','低空飛過','不及格'],pass:'不準的字不超過 2 個'},
   lyr:{n:'📝 歌詞',res:{ok:'✓ 全對',some:'△ 卡 1～2 個字',bad:'✗ 想不起來'},sc:['全對','卡幾個字','想不起來'],pass:'整句唱得出來，卡不超過 2 個字'},
   beat:{n:'🥁 進拍',res:{ok:'✓ 準時',some:'⏩ 搶太早',bad:'⏪ 慢半拍'},sc:['準時','搶太早','慢半拍'],pass:'跟原唱同一刻開口'},
+  exam:{n:'✍️ 筆試',res:{ok:'✓ 全對',some:'△ 錯 1～2 個',bad:'✗ 錯更多'},sc:['全對','錯 1～2 個','錯更多'],pass:'記號和音高錯不超過 2 個'},
   map:{n:'🗺 架構',res:{ok:'✓ 說對',some:'△ 說對一半',bad:'✗ 想不起來'},sc:['說對','一半','想不起來'],pass:'段落和第一句都說得出來'}};
 const QTYPE={
   '':{n:'整句',t:''},
@@ -74,13 +75,14 @@ function qzAnalyze0(){const c=window._qzPA;const ln=qLane('vocal');if(!ln)return
     if(Math.abs(bj)>=5)jump[g]={st:Math.round(bj),t:+bt.toFixed(2)}});
   return c[key]={hi,jump}}
 // ---------- 題庫（像考照 App）：整首每一句都出題；每份卷可以照順序或隨機，Part 照段落分 ----------
-const QRE={whole:/^P(\d+)(?:\.(\d+)-(\d+))?$/,multi:/^R(\d+)-(\d+)$/,pitch:/^L(\d+)([ftjh]?)$/,lyr:/^Y(\d+)$/,beat:/^B(\d+)$/};
+const QRE={whole:/^P(\d+)(?:\.(\d+)-(\d+))?$/,multi:/^R(\d+)-(\d+)$/,pitch:/^L(\d+)([ftjh]?)$/,lyr:/^Y(\d+)$/,exam:/^X(\d+)$/,beat:/^B(\d+)$/};
 const QCATS=['pitch','lyr','beat','map'];
-const QPAPER={all:{n:'🔀 全部混合'},pitch:{n:'🎯 音準'},lyr:{n:'📝 歌詞'},beat:{n:'🥁 進拍'},map:{n:'🗺 架構'},wrong:{n:'❌ 錯題本'}}; // 「今天練什麼」健檢跟這個同順序
+const QPAPER={all:{n:'🔀 全部混合'},pitch:{n:'🎯 音準'},lyr:{n:'📝 歌詞'},beat:{n:'🥁 進拍'},map:{n:'🗺 架構'},exam:{n:'✍️ 筆試'},wrong:{n:'❌ 錯題本'}}; // 「今天練什麼」健檢跟這個同順序
 function qzQ(id,j){let m;
   if((m=id.match(QRE.pitch))){const l=+m[1],t=m[2]||'';return {id,cat:'pitch',l,s:secOfLine(l),t,m:'sing'}/* 每題都先唱 */}
   if((m=id.match(QRE.multi)))return {id,cat:'pitch',l:null,s:+m[2],s0:+m[1],R:1,t:'s',m:'sing'}; // 好幾個 Part 一起連唱
   if((m=id.match(QRE.whole)))return m[2]?{id,cat:'pitch',l:null,s:+m[1],t:'s',m:'sing',a:+m[2],b:+m[3]}:{id,cat:'pitch',l:null,s:+m[1],t:'s',m:'sing'}; // 整段連唱：這個 Part 每句考完，最後整段唱一次
+  if((m=id.match(QRE.exam)))return {id,cat:'exam',l:+m[1],s:secOfLine(+m[1])}; // ✍️ 記號筆試：憑記憶標回記號和音高
   if((m=id.match(QRE.lyr)))return {id,cat:'lyr',l:+m[1],s:secOfLine(+m[1])};
   if((m=id.match(QRE.beat)))return {id,cat:'beat',l:+m[1],s:secOfLine(+m[1])};
   if((m=id.match(/^M(\d+)$/)))return {id,cat:'map',s:+m[1]};
@@ -103,7 +105,7 @@ function qzBank(){const pool=qzPool(),pa=qzAnalyze(),out=[],L=getLines(),ent=new
     for(let k=sec+1;k<=s;k++)out.push(qzQ('M'+k));sec=Math.max(sec,s);
     if(ent.has(g))out.push(qzQ('B'+g));
     out.push(qzQ('Y'+g));
-    const t=pa&&pa.jump[g]?'j':H.includes(g)?'h':firstOf(g)?'f':lastOf(g)?'t':'';out.push(qzQ('L'+g+t));
+    const t=pa&&pa.jump[g]?'j':H.includes(g)?'h':firstOf(g)?'f':lastOf(g)?'t':'';out.push(qzQ('L'+g+t));if(qzLineHasMk('pitch',g))out.push(qzQ('X'+g));
     if(lastOf(g)&&qzLines(s).length>=2){qzGrps(s).forEach(([a,b])=>out.push(qzQ(`P${s}.${a}-${b}`)));out.push(qzQ('P'+s))}});
   for(let k=sec+1;k<SCENES[key].steps.length;k++)out.push(qzQ('M'+k));
   qzMultis().forEach(([a,b])=>{const q=qzQ(`R${a}-${b}`);let i=-1;out.forEach((x,j)=>{if(x.cat==='pitch'&&x.s<=b)i=j});out.splice(i+1,0,q)});
@@ -336,8 +338,8 @@ function qzWMig(){const A=qzWAll();if(A[key]&&A[key]._mig)return;const B=A[key]=
   try{[false,true].forEach(single=>days.forEach(d=>Object.entries(T[d]).forEach(([id,r])=>{const q=qzQ(id);if(q&&(q.l!=null)===single)put(id,r)})))}catch(e){}
   B._mig=1;qzLS(QWK,JSON.stringify(A))}
 // 這題看到的記號（key 換成題目裡的「第幾行:第幾個字」）
-function qzMkOf(q){const {c}=qzW(q.cat),mk={},pn={},kz={};qzText(q).forEach((ln,li)=>{const g=qzGl(q,li);[...ln].forEach((_,ci)=>{const k=g+':'+ci;if(c.mk[k])mk[li+':'+ci]=c.mk[k];if(c.pn[k])pn[li+':'+ci]=1;if(c.kz[k])kz[li+':'+ci]=1})});return {mk,pn,kz}}
-function qzMkPut(q,lk,f){const [li,ci]=lk.split(':').map(Number),{A,c}=qzW(q.cat);f(c,qzGl(q,li)+':'+ci);qzLS(QWK,JSON.stringify(A))}
+function qzMkOf(q){const {c}=qzW(q.cat==='exam'?'pitch':q.cat),mk={},pn={},kz={};qzText(q).forEach((ln,li)=>{const g=qzGl(q,li);[...ln].forEach((_,ci)=>{const k=g+':'+ci;if(c.mk[k])mk[li+':'+ci]=c.mk[k];if(c.pn[k])pn[li+':'+ci]=1;if(c.kz[k])kz[li+':'+ci]=1})});return {mk,pn,kz}}
+function qzMkPut(q,lk,f){const [li,ci]=lk.split(':').map(Number),{A,c}=qzW(q.cat);f(c,qzGl(q,li)+':'+ci);Q.bank=null;qzLS(QWK,JSON.stringify(A))}
 const qzLineHasMk=(cat,g)=>{const {c}=qzW(cat),pre=g+':';return Object.keys(c.mk).some(k=>k.startsWith(pre))||Object.keys(c.kz||{}).some(k=>k.startsWith(pre))||Object.keys(c.pn).some(k=>k.startsWith(pre))};
 function qzMarksTxt(q,r0){const r0b=qzMkOf(q),r={mk:Object.assign({},r0b.mk)};Object.keys(r0b.kz).forEach(k=>{if(!r.mk[k])r.mk[k]='k'});const _u=0,L=qzText(q),MK=QMARKS[q.cat]||[],out=[];Object.keys(r.mk||{}).sort((x,y)=>{const [a,b]=x.split(':').map(Number),[c,d]=y.split(':').map(Number);return a-c||b-d}).forEach(k=>{
   const [li,ci]=k.split(':').map(Number),ch=[...(L[li]||'')][ci],M=MK.find(m=>m[0]===r.mk[k]);if(ch&&M)out.push({li,ci,ch,M})});return out}
@@ -392,7 +394,7 @@ function qzSumHtml(){
     <div>${pc!=='beat'&&pc!=='map'&&!words.length?'<p class="qz-tip">還沒有標記的字。聽到不對，就點那個字，它會出現在左邊那題的卡片上。</p>':''}
     ${rows.filter(x=>x.r.n).map(({j,r})=>`<p class="qz-note"><b>${j+1}</b>${esc(r.n)}</p>`).join('')}
     <p class="qz-tip">怎麼練：${how}</p></div></div>`}
-function qzChars(q,r,cls){const W=qzMkOf(q),hide=q.t==='s'&&!Q.fold,mk=hide?{}:W.mk,pn=hide?{}:W.pn,kz=hide?{}:W.kz,MK=QMARKS[q.cat]||[],L=qzText(q),PN=q.cat==='pitch'?qzNotes(q):null;let pk=0;
+function qzChars(q,r,cls){const W=qzMkOf(q),hide=q.cat==='pitch'&&!Q.fold,mk=hide?{}:W.mk,pn=hide?{}:W.pn,kz=hide?{}:W.kz,MK=QMARKS[q.cat]||[],L=qzText(q),PN=q.cat==='pitch'?qzNotes(q):null;let pk=0;
   return L.map((ln,li)=>{const lm=q.t==='s'&&Q.fold?qzLineMk(qzGl(q,li)):null,hasP=[...ln].some((_,ci)=>pn[li+':'+ci]);return `<p data-li="${li}"${hasP?' class="pn"':''}>${L.length>1&&q.cat==='pitch'?`<b class="qz-lno${Q.lsel===li?' on':''}" data-q="lsel" data-li="${li}">${li+1}</b>`:''}${[...ln].map((ch,ci,all)=>{if(/\s/.test(ch))return ' ';const c=mk[li+':'+ci],M=MK.find(x=>x[0]===c);
     const f=q.t==='f'&&ci===all.findIndex(z=>!/\s/.test(z))||q.t==='t'&&ci>=all.length-3?' focus':'';
     const pw0=PN&&qzNorm(ch)?PN.w[pk++]:null,pw=pw0&&pn[li+':'+ci]?pw0:null;
@@ -439,8 +441,13 @@ function qzRender(){
       <div class="qz-st"><b>3</b><span>消音時在心裡繼續唱；聲音回來那一刻，妳還在音上嗎？對不上的字在右邊點它</span></div>`
      :q.t==='f'?`${recB(1,'⏺ 跟伴奏錄：直接唱第一個字')}${cmp(2)}<div class="qz-st"><b>3</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':'▶ 再聽一次原唱的開頭'}</button></div>`
      :`<div class="qz-st"><b>1</b><button data-q="listen" class="${on('listen')}">${on('listen')?'⏹ 停':q.l!=null?'▶ 先聽原曲這句':'▶ 先聽原曲這段'}</button></div>${recB(2,`⏺ 跟伴奏${QMODE[m].v}一次`)}${cmp(3)}`;
-    right=`<div class="qz-lyr${q.l!=null?' one':''}${q.t==='s'?' many':''}">${q.t==='s'?qzFoldHtml(q):q.cat==='pitch'?`<div class="qz-lyt">${qzExBtn(q)}</div>`:''}${A.length?(q.t==='s'?`<div class="qz-lp">${qzChars(q,r)}</div>`:qzChars(q,r)):`<p class="qz-tip">（這首還沒貼歌詞，就用提示：${esc(st.cue)}）</p>`}</div>
+    right=`<div class="qz-lyr${q.l!=null?' one':''}${q.t==='s'?' many':''}">${qzFoldHtml(q)}${A.length?(q.t==='s'?`<div class="qz-lp">${qzChars(q,r)}</div>`:qzChars(q,r)):`<p class="qz-tip">（這首還沒貼歌詞，就用提示：${esc(st.cue)}）</p>`}</div>
       <p class="qz-leg qz-brush" title="先選筆、再點字">${QMARKS.pitch.map(([k,i,n])=>`<button data-q="brush" data-b="${k}" class="${k}${qzBrush()===k?' on':''}">${i} ${n}</button>`).join('')}<button data-q="brush" data-b="p" class="p${qzBrush()==='p'?' on':''}">🎵 音高</button><button data-q="brush" data-b="e" class="e${qzBrush()==='e'?' on':''}">⌫ 擦掉</button>${nm?`　・已標 ${nm} 個字`:''}</p>`;
+  }else if(q.cat==='exam'){
+    const pv=q.l>0?A[q.l-1]:'';title+='<small>・記號筆試</small>';tip='不用唱：憑記憶把這句標過的記號（再高、再低、穩定、轉音、咬字、注意）和音高數字填回去，再對答案。';
+    steps=`<div class="qz-st"><b>1</b><button data-q="exam" class="go">✍️ 開始筆試</button></div><div class="qz-st"><b>2</b><span>對完答案會自動記下這題的結果；想改記號就回音準題去改</span></div>`;
+    right=`${pv?`<p class="qz-prev">上一句：${esc(pv)}</p>`:''}<div class="qz-lyr one"><p>${esc(A[q.l]||'')}</p></div>`;
+    if(Q.exAuto!==q.id){Q.exAuto=q.id;setTimeout(()=>{if(Q&&!Q.home&&!Q.sum&&Q.list[Q.i]===q&&!Q.ex)qzExOpen(q)},150)}
   }else if(q.cat==='lyr'){
     const pv=q.l>0?A[q.l-1]:'',len=[...A[q.l]].filter(c=>!/\s/.test(c)).length;
     title+='<small>・歌詞填空</small>';tip='詞遮起來了。伴奏從上一句開始放，輪到這句時，不看詞唱出來。唱完再對答案，卡住或唱錯的字點起來。';
@@ -539,10 +546,10 @@ app.addEventListener('click',e=>{
   else if(a==='mplay'){const [x,y]=secRange(q.s);qzPlay('mplay',qzOrig(),x-.3,Math.min(y,x+8))}
   else if(a==='brush'){qzLS('scene-qbrush',t.dataset.b);document.querySelectorAll('#s-quiz [data-q=brush]').forEach(b=>b.classList.toggle('on',b.dataset.b===t.dataset.b));return}
   else if(a==='mk'&&q.cat==='pitch'&&(qzBrush()==='p'||qzBrush()==='e')&&(qzBrush()==='p'||qzMkOf(q).pn[t.dataset.k])){const k=t.dataset.k;
-    if(qzBrush()==='p'&&!qzNotes(q)){qzHint('這句還沒有簡譜音可以顯示');return}if(q.t==='s')Q.fold=true;
+    if(qzBrush()==='p'&&!qzNotes(q)){qzHint('這句還沒有簡譜音可以顯示');return}Q.fold=true;
     qzMkPut(q,k,(c,gk)=>{if(qzBrush()==='e'){delete c.pn[gk];delete c.mk[gk];delete c.kz[gk]}else if(c.pn[gk])delete c.pn[gk];else c.pn[gk]=1});if(qzBrush()==='p')qzSet(q.id,{hint:1});qzRender();return}
-  else if(a==='mk'&&qzBrush()==='k'&&QMARKS[q.cat]){qzMkPut(q,t.dataset.k,(c,gk)=>{if(c.kz[gk])delete c.kz[gk];else c.kz[gk]=1});if(q.t==='s')Q.fold=true;qzRender();return}
-  else if(a==='mk'){const MK=QMARKS[q.cat];if(!MK)return;const mk=qzMkOf(q).mk,k=t.dataset.k,o=['',...MK.map(x=>x[0])],br=MK.length>1?qzBrush():'',nx=br==='e'?'':br?(mk[k]===br?'':br):o[(o.indexOf(mk[k]||'')+1)%o.length];qzMkPut(q,k,(c,gk)=>{if(nx)c.mk[gk]=nx;else delete c.mk[gk];if(br==='e')delete c.kz[gk]});if(br==='e'){qzRender();return}if(q.t==='s'&&!Q.fold){Q.fold=true;qzRender();return}
+  else if(a==='mk'&&qzBrush()==='k'&&QMARKS[q.cat]){qzMkPut(q,t.dataset.k,(c,gk)=>{if(c.kz[gk])delete c.kz[gk];else c.kz[gk]=1});Q.fold=true;qzRender();return}
+  else if(a==='mk'){const MK=QMARKS[q.cat];if(!MK)return;const mk=qzMkOf(q).mk,k=t.dataset.k,o=['',...MK.map(x=>x[0])],br=MK.length>1?qzBrush():'',nx=br==='e'?'':br?(mk[k]===br?'':br):o[(o.indexOf(mk[k]||'')+1)%o.length];qzMkPut(q,k,(c,gk)=>{if(nx)c.mk[gk]=nx;else delete c.mk[gk];if(br==='e')delete c.kz[gk]});if(br==='e'){qzRender();return}if(q.cat==='pitch'&&!Q.fold){Q.fold=true;qzRender();return}
     const M=MK.find(x=>x[0]===nx);t.className=(nx||'')+(t.classList.contains('focus')?' focus':'');const i=t.querySelector('i');if(i)i.remove();if(M)t.insertAdjacentHTML('beforeend',`<i>${M[1]}</i>`);
     const lg=document.querySelector('#s-quiz .qz-leg');if(lg){const W2=qzMkOf(q),n=new Set([...Object.keys(W2.mk),...Object.keys(W2.kz)]).size;lg.lastChild.nodeType===3&&/已標/.test(lg.lastChild.textContent)&&lg.lastChild.remove();if(n)lg.insertAdjacentText('beforeend',`　・已標 ${n} 個字`)}}
   else if(a==='tskip'){document.getElementById('qz-tover')?.remove();if(S.recd)return;const C=QCAT[q.cat]||{};if(Q.qt)Q.qt.show=false;const bad=q.cat==='beat'?null:'bad';if(bad&&!qzGet(q.id).res)qzSet(q.id,{res:bad});if(Q.i<Q.list.length-1)qzGo(Q.i+1);else{Q.sum=true;sStop();qzRender()}return}
@@ -656,7 +663,7 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 #qz-ex .xk{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}#qz-ex .xk button{min-width:44px;padding:8px 10px;font-size:16px;border-radius:10px}
 #qz-ex .xr{margin:0;text-align:center;font-size:14px;color:var(--muted)}#qz-ex .xr.ok{color:#7fd08a;font-size:18px;font-weight:700}#qz-ex .xr.mid{color:#f2c27b;font-weight:600}#qz-ex .xr.bad{color:#ffb3ab;font-weight:600}
 #qz-ex .xn{display:flex;justify-content:flex-end;gap:8px}#qz-ex .xn .go{background:var(--glow);color:#1a130c;border-color:var(--glow);font-weight:700}
-#qz-ex .xb{justify-content:center}.qz-exb{margin-right:6px}
+#qz-ex .xb{justify-content:center}#studio .qz-lyr.one{position:relative}#studio .qz-lyr.one>.qz-lyt{position:absolute;top:6px;right:8px;margin:0;padding:0;background:none}.qz-exb{margin-right:6px}
 .qz-pcols{display:grid;gap:14px;align-items:start}.qz-pcol h5{margin:6px 0 2px;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.1em}
 .qz-pcol .qz-pr.sm{gap:4px}
 @media (max-width:820px){.qz-home2{flex-direction:column}.qz-crs2{flex-wrap:wrap}.qz-pcols{grid-template-columns:1fr!important}}
@@ -680,31 +687,32 @@ document.addEventListener('pointerdown',e=>{const g=e.target.closest&&e.target.c
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up)},{passive:false});
 
 // ---------- ✍️ 記號筆試（試用版）：不用唱，憑記憶標出自己做過的記號、填出音高，再對答案 ----------
-function qzExData(q){const W=qzMkOf(q),L=qzText(q),PN=q.cat==='pitch'?qzNotes(q):null,pw={};let pk=0;
+function qzExData(q){const W=qzMkOf(q),L=qzText(q),PN=q.cat==='pitch'||q.cat==='exam'?qzNotes(q):null,pw={};let pk=0;
   L.forEach((ln,li)=>[...ln].forEach((ch,ci)=>{if(/\s/.test(ch))return;const p=PN&&qzNorm(ch)?PN.w[pk++]:null;if(p&&W.pn[li+':'+ci])pw[li+':'+ci]=p[1]}));
   const lines=L.map((ln,li)=>li).filter(li=>[...L[li]].some((_,ci)=>{const k=li+':'+ci;return W.mk[k]||W.kz[k]||pw[k]}));return {W,L,pw,lines}}
-function qzExBtn(q){const n=q.cat==='pitch'?qzExData(q).lines.length:0;return `<button data-q="exam" class="qz-mkt qz-exb"${n?'':' disabled'}>✍️ 記號筆試${n?`（${n} 句）`:''}</button>`}
+function qzExBtn(q){const n=qzExData(q).lines.length;return `<button data-q="exam" class="qz-mkt qz-exb"${n?'':' disabled'}>✍️ 記號筆試${n?`（${n} 句）`:''}</button>`}
 function qzExOpen(q){const D=qzExData(q);if(!D.lines.length){qzHint('這題還沒有標記號或音高');return}sStop();
-  Q.ex={q,D,i:0,br:'d',sel:null,ans:{},done:false};qzExDraw()}
-function qzExClose(){Q.ex=null;document.getElementById('qz-ex')?.remove()}
+  Q.ex={q,D,i:0,br:'d',sel:null,ans:{},done:false,err:{}};qzExDraw()}
+function qzExClose(){Q.ex=null;document.getElementById('qz-ex')?.remove();if(Q&&!Q.home&&!Q.sum)qzRender()}
 const qzExKey=(li,ci)=>li+':'+ci;
 function qzExDraw(){const E=Q.ex;if(!E)return;let el=document.getElementById('qz-ex');if(!el){el=document.createElement('div');el.id='qz-ex';document.body.appendChild(el);el.addEventListener('click',qzExClick)}
   const {D,i}=E,li=D.lines[i],ln=[...D.L[li]],A=E.ans[li]=E.ans[li]||{mk:{},kz:{},pn:{}},MK=QMARKS.pitch;let err=0;
   const chars=ln.map((ch,ci)=>{if(/\s/.test(ch))return '<span class="sp"> </span>';const k=qzExKey(li,ci),em=D.W.mk[k]||'',ez=!!D.W.kz[k],ep=D.pw[k],am=A.mk[ci]||'',az=!!A.kz[ci],ap=A.pn[ci];
     let st='',tip='';
-    if(E.done){const okM=em===am,okZ=ez===az,okP=!ep||(ap||'')===ep;const bad=!okM||!okZ||!okP;if(bad)err++;
+    if(E.done){const okM=em===am,okZ=ez===az,okP=(ap||'')===(ep||'');const bad=!okM||!okZ||!okP;if(bad)err++;
       const miss=(em&&!am)||(ez&&!az)||(ep&&!ap),wrong=(am&&am!==em)||(az&&!ez)||(ap&&ap!==ep);st=!(em||ez||ep||am||az||ap)?'':bad?(wrong?' xw':' xm'):' xo';
       if(bad){const M=MK.find(x=>x[0]===em);tip=`<b class="xa">${M?M[1]:''}${ez?'😬':''}${!M&&!ez&&!ep?'不用標':''}</b>`}}
     const M=MK.find(x=>x[0]===am);const blank=ep?`<em class="xp${E.sel===ci?' on':''}" data-x="pn" data-ci="${ci}">${ap?qzNs(ap).map(qzSol).join('<s>→</s>'):'＿'}${E.done&&ap!==ep?`<u>${qzNs(ep).map(qzSol).join('→')}</u>`:''}</em>`:'';
     return `<span class="xc ${am||(az?'k':'')}${az&&am?' kz':''}${st}" data-x="ch" data-ci="${ci}">${esc(ch)}${M?`<i>${M[1]}</i>`:''}${az?'<i class="kzi">😬</i>':''}${tip}${blank}</span>`}).join('');
   const brushes=MK.map(([k,ic,n])=>`<button data-x="br" data-b="${k}" class="${k}${E.br===k?' on':''}">${ic} ${n}</button>`).join('')+`<button data-x="br" data-b="e" class="e${E.br==='e'?' on':''}">⌫ 擦掉</button>`;
   const pad=E.sel!=null&&!E.done?`<div class="xk">${[1,2,3,4,5,6,7].map(n=>`<button data-x="kd" data-v="${n}">${n}</button>`).join('')}<button data-x="ko" data-v="'">高音 ̇</button><button data-x="ko" data-v=".">低音 ̣</button><button data-x="kf">♭</button><button data-x="kn">＋下一個音</button><button data-x="kb">⌫</button><button data-x="kx">好</button></div>`:'';
-  const res=E.done?(err===0?'<p class="xr ok">✓ 全對！</p>':`<p class="xr ${err<=2?'mid':'bad'}">${err<=2?'△':'✗'} 錯 ${err} 個字　綠＝對、黃＝漏掉、紅＝標錯，小字是正確答案</p>`):'<p class="xr">先選筆、再點字；有「＿」的字要填音高（點它會跳出數字鍵）</p>';
-  el.innerHTML=`<div class="xbox"><div class="xh"><b>✍️ 記號筆試</b><span>第 ${i+1} / ${D.lines.length} 句・試用版（還不會記進成績單）</span><button data-x="close">✕ 關閉</button></div>
+  E.lastErr=err;const res=E.done?(err===0?'<p class="xr ok">✓ 全對！</p>':`<p class="xr ${err<=2?'mid':'bad'}">${err<=2?'△':'✗'} 錯 ${err} 個字　綠＝對、黃＝漏掉、紅＝標錯，小字是正確答案</p>`):'<p class="xr">先選筆、再點字；有「＿」的字要填音高（點它會跳出數字鍵）</p>';
+  el.innerHTML=`<div class="xbox"><div class="xh"><b>✍️ 記號筆試</b><span>第 ${i+1} / ${D.lines.length} 句</span><button data-x="close">✕ 關閉</button></div>
     <div class="xl">${chars}</div>${E.done?'':`<div class="xb qz-brush">${brushes}</div>`}${pad}${res}
-    <div class="xn">${E.done?`<button data-x="again">再考一次這句</button>${i<D.lines.length-1?'<button data-x="next" class="go">下一句 →</button>':'<button data-x="close" class="go">考完了</button>'}`:'<button data-x="check" class="go">對答案</button>'}</div></div>`}
+    <div class="xn">${E.done?`<button data-x="again">再考一次這句</button>${i<D.lines.length-1?'<button data-x="next" class="go">下一句 →</button>':(E.q.cat==='exam'&&Q.i<Q.list.length-1?'<button data-x="close">回題目頁</button><button data-x="nextq" class="go">下一題 →</button>':'<button data-x="close" class="go">考完了</button>')}`:'<button data-x="check" class="go">對答案</button>'}</div></div>`}
 function qzExClick(e){const t=e.target.closest('[data-x]');const E=Q&&Q.ex;if(!t||!E)return;const x=t.dataset.x,li=E.D.lines[E.i],A=E.ans[li];
   if(x==='close'){qzExClose();return}
+  if(x==='nextq'){qzExClose();qzGo(Q.i+1);return}
   if(x==='br'){E.br=t.dataset.b;qzExDraw();return}
   if(x==='pn'){if(E.done)return;E.sel=+t.dataset.ci;qzExDraw();return}
   if(x==='ch'){if(E.done)return;const ci=+t.dataset.ci;if(E.br==='e'){delete A.mk[ci];delete A.kz[ci];delete A.pn[ci]}else if(E.br==='k'){if(A.kz[ci])delete A.kz[ci];else A.kz[ci]=1}else{if(A.mk[ci]===E.br)delete A.mk[ci];else A.mk[ci]=E.br}qzExDraw();return}
@@ -715,6 +723,6 @@ function qzExClick(e){const t=e.target.closest('[data-x]');const E=Q&&Q.ex;if(!t
   if(x==='kn'&&ci!=null&&cur&&!cur.endsWith('-')){A.pn[ci]=cur+'-';qzExDraw();return}
   if(x==='kb'&&ci!=null){const v=cur.replace(/-$/,'').split('-');v.pop();if(v.length)A.pn[ci]=v.join('-');else delete A.pn[ci];qzExDraw();return}
   if(x==='kx'){if(ci!=null&&A.pn[ci])A.pn[ci]=A.pn[ci].replace(/-$/,'');E.sel=null;qzExDraw();return}
-  if(x==='check'){Object.keys(A.pn).forEach(k=>{A.pn[k]=A.pn[k].replace(/-$/,'')});E.sel=null;E.done=true;qzExDraw();return}
+  if(x==='check'){Object.keys(A.pn).forEach(k=>{A.pn[k]=A.pn[k].replace(/-$/,'')});E.sel=null;E.done=true;qzExDraw();const n=E.lastErr||0,g=qzGl(E.q,li);qzSet('X'+g,{res:n===0?'ok':n<=2?'some':'bad'});return}
   if(x==='again'){E.ans[li]={mk:{},kz:{},pn:{}};E.done=false;E.sel=null;qzExDraw();return}
   if(x==='next'){E.i++;E.done=false;E.sel=null;qzExDraw();return}}
