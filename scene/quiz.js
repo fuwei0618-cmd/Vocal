@@ -356,10 +356,13 @@ function qzH2(){const n=Q.list.length,w=3,lo=Math.max(0,Math.min(Q.i-w,n-2*w-1))
 function qzHead(extra){return qzNav(Q.sum?'sum':'q',qzPaperName(Q.paper),extra)}
 // 題組首頁：左邊每份卷（⭐ 答對率），右邊這份卷的 Part（照段落分），每個都可以照順序或隨機
 // 首頁：幾個 Part 一起連唱（點第一個 Part、再點最後一個）
-function qzMultiHtml(){const sc=SCENES[key],ks=sc.steps.map((_,k)=>k).filter(k=>qzLines(k).length),sel=Q.hsel,lt=qzLatest(),ms=qzMultis();
-  return `<div class="qz-multi"><h4>幾個 Part 一起連唱<small>${sel!=null?`再點最後一個 Part（從 Part ${sel+1}）`:'點第一個 Part、再點最後一個，就多一題'}</small></h4>
+function qzMRow(a,b,lt){const id=`R${a}-${b}`,res=lt[id];return `<div class="qz-pr sm qz-drag" data-id="${id}"><i class="qz-grip" aria-label="拖曳排順序">⠿</i><span>Part ${a+1}–${b+1} 連唱<small>${res?'做過':''}</small></span><em>${res==='ok'?'⭐ 準':res==='some'?'△ 低空飛過':res==='bad'?'✗ 不及格':''}</em><button data-q="mbeg" data-id="${id}">開始</button><button data-q="mdel" data-id="${id}" aria-label="刪掉這組">✕</button></div>`}
+// 連唱題放在它那一輪的欄位下面；跨輪的放最下面一排
+function qzMListCol(c,colOf){const lt=qzLatest(),ms=qzMultis().filter(([a,b])=>colOf(a)===c&&colOf(b)===c);return ms.length?`<div class="qz-msub"><h6>連唱</h6><div class="qz-mlist">${ms.map(([a,b])=>qzMRow(a,b,lt)).join('')}</div></div>`:''}
+function qzMultiHtml(colOf){const sc=SCENES[key],ks=sc.steps.map((_,k)=>k).filter(k=>qzLines(k).length),sel=Q.hsel,lt=qzLatest(),ms=qzMultis().filter(([a,b])=>colOf(a)!==colOf(b));
+  return `<div class="qz-multi"><h4>幾個 Part 一起連唱<small>${sel!=null?`再點最後一個 Part（從 Part ${sel+1}）`:'點第一個 Part、再點最後一個，就多一題・同一輪的會放到那一輪下面'}</small></h4>
     <div class="qz-grp">${ks.map(k=>`<button data-q="msel" data-n="${k}" class="${sel===k?'on':''}">${k+1}</button>`).join('')}</div>
-    <div class="qz-mlist">${ms.map(([a,b],i)=>{const id=`R${a}-${b}`,res=lt[id];return `<div class="qz-pr sm qz-drag" data-id="${id}"><i class="qz-grip" aria-label="拖曳排順序">⠿</i><span>Part ${a+1}–${b+1} 連唱<small>${res?'做過':''}</small></span><em>${res==='ok'?'⭐ 準':res==='some'?'△ 低空飛過':res==='bad'?'✗ 不及格':''}</em><button data-q="mbeg" data-id="${id}">開始</button><button data-q="mdel" data-id="${id}" aria-label="刪掉這組">✕</button></div>`}).join('')}</div></div>`}
+    ${ms.length?`<h6 class="qz-mx">跨輪連唱</h6><div class="qz-mlist">${ms.map(([a,b])=>qzMRow(a,b,lt)).join('')}</div>`:''}</div>`}
 // 連唱題：把一句一句練的時候標的記號和筆記收在一個可以打開的摺疊頁
 function qzLineMk(g){const T=qzAll()[key]||{},re=new RegExp('^L'+g+'[ftjh]?$');for(const d of Object.keys(T).sort().reverse()){const D=T[d];for(const id in D)if(re.test(id)){const r=D[id];if((r.mk&&Object.keys(r.mk).length)||(r.pn&&Object.keys(r.pn).length)||r.n)return r}}return null}
 function qzFoldHtml(q){const n=qzText(q).filter((_,li)=>qzLineHasMk(q.cat,qzGl(q,li))||(qzLineMk(qzGl(q,li))||{}).n).length;
@@ -374,11 +377,13 @@ function qzHomeHtml(){const sc=SCENES[key],bank=Q.bank||(Q.bank=qzBank()),last=q
     <div class="qz-parts">${(()=>{const W=qzPaperList(hc,'all',1).filter(q=>{const r=qzLatest()[qzBase(q.id)];return r==='some'||r==='bad'}),wk=Q.wk||'all',kinds=hc==='pitch'||hc==='all';
         const pool=Q.wo?W:qzPaperList(hc,'all',1);
         return `<div class="qz-wk"><button data-q="wo" data-v="0" class="${Q.wo?'':'on'}">全部題目</button><button data-q="wo" data-v="1" class="wr${Q.wo?' on':''}"${W.length?'':' disabled'}>❌ 只考錯題<small>${W.length}</small></button>${kinds?`<span class="sep"></span>${[['all','全部題型',pool.length],...Object.keys(QKIND).map(k=>[k,QKIND[k],pool.filter(q=>qzKind(q)===k).length])].map(([k,n,c])=>`<button data-q="wk" data-k="${k}" class="${k===wk?'on':''}"${c?'':' disabled'}>${n}<small>${c}</small></button>`).join('')}`:''}</div>${Q.wo?'<p class="qz-n">錯題＝最近一次選了「△」或「✗」，之後選到「✓」才會離開</p>':''}`})()}
-      ${all.length?prow('all','整份',all)+qzPartCols(parts,p=>prow(p,`<b>${p+1}</b>${esc(sc.steps[p].sec)}`,qzPaperList(hc,p),1))+((hc==='pitch'||hc==='all')&&!Q.wo?qzMultiHtml():''):`<p class="qz-tip">${Q.wo?'目前沒有錯題 🎉':'這首還沒貼歌詞或還沒逐句對拍，出不了題。'}</p>`}</div>`}
+      ${all.length?prow('all','整份',all)+(()=>{const mu=(hc==='pitch'||hc==='all')&&!Q.wo,colOf=qzColOf();return qzPartCols(parts,p=>prow(p,`<b>${p+1}</b>${esc(sc.steps[p].sec)}`,qzPaperList(hc,p),1),mu?c=>qzMListCol(c,colOf):null)+(mu?qzMultiHtml(colOf):'')})():`<p class="qz-tip">${Q.wo?'目前沒有錯題 🎉':'這首還沒貼歌詞或還沒逐句對拍，出不了題。'}</p>`}</div>`}
 // 題組首頁的 Part：照歌詞「一頁」排版分欄（每一輪一欄），排不出來就一欄
-function qzPartCols(parts,cell){const sc=SCENES[key];let pos=null;try{pos=typeof tocGrid==='function'&&typeof blocks!=='undefined'&&blocks.length===sc.steps.length?tocGrid():null}catch(e){pos=null}
-  const cols=[];parts.forEach(p=>{const c=pos&&pos[p]?pos[p].c:0;(cols[c]=cols[c]||[]).push(p)});const cs=cols.filter(Boolean);
-  return `<div class="qz-pcols" style="grid-template-columns:repeat(${cs.length},1fr)">${cols.map((l,c)=>l?`<div class="qz-pcol">${sc.rounds&&sc.rounds[c]&&cs.length>1?`<h5>${esc(sc.rounds[c].t)}</h5>`:''}${l.map(cell).join('')}</div>`:'').join('')}</div>`}
+function qzTocPos(){const sc=SCENES[key];try{return typeof tocGrid==='function'&&typeof blocks!=='undefined'&&blocks.length===sc.steps.length?tocGrid():null}catch(e){return null}}
+function qzColOf(){const pos=qzTocPos();return p=>pos&&pos[p]?pos[p].c:0}
+function qzPartCols(parts,cell,extra){const sc=SCENES[key],colOf=qzColOf();
+  const cols=[];parts.forEach(p=>{const c=colOf(p);(cols[c]=cols[c]||[]).push(p)});const cs=cols.filter(Boolean);
+  return `<div class="qz-pcols" style="grid-template-columns:repeat(${cs.length},1fr)">${cols.map((l,c)=>l?`<div class="qz-pcol">${sc.rounds&&sc.rounds[c]&&cs.length>1?`<h5>${esc(sc.rounds[c].t)}</h5>`:''}${l.map(cell).join('')}${extra?extra(c):''}</div>`:'').join('')}</div>`}
 // 成績單上的題目名稱：標過的字直接在字上亮顏色＋箭頭（跟題目頁一樣），不另外列
 function qzLabelMk(q,r){const W=qzMkOf(q),mk=Object.assign({},W.mk);Object.keys(W.kz).forEach(k=>{if(!mk[k])mk[k]='k'});const _x=0,MK=QMARKS[q.cat]||[];if(q.l==null||q.t==='s'||!Object.keys(mk).length)return esc(qzLabel(q));
   return `<span class="qz-lm">${[...(qzText(q)[0]||'')].map((ch,ci)=>{const M=MK.find(x=>x[0]===mk['0:'+ci]);return M?`<b class="${M[0]}">${esc(ch)}<i>${M[1]}</i></b>`:esc(ch)}).join('')}</span>`}
@@ -648,7 +653,7 @@ app.addEventListener('input',e=>{const t=e.target;if(!Q||t.dataset.q!=='note'||!
 .qz-home2{display:flex;align-items:stretch;gap:10px;margin-bottom:8px}.qz-crs2{flex:1;display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden}
 #studio .qz-crs2 .qz-cr{flex:1;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:7px 4px;border-bottom:0;border-right:1px solid var(--line);font-size:15px;text-align:center}#studio .qz-crs2 .qz-cr:last-child{border-right:0}#studio .qz-crs2 .qz-cr span{flex:0}#studio .qz-crs2 .qz-cr em{min-width:0;text-align:center;font-size:12px}#studio .qz-crs2 .qz-cr small{font-size:11px}
 #studio .qz-home2 .qz-cont{width:auto;margin:0;padding:8px 18px;font-size:16px}
-.qz-grip{font-style:normal;font-size:18px;color:var(--muted);padding:2px 8px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}.qz-drag.dragging{background:rgba(242,194,123,.14);border-radius:8px;position:relative;z-index:3;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+.qz-msub{margin-top:6px;padding-top:4px;border-top:1px dashed var(--line)}.qz-msub h6,.qz-mx{margin:4px 0 2px;font-size:12px;font-weight:600;color:#f2c27b;letter-spacing:.05em}.qz-grip{font-style:normal;font-size:18px;color:var(--muted);padding:2px 8px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}.qz-drag.dragging{background:rgba(242,194,123,.14);border-radius:8px;position:relative;z-index:3;box-shadow:0 6px 18px rgba(0,0,0,.45)}
 .qz-wk{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 8px}.qz-wk .sep{width:1px;height:20px;background:var(--line);margin:0 4px}#studio .qz-wk button.wr.on{background:rgba(232,128,111,.22);border-color:#e8806f;color:#ffb3ab}.qz-parts .qz-n{margin:-2px 0 6px;font-size:12px;color:var(--muted)}#studio .qz-wk button{padding:5px 12px;font-size:13px;border-radius:999px}#studio .qz-wk button.on{background:rgba(242,194,123,.2);border-color:#f2c27b;color:#f2c27b}.qz-wk small{margin-left:5px;color:var(--muted);font-size:11px}
 .qz-lyr span i.kzi{top:auto;bottom:-9px;right:auto;left:-6px;font-size:11px;text-shadow:none}.qz-lyr span.kz{box-shadow:inset 0 -3px 0 rgba(240,140,190,.75)}
 .qz-rv{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);margin-left:auto;padding-left:6px;white-space:nowrap;flex:none}.qz-rv input{width:72px;accent-color:#f2c27b}
