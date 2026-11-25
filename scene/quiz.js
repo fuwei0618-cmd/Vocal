@@ -489,8 +489,13 @@ app.addEventListener('click',e=>{
   if(!Q||a==='note')return;const q=Q.list[Q.i];
   if(a==='x'){qzClose();return}
   if(a==='tabsim'){if(S.recd)return;sStop();Q.sim=true;qzRender();return}
+  if(a==='simg'){const g=+t.dataset.g;qzSimStop();Q.simG=g<0?null:g;Q.sim=true;qzRender();return}
+  if(a==='simplay'){const s0=+t.dataset.s,act='sim'+s0;if(Q.act===act&&(S.playing||Q.slow)){qzSimStop();qzRender();return}qzSimStop();qzSimPlay(s0,act);qzRender();return}
+  if(a==='simtone'){const tk=qzPartTok(+t.dataset.s),N=qzNotes(qzQ('L'+lineOff(+t.dataset.s)))||{},bt=60/((QNOTES[key]||{}).bpm||75),Ls=[];tk.forEach(c=>{if(!c.n)return;const ns=qzNs(c.n);ns.forEach(n=>Ls.push([n,Math.max(.15,(c.b||.5)*bt/ns.length)]))});qzSimStop();qzTone(Ls,(QNOTES[key]||{}).base||60);qzHint('🎹 '+tk.map(c=>c.ch).join(''));return}
+  if(a==='simgo'){qzSimStop();Q.sim=false;qzBegin('pitch','all','seq',['P'+t.dataset.s],0);return}
+  if(a==='simalt'){const g=(Q.simGs||[])[Q.simG];if(!g)return;clearTimeout(Q.simT);qzSeq('simalt',g.map(x=>({ids:qzOrig(),r:qzWholeRange(x.s),who:`Part ${x.s+1}`})));return}
   if(a==='plan'){qzPlanToggle();return}
-  if(a==='home'||a==='tabq'||a==='tabs')Q.sim=false;
+  if(a==='home'||a==='tabq'||a==='tabs'){if(Q.sim)qzSimStop();Q.sim=false}
   if(a==='home'){if(S.recd)return;Q.seq=null;sStop();Q.home=true;Q.bank=null;qzRender();return}
   if(a==='hc'){Q.hc=t.dataset.cat;if(Q.hc!=='pitch'&&Q.hc!=='all')Q.wk='all';qzLS('scene-pquiz-hc',Q.hc);qzRender();return}
   if(a==='psum'){const hc=Q.hc||'pitch',part=t.dataset.part,list=qzPaperList(hc,part);if(!list.length)return;Q.paper={cat:hc,part,ord:'seq'};Q.list=list;Q.i=0;Q.home=false;Q.sum=true;Q.act='';sStop();qzRender();return}
@@ -755,22 +760,26 @@ const QSIMNOTE={houlai:[
   ['第 10 段的尾巴','「永遠不會再重來」的「會 → 再」是 5̣ 跳 5，一整個八度，整首最大的跳。「有一個男孩」1 直接跳 4，「愛著那個女孩」一級一級走回 1。'],
   ['導歌（6、8）','「你都如何」的「都 → 如」6̣ 跳 4 是最難的一下；「不寂寞」停在 2，下一句副歌從 3 開始，就是 6→7、8→9 的接口。']]};
 function qzPartTok(s0){const L=qzLines(s0),o=[];L.forEach((_,i)=>{const g=lineOff(s0)+i,q=qzQ('L'+g);if(!q)return;const N=qzNotes(q);const T=[...(qzAllLines()[g]||'')];let k=0;
-  T.forEach((ch,ci)=>{if(/\s/.test(ch)||!qzNorm(ch))return;const w=N&&N.w[k++];o.push({li:i,ci,ch,n:w?w[1]:null})})});return o}
+  T.forEach((ch,ci)=>{if(/\s/.test(ch)||!qzNorm(ch))return;const w=N&&N.w[k++];o.push({li:i,ci,ch,n:w?w[1]:null,b:w?w[2]:.5})})});return o}
 function qzLcsMap(a,b){const m=a.length,n=b.length,d=Array.from({length:m+1},()=>new Uint16Array(n+1));for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=a[i-1]===b[j-1]?d[i-1][j-1]+1:Math.max(d[i-1][j],d[i][j-1]);
   const ma=new Array(m).fill(false),mb=new Array(n).fill(false);let i=m,j=n;while(i&&j){if(a[i-1]===b[j-1]){ma[i-1]=mb[j-1]=true;i--;j--}else if(d[i-1][j]>=d[i][j-1])i--;else j--}return {k:d[m][n],ma,mb}}
 function qzSimGroups(){const sc=SCENES[key],P=sc.steps.map((_,s0)=>({s:s0,t:qzLines(s0).length?qzPartTok(s0):[]})).filter(x=>x.t.length&&x.t.every(c=>c.n)),par=P.map((_,i)=>i),f=i=>par[i]===i?i:(par[i]=f(par[i]));
   const sim={};for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){const a=P[i].t.map(c=>c.n),b=P[j].t.map(c=>c.n),{k}=qzLcsMap(a,b),r1=k/Math.max(a.length,b.length),r2=k/Math.min(a.length,b.length);
     if(r1>=.8||(r2>=.9&&Math.min(a.length,b.length)>=8)){par[f(j)]=f(i);sim[i+'-'+j]=r1}}
   const G={};P.forEach((x,i)=>{(G[f(i)]=G[f(i)]||[]).push(x)});return Object.values(G).filter(g=>g.length>1)}
-function qzSimHtml(){const sc=SCENES[key];let G=[];try{G=qzSimGroups()}catch(e){G=[]}
-  const grp=g=>{const ref=g[0].t.map(c=>c.n);const cols=g.map(x=>{const {ma,mb}=qzLcsMap(ref,x.t.map(c=>c.n)),ok=x===g[0]?ma.map(()=>true):mb,allok=ok.every(Boolean),same=allok&&x.t.length===ref.length;
+function qzSimName(g){const sc=SCENES[key],c={};g.forEach(x=>{const n=sc.steps[x.s].sec;if(n!=='開場')c[n]=(c[n]||0)+1});const n=Object.keys(c).sort((x,y)=>c[y]-c[x])[0]||sc.steps[g[0].s].sec;return n.replace(/^最後/,'')}
+function qzSimHtml(){const sc=SCENES[key];let G=[];try{G=Q.simGs=qzSimGroups()}catch(e){G=Q.simGs=[]}const cur=Q.simG!=null&&G[Q.simG]?Q.simG:null;
+  const grp=(g,gi,full)=>{const ref=g[0].t.map(c=>c.n);const cols=g.map(x=>{const {ma,mb}=qzLcsMap(ref,x.t.map(c=>c.n)),ok=x===g[0]?ma.map(()=>true):mb,allok=ok.every(Boolean),same=allok&&x.t.length===ref.length;
       const lines=[];x.t.forEach((c,i)=>{(lines[c.li]=lines[c.li]||[]).push(`<span class="sc${ok[i]?'':' df'}"><b>${esc(c.ch)}</b><i>${qzNs(c.n).map(qzSol).join('')}</i></span>`)});
-      return `<div class="qz-scol"><h5><b>${x.s+1}</b> ${esc(sc.steps[x.s].sec)}<small>${x===g[0]?'基準':same?'旋律一樣':allok?(x.t.length<ref.length?'旋律一樣（是基準的一部分）':'旋律一樣，另外多了一段'):'紅字＝跟基準不一樣'}</small></h5>${lines.filter(Boolean).map(l=>`<p>${l.join('')}</p>`).join('')}</div>`}).join('');
-    return `<div class="qz-sg"><h4>Part ${g.map(x=>x.s+1).join('、')}</h4><div class="qz-scols" style="grid-template-columns:repeat(${g.length},minmax(0,1fr))">${cols}</div></div>`};
-  const notes=(QSIMNOTE[key]||[]).map(([t,d])=>`<div class="qz-snote"><b>${esc(t)}</b><span>${esc(d)}</span></div>`).join('');
-  return `${qzNav('sim','🔁 '+esc(sc.title))}<div class="qz-sim"><p class="qz-n">用簡譜自動找旋律一樣或很像的 Part。一樣的只要練一次音，其他段只練唱法；紅字是音不一樣的地方。</p>
-    ${notes?`<div class="qz-snotes">${notes}</div>`:''}${G.length?G.map(grp).join(''):'<p class="qz-tip">這首還沒有簡譜，或找不到相似的段落。</p>'}</div>`}
-
+      const pa=`sim${x.s}`,pt=`simt${x.s}`,on=v=>Q.act===v&&(S.playing||Q.slow)?' on':'';
+      const tools=full?`<div class="qz-stl"><button data-q="simplay" data-s="${x.s}" class="${on(pa)}">${on(pa)?'⏹ 停':'▶ 原曲'}</button><button data-q="simtone" data-s="${x.s}">🎹 鋼琴</button><button data-q="simgo" data-s="${x.s}" class="go">✏️ 練這段</button></div>`:'';
+      return `<div class="qz-scol"><h5><b>${x.s+1}</b> ${esc(sc.steps[x.s].sec)}<small>${x===g[0]?'基準':same?'旋律一樣':allok?(x.t.length<ref.length?'旋律一樣（是基準的一部分）':'旋律一樣，另外多了一段'):'紅字＝跟基準不一樣'}</small></h5>${tools}${lines.filter(Boolean).map(l=>`<p>${l.join('')}</p>`).join('')}</div>`}).join('');
+    return `<div class="qz-sg"><h4>${full?'':`<button data-q="simg" data-g="${gi}" class="qz-sgo">${esc(qzSimName(g))}組 ›</button>`}Part ${g.map(x=>x.s+1).join('、')}${full?`<button data-q="simalt" class="qz-salt${Q.act==='simalt'?' on':''}">${Q.act==='simalt'?`⏹ 停${Q.who?'・正在放 '+Q.who:''}`:'🔁 輪流聽原曲（一段一段比）'}</button>`:''}</h4><div class="qz-scols" style="grid-template-columns:repeat(${g.length},minmax(0,1fr))">${cols}</div></div>`};
+  const tabs=`<div class="qz-stabs"><button data-q="simg" data-g="-1" class="${cur==null?'on':''}">差異總表</button>${G.map((g,i)=>`<button data-q="simg" data-g="${i}" class="${cur===i?'on':''}">${esc(qzSimName(g))}組<small>${g.map(x=>x.s+1).join('·')}</small></button>`).join('')}</div>`;
+  return `${qzNav('sim','🔁 '+esc(sc.title))}<div class="qz-sim">${G.length?tabs:''}<p class="qz-n">${cur==null?'用簡譜自動找旋律一樣或很像的 Part；紅字＝音跟第一段不一樣。點上面的分頁可以聽、彈鋼琴音、直接練。':'每段都可以 ▶ 聽原曲、🎹 聽鋼琴音、✏️ 直接進去練（錄音、比一比都在裡面）。紅字＝跟第一段不一樣的音。'}</p>
+    ${G.length?(cur==null?G.map((g,i)=>grp(g,i,false)).join(''):grp(G[cur],cur,true)):'<p class="qz-tip">這首還沒有簡譜，或找不到相似的段落。</p>'}</div>`}
+function qzSimStop(){clearTimeout(Q.simT);Q.simT=null;qzSlowStop();sStop();Q.act=''}
+function qzSimPlay(s0,act){const [x,y]=qzWholeRange(s0);qzPlay(act,qzOrig(),Math.max(0,x-.3),y+.3);Q.act=act;return (y-x+.6)/Math.max(.3,qzSpeed())}
 // ---------- 📝 練習順序小紙條：浮動、可打勾 ----------
 const QPLANK='scene-qplan';
 const qzPlanAll=()=>{try{return JSON.parse(qzLS(QPLANK)||'{}')||{}}catch(e){return {}}};
@@ -827,7 +836,7 @@ function qzPlanDrag(el){el.addEventListener('pointerdown',e=>{if(!e.target.close
 #qz-plan .pg{font-style:normal;color:#b3a27c;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;padding:0 2px;font-size:16px}#qz-plan li.dragging{background:#f3e6c4}#qz-plan .prd{display:flex;align-items:center;gap:4px;margin-top:6px;font-size:12px;color:#8a7650}#qz-plan .prd small{margin-left:auto}#qz-plan .rd{width:24px;height:24px;padding:0;border-radius:50%}#qz-plan .rd.on{background:#3a2e1c;color:#fdf6e3;border-color:#3a2e1c}#qz-plan .pd{display:inline-flex;gap:2px}#qz-plan .pd i{width:7px;height:7px;border-radius:50%;border:1px solid #b3a27c}#qz-plan .pd i.y{background:#2f7d3a;border-color:#2f7d3a}#qz-plan .pd i.c{outline:1px solid #3a2e1c;outline-offset:1px}#qz-plan .pl.nx{background:#2f7d3a;color:#fff;border-color:#2f7d3a}#qz-plan .go{border-color:#d99a2b;color:#a3650c}#qz-plan textarea{width:100%;height:240px;font-size:14px;border:1px solid #c9b78f;border-radius:6px;background:#fffaf0;color:#3a2e1c;padding:6px}#qz-plan .pl{margin-top:6px}
 .qz-planb.on{background:#fdf6e3!important;color:#3a2e1c!important}
 .qz-sim{overflow:auto;max-height:calc(100% - 50px);padding-right:4px}.qz-snotes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.qz-snote{background:rgba(242,194,123,.1);border:1px solid rgba(242,194,123,.35);border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.5}.qz-snote b{display:block;color:#f2c27b;margin-bottom:2px}
-.qz-sg{margin:10px 0 14px}.qz-sg h4{margin:0 0 6px;color:#f2c27b;font-size:15px}.qz-scols{display:grid;gap:10px}.qz-scol{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:6px 8px}
+.qz-stabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 6px}.qz-stabs button{border:1px solid var(--line);background:none;color:var(--text,#eee);border-radius:999px;padding:5px 14px;font-size:14px}.qz-stabs button small{margin-left:6px;color:var(--muted);font-size:11px}.qz-stabs button.on{background:#f2c27b;color:#2a1c06;border-color:#f2c27b}.qz-stabs button.on small{color:#5a4320}.qz-sgo{margin-right:8px;border:1px solid #f2c27b;background:none;color:#f2c27b;border-radius:8px;padding:2px 10px;font-size:13px}.qz-salt{margin-left:12px;border:1px solid var(--line);background:none;color:var(--text,#eee);border-radius:8px;padding:3px 10px;font-size:13px;font-weight:400}.qz-salt.on{background:#e8806f;color:#fff}.qz-stl{display:flex;gap:4px;margin:2px 0 6px}.qz-stl button{border:1px solid var(--line);background:none;color:var(--text,#eee);border-radius:8px;padding:3px 8px;font-size:12px}.qz-stl button.on{background:#e8806f;color:#fff}.qz-stl button.go{border-color:#f2c27b;color:#f2c27b}.qz-sg{margin:10px 0 14px}.qz-sg h4{margin:0 0 6px;color:#f2c27b;font-size:15px}.qz-scols{display:grid;gap:10px}.qz-scol{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:6px 8px}
 .qz-scol h5{margin:0 0 4px;font-size:14px}.qz-scol h5 b{color:#f2c27b;margin-right:4px}.qz-scol h5 small{margin-left:6px;font-weight:400;color:var(--muted);font-size:11px}.qz-scol p{margin:0 0 4px;display:flex;flex-wrap:wrap;gap:1px 2px}
 .qz-scol .sc{display:inline-flex;flex-direction:column;align-items:center;min-width:16px}.qz-scol .sc b{font-size:15px;font-weight:500}.qz-scol .sc i{font-style:normal;font-size:10px;color:var(--muted);white-space:nowrap}.qz-scol .sc.df b,.qz-scol .sc.df i{color:#ff8a78}.qz-scol .sc.df i{font-weight:700}
 `;document.head.appendChild(s)})();
