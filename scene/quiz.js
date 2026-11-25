@@ -778,27 +778,40 @@ const qzPlanOpen=()=>qzLS(QPLANK+'-open')==='1';
 function qzPlanDefault(){const sc=SCENES[key],ks=sc.steps.map((_,k)=>k).filter(k=>qzLines(k).length);const pos=qzTocPos(),colOf=p=>pos&&pos[p]?pos[p].c:0;
   if(key==='houlai')return ['Part 1 開場','Part 2','Part 3','Part 2–3 連唱','Part 4','Part 5','Part 6','Part 4–6 連唱','Part 7','Part 2–7 連唱','比較：開場、7、9、10（看 🔁 相似段落）','比較：6、8','Part 8–10 連唱','串接：Part 1–2 連唱'];
   const cols={};ks.forEach(k=>{(cols[colOf(k)]=cols[colOf(k)]||[]).push(k)});const o=[];Object.values(cols).forEach(l=>{l.forEach(k=>o.push(`Part ${k+1}`));if(l.length>1)o.push(`Part ${l[0]+1}–${l[l.length-1]+1} 連唱`)});o.push('比較相似段落（看 🔁 相似段落）');return o}
-function qzPlanGet(){const A=qzPlanAll(),P=A[key]||{};return {items:P.items||qzPlanDefault(),done:P.done||{}}}
-function qzPlanSave(P){const A=qzPlanAll();A[key]=P;qzLS(QPLANK,JSON.stringify(A))}
+function qzPlanGet(){const A=qzPlanAll(),P=A[key]||{};const o={items:P.items||qzPlanDefault(),rounds:P.rounds||[{done:P.done||{}}],cur:P.cur||0};if(o.cur>=o.rounds.length)o.cur=o.rounds.length-1;return o}
+function qzPlanSave(P){const A=qzPlanAll();A[key]={items:P.items,rounds:P.rounds,cur:P.cur};qzLS(QPLANK,JSON.stringify(A))}
 function qzPlanToggle(){qzLS(QPLANK+'-open',qzPlanOpen()?'0':'1');Q.planEd=false;qzPlanDraw();document.querySelectorAll('#s-quiz .qz-planb').forEach(b=>b.classList.toggle('on',qzPlanOpen()))}
+const QPRE=/Part\s*(\d+)(?:\s*[–\-~]\s*(\d+))?/;
 function qzPlanDraw(){let el=document.getElementById('qz-plan');if(!qzPlanOpen()||!Q){el&&el.remove();return}
   if(!el){el=document.createElement('div');el.id='qz-plan';document.body.appendChild(el);el.addEventListener('click',qzPlanClick);qzPlanDrag(el)}
-  const P=qzPlanGet(),n=P.items.filter(x=>P.done[x]).length;
-  el.innerHTML=`<div class="ph"><b>📝 練習順序</b><small>${n}/${P.items.length}</small><span class="sp"></span><button data-p="ed">${Q.planEd?'完成':'✏️ 改'}</button><button data-p="x">✕</button></div>
-    <p class="pr">每天：錯題 5 分 → 新進度 20 分 → 筆試 2 分</p>
+  const P=qzPlanGet(),R=P.rounds,c=P.cur,D=R[c].done,n=P.items.filter(x=>D[x]).length,last=c===R.length-1,all=n===P.items.length;
+  const tabs=R.map((_,i)=>`<button data-p="rd" data-i="${i}" class="rd${i===c?' on':''}">${i+1}</button>`).join('');
+  el.innerHTML=`<div class="ph"><b>📝 練習順序</b><span class="sp"></span><button data-p="ed">${Q.planEd?'完成':'✏️ 改'}</button><button data-p="x">✕</button></div>
+    <div class="prd"><span>回合</span>${tabs}<small>${n}/${P.items.length}</small></div>
+    <p class="pr">每天：錯題 5 分 → 新進度 20 分 → 筆試 2 分${last?'':'・這是第 '+(c+1)+' 回合的紀錄'}</p>
     ${Q.planEd?`<textarea>${esc(P.items.join('\n'))}</textarea><p class="pr">一行一項；寫「Part 2」或「Part 2–3 連唱」會出現 ▶ 直接開始</p><button data-p="def" class="pl">回到預設</button>`:
-    `<ol>${P.items.map((x,i)=>{const m=/Part\s*(\d+)(?:\s*[–\-~]\s*(\d+))?/.exec(x);return `<li class="${P.done[x]?'ok':''}"><button data-p="ck" data-i="${i}" class="ck">${P.done[x]?'✓':''}</button><span>${esc(x)}${P.done[x]?`<small>${P.done[x].slice(5).replace('-','/')}</small>`:''}</span>${/相似/.test(x)?`<button data-p="sim" class="go">🔁</button>`:m?`<button data-p="go" data-i="${i}" class="go">▶</button>`:''}</li>`}).join('')}</ol>
-    ${n?'<button data-p="clr" class="pl">全部重來（清掉勾）</button>':''}`}`}
-function qzPlanClick(e){const t=e.target.closest('[data-p]');if(!t||!Q)return;const a=t.dataset.p,P=qzPlanGet();
+    `<ol class="pl-list">${P.items.map((x,i)=>{const m=QPRE.exec(x),dots=R.length>1?`<em class="pd">${R.map((r,j)=>`<i class="${r.done[x]?'y':''}${j===c?' c':''}"></i>`).join('')}</em>`:'';
+      return `<li class="${D[x]?'ok':''}" data-i="${i}"><i class="pg" aria-label="拖曳排順序">⠿</i><button data-p="ck" data-i="${i}" class="ck">${D[x]?'✓':''}</button><span>${esc(x)}${D[x]?`<small>${D[x].slice(5).replace('-','/')}</small>`:''}</span>${dots}${/相似/.test(x)?`<button data-p="sim" class="go">🔁</button>`:m?`<button data-p="go" data-i="${i}" class="go">▶</button>`:''}</li>`}).join('')}</ol>
+    ${last?`<button data-p="new" class="pl${all?' nx':''}">${all?`🎉 這回合完成！開始第 ${R.length+1} 回合`:`＋ 開始第 ${R.length+1} 回合`}</button>`:''}${n&&last?'<button data-p="clr" class="pl">清掉這回合的勾</button>':''}`}`}
+function qzPlanClick(e){const t=e.target.closest('[data-p]');if(!t||!Q)return;const a=t.dataset.p,P=qzPlanGet(),D=P.rounds[P.cur].done;
   if(a==='x'){qzPlanToggle();return}
   if(a==='ed'){if(Q.planEd){const v=document.querySelector('#qz-plan textarea').value.split('\n').map(x=>x.trim()).filter(Boolean);P.items=v.length?v:qzPlanDefault();qzPlanSave(P)}Q.planEd=!Q.planEd;qzPlanDraw();return}
   if(a==='def'){P.items=qzPlanDefault();qzPlanSave(P);Q.planEd=false;qzPlanDraw();return}
-  if(a==='clr'){P.done={};qzPlanSave(P);qzPlanDraw();return}
-  if(a==='ck'){const x=P.items[+t.dataset.i];if(P.done[x])delete P.done[x];else P.done[x]=qzDay();qzPlanSave(P);qzPlanDraw();return}
+  if(a==='rd'){P.cur=+t.dataset.i;qzPlanSave(P);qzPlanDraw();return}
+  if(a==='new'){P.rounds.push({done:{},start:qzDay()});P.cur=P.rounds.length-1;qzPlanSave(P);qzPlanDraw();qzHint(`第 ${P.cur+1} 回合開始：勾勾重來，成績和錯題都還在`);return}
+  if(a==='clr'){P.rounds[P.cur].done={};qzPlanSave(P);qzPlanDraw();return}
+  if(a==='ck'){const x=P.items[+t.dataset.i];if(D[x])delete D[x];else D[x]=qzDay();qzPlanSave(P);qzPlanDraw();return}
   if(a==='sim'){if(S.recd)return;sStop();Q.sim=true;Q.home=false;qzRender();return}
-  if(a==='go'){if(S.recd)return;const m=/Part\s*(\d+)(?:\s*[–\-~]\s*(\d+))?/.exec(P.items[+t.dataset.i]);if(!m)return;const x=+m[1]-1,y=m[2]!=null?+m[2]-1:null;Q.sim=false;sStop();
+  if(a==='go'){if(S.recd)return;const m=QPRE.exec(P.items[+t.dataset.i]);if(!m)return;const x=+m[1]-1,y=m[2]!=null?+m[2]-1:null;Q.sim=false;sStop();
     if(y==null||y===x){if(!qzLines(x).length){qzHint('這個 Part 沒有歌詞');return}qzBegin('pitch',x,'seq');return}
     const a0=Math.min(x,y),b0=Math.max(x,y);qzGrpSave('R',l=>l.some(g=>g[0]===a0&&g[1]===b0)?l:l.concat([[a0,b0]]));Q.bank=null;qzBegin('pitch','all','seq',[`R${a0}-${b0}`],0)}}
+// 小紙條的項目：按住 ⠿ 上下拖曳
+document.addEventListener('pointerdown',e=>{const g=e.target.closest&&e.target.closest('#qz-plan .pg');if(!g)return;e.preventDefault();e.stopPropagation();
+  const row=g.closest('li'),list=row.parentNode;row.classList.add('dragging');
+  const mv=ev=>{const y=ev.clientY;for(const r of [...list.children]){if(r===row)continue;const b=r.getBoundingClientRect();if(y>b.top&&y<b.bottom){list.insertBefore(row,y<b.top+b.height/2?r:r.nextSibling);break}}};
+  const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);row.classList.remove('dragging');
+    const P=qzPlanGet(),old=P.items;P.items=[...list.children].map(r=>old[+r.dataset.i]);qzPlanSave(P);qzPlanDraw()};
+  document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up)},{passive:false,capture:true});
 function qzPlanDrag(el){el.addEventListener('pointerdown',e=>{if(!e.target.closest('.ph')||e.target.closest('button'))return;const r=el.getBoundingClientRect(),dx=e.clientX-r.left,dy=e.clientY-r.top;
   const mv=ev=>{el.style.left=Math.max(0,Math.min(innerWidth-60,ev.clientX-dx))+'px';el.style.top=Math.max(0,Math.min(innerHeight-40,ev.clientY-dy))+'px';el.style.right='auto'};
   const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);qzLS(QPLANK+'-pos',JSON.stringify([el.style.left,el.style.top]))};
@@ -806,12 +819,12 @@ function qzPlanDrag(el){el.addEventListener('pointerdown',e=>{if(!e.target.close
   try{const p=JSON.parse(qzLS(QPLANK+'-pos')||'null');if(p){el.style.left=p[0];el.style.top=p[1];el.style.right='auto'}}catch(e){}}
 (()=>{const s=document.createElement('style');s.textContent=`
 #qz-plan{position:fixed;right:16px;top:120px;z-index:60;width:270px;max-height:70vh;overflow:auto;background:#fdf6e3;color:#3a2e1c;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.45);padding:8px 10px 10px;font-size:14px;transform:rotate(-.4deg)}
-#qz-plan .ph{display:flex;align-items:center;gap:6px;cursor:move;touch-action:none;padding-bottom:4px;border-bottom:1px dashed #c9b78f}#qz-plan .ph small{color:#8a7650}#qz-plan .sp{flex:1}
+#qz-plan .ph{position:sticky;top:-8px;background:#fdf6e3;z-index:1;padding-top:4px;display:flex;align-items:center;gap:6px;cursor:move;touch-action:none;padding-bottom:4px;border-bottom:1px dashed #c9b78f}#qz-plan .ph small{color:#8a7650}#qz-plan .sp{flex:1}
 #qz-plan button{background:none;border:1px solid #c9b78f;border-radius:6px;color:#3a2e1c;padding:2px 7px;font-size:12px}
 #qz-plan .pr{margin:5px 0;font-size:12px;color:#8a7650}#qz-plan ol{list-style:none;margin:0;padding:0}
 #qz-plan li{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #eadfc4}#qz-plan li span{flex:1;line-height:1.3}#qz-plan li small{margin-left:6px;color:#8a7650;font-size:11px}
 #qz-plan li.ok span{text-decoration:line-through;color:#9c8b69}#qz-plan .ck{width:22px;height:22px;padding:0;border:2px solid #8a7650;border-radius:5px;font-weight:700;color:#2f7d3a}#qz-plan li.ok .ck{background:#d9eccf;border-color:#2f7d3a}
-#qz-plan .go{border-color:#d99a2b;color:#a3650c}#qz-plan textarea{width:100%;height:240px;font-size:14px;border:1px solid #c9b78f;border-radius:6px;background:#fffaf0;color:#3a2e1c;padding:6px}#qz-plan .pl{margin-top:6px}
+#qz-plan .pg{font-style:normal;color:#b3a27c;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;padding:0 2px;font-size:16px}#qz-plan li.dragging{background:#f3e6c4}#qz-plan .prd{display:flex;align-items:center;gap:4px;margin-top:6px;font-size:12px;color:#8a7650}#qz-plan .prd small{margin-left:auto}#qz-plan .rd{width:24px;height:24px;padding:0;border-radius:50%}#qz-plan .rd.on{background:#3a2e1c;color:#fdf6e3;border-color:#3a2e1c}#qz-plan .pd{display:inline-flex;gap:2px}#qz-plan .pd i{width:7px;height:7px;border-radius:50%;border:1px solid #b3a27c}#qz-plan .pd i.y{background:#2f7d3a;border-color:#2f7d3a}#qz-plan .pd i.c{outline:1px solid #3a2e1c;outline-offset:1px}#qz-plan .pl.nx{background:#2f7d3a;color:#fff;border-color:#2f7d3a}#qz-plan .go{border-color:#d99a2b;color:#a3650c}#qz-plan textarea{width:100%;height:240px;font-size:14px;border:1px solid #c9b78f;border-radius:6px;background:#fffaf0;color:#3a2e1c;padding:6px}#qz-plan .pl{margin-top:6px}
 .qz-planb.on{background:#fdf6e3!important;color:#3a2e1c!important}
 .qz-sim{overflow:auto;max-height:calc(100% - 50px);padding-right:4px}.qz-snotes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.qz-snote{background:rgba(242,194,123,.1);border:1px solid rgba(242,194,123,.35);border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.5}.qz-snote b{display:block;color:#f2c27b;margin-bottom:2px}
 .qz-sg{margin:10px 0 14px}.qz-sg h4{margin:0 0 6px;color:#f2c27b;font-size:15px}.qz-scols{display:grid;gap:10px}.qz-scol{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:6px 8px}
