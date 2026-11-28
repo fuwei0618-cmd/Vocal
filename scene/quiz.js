@@ -15,8 +15,8 @@ const QCAT={
   map:{n:'🗺 架構',res:{ok:'✓ 說對',some:'△ 說對一半',bad:'✗ 想不起來'},sc:['說對','一半','想不起來'],pass:'段落和第一句都說得出來'}};
 const QTYPE={
   '':{n:'整句',t:''},
-  f:{n:'句首音',t:'不先聽原唱：伴奏放到這句前，直接唱出第一個字。考的是「起音」記不記得。比的時候只比開頭。'},
-  t:{n:'句尾長音',t:'這句最後的長音：撐住、不往下掉、不抖。想只聽句尾，用右邊「✂️ 框選幾個字」。'},
+  f:{n:'句首音',t:'不先聽原唱：伴奏放到這句前，直接唱出第一個字（歌詞下有金色底線的字）。考的是「起音」記不記得。比的時候只比開頭。'},
+  t:{n:'句尾長音',t:'這句最後的長音（歌詞下有金色底線的字）：撐住、不往下掉、不抖。想只聽句尾，用右邊「✂️ 框選幾個字」。'},
   h:{n:'高音句',t:'這句是整首最高的幾句之一（從原唱人聲聽出來的）：注意有沒有真的唱上去。'},
   j:{n:'大跳音',t:''},
   s:{n:'整段連唱',t:'這個 Part 一句一句考完了，最後整段連起來唱一次：換句、換氣的地方音有沒有跑掉。'}};
@@ -403,7 +403,7 @@ function qzChars(q,r,cls){const W=qzMkOf(q),hide=q.cat==='pitch'&&!Q.fold,mk=hid
   return L.map((ln,li)=>{const lm=q.t==='s'&&Q.fold?qzLineMk(qzGl(q,li)):null,hasP=[...ln].some((_,ci)=>pn[li+':'+ci]);return `<p data-li="${li}"${hasP?' class="pn"':''}>${L.length>1&&q.cat==='pitch'?`<b class="qz-lno${Q.lsel===li?' on':''}" data-q="lsel" data-li="${li}">${li+1}</b>`:''}${[...ln].map((ch,ci,all)=>{if(/\s/.test(ch))return ' ';const c=mk[li+':'+ci],M=MK.find(x=>x[0]===c);
     const f=q.t==='f'&&ci===all.findIndex(z=>!/\s/.test(z))||q.t==='t'&&ci>=all.length-3?' focus':'';
     const pw0=PN&&qzNorm(ch)?PN.w[pk++]:null,pw=pw0&&pn[li+':'+ci]?pw0:null;
-    const z=kz[li+':'+ci];return `<span data-q="mk" data-k="${li}:${ci}" class="${c||(z?'k':'')}${z&&c?' kz':''}${f}">${esc(ch)}${M?`<i>${M[1]}</i>`:''}${z?'<i class="kzi">😬</i>':''}${pw?`<em class="qn">${qzNs(pw[1]).map(qzSol).join('<s>→</s>')}</em>`:''}</span>`}).join('')}${lm&&lm.n?`<small class="qz-ln">📝 ${esc(lm.n)}</small>`:''}</p>`}).join('')}
+    const z=kz[li+':'+ci];return `<span data-q="mk" data-k="${li}:${ci}"${f?' title="這題的重點（自動標的，不是記號）"':''} class="${c||(z?'k':'')}${z&&c?' kz':''}${f}">${esc(ch)}${M?`<i>${M[1]}</i>`:''}${z?'<i class="kzi">😬</i>':''}${pw?`<em class="qn">${qzNs(pw[1]).map(qzSol).join('<s>→</s>')}</em>`:''}</span>`}).join('')}${lm&&lm.n?`<small class="qz-ln">📝 ${esc(lm.n)}</small>`:''}</p>`}).join('')}
 // ---------- 每題自動計時：進到題目就開始算，離開 App 會暫停；5 分鐘到提醒先跳下一題 ----------
 const QZ_LIMIT=300;
 // 每題計時：每次進來從 0 開始（不累計）；按了播放或錄音才開始算，只是點進來看看不算
