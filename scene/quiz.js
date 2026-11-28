@@ -348,7 +348,7 @@ function qzTag(q,r){if(q.cat==='pitch')return (q.R?'幾段連唱・':q.a?'幾句
 // 三頁共用的頂列：左邊固定三個分頁（題組首頁｜題目｜成績單，現在在哪頁就亮哪個），中間標題，最右邊 ✕ 結束
 function qzNav(cur,title,right){qzXBtn();const last=qzLastAll()[key],hasQ=!!(Q.list&&Q.list.length)||!!(last&&last.ids&&last.ids.length);
   const tb=(id,a,l)=>`<button data-q="${cur===id?'':a}" class="${cur===id?'on':''}"${cur!==id&&id!=='home'&&!hasQ?' disabled':''}>${l}</button>`;
-  return `<div class="qz-h"><div class="qz-tabs"><button data-q="songs">🎵 歌單</button>${tb('home','home','🏠 題組首頁')}${tb('q','tabq','✏️ 題目')}${tb('sum','tabs','📋 成績單')}<button data-q="${cur==='sim'?'':'tabsim'}" class="${cur==='sim'?'on':''}">🔁 相似段落</button><button data-q="plan" class="qz-planb${qzPlanOpen()?' on':''}">📝 練習順序</button></div><b class="qz-tt">${title}</b><span class="sp"></span>${right||''}</div>`}
+  return `<div class="qz-h"><div class="qz-tabs"><button data-q="songs">🎵 歌單</button>${tb('home','home','🏠 題組首頁')}${tb('q','tabq','✏️ 題目')}${tb('sum','tabs','📋 成績單')}<button data-q="${cur==='sim'?'':'tabsim'}" class="${cur==='sim'?'on':''}">🔁 相似段落</button></div><b class="qz-tt">${title}</b><span class="sp"></span>${right||''}</div>`}
 // ✕ 結束 放在最上面那條（時間旁邊），題組每一頁都在同一個位置
 function qzXBtn(){const top=document.querySelector('#studio .s-top');if(!top||top.querySelector('.qz-x'))return;const b=document.createElement('button');b.className='qz-x';b.dataset.q='x';b.textContent='✕ 結束題組';top.appendChild(b)}
 function qzH2(){const n=Q.list.length,w=3,lo=Math.max(0,Math.min(Q.i-w,n-2*w-1)),hi=Math.min(n,lo+2*w+1);
@@ -796,13 +796,14 @@ function qzPlanDefault(){const sc=SCENES[key],ks=sc.steps.map((_,k)=>k).filter(k
   const cols={};ks.forEach(k=>{(cols[colOf(k)]=cols[colOf(k)]||[]).push(k)});const o=[];Object.values(cols).forEach(l=>{l.forEach(k=>o.push(`Part ${k+1}`));if(l.length>1)o.push(`Part ${l[0]+1}–${l[l.length-1]+1} 連唱`)});o.push('比較相似段落（看 🔁 相似段落）');return o}
 function qzPlanGet(){const A=qzPlanAll(),P=A[key]||{};const o={items:P.items||qzPlanDefault(),rounds:P.rounds||[{done:P.done||{}}],cur:P.cur||0};if(o.cur>=o.rounds.length)o.cur=o.rounds.length-1;return o}
 function qzPlanSave(P){const A=qzPlanAll();A[key]={items:P.items,rounds:P.rounds,cur:P.cur};qzLS(QPLANK,JSON.stringify(A))}
-function qzPlanToggle(){qzLS(QPLANK+'-open',qzPlanOpen()?'0':'1');Q.planEd=false;qzPlanDraw();document.querySelectorAll('#s-quiz .qz-planb').forEach(b=>b.classList.toggle('on',qzPlanOpen()))}
+function qzPlanToggle(){qzLS(QPLANK+'-open',qzPlanOpen()?'0':'1');Q.planEd=false;qzPlanDraw()}
 const QPRE=/Part\s*(\d+)(?:\s*[–\-~]\s*(\d+))?/;
-function qzPlanDraw(){let el=document.getElementById('qz-plan');if(!qzPlanOpen()||!Q){el&&el.remove();return}
-  if(!el){el=document.createElement('div');el.id='qz-plan';document.body.appendChild(el);el.addEventListener('click',qzPlanClick);qzPlanDrag(el)}
+function qzPlanDraw(){let el=document.getElementById('qz-plan');if(!Q){el&&el.remove();return}
+  if(!el){el=document.createElement('div');el.id='qz-plan';document.body.appendChild(el);el.addEventListener('click',qzPlanClick)}
+  const op=qzPlanOpen();el.classList.toggle('open',op);if(!op){const P=qzPlanGet(),D=P.rounds[P.cur].done,n=P.items.filter(x=>D[x]).length;el.innerHTML=`<button data-p="x" class="ptab"><i>📝</i><b>練<br>習<br>單</b><small>${n}/${P.items.length}</small></button>`;return}
   const P=qzPlanGet(),R=P.rounds,c=P.cur,D=R[c].done,n=P.items.filter(x=>D[x]).length,last=c===R.length-1,all=n===P.items.length;
   const tabs=R.map((_,i)=>`<button data-p="rd" data-i="${i}" class="rd${i===c?' on':''}">${i+1}</button>`).join('');
-  el.innerHTML=`<div class="ph"><b>📝 練習順序</b><span class="sp"></span><button data-p="ed">${Q.planEd?'完成':'✏️ 改'}</button><button data-p="x">✕</button></div>
+  el.innerHTML=`<div class="ph"><b>📝 練習單</b><span class="sp"></span><button data-p="ed">${Q.planEd?'完成':'✏️ 改'}</button><button data-p="x" title="收起來">收起 》</button></div>
     <div class="prd"><span>回合</span>${tabs}<small>${n}/${P.items.length}</small></div>
     <p class="pr">每天：錯題 5 分 → 新進度 20 分 → 筆試 2 分${last?'':'・這是第 '+(c+1)+' 回合的紀錄'}</p>
     ${Q.planEd?`<textarea>${esc(P.items.join('\n'))}</textarea><p class="pr">一行一項；寫「Part 2」或「Part 2–3 連唱」會出現 ▶ 直接開始</p><button data-p="def" class="pl">回到預設</button>`:
@@ -834,8 +835,10 @@ function qzPlanDrag(el){el.addEventListener('pointerdown',e=>{if(!e.target.close
   document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up)});
   try{const p=JSON.parse(qzLS(QPLANK+'-pos')||'null');if(p){el.style.left=p[0];el.style.top=p[1];el.style.right='auto'}}catch(e){}}
 (()=>{const s=document.createElement('style');s.textContent=`
-#qz-plan{position:fixed;right:16px;top:120px;z-index:60;width:270px;max-height:70vh;overflow:auto;background:#fdf6e3;color:#3a2e1c;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.45);padding:8px 10px 10px;font-size:14px;transform:rotate(-.4deg)}
-#qz-plan .ph{position:sticky;top:-8px;background:#fdf6e3;z-index:1;padding-top:4px;display:flex;align-items:center;gap:6px;cursor:move;touch-action:none;padding-bottom:4px;border-bottom:1px dashed #c9b78f}#qz-plan .ph small{color:#8a7650}#qz-plan .sp{flex:1}
+#qz-plan{position:fixed;right:0;top:120px;z-index:60;font-size:14px;color:#3a2e1c}
+#qz-plan.open{width:280px;max-height:calc(100vh - 140px);overflow:auto;background:#fdf6e3;border-radius:10px 0 0 10px;box-shadow:-6px 8px 28px rgba(0,0,0,.45);padding:8px 10px 10px}
+#qz-plan .ptab{writing-mode:vertical-rl;background:#fdf6e3!important;color:#3a2e1c;border:none!important;border-radius:10px 0 0 10px!important;padding:12px 6px!important;font-size:14px!important;font-weight:600;letter-spacing:.15em;box-shadow:-3px 4px 14px rgba(0,0,0,.4)}#qz-plan .ptab{writing-mode:horizontal-tb!important;display:flex;flex-direction:column;align-items:center;gap:4px;width:40px}#qz-plan .ptab i{font-style:normal;font-size:16px}#qz-plan .ptab b{font-size:15px;line-height:1.25}#qz-plan .ptab small{font-weight:400;color:#8a7650;letter-spacing:0;font-size:11px}
+#qz-plan .ph{position:sticky;top:-8px;background:#fdf6e3;z-index:1;padding-top:4px;display:flex;align-items:center;gap:6px;padding-bottom:4px;border-bottom:1px dashed #c9b78f}#qz-plan .ph small{color:#8a7650}#qz-plan .sp{flex:1}
 #qz-plan button{background:none;border:1px solid #c9b78f;border-radius:6px;color:#3a2e1c;padding:2px 7px;font-size:12px}
 #qz-plan .pr{margin:5px 0;font-size:12px;color:#8a7650}#qz-plan ol{list-style:none;margin:0;padding:0}
 #qz-plan li{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #eadfc4}#qz-plan li span{flex:1;line-height:1.3}#qz-plan li small{margin-left:6px;color:#8a7650;font-size:11px}
